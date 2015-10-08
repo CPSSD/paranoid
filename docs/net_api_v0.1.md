@@ -3,7 +3,10 @@
 ## The Architecture ##
 The sprint follows a simple network architecture i.e, multiple clients and one central server. The server's only purpose is to echo messages received to all clients.
 
-## Messages
+## Server Messages
+
+
+## Client Messages
 Each message is a JSON object with 2 mandatory fields
 * SenderID - (string) A unique identifier for the sender address of the sender of the message
 * MessageType (string)
@@ -18,7 +21,7 @@ The rest of the fields of a message depend on the message type
 ---
 
 ### write ###
-When a client issues a `write` command it is broadcasted to all connected clients. They then write the data to the files specified
+Writes to a file specified in `fileName` and Base64 encoded data
 * __fileName__ - (string) The name of the file to write to
 * __offset__ - (int) The offset of the write in bytes
 * __length__ - (int) The length of the write in bytes
@@ -38,7 +41,7 @@ When a client issues a `write` command it is broadcasted to all connected client
 
 ---
 ### creat ###
-Broadcasted by the server to all connected clients and tells them to `creat` a file with the name specified in the `fileName` field
+Creates a file with the name specified in the `fileName` field
 * __fileName__ - (string) The name of the file to create
 
 ```
