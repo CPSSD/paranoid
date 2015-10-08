@@ -5,13 +5,14 @@ pfs(1) -- issue commands to a paranoid filesystem
 
 `pfs` `init`<br>
 `pfs` `mount` <mountpoint><br>
+`pfs` [`-f`|`--fuse`] `read` <file><br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `creat` <file><br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `write` <file> <offset> <length><br>
 
 ## DESCRIPTION
 
 **pfs** is the control system for the paranoid file storage system. It handles 
-communication between the network layers and fuse and the virtual file system. 
+communication between the network layers and FUSE and the virtual file system. 
 It can also be used to manually test the file system by using commands without the 
 `-n` or `-f`. 
 
@@ -21,7 +22,10 @@ It can also be used to manually test the file system by using commands without t
     Create a new filesystem with the current directory on the host filesystem as the root.
 
 * `mount`:
-    Mount a paranoid filesystem and register it with fuse. It will be mounted at <mountpoint>.
+    Mount a paranoid filesystem and register it with FUSE. It will be mounted at <mountpoint>.
+
+* `read`:
+    Reads the file linked to by <file> and prints it to stdout (if called by the user) or to FUSE.
 
 * `creat` <file>:
     Create a new file in the filesystem and create a hard link to it called <file>.
@@ -59,4 +63,6 @@ Create new file with primary link name of `helloworld.txt` and write the text "H
 
     $ pfs creat helloworld.txt
     $ echo "Hello World!" | pfs write helloworld.txt 0 13
+    $ pfs read helloworld.txt
+    Hello World!
  
