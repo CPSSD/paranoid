@@ -1,2 +1,58 @@
 pfs(1) -- issue commands to a paranoid filesystem
 =================================================
+
+## SYNOPSIS
+
+`pfs` `init`<br>
+`pfs` [`-n`|`--net`|`-f`|`--fuse`] `creat` <file><br>
+`pfs` [`-n`|`--net`|`-f`|`--fuse`] `write` <file> <offset> <length><br>
+
+## DESCRIPTION
+
+**pfs** is the control system for the paranoid file storage system. It handles 
+communication between the network layers and fuse and the virtual file system. 
+It can also be used to manually test the file system by using commands without the 
+`-n` or `-f`. 
+
+## COMMANDS
+
+* `init`:
+    Create a new filesystem with the current directory on the host filesystem as the root.
+
+* `creat` <file>:
+    Create a new file in the filesystem and create a hard link to it called <file>.
+    
+* `write` <file> <offset> <length>:
+    Write the data piped in through stdin to the file referenced by <file> starting at <offset> and
+    writing <length> bytes of data.
+
+## OPTIONS
+
+These options specify the source of the command.
+
+  * `-n`, `--net`:
+    The source of the command is the network. It is coming from another node. This
+    flag instructs `pfs` not to send a message out on the network after performing the
+    operation.
+
+  * `-f`, `--fuse`:
+    The source of the command is the FUSE layer. This flag instructs `pfs` to send a message
+    out on the network after performing the operation.
+    
+These options specify the output of the program.
+
+  * `-v`, `--verbose`:
+    This enables debug logging. 
+
+These options are miscellaneous options.
+
+  * `--version`:
+    Show pfs version and exit.
+    
+## EXAMPLES
+
+Create new file with primary link name of `helloworld.txt` and write the text "Hello World!"
+
+    $ pfs creat helloworld.txt
+    $ echo "Hello World!" | pfs write helloworld.txt 0 13
+ 
