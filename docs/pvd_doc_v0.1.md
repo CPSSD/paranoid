@@ -1,4 +1,4 @@
-Paranoid Virtual Disk V0.01
+Paranoid Virtual Disk V0.1
 =====================
 
 #### File System Structure
@@ -11,17 +11,21 @@ contains the file data as well as a UUID for referencing the file.
 #### Generic structure
 ```
 -                 Root
--       File UUID      File UUID2
--       File Data      File Data2
+-           Node        Node
 ```
+### Links
+  nodeUUID: 123456789
+  linkname: adsf
 
-File Structure
+Node Structure
 ```
 {
   nodeUUID: 1234567890
   file_name: asdf
   file_metadata: []
-  file_content: (base64 encoded data?)
+  length: 12
+  offset: 1
+  file_content: asdf123
 }
 ```
 
@@ -29,15 +33,28 @@ For the file system the UUID and filename must be unique.
 
 #### Supported Functions
 
-- create
+- creat (filename)
 
       Create a file with a new UUID and Name
 
-- write
+- write (filename data)
 
       Update data in a currently existing file
 
-- unlink
+- link (file nodeID)
 
-      Remove the file from the FS
+      Creates a link between a node and a file
+
+- unlink (filename)
+
+      Removes Link to a file. If no other links to a file exist file
+      it is removed
+
+- truncate (filename size)
+
+      Cuts the file down to a specific size
+
+- link (filename )
+
+      creates a link between a file and a node
 
