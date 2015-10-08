@@ -20,9 +20,9 @@ to writing Go.
 Branches should have a short prefix describing what type of changes are contained in it.
 These prefixes should be one of the following:
 
-    * **feature/** -- for changes which add/affect a feature.
-    * **doc/** -- for changes to the documentation.
-    * **hotfix/** -- for quick bugfixes.
+* **feature/** -- for changes which add/affect a feature.
+* **doc/** -- for changes to the documentation.
+* **hotfix/** -- for quick bugfixes.
 
 ## Version Numbering ##
 
