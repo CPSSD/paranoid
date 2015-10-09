@@ -39,6 +39,6 @@ Connects to the server, reads and sends its standard input to the server (stdin 
 
 #### Synopsis
 
-    pfs-network-server <server-ip> <server-port>
+    pfs-network-server <server-port>
 
 Starts the server.
