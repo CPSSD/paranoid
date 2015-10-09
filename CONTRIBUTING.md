@@ -24,6 +24,8 @@ These prefixes should be one of the following:
 * **doc/** -- for changes to the documentation.
 * **hotfix/** -- for quick bugfixes.
 
+Branches must also contain the name of the contributor, i.e. `doc/terry/...`.
+
 ## Version Numbering ##
 
 We will be using [semantic versioning](http://semver.org/). Every binary will have a separate
