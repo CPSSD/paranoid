@@ -3,58 +3,40 @@ Paranoid Virtual Disk V0.1
 
 #### File System Structure
 
-The file system will initially be a flat file system. (no dirs only files)
+The supports file system is a flat file system: it contains only files (not directories).
 
-In this sprint the i-node and the file data are the same thing. The node
-contains the file data as well as a UUID for referencing the file.
-
-#### Generic structure
 ```
--                 Root
--           Node        Node
+                 Root
+             /     |    \
+          names  inodes  contents
 ```
-### Links
-  nodeUUID: 123456789
-  linkname: adsf
 
-Node Structure
+`Root` here corresponds to `pfs-directory` in the `pfs` manual page.
+
+Example (taking `~/.pfs` is the root):
+
+- `~/.pfs/names/my-file.txt` is a text file containing the (textual) name of the corresponding inode (e.g. `1a2b3c4d`).
+- `~/.pfs/inodes/1a2b3c4d` is a text file containing a JSONified inode structure (see below).
+- `~/.pfs/contents/1a2b3c4d` is a regular file-system file containing the actual data of `my-file.txt`.
+
+Note:
+
+- Later, we will need another file or directory containing file-system meta
+  data such as the globally-unique identity of the file system, information
+  about peers, keys, etc.
+
+### INode Structure
+
+INode Structure:
 ```
 {
-  nodeUUID: 1234567890
-  file_name: asdf
-  file_metadata: []
-  length: 12
-  offset: 1
-  file_content: asdf123
+  inode: 1a2b3c4d  // unique within file system
+  count: 1         // reference count
+                   // in due course, we will need other stuff
 }
 ```
 
-For the file system the UUID and filename must be unique.
+### Supported Functions
 
-#### Supported Functions
-
-- creat (filename)
-
-      Create a file with a new UUID and Name
-
-- write (filename data)
-
-      Update data in a currently existing file
-
-- link (file nodeID)
-
-      Creates a link between a node and a file
-
-- unlink (filename)
-
-      Removes Link to a file. If no other links to a file exist file
-      it is removed
-
-- truncate (filename size)
-
-      Cuts the file down to a specific size
-
-- link (filename )
-
-      creates a link between a file and a node
+This is an on-disk data structure.  The operations for manipulating it are provided the `pfs` utility, which is documented separately.
 
