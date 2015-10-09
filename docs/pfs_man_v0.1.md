@@ -4,7 +4,7 @@ pfs(1) -- issue commands to a paranoid filesystem
 ## SYNOPSIS
 
 `pfs` `init` `<pfs-directory>`<br>
-`pfs` `mount` `<pfs-directory>` `<mountpoint>`<br>
+`pfs` `mount` `<pfs-directory>` `<server-ip>` `<server-port>`<br>
 `pfs` [`-f`|`--fuse`] `stat` `<pfs-directory>` `<file>`<br>
 `pfs` [`-f`|`--fuse`] `read` `<pfs-directory>` `<file>` [`<offset>` `<length>`]<br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>`<br>
@@ -20,10 +20,10 @@ It can also be used to test the file system by omitting the
 ## COMMANDS
 
 * `init`:
-    Create a new filesystem in the indicated directory.  The directory must already exist and must be empty.
+    Create a new filesystem in the indicated directory.  The directory must already exist and must be empty. Also generates the file-system's UUID.
 
 * `mount`:
-    Mount the indicated paranoid filesystem with FUSE. It will be mounted at `<mountpoint>`.
+    This informs that the indicated file system has been mounted; specifically, it provides the server IP address and port to use.  These are written into the relevant meta-data files.
 
 * `stat`:
     Writes stat information for the indicated file to standard output (in a format to be determined, but must initially include at least the length).
