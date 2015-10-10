@@ -7,7 +7,7 @@ pfs(1) -- issue commands to a paranoid filesystem
 `pfs` `mount` `<pfs-directory>` `<server-ip>` `<server-port>`<br>
 `pfs` [`-f`|`--fuse`] `stat` `<pfs-directory>` `<file>`<br>
 `pfs` [`-f`|`--fuse`] `read` `<pfs-directory>` `<file>` [`<offset>` `<length>`]<br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
+`pfs` [`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>`<br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `write` `<pfs-directory>` `<file>` [`<offset>` `<length>]`<br>
 
@@ -33,7 +33,7 @@ It can also be used to test the file system by omitting the
     Reads the file `<file>` and prints it to standard output.  If `<offset>` and `<length>` are omitted, then output all of the file.
 
 * `readdir`:
-    Returns a list of all files in the filesystem. 
+    Returns a list of all files in the filesystem to standard output one per line. 
 
 * `creat`:
     Create a new file in the filesystem and create a hard link to it called `<file>`.
