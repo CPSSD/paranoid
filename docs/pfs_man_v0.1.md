@@ -7,7 +7,7 @@ pfs(1) -- issue commands to a paranoid filesystem
 `pfs` `mount` `<pfs-directory>` `<server-ip>` `<server-port>`<br>
 `pfs` [`-f`|`--fuse`] `stat` `<pfs-directory>` `<file>`<br>
 `pfs` [`-f`|`--fuse`] `read` `<pfs-directory>` `<file>` [`<offset>` `<length>`]<br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
+`pfs` [`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>`<br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `write` `<pfs-directory>` `<file>` [`<offset>` `<length>]`<br>
 
