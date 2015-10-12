@@ -7,22 +7,22 @@ import (
 	"path"
 )
 
-func checkErr(err error) {
+func checkErr(cmd string, err error) {
 	if err != nil {
-		log.Fatal("init error occured:", err)
+		log.Fatal(cmd, "error occured:", err)
 	}
 }
 
 func makeDir(parentDir, newDir string) string {
 	newDirPath := path.Join(parentDir, newDir)
 	err := os.Mkdir(newDirPath, 0777)
-	checkErr(err)
+	checkErr("init", err)
 	return newDirPath
 }
 
 func checkEmpty(directory string) {
 	files, err := ioutil.ReadDir(directory)
-	checkErr(err)
+	checkErr("init", err)
 	if len(files) > 0 {
 		log.Fatal("init : directory must be empty")
 	}
@@ -39,7 +39,7 @@ func InitCommand(args []string) {
 	metaDir := makeDir(directory, "meta/")
 	makeDir(directory, "contents/")
 	uuid, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
-	checkErr(err)
+	checkErr("init", err)
 	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), uuid, 0777)
-	checkErr(err)
+	checkErr("init", err)
 }
