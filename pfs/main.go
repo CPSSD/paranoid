@@ -29,6 +29,8 @@ func main() {
 			commands.WriteCommand(onlyArgs[1:])
 		case "read":
 			commands.ReadCommand(onlyArgs[1:])
+		case "readdir":
+			commands.ReadDirCommand(onlyArgs[1:])
 		default:
 			log.Fatal("Given command not recognised")
 		}
