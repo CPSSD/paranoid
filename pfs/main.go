@@ -25,6 +25,8 @@ func main() {
 			commands.MountCommand(onlyArgs[1:])
 		case "creat":
 			commands.CreatCommand(onlyArgs[1:])
+		case "write":
+			commands.WriteCommand(onlyArgs[1:])
 		default:
 			log.Fatal("Given command not recognised")
 		}
