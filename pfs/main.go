@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/cpssd/paranoid/pfs/initcmd"
-	"github.com/cpssd/paranoid/pfs/mountcmd"
+	"github.com/cpssd/paranoid/pfs/commands"
 	"os"
 )
 
@@ -19,9 +18,9 @@ func main() {
 	}
 	if len(onlyArgs) > 0 {
 		if onlyArgs[0] == "init" {
-			initcmd.InitCommand(onlyArgs[1:])
+			commands.InitCommand(onlyArgs[1:])
 		} else if onlyArgs[0] == "mount" {
-			mountcmd.MountCommand(onlyArgs[1:])
+			commands.MountCommand(onlyArgs[1:])
 		}
 	}
 }

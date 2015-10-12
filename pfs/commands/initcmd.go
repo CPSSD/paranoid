@@ -1,9 +1,10 @@
-package initcmd
+package commands
 
 import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 )
 
 func checkErr(err error) {
@@ -13,11 +14,7 @@ func checkErr(err error) {
 }
 
 func makeDir(parentDir, newDir string) string {
-	newDirPath := parentDir
-	if parentDir[len(parentDir)-1] != '/' {
-		newDirPath += "/"
-	}
-	newDirPath += newDir
+	newDirPath := path.Join(parentDir, newDir)
 	err := os.Mkdir(newDirPath, 0777)
 	checkErr(err)
 	return newDirPath
@@ -43,6 +40,6 @@ func InitCommand(args []string) {
 	makeDir(directory, "contents/")
 	uuid, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	checkErr(err)
-	err = ioutil.WriteFile(metaDir+"uuid", uuid, 0777)
+	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), uuid, 0777)
 	checkErr(err)
 }
