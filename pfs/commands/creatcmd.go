@@ -19,7 +19,7 @@ func CreatCommand(args []string) {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
-	if _, err := os.Stat(path.Join(directory, "/names/", args[1])); os.IsNotExist(err) == false {
+	if _, err := os.Stat(path.Join(directory, "/names/", args[1])); !os.IsNotExist(err) {
 		log.Fatal("creat : file already exits")
 	}
 	uuidbytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
