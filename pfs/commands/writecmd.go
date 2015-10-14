@@ -13,16 +13,16 @@ func WriteCommand(args []string) {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
-	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "/names/", args[1]))
+	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	fileName := string(fileNameBytes)
 	checkErr("write", err)
 	fileData, err := ioutil.ReadAll(os.Stdin)
 	checkErr("write", err)
 	if len(args) == 2 {
-		err = ioutil.WriteFile(path.Join(directory, "/contents/", fileName), fileData, 0777)
+		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
 		checkErr("write", err)
 	} else {
-		contentsFile, err := os.Open(path.Join(directory, "/contents/", fileName))
+		contentsFile, err := os.Open(path.Join(directory, "contents", fileName))
 		checkErr("write", err)
 		length, err := strconv.Atoi(args[2])
 		checkErr("write", err)

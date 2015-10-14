@@ -19,21 +19,21 @@ func CreatCommand(args []string) {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
-	if _, err := os.Stat(path.Join(directory, "/names/", args[1])); !os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(directory, "names", args[1])); !os.IsNotExist(err) {
 		log.Fatal("creat : file already exits")
 	}
 	uuidbytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	uuid := strings.TrimSpace(string(uuidbytes))
 	checkErr("creat", err)
-	err = ioutil.WriteFile(path.Join(directory, "/names/", args[1]), []byte(uuid), 0777)
+	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), 0777)
 	checkErr("creat", err)
 	nodeData := &inode{
 		Inode: uuid,
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	checkErr("creat", err)
-	err = ioutil.WriteFile(path.Join(directory, "/inodes/", uuid), jsonData, 0777)
+	err = ioutil.WriteFile(path.Join(directory, "inodes", uuid), jsonData, 0777)
 	checkErr("creat", err)
-	_, err = os.Create(path.Join(directory, "/contents/", uuid))
+	_, err = os.Create(path.Join(directory, "contents", uuid))
 	checkErr("creat", err)
 }

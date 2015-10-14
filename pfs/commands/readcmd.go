@@ -14,9 +14,9 @@ func ReadCommand(args []string) {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
-	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "/names/", args[1]))
+	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	fileName := string(fileNameBytes)
-	file, err := os.Open(path.Join(directory, "/contents/", fileName))
+	file, err := os.Open(path.Join(directory, "contents", fileName))
 	checkErr("read", err)
 	if len(args) == 2 {
 		bytesRead := make([]byte, 1024)

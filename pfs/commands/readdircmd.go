@@ -12,7 +12,7 @@ func ReadDirCommand(args []string) {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
-	files, err := ioutil.ReadDir(path.Join(directory, "/names/"))
+	files, err := ioutil.ReadDir(path.Join(directory, "names"))
 	checkErr("readdir", err)
 	for i := 0; i < len(files); i++ {
 		fmt.Println(files[i].Name())
