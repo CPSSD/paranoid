@@ -6,12 +6,12 @@ import (
 )
 
 func TestSendReceiveMessage(t *testing.T) {
-	p := NewConnPool()
-	go p.Run()
-	conn := NewConnection(nil, p)
-	p.Register <- conn
-	defer func() { p.Unregister <- conn }()
-	p.messages <- []byte("test!")
+	pool := NewConnPool()
+	go pool.Run()
+	conn := NewConnection(nil, pool)
+	pool.Register <- conn
+	defer func() { pool.Unregister <- conn }()
+	pool.messages <- []byte("test!")
 	timeout := make(chan bool, 1)
 	go func() {
 		time.Sleep(1 * time.Second)
