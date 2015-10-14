@@ -11,8 +11,8 @@ func MountCommand(args []string) {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
-	err := ioutil.WriteFile(path.Join(directory, "meta/ip"), []byte(args[1]), 0777)
+	err := ioutil.WriteFile(path.Join(directory, "meta", "ip"), []byte(args[1]), 0777)
 	checkErr("mount", err)
-	err = ioutil.WriteFile(path.Join(directory, "meta/port"), []byte(args[2]), 0777)
+	err = ioutil.WriteFile(path.Join(directory, "meta", "port"), []byte(args[2]), 0777)
 	checkErr("mount", err)
 }

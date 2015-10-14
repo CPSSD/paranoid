@@ -34,10 +34,10 @@ func InitCommand(args []string) {
 	}
 	directory := args[0]
 	checkEmpty(directory)
-	makeDir(directory, "names/")
-	makeDir(directory, "inodes/")
-	metaDir := makeDir(directory, "meta/")
-	makeDir(directory, "contents/")
+	makeDir(directory, "names")
+	makeDir(directory, "inodes")
+	metaDir := makeDir(directory, "meta")
+	makeDir(directory, "contents")
 	uuid, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	checkErr("init", err)
 	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), uuid, 0777)
