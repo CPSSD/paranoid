@@ -22,7 +22,7 @@ func WriteCommand(args []string) {
 		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
 		checkErr("write", err)
 	} else {
-		contentsFile, err := os.Open(path.Join(directory, "contents", fileName))
+		contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
 		checkErr("write", err)
 		length, err := strconv.Atoi(args[2])
 		checkErr("write", err)

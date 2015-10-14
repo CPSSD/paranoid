@@ -9,7 +9,7 @@ import (
 
 func checkErr(cmd string, err error) {
 	if err != nil {
-		log.Fatal(cmd, "error occured:", err)
+		log.Fatal(cmd, " error occured: ", err)
 	}
 }
 
