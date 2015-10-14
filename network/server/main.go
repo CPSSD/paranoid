@@ -33,18 +33,18 @@ func NewConnPool() *connPool {
 	}
 }
 
-func (p *connPool) Run() {
+func (pool *connPool) Run() {
 	for {
 		select {
-		case conn := <-p.Register:
-			p.connections[conn] = true
-		case conn := <-p.Unregister:
-			if _, ok := p.connections[conn]; ok {
-				delete(p.connections, conn)
+		case conn := <-pool.Register:
+			pool.connections[conn] = true
+		case conn := <-pool.Unregister:
+			if _, ok := pool.connections[conn]; ok {
+				delete(pool.connections, conn)
 			}
 		// When receiving a message, send it down all active connections
-		case message := <-p.messages:
-			for conn := range p.connections {
+		case message := <-pool.messages:
+			for conn := range pool.connections {
 				conn.messages <- message
 			}
 		}
@@ -52,56 +52,56 @@ func (p *connPool) Run() {
 }
 
 type connection struct {
-	ws *websocket.Conn
-	p  *connPool
+	websocket *websocket.Conn
+	pool      *connPool
 	// Buffered channel of messages to be send to the client
 	messages chan []byte
 }
 
-func NewConnection(ws *websocket.Conn, p *connPool) *connection {
+func NewConnection(websocket *websocket.Conn, pool *connPool) *connection {
 	return &connection{
-		ws:       ws,
-		p:        p,
-		messages: make(chan []byte, 256),
+		websocket: websocket,
+		pool:      pool,
+		messages:  make(chan []byte, 256),
 	}
 }
 
 func (conn *connection) Reader() {
 	for {
-		_, message, err := conn.ws.ReadMessage()
+		_, message, err := conn.websocket.ReadMessage()
 		if err != nil {
 			log.Println("ERROR: Could not read message: ", err)
 			break
 		}
-		conn.p.messages <- message
+		conn.pool.messages <- message
 	}
-	conn.ws.Close()
+	conn.websocket.Close()
 }
 
 func (conn *connection) Writer() {
 	for message := range conn.messages {
-		err := conn.ws.WriteMessage(websocket.TextMessage, message)
+		err := conn.websocket.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
 			log.Println("ERROR: Could not write to websocket: ", err)
 			break
 		}
 	}
-	conn.ws.Close()
+	conn.websocket.Close()
 }
 
 type websocketHandler struct {
-	p *connPool
+	pool *connPool
 }
 
 func (handler websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ws, err := websocketUpgrader.Upgrade(w, r, nil)
+	websocket, err := websocketUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("ERROR: Could not upgrade websocket: ", err)
 		return
 	}
-	conn := NewConnection(ws, handler.p)
-	handler.p.Register <- conn
-	defer func() { handler.p.Unregister <- conn }()
+	conn := NewConnection(websocket, handler.pool)
+	handler.pool.Register <- conn
+	defer func() { handler.pool.Unregister <- conn }()
 	go conn.Writer()
 	conn.Reader()
 }
@@ -109,7 +109,7 @@ func (handler websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 func main() {
 	pool := NewConnPool()
 	go pool.Run()
-	http.Handle("/connect", websocketHandler{p: pool})
+	http.Handle("/connect", websocketHandler{pool: pool})
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatalln("FATAL: ", err)
