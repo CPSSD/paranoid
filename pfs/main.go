@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/cpssd/paranoid/pfs/commands"
 	"log"
 	"os"
@@ -10,6 +11,14 @@ func main() {
 	args := os.Args[1:]
 	var onlyArgs []string
 	var onlyFlags []string
+	commands.ProcessFlags(onlyFlags)
+	if commands.Flags.Version {
+		fmt.Println("pfs v0.1.0")
+		return
+	}
+	if commands.Flags.Network && commands.Flags.Fuse {
+		log.Fatal("Error, both network and fuse flags are set")
+	}
 	for i := 0; i < len(args); i++ {
 		if args[i][0] == '-' {
 			onlyFlags = append(onlyFlags, args[i])
