@@ -1,4 +1,4 @@
-#!/bin/sh
+#/bin/sh
 
 read_fn () {
   OPTION=$1
@@ -17,7 +17,8 @@ write_fn (){
 
   if [ "$TYPE" = "-f" ]
     then
-      exit 0
+      exit 0 
+	#TODO Need to change  
   elif [ "$TYPE" = "-n" ]
     then
       exit 0
