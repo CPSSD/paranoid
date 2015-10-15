@@ -26,6 +26,15 @@ func main() {
 			onlyArgs = append(onlyArgs, args[i])
 		}
 	}
+	if commands.Flags.Verbose {
+		if len(args) > 0 {
+			givenCmd := args[0]
+			for i := 1; i < len(args); i++ {
+				givenCmd = givenCmd + " " + args[i]
+			}
+			log.Println("Given command : ", givenCmd)
+		}
+	}
 	if len(onlyArgs) > 0 {
 		switch onlyArgs[0] {
 		case "init":

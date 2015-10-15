@@ -15,15 +15,19 @@ type inode struct {
 }
 
 func CreatCommand(args []string) {
+	verboseLog("creat command called")
 	if len(args) < 2 {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
+	verboseLog("creat : directory = " + directory)
 	if _, err := os.Stat(path.Join(directory, "names", args[1])); !os.IsNotExist(err) {
 		log.Fatal("creat : file already exits")
 	}
+	verboseLog("creat : creating file " + args[1])
 	uuidbytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	uuid := strings.TrimSpace(string(uuidbytes))
+	verboseLog("creat : uuid = " + uuid)
 	checkErr("creat", err)
 	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), 0777)
 	checkErr("creat", err)

@@ -9,12 +9,15 @@ import (
 )
 
 func WriteCommand(args []string) {
+	verboseLog("write command given")
 	if len(args) < 2 {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
+	verboseLog("write : given directory = " + directory)
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	fileName := string(fileNameBytes)
+	verboseLog("write : wrting to " + fileName)
 	checkErr("write", err)
 	fileData, err := ioutil.ReadAll(os.Stdin)
 	checkErr("write", err)

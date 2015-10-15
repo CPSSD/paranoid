@@ -19,10 +19,12 @@ type statInfo struct {
 }
 
 func StatCommand(args []string) {
+	verboseLog("stat command called")
 	if len(args) < 2 {
 		log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
+	verboseLog("stat : given directory = " + directory)
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	fileName := string(fileNameBytes)
 	file, err := os.Open(path.Join(directory, "contents", fileName))
@@ -38,5 +40,6 @@ func StatCommand(args []string) {
 		Atime:  atime}
 	jsonData, err := json.Marshal(statData)
 	checkErr("stat", err)
+	verboseLog("stat : returning " + string(jsonData))
 	io.WriteString(os.Stdout, string(jsonData))
 }
