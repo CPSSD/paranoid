@@ -22,7 +22,9 @@ func ReadCommand(args []string) {
 		bytesRead := make([]byte, 1024)
 		for {
 			n, err := file.Read(bytesRead)
-			checkErr("read", err)
+			if err != io.EOF {
+				checkErr("read", err)
+			}
 			io.WriteString(os.Stdout, string(bytesRead))
 			if n < 1024 {
 				break
