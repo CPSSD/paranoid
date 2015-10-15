@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-
+	""
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
