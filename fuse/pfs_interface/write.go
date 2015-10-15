@@ -3,7 +3,6 @@ package pfsInterface
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 )
 
@@ -36,13 +35,11 @@ func Write(mountDir string, pfsLocation string, name string, data []byte, offset
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 
 	err = command.Start()
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 
 	stdinPipe.Write(data)

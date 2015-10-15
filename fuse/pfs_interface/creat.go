@@ -3,7 +3,6 @@ package pfsInterface
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 )
 
@@ -26,6 +25,5 @@ func Creat(mountDir string, pfsLocation string, name string) {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 }

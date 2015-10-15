@@ -1,11 +1,19 @@
 package pfsInterface
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
+	"time"
 )
+
+type statInfo struct {
+	Length int64     `json:"length"`
+	Ctime  time.Time `json:"ctime"`
+	Mtime  time.Time `json:"mtime"`
+	Atime  time.Time `json:"atime"`
+}
 
 /*
 Stat -
@@ -19,10 +27,9 @@ paramenters :
     name - The name of the file whos attributes are needed.
 
 return :
-    Should return a structure of the attributes, waiting on
-    confirmation from the pfs team.
+    info - The statInfo object containing details of the file.
 */
-func Stat(mountDir string, pfsLocation, name string) { // TODO: return structure
+func Stat(mountDir string, pfsLocation, name string) (info statInfo) {
 	args := fmt.Sprintf("-f stat %s %s", mountDir, name)
 	command := exec.Command(pfsLocation, args)
 
@@ -30,9 +37,16 @@ func Stat(mountDir string, pfsLocation, name string) { // TODO: return structure
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 
 	fmt.Println(string(output))
+	info = statInfo{}
+	err = json.Unmarshal(output, &info)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return info
 	// TODO: return return structure object
 }

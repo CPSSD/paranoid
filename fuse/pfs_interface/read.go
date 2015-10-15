@@ -3,7 +3,6 @@ package pfsInterface
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 )
 
@@ -39,7 +38,6 @@ func Read(mountDir string, pfsLocation string, name string, offset int, length i
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 
 	fmt.Println(output)

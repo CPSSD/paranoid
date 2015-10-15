@@ -3,7 +3,6 @@ package pfsInterface
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 )
@@ -30,7 +29,6 @@ func Readdir(mountDir string, pfsLocation string, name string) (fileNames []stri
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 
 	outputString := string(output)
