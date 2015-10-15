@@ -15,7 +15,7 @@ var Flags = programFlags{
 	Network: false,
 	Fuse:    false,
 	Version: false,
-	Verbost: false,
+	Verbose: false,
 }
 
 func ProcessFlags(toFlags []string) {
