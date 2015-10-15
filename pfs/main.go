@@ -13,7 +13,7 @@ func main() {
 	var onlyFlags []string
 	commands.ProcessFlags(onlyFlags)
 	if commands.Flags.Version {
-		fmt.Println("pfs v0.1")
+		fmt.Println("pfs v0.1.0")
 		return
 	}
 	if commands.Flags.Network && commands.Flags.Fuse {

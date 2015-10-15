@@ -11,13 +11,14 @@ type programFlags struct {
 	Verbose bool
 }
 
-var Flags programFlags
+var Flags = programFlags{
+	Network: false,
+	Fuse:    false,
+	Version: false,
+	Verbost: false,
+}
 
 func ProcessFlags(toFlags []string) {
-	Flags.Network = false
-	Flags.Fuse = false
-	Flags.Verbose = false
-	Flags.Version = false
 	for i := 0; i < len(toFlags); i++ {
 		if strings.ToLower(toFlags[i]) == "-f" || strings.ToLower(toFlags[i]) == "--fuse" {
 			Flags.Fuse = true
