@@ -15,6 +15,12 @@ found [here](https://github.com/golang/go/wiki/CodeReviewComments). Also worth a
 [Effective Go](https://golang.org/doc/effective_go.html), a slightly more advanced guide
 to writing Go.
 
+## Commenting ##
+
+Commenting will be done in accordance with the standard Go style used for generating Godocs. 
+You should write comments to explain any code you write that does something in a way that may not be obvious.
+An explaination of standard Go commenting practice and Godoc can be found [here](https://blog.golang.org/godoc-documenting-go-code).
+
 ## Branching ##
 
 Branches should have a short prefix describing what type of changes are contained in it.
