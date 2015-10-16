@@ -17,9 +17,9 @@ to writing Go.
 
 ## Commenting ##
 
-Commenting will be done in accordance with the standard go style used for generating godocs. 
+Commenting will be done in accordance with the standard Go style used for generating Godocs. 
 You should write comments to explain any code you write that does something in a way that may not be obvious.
-An explaination of standard go commenting practice and godoc can be found [here](https://blog.golang.org/godoc-documenting-go-code).
+An explaination of standard Go commenting practice and Godoc can be found [here](https://blog.golang.org/godoc-documenting-go-code).
 
 ## Branching ##
 
