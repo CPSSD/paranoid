@@ -14,24 +14,26 @@ description :
     Called when the contents of a directory are needed.
 
 parameters :
-    mountDir - The root directory of the file system.
+    initDir - The root directory of the pvd.
     pfsLocation - The path to the pfs executable.
     name - The name of the directory whose contents are needed.
 
 return :
     fileNames - An array of strings representing the file names in the directory.
 */
-func Readdir(mountDir string, pfsLocation string, name string) (fileNames []string) {
-	args := fmt.Sprintf("-f readdir %s", mountDir)
-	command := exec.Command(pfsLocation, args)
+func Readdir(initDir string, pfsLocation string, name string) (fileNames []string) {
+	command := exec.Command(pfsLocation, "-f", "readdir", initDir)
 
 	output, err := command.Output()
+	outputString := string(output)
 
 	if err != nil {
 		log.Fatal(err)
 	}
+	if outputString == "" {
+		return make([]string, 0)
+	}
 
-	outputString := string(output)
 	filenames := strings.Split(outputString, "\n")
 	fmt.Println(filenames)
 	return filenames

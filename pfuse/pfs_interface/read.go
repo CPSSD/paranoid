@@ -13,7 +13,7 @@ description :
     Called when the contents of a file must be read.
 
 parameters :
-    mountDir - The root directory of the file system.
+    initDir - The root directory of the pvd.
     pfsLocation - The path to the pfs executable.
     name - The name of the file to be read.
     offset (optional indicated by being -1) - The offset in bytes.
@@ -22,17 +22,14 @@ parameters :
 return :
     bytes - An array of bytes.
 */
-func Read(mountDir string, pfsLocation string, name string, offset int, length int) (bytes []byte) {
-	args := fmt.Sprintf("-f read %s %s", mountDir, name)
+func Read(initDir string, pfsLocation string, name string, offset int, length int) (bytes []byte) {
+	command := exec.Command(pfsLocation, "-f", "read", initDir, name)
 	if offset != -1 {
-		args += " " + string(offset)
-
+		command = exec.Command(pfsLocation, "-f", "read", initDir, name, string(offset))
 		if length != -1 {
-			args += " " + string(length)
+			command = exec.Command(pfsLocation, "-f", "read", initDir, name, string(offset), string(length))
 		}
 	}
-
-	command := exec.Command(pfsLocation, args)
 
 	output, err := command.Output()
 

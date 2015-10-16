@@ -22,17 +22,15 @@ description :
     Called when the attributes of a file or directory are needed.
 
 paramenters :
-    mountDir - The root directory of the file system.
+    initDir - The root directory of the pvd.
     pfsLocation - The path to the pfs executable.
     name - The name of the file whos attributes are needed.
 
 return :
     info - The statInfo object containing details of the file.
 */
-func Stat(mountDir string, pfsLocation, name string) (info statInfo) {
-	args := fmt.Sprintf("-f stat %s %s", mountDir, name)
-	command := exec.Command(pfsLocation, args)
-
+func Stat(initDir string, pfsLocation, name string) (info statInfo) {
+	command := exec.Command(pfsLocation, "-f", "stat", initDir, name)
 	output, err := command.Output()
 
 	if err != nil {
@@ -48,5 +46,4 @@ func Stat(mountDir string, pfsLocation, name string) (info statInfo) {
 	}
 
 	return info
-	// TODO: return return structure object
 }
