@@ -6,6 +6,8 @@ import (
 	"path"
 )
 
+//MountCommand is used to notify a pfs directory it has been mounted.
+//Stores the ip given as args[1] and the port given as args[2] in files in the meta directory.
 func MountCommand(args []string) {
 	verboseLog("mount command called")
 	if len(args) < 3 {

@@ -18,6 +18,8 @@ type statInfo struct {
 	Atime  time.Time `json:"atime"`
 }
 
+//StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
+//Includes the length of the file, ctime, mtime and atime
 func StatCommand(args []string) {
 	verboseLog("stat command called")
 	if len(args) < 2 {
