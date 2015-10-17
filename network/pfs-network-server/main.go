@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"os"
 )
 
 var websocketUpgrader = websocket.Upgrader{
@@ -107,10 +109,16 @@ func (handler websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		fmt.Print("Usage:\n\tpfs-network-server <port>\n")
+		os.Exit(0)
+	}
+	port := os.Args[1]
+
 	pool := NewConnPool()
 	go pool.Run()
 	http.Handle("/connect", websocketHandler{pool: pool})
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":"+string(port), nil)
 	if err != nil {
 		log.Fatalln("FATAL: ", err)
 	}
