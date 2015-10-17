@@ -14,6 +14,7 @@ type inode struct {
 	Inode string `json:"inode"`
 }
 
+//CreatCommand creates a new file with the name args[1] in the pfs directory args[0]
 func CreatCommand(args []string) {
 	verboseLog("creat command called")
 	if len(args) < 2 {

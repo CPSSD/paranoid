@@ -7,6 +7,7 @@ import (
 	"path"
 )
 
+//ReadDirCommand takes a pfs directory as args[0] and prints a list of the names of the files in that directory 1 per line.
 func ReadDirCommand(args []string) {
 	verboseLog("readdir command called")
 	if len(args) < 1 {
