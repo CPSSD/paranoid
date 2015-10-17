@@ -26,6 +26,7 @@ func StatCommand(args []string) {
 	directory := args[0]
 	verboseLog("stat : given directory = " + directory)
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
+	checkErr("stat", err)
 	fileName := string(fileNameBytes)
 	file, err := os.Open(path.Join(directory, "contents", fileName))
 	checkErr("stat", err)
