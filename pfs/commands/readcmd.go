@@ -10,7 +10,7 @@ import (
 )
 
 //ReadCommand reads data from a file given as args[1] in pfs directory args[0] and prints it to Stdout
-//Can also be given an offset and length as args[2] and args[3]
+//Can also be given an offset and length as args[2] and args[3] otherwise it reads the whole file
 func ReadCommand(args []string) {
 	verboseLog("read command called")
 	if len(args) < 2 {

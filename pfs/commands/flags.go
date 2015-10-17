@@ -18,7 +18,7 @@ var Flags = programFlags{
 	Verbose: false,
 }
 
-//ProcessFlags takes an array of the flags and populates the Flags struct.
+//ProcessFlags takes an array of the command-line flags and populates the Flags struct.
 func ProcessFlags(toFlags []string) {
 	for i := 0; i < len(toFlags); i++ {
 		if strings.ToLower(toFlags[i]) == "-f" || strings.ToLower(toFlags[i]) == "--fuse" {

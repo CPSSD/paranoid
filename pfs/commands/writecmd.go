@@ -9,7 +9,7 @@ import (
 )
 
 //WriteCommand writes data from Stdin to the file given in args[1] in the pfs directory args[0]
-//Can also be given an offset and length as args[2] and args[3]
+//Can also be given an offset and length as args[2] and args[3] otherwise it writes from the start of the file
 func WriteCommand(args []string) {
 	verboseLog("write command given")
 	if len(args) < 2 {

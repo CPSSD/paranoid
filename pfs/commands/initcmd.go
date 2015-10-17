@@ -22,7 +22,7 @@ func verboseLog(message string) {
 	}
 }
 
-//makeDir creates a new directory with premissions 0777 with the name newDir in parentDir.
+//makeDir creates a new directory with permissions 0777 with the name newDir in parentDir.
 func makeDir(parentDir, newDir string) string {
 	newDirPath := path.Join(parentDir, newDir)
 	err := os.Mkdir(newDirPath, 0777)
@@ -40,7 +40,7 @@ func checkEmpty(directory string) {
 }
 
 //InitCommand creates the pvd directory sturucture in args[0]
-//It also get a UUID and stores it in the meta directory.
+//It also gets a UUID and stores it in the meta directory.
 func InitCommand(args []string) {
 	verboseLog("init command called")
 	if len(args) < 1 {
