@@ -16,9 +16,9 @@ func WriteCommand(args []string) {
 	directory := args[0]
 	verboseLog("write : given directory = " + directory)
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
+	checkErr("write", err)
 	fileName := string(fileNameBytes)
 	verboseLog("write : wrting to " + fileName)
-	checkErr("write", err)
 	fileData, err := ioutil.ReadAll(os.Stdin)
 	checkErr("write", err)
 	if len(args) == 2 {
