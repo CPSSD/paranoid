@@ -17,6 +17,7 @@ func ReadCommand(args []string) {
 	directory := args[0]
 	verboseLog("read : given directory = " + directory)
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
+	checkErr("read", err)
 	fileName := string(fileNameBytes)
 	file, err := os.Open(path.Join(directory, "contents", fileName))
 	checkErr("read", err)
