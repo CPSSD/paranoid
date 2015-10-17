@@ -22,14 +22,16 @@ parameters :
 return :
     bytes - An array of bytes.
 */
-func Read(initDir string, pfsLocation string, name string, offset int, length int) (bytes []byte) {
+func Read(initDir string, pfsLocation string, name string, offset int64, length int64) (bytes []byte) {
 	command := exec.Command(pfsLocation, "-f", "read", initDir, name)
 	if offset != -1 {
-		command = exec.Command(pfsLocation, "-f", "read", initDir, name, string(offset))
+		command = exec.Command(pfsLocation, "-f", "read", initDir, name, fmt.Sprintf("%d", offset))
 		if length != -1 {
-			command = exec.Command(pfsLocation, "-f", "read", initDir, name, string(offset), string(length))
+			command = exec.Command(pfsLocation, "-f", "read", initDir, name, fmt.Sprintf("%d", offset), fmt.Sprintf("%d", length))
 		}
 	}
+
+	fmt.Println(pfsLocation, "-f", "read", initDir, name, fmt.Sprintf("%d", offset), fmt.Sprintf("%d", length))
 
 	output, err := command.Output()
 

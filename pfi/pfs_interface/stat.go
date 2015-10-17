@@ -29,12 +29,12 @@ paramenters :
 return :
     info - The statInfo object containing details of the file.
 */
-func Stat(initDir string, pfsLocation, name string) (info statInfo) {
+func Stat(initDir string, pfsLocation, name string) (info statInfo, e error) {
 	command := exec.Command(pfsLocation, "-f", "stat", initDir, name)
 	output, err := command.Output()
 
 	if err != nil {
-		log.Fatal(err)
+		return statInfo{}, err
 	}
 
 	fmt.Println(string(output))
@@ -45,5 +45,5 @@ func Stat(initDir string, pfsLocation, name string) (info statInfo) {
 		log.Fatal(err)
 	}
 
-	return info
+	return info, nil
 }

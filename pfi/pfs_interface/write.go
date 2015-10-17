@@ -1,6 +1,7 @@
 package pfsInterface
 
 import (
+	"fmt"
 	"log"
 	"os/exec"
 )
@@ -19,14 +20,16 @@ parameters :
     offset (optional indicated by being -1) - The offset in bytes.
     length (optional indicated by being -1) - The length in bytes.
 */
-func Write(initDir string, pfsLocation string, name string, data []byte, offset int, length int) {
+func Write(initDir string, pfsLocation string, name string, data []byte, offset int64, length int64) {
 	command := exec.Command(pfsLocation, "-f", "write", initDir, name)
 	if offset != -1 {
-		command = exec.Command(pfsLocation, "-f", "read", initDir, name, string(offset))
+		command = exec.Command(pfsLocation, "-f", "write", initDir, name, fmt.Sprintf("%d", offset))
 		if length != -1 {
-			command = exec.Command(pfsLocation, "-f", "read", initDir, name, string(offset), string(length))
+			command = exec.Command(pfsLocation, "-f", "write", initDir, name, fmt.Sprintf("%d", offset), fmt.Sprintf("%d", length))
 		}
 	}
+
+	fmt.Println(pfsLocation, "-f", "write", initDir, name, fmt.Sprintf("%d", offset), fmt.Sprintf("%d", length))
 
 	stdinPipe, err := command.StdinPipe()
 
