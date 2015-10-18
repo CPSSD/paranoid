@@ -24,7 +24,7 @@ func main() {
 		return
 	}
 	if commands.Flags.Network && commands.Flags.Fuse {
-		log.Fatal("Error, both network and fuse flags are set")
+		log.Fatalln("Error, both network and fuse flags are set")
 	}
 	if commands.Flags.Verbose {
 		if len(args) > 0 {
@@ -52,9 +52,9 @@ func main() {
 		case "stat":
 			commands.StatCommand(onlyArgs[1:])
 		default:
-			log.Fatal("Given command not recognised")
+			log.Fatalln("Given command not recognised")
 		}
 	} else {
-		log.Fatal("No command given")
+		log.Fatalln("No command given")
 	}
 }

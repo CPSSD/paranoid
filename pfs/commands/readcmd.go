@@ -14,7 +14,7 @@ import (
 func ReadCommand(args []string) {
 	verboseLog("read command called")
 	if len(args) < 2 {
-		log.Fatal("Not enough arguments!")
+		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
 	verboseLog("read : given directory = " + directory)

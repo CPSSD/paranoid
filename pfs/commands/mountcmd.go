@@ -11,7 +11,7 @@ import (
 func MountCommand(args []string) {
 	verboseLog("mount command called")
 	if len(args) < 3 {
-		log.Fatal("Not enough arguments!")
+		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
 	verboseLog("mount : given directory = " + directory)
