@@ -28,4 +28,5 @@ func Write(initDir string, pfsLocation string, name string, data []byte, offset,
 
 	stdinPipe.Write(data)
 	stdinPipe.Close()
+	command.Wait()
 }

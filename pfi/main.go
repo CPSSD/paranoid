@@ -1,8 +1,8 @@
 package main
 
 import (
+	"CanOpener/pfuse/pfs_interface"
 	"flag"
-	"github.com/cpssd/paranoid/pfi/pfs_interface"
 	"log"
 	"path/filepath"
 	"time"
@@ -64,12 +64,9 @@ type ParanoidFileSystem struct {
 //file or directory are needed. (pfs stat)
 func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.Status) {
 	logMessage("GetAttr called on : " + name)
-	/*
-		since our file structure is flat for this sprint
-		a special case is added for the only possible directory
-		that GetAttr can ba called on i.e the root directory of
-		the file system (indicated by name being an empty string)
-	*/
+
+	// Special case : "" is the root of our flat
+	// file system (Only directory GetAttr can be called on)
 	if name == "" {
 		return &fuse.Attr{
 			Mode: fuse.S_IFDIR | 0755,
