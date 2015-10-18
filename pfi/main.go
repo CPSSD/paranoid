@@ -174,7 +174,7 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	return uint32(len(content)), fuse.OK
 }
 
-//LogMessage checks if the --log flag was specified and either logs or doesnt log the message
+//LogMessage checks if the -v flag was specified and either logs or doesnt log the message
 func logMessage(message string) {
 	if *logOutput {
 		log.Println(message)
