@@ -3,4 +3,4 @@ pfs
 
 ## Build Instructions ##
 
-From this directory, run `go build` to create a binary named `pfs`.
+From this directory, run `go build -i` to create a binary named `pfs`.
