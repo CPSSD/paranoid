@@ -11,7 +11,7 @@ import (
 //Specifies the command where the error occured as cmd
 func checkErr(cmd string, err error) {
 	if err != nil {
-		log.Fatal(cmd, " error occured: ", err)
+		log.Fatalln(cmd, " error occured: ", err)
 	}
 }
 
@@ -35,7 +35,7 @@ func checkEmpty(directory string) {
 	files, err := ioutil.ReadDir(directory)
 	checkErr("init", err)
 	if len(files) > 0 {
-		log.Fatal("init : directory must be empty")
+		log.Fatalln("init : directory must be empty")
 	}
 }
 
@@ -44,7 +44,7 @@ func checkEmpty(directory string) {
 func InitCommand(args []string) {
 	verboseLog("init command called")
 	if len(args) < 1 {
-		log.Fatal("Not enough arguments!")
+		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
 	checkEmpty(directory)

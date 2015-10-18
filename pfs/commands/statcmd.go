@@ -23,7 +23,7 @@ type statInfo struct {
 func StatCommand(args []string) {
 	verboseLog("stat command called")
 	if len(args) < 2 {
-		log.Fatal("Not enough arguments!")
+		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
 	verboseLog("stat : given directory = " + directory)

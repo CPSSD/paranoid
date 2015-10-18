@@ -11,7 +11,7 @@ import (
 func ReadDirCommand(args []string) {
 	verboseLog("readdir command called")
 	if len(args) < 1 {
-		log.Fatal("Not enough arguments!")
+		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
 	verboseLog("readdir : given directory = " + directory)

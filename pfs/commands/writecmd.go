@@ -13,7 +13,7 @@ import (
 func WriteCommand(args []string) {
 	verboseLog("write command given")
 	if len(args) < 2 {
-		log.Fatal("Not enough arguments!")
+		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
 	verboseLog("write : given directory = " + directory)
