@@ -29,8 +29,6 @@ func Write(initDir string, pfsLocation string, name string, data []byte, offset 
 		}
 	}
 
-	fmt.Println(pfsLocation, "-f", "write", initDir, name, fmt.Sprintf("%d", offset), fmt.Sprintf("%d", length))
-
 	stdinPipe, err := command.StdinPipe()
 
 	if err != nil {

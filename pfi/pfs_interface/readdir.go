@@ -1,7 +1,6 @@
 package pfsInterface
 
 import (
-	"fmt"
 	"log"
 	"os/exec"
 	"strings"
@@ -35,6 +34,5 @@ func Readdir(initDir string, pfsLocation string, name string) (fileNames []strin
 	}
 
 	filenames := strings.Split(outputString, "\n")
-	fmt.Println(filenames)
 	return filenames
 }

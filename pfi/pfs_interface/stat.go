@@ -2,7 +2,6 @@ package pfsInterface
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os/exec"
 	"time"
@@ -37,7 +36,6 @@ func Stat(initDir string, pfsLocation, name string) (info statInfo, e error) {
 		return statInfo{}, err
 	}
 
-	fmt.Println(string(output))
 	info = statInfo{}
 	err = json.Unmarshal(output, &info)
 

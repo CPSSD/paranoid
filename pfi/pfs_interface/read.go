@@ -31,14 +31,11 @@ func Read(initDir string, pfsLocation string, name string, offset int64, length 
 		}
 	}
 
-	fmt.Println(pfsLocation, "-f", "read", initDir, name, fmt.Sprintf("%d", offset), fmt.Sprintf("%d", length))
-
 	output, err := command.Output()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(output)
 	return output
 }
