@@ -1,27 +1,17 @@
-package pfsInterface
+package pfsinterface
 
 import (
 	"log"
 	"os/exec"
 )
 
-/*
-Creat -
-
-description :
-    Called when a file is to be created.
-
-parameters :
-    initDir - The root directory of the pvd.
-    pfsLocation - The path to the pfs executable.
-    name - The name of the file to create.
-*/
+//Creat tells pfs that a file needs to be created
 func Creat(initDir string, pfsLocation string, name string) {
 	command := exec.Command(pfsLocation, "-f", "creat", initDir, name)
 
 	err := command.Run()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

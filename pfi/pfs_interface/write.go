@@ -1,43 +1,29 @@
-package pfsInterface
+package pfsinterface
 
 import (
-	"fmt"
 	"log"
 	"os/exec"
+	"strconv"
 )
 
-/*
-Write -
-
-description :
-    Called when writing to a file.
-
-parameters :
-    initDir - The root directory of the pvd.
-    pfsLocation - The path to the pfs executable.
-    name - The name of the file to be read.
-    data - The data (array of bytes) to write to the file.
-    offset (optional indicated by being -1) - The offset in bytes.
-    length (optional indicated by being -1) - The length in bytes.
-*/
-func Write(initDir string, pfsLocation string, name string, data []byte, offset int64, length int64) {
-	command := exec.Command(pfsLocation, "-f", "write", initDir, name)
+//Write tells pfs to write to a file
+func Write(initDir string, pfsLocation string, name string, data []byte, offset, length int64) {
+	var command *exec.Cmd
 	if offset != -1 {
-		command = exec.Command(pfsLocation, "-f", "write", initDir, name, fmt.Sprintf("%d", offset))
-		if length != -1 {
-			command = exec.Command(pfsLocation, "-f", "write", initDir, name, fmt.Sprintf("%d", offset), fmt.Sprintf("%d", length))
-		}
+		command = exec.Command(pfsLocation, "-f", "write", initDir, name, strconv.FormatInt(offset, 10), strconv.FormatInt(length, 10))
+	} else {
+		command = exec.Command(pfsLocation, "-f", "write", initDir, name)
 	}
 
 	stdinPipe, err := command.StdinPipe()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	err = command.Start()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	stdinPipe.Write(data)

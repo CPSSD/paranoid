@@ -1,4 +1,4 @@
-package pfsInterface
+package pfsinterface
 
 import (
 	"log"
@@ -6,20 +6,7 @@ import (
 	"strings"
 )
 
-/*
-Readdir -
-
-description :
-    Called when the contents of a directory are needed.
-
-parameters :
-    initDir - The root directory of the pvd.
-    pfsLocation - The path to the pfs executable.
-    name - The name of the directory whose contents are needed.
-
-return :
-    fileNames - An array of strings representing the file names in the directory.
-*/
+//Readdir gets the contets of a directory from pfs
 func Readdir(initDir string, pfsLocation string, name string) (fileNames []string) {
 	command := exec.Command(pfsLocation, "-f", "readdir", initDir)
 
@@ -27,7 +14,7 @@ func Readdir(initDir string, pfsLocation string, name string) (fileNames []strin
 	outputString := string(output)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	if outputString == "" {
 		return make([]string, 0)

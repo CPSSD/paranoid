@@ -1,4 +1,4 @@
-package pfsInterface
+package pfsinterface
 
 import (
 	"encoding/json"
@@ -14,21 +14,8 @@ type statInfo struct {
 	Atime  time.Time `json:"atime"`
 }
 
-/*
-Stat -
-
-description :
-    Called when the attributes of a file or directory are needed.
-
-paramenters :
-    initDir - The root directory of the pvd.
-    pfsLocation - The path to the pfs executable.
-    name - The name of the file whos attributes are needed.
-
-return :
-    info - The statInfo object containing details of the file.
-*/
-func Stat(initDir string, pfsLocation, name string) (info statInfo, e error) {
+//Stat gets the attributes of a file or directory from pfs
+func Stat(initDir, pfsLocation, name string) (info statInfo, e error) {
 	command := exec.Command(pfsLocation, "-f", "stat", initDir, name)
 	output, err := command.Output()
 
@@ -40,7 +27,7 @@ func Stat(initDir string, pfsLocation, name string) (info statInfo, e error) {
 	err = json.Unmarshal(output, &info)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	return info, nil
