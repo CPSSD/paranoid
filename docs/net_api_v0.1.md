@@ -93,7 +93,7 @@ Removes the data from a file.
 ```
 {
   "sender":1,
-  "type":"link",
+  "type":"truncate",
   "name":"hello.txt"
   "offset":1
 }
