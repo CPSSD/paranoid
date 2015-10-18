@@ -31,6 +31,19 @@ func WriteCommand(args []string) {
 		checkErr("write", err)
 		offset, err := strconv.Atoi(args[2])
 		checkErr("write", err)
+		if len(args) == 3 {
+			err = contentsFile.Truncate(int64(offset))
+			checkErr("write", err)
+		} else {
+			length, err := strconv.Atoi(args[3])
+			checkErr("write", err)
+			if len(fileData) > length {
+				fileData = fileData[:length]
+			} else if len(fileData) < length {
+				emptyBytes := make([]byte, length-len(fileData))
+				fileData = append(fileData, emptyBytes...)
+			}
+		}
 		_, err = contentsFile.WriteAt(fileData, int64(offset))
 		checkErr("write", err)
 	}
