@@ -13,7 +13,7 @@ Notes:
 
 #### Synopsis
 
-    mount.pfs server-adress pfs-directory mountpoint
+    mount.pfs server-address pfs-directory mountpoint
 
 `pfs-directory` must exist.  If the directory is empty, then runs `pfs -f init <pfs-directory>`.
 
