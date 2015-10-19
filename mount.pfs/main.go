@@ -43,7 +43,7 @@ func mountpfs(c *cli.Context) {
 	cmd := exec.Command("pfs", "mount", directory, splits[0], splits[1])
 	err = cmd.Run()
 	if err != nil {
-		log.Fatal("FATAL error running pfs mount command : ", err)
+		log.Fatalln("FATAL error running pfs mount command : ", err)
 	}
 	cmd = exec.Command("pfi", directory, args[2])
 	outfile, err := os.Create("./out.txt")
@@ -53,7 +53,7 @@ func mountpfs(c *cli.Context) {
 	cmd.Stderr = outfile
 	err = cmd.Start()
 	if err != nil {
-		log.Fatal("FATAL error running pfi command : ", err)
+		log.Fatalln("FATAL error running pfi command : ", err)
 	}
 }
 
