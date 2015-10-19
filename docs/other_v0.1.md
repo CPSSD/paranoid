@@ -13,7 +13,7 @@ Notes:
 
 #### Synopsis
 
-    mount.pfs -o server=1.2.3.4,port=1234 pfs-directory mountpoint
+    mount.pfs server-adress pfs-directory mountpoint
 
 `pfs-directory` must exist.  If the directory is empty, then runs `pfs -f init <pfs-directory>`.
 
