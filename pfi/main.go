@@ -1,8 +1,8 @@
 package main
 
 import (
-	"CanOpener/pfuse/pfs_interface"
 	"flag"
+	"github.com/cpssd/paranoid/pfi/pfs_interface"
 	"log"
 	"path/filepath"
 	"time"
@@ -13,7 +13,6 @@ import (
 )
 
 var mountPoint string
-var pfsLocation string
 var pfsInitPoint string
 var logOutput *bool
 
@@ -23,19 +22,16 @@ func main() {
 	flag.Parse()
 	noFlagArgs := flag.Args()
 
-	if len(noFlagArgs) < 3 {
-		log.Fatalln("\nUsage:\npfi [flags] <Mountpoint> <PfsInitPoint> <PfsExecutablePath>")
+	if len(noFlagArgs) < 2 {
+		log.Fatalln("\nUsage:\npfi [flags] <PfsInitPoint> <MountPoint>")
 	}
 
-	mountPoint, err := filepath.Abs(noFlagArgs[0])
+	var err error
+	pfsInitPoint, err = filepath.Abs(noFlagArgs[0])
 	if err != nil {
 		log.Fatalln(err)
 	}
-	pfsInitPoint, err = filepath.Abs(noFlagArgs[1])
-	if err != nil {
-		log.Fatalln(err)
-	}
-	pfsLocation, err = filepath.Abs(noFlagArgs[2])
+	mountPoint, err = filepath.Abs(noFlagArgs[1])
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -73,7 +69,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		}, fuse.OK
 	}
 
-	stats, err := pfsinterface.Stat(pfsInitPoint, pfsLocation, name)
+	stats, err := pfsinterface.Stat(pfsInitPoint, name)
 	if err != nil {
 		return nil, fuse.ENOENT
 	}
@@ -96,7 +92,7 @@ func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fus
 	logMessage("OpenDir called on : " + name)
 	// pfs init point is used instead of a name in pfsinterface.Readdir indicating
 	// the root of the file system (because name == "")
-	fileNames := pfsinterface.Readdir(pfsInitPoint, pfsLocation, pfsInitPoint)
+	fileNames := pfsinterface.Readdir(pfsInitPoint, pfsInitPoint)
 	dirEntries := make([]fuse.DirEntry, len(fileNames))
 
 	for i, dirName := range fileNames {
@@ -117,7 +113,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
 	logMessage("Create called on : " + name)
-	pfsinterface.Creat(pfsInitPoint, pfsLocation, name)
+	pfsinterface.Creat(pfsInitPoint, name)
 	file = NewParanoidFile(name)
 	return file, fuse.OK
 }
@@ -163,14 +159,14 @@ func NewParanoidFile(name string) nodefs.File {
 //Read reads a file and returns an array of bytes
 func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
 	logMessage("Read called on : " + f.Name)
-	data := pfsinterface.Read(pfsInitPoint, pfsLocation, f.Name, off, int64(len(buf)))
+	data := pfsinterface.Read(pfsInitPoint, f.Name, off, int64(len(buf)))
 	return fuse.ReadResultData(data), fuse.OK
 }
 
 //Write writes to a file
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	logMessage("Write called on : " + f.Name)
-	pfsinterface.Write(pfsInitPoint, pfsLocation, f.Name, content, off, int64(len(content)))
+	pfsinterface.Write(pfsInitPoint, f.Name, content, off, int64(len(content)))
 	return uint32(len(content)), fuse.OK
 }
 

@@ -7,8 +7,8 @@ import (
 )
 
 //Readdir gets the contents of a directory from pfs
-func Readdir(initDir, pfsLocation, name string) (fileNames []string) {
-	command := exec.Command(pfsLocation, "-f", "readdir", initDir)
+func Readdir(initDir, name string) (fileNames []string) {
+	command := exec.Command("pfs", "-f", "readdir", initDir)
 
 	output, err := command.Output()
 	outputString := string(output)
