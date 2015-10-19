@@ -12,7 +12,7 @@ go build -i
 ##Usage
 ###General
 ```
-pfi [flags] <MountLocation> <PfsInitLocation> <PfsBinaryPath>
+pfi [flags] <PfsInitLocation> <MountLocation>
 ```
 
 * MountLocation - The path to the folder where you wish to mount the paranoid file system.
@@ -21,7 +21,7 @@ pfi [flags] <MountLocation> <PfsInitLocation> <PfsBinaryPath>
 
 example :
 ```
-pfi -v /home/mladen/coding/mountDir ~/coding/initDir bin/pfs
+pfi -v ~/coding/initDir /home/mladen/coding/mountDir
 ```
 
 ###Flags
