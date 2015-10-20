@@ -4,13 +4,13 @@ import (
 	"testing"
 )
 
-// Stores the messageData for each parsed message type
+// Stores the MessageData for each parsed message type
 var (
-	md1 messageData
-	md2 messageData
-	md3 messageData
-	md4 messageData
-	md5 messageData
+	md1 MessageData
+	md2 MessageData
+	md3 MessageData
+	md4 MessageData
+	md5 MessageData
 )
 
 func TestParseMessage(t *testing.T) {
