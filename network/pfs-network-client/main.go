@@ -1,7 +1,9 @@
 package main
 
 import (
+	//"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"io/ioutil"
@@ -12,21 +14,14 @@ import (
 	"strconv"
 )
 
-var (
-	pfsDir string
-)
-
-type uuid string
-type base64 []byte
-
-type MessageData struct {
-	sender     uuid
-	actionType string
-	name       string
-	target     string
-	offset     string
-	length     string
-	data       base64
+type messageData struct {
+	Sender string `json:"sender,omitempty"`
+	Type   string `json:"type,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Target string `json:"target,omitempty"`
+	Offset int    `json:"offset,omitempty"`
+	Length int    `json:"length,omitempty"`
+	Data   string `json:"data,omitempty"`
 }
 
 func main() {
@@ -37,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	pfsDir = args[1]
+	pfsDir := args[1]
 
 	log.Println("Using pfs directory", pfsDir)
 
@@ -67,46 +62,76 @@ func main() {
 			log.Fatalln("Cannot Read Message:", err)
 			break
 		}
-		parseMessage(message)
+		data, err := parseMessage(message)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		if len(data.Sender) == 0 {
+			log.Fatalln("FATAL: The Sender must be specified")
+		}
+
+		if data.Sender != getUUID(pfsDir) {
+			if err := hasValidFields(data); err != nil {
+				log.Fatalln("FATAL: invalid fields in message:", err)
+			}
+
+			if err := performAction(data); err != nil {
+				log.Fatalln("FATAL: Cannot perform action", data.Type)
+			}
+		}
 	}
 
 	defer c.Close()
 }
 
-func parseMessage(messageString []byte) {
-	m := MessageData{}
+func parseMessage(messageString []byte) (messageData, error) {
+	m := messageData{}
 
 	if err := json.Unmarshal(messageString, &m); err != nil {
-		log.Fatalln("FATAL: Message was not valid JSON")
+		log.Println(err)
+		return m, errors.New("FATAL: Message was not valid JSON")
 	}
 
-	log.Println(m)
-
-	if m.sender != getUUID() {
-
-		if err := hasValidFields(m); err != nil {
-			log.Fatalln("FATAL: invalid fields in message", err)
-		}
-
-		if err := performAction(m); err != nil {
-			log.Fatalln("FATAL: Cannot perform action:", err)
-		}
-	}
+	return m, nil
 }
 
-func getUUID() uuid {
+func getUUID(pfsDir string) string {
 	uuidBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "uuid"))
 	if err != nil {
-		log.Fatalln("FATAL: Cannot read UUID")
+		log.Fatalln("FATAL: Cannot read UUID:", err)
 	}
 
-	return uuid(uuidBytes)
+	return string(uuidBytes)
 }
 
-func hasValidFields(m MessageData) *error {
+func hasValidFields(m messageData) error {
+	switch m.Type {
+	case "write":
+		if (len(m.Name) == 0) || (len(m.Data) == 0) {
+			return errors.New("write")
+		}
+	case "creat":
+		if len(m.Name) == 0 {
+			return errors.New("creat")
+		}
+	case "link":
+		if (len(m.Name) == 0) || (len(m.Target) == 0) {
+			return errors.New("link")
+		}
+	case "unlink":
+		if len(m.Name) == 0 {
+			return errors.New("unlink")
+		}
+	case "truncate":
+		if len(m.Name) == 0 {
+			return errors.New("truncate")
+		}
+	}
+
 	return nil
 }
 
-func performAction(m MessageData) *error {
+func performAction(m messageData) *error {
 	return nil
 }
