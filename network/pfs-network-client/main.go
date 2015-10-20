@@ -10,19 +10,10 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"strconv"
 )
-
-type messageData struct {
-	Sender string `json:"sender,omitempty"`
-	Type   string `json:"type,omitempty"`
-	Name   string `json:"name,omitempty"`
-	Target string `json:"target,omitempty"`
-	Offset int    `json:"offset,omitempty"`
-	Length int    `json:"length,omitempty"`
-	Data   string `json:"data,omitempty"`
-}
 
 func main() {
 	args := os.Args[1:]
@@ -62,7 +53,7 @@ func main() {
 			log.Fatalln("Cannot Read Message:", err)
 			break
 		}
-		data, err := parseMessage(message)
+		data, err := ParseMessage(message)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -71,13 +62,13 @@ func main() {
 			log.Fatalln("FATAL: The Sender must be specified")
 		}
 
-		if data.Sender != getUUID(pfsDir) {
-			if err := hasValidFields(data); err != nil {
+		if data.Sender != GetUUID(pfsDir) {
+			if err := HasValidFields(data); err != nil {
 				log.Fatalln("FATAL: invalid fields in message:", err)
 			}
 
-			if err := performAction(data); err != nil {
-				log.Fatalln("FATAL: Cannot perform action", data.Type)
+			if err := PerformAction(data, pfsDir); err != nil {
+				log.Fatalln("FATAL: Cannot perform action", data.Type, ":", err)
 			}
 		}
 	}
@@ -85,8 +76,21 @@ func main() {
 	defer c.Close()
 }
 
-func parseMessage(messageString []byte) (messageData, error) {
-	m := messageData{}
+// MessageData stores all the values that the server can provide it.
+// It ommits values if something is empty
+type MessageData struct {
+	Sender string `json:"sender,omitempty"`
+	Type   string `json:"type,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Target string `json:"target,omitempty"`
+	Offset int    `json:"offset,omitempty"`
+	Length int    `json:"length,omitempty"`
+	Data   string `json:"data,omitempty"`
+}
+
+// Parse Message converts the input from JSON into the MessageData struct
+func ParseMessage(messageString []byte) (MessageData, error) {
+	m := MessageData{}
 
 	if err := json.Unmarshal(messageString, &m); err != nil {
 		log.Println(err)
@@ -96,7 +100,8 @@ func parseMessage(messageString []byte) (messageData, error) {
 	return m, nil
 }
 
-func getUUID(pfsDir string) string {
+// GetUUID takes the uuid of the pfs from the meta file
+func GetUUID(pfsDir string) string {
 	uuidBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "uuid"))
 	if err != nil {
 		log.Fatalln("FATAL: Cannot read UUID:", err)
@@ -105,7 +110,8 @@ func getUUID(pfsDir string) string {
 	return string(uuidBytes)
 }
 
-func hasValidFields(m messageData) error {
+// HasValidFields checks do all messages have required inputs
+func HasValidFields(m MessageData) error {
 	switch m.Type {
 	case "write":
 		if (len(m.Name) == 0) || (len(m.Data) == 0) {
@@ -132,6 +138,20 @@ func hasValidFields(m messageData) error {
 	return nil
 }
 
-func performAction(m messageData) *error {
+// PerformAction calls pfs from the network so the changes can be performed
+// accross all connected devices
+func PerformAction(m MessageData, pfsDir string) error {
+	switch m.Type {
+	case "creat":
+		command := exec.Command("pfs", "-n", "creat", pfsDir, m.Name)
+		if err := command.Run(); err != nil {
+			return err
+		}
+	//case "write":
+		// TODO: Implement write with pipes
+
+		//command := exec.Command("pfs", "-n", "write", pfsDir, m.Name, m.Offset, m.Length)
+	}
+
 	return nil
 }
