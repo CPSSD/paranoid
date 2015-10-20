@@ -1,11 +1,12 @@
 package main
 
 import (
-	//"encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -85,7 +86,7 @@ type MessageData struct {
 	Target string `json:"target,omitempty"`
 	Offset int    `json:"offset,omitempty"`
 	Length int    `json:"length,omitempty"`
-	Data   string `json:"data,omitempty"`
+	Data   []byte `json:"data,omitempty"`
 }
 
 // Parse Message converts the input from JSON into the MessageData struct
@@ -147,10 +148,20 @@ func PerformAction(m MessageData, pfsDir string) error {
 		if err := command.Run(); err != nil {
 			return err
 		}
-	//case "write":
-		// TODO: Implement write with pipes
+	case "write":
+		data := base64.StdEncoding.EncodeToString(m.Data)
 
-		//command := exec.Command("pfs", "-n", "write", pfsDir, m.Name, m.Offset, m.Length)
+		command := exec.Command("pfs", "-n", "write", pfsDir, m.Name, string(m.Offset), string(m.Length))
+		pipe, err := command.StdinPipe()
+		if err != nil {
+			return err
+		}
+		io.WriteString(pipe, data)
+		pipe.Close()
+		err = command.Run()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
