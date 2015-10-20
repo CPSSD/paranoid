@@ -51,25 +51,29 @@ func main() {
 	for {
 		_, message, err := c.ReadMessage()
 		if err != nil {
-			log.Fatalln("Cannot Read Message:", err)
-			break
+			log.Println("FATAL: Cannot Read Message:", err)
+			continue
 		}
 		data, err := ParseMessage(message)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println("FATAL: Cannot Parse Message:", err)
+			continue
 		}
 
 		if len(data.Sender) == 0 {
-			log.Fatalln("FATAL: The Sender must be specified")
+			log.Println("FATAL: The Sender must be specified")
+			continue
 		}
 
 		if data.Sender != GetUUID(pfsDir) {
 			if err := HasValidFields(data); err != nil {
-				log.Fatalln("FATAL: invalid fields in message:", err)
+				log.Println("FATAL: invalid fields in message:", err)
+				continue
 			}
 
 			if err := PerformAction(data, pfsDir); err != nil {
-				log.Fatalln("FATAL: Cannot perform action", data.Type, ":", err)
+				log.Println("FATAL: Cannot perform action", data.Type, ":", err)
+				continue
 			}
 		}
 	}
@@ -95,7 +99,7 @@ func ParseMessage(messageString []byte) (MessageData, error) {
 
 	if err := json.Unmarshal(messageString, &m); err != nil {
 		log.Println(err)
-		return m, errors.New("FATAL: Message was not valid JSON")
+		return m, err
 	}
 
 	return m, nil
