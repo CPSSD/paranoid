@@ -65,55 +65,55 @@ func TestParseMessage(t *testing.T) {
 	`)
 
 	// Check is each message parsed without errors
-	md1p, err := parseMessage(fmd1)
+	md1p, err := ParseMessage(fmd1)
 	if err != nil {
-		t.Error("parseMessage failed on write")
+		t.Error("ParseMessage failed on write")
 	}
 	md1 = md1p
 
-	md2p, err := parseMessage(fmd2)
+	md2p, err := ParseMessage(fmd2)
 	if err != nil {
-		t.Error("parseMessage failed on creat")
+		t.Error("ParseMessage failed on creat")
 	}
 	md2 = md2p
 
-	md3p, err := parseMessage(fmd3)
+	md3p, err := ParseMessage(fmd3)
 	if err != nil {
-		t.Error("parseMessage failed on link")
+		t.Error("ParseMessage failed on link")
 	}
 	md3 = md3p
 
-	md4p, err := parseMessage(fmd4)
+	md4p, err := ParseMessage(fmd4)
 	if err != nil {
-		t.Error("parseMessage failed on unlink")
+		t.Error("ParseMessage failed on unlink")
 	}
 	md4 = md4p
 
-	md5p, err := parseMessage(fmd5)
+	md5p, err := ParseMessage(fmd5)
 	if err != nil {
-		t.Error("parseMessage failed on truncate")
+		t.Error("ParseMessage failed on truncate")
 	}
 	md5 = md5p
 }
 
 func TestHasValidFields(t *testing.T) {
-	if err := hasValidFields(md1); err != nil {
-		t.Error("hasValidFields failed on write")
+	if err := HasValidFields(md1); err != nil {
+		t.Error("HasValidFields failed on write")
 	}
 
-	if err := hasValidFields(md2); err != nil {
-		t.Error("hasValidFields failed on creat")
+	if err := HasValidFields(md2); err != nil {
+		t.Error("HasValidFields failed on creat")
 	}
 
-	if err := hasValidFields(md3); err != nil {
-		t.Error("hasValidFields failed on link")
+	if err := HasValidFields(md3); err != nil {
+		t.Error("HasValidFields failed on link")
 	}
 
-	if err := hasValidFields(md4); err != nil {
-		t.Error("hasValidFields failed on unlink")
+	if err := HasValidFields(md4); err != nil {
+		t.Error("HasValidFields failed on unlink")
 	}
 
-	if err := hasValidFields(md5); err != nil {
-		t.Error("hasValidFields failed on truncate")
+	if err := HasValidFields(md5); err != nil {
+		t.Error("HasValidFields failed on truncate")
 	}
 }
