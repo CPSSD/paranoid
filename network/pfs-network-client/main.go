@@ -78,7 +78,7 @@ func main() {
 		}
 	}
 
-	defer c.Close()
+	c.Close()
 }
 
 // MessageData stores all the values that the server can provide it.
