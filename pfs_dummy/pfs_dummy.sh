@@ -17,13 +17,16 @@ write_fn (){
 
   if [ "$TYPE" = "-f" ]
     then
-      exit 0 
-	#TODO Need to change  
+      echo 1
+      exit 0
+	#TODO Need to change
   elif [ "$TYPE" = "-n" ]
     then
+      echo 1
       exit 0
   else
     echo "No option provided?"
+    exit 1
   fi
 }
 
@@ -42,4 +45,5 @@ elif [ "$1" = "write" ]
     write_fn $2
 else
   echo "Missing one or more args"
+  exit 1
 fi
