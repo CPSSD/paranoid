@@ -15,7 +15,7 @@ go build -i
 pfi [flags] <PfsDirectory> <MountPoint>
 ```
 
-* PfsDirectory - The path to the folder where you initialised pfs with `pfs init initDir`.
+* PfsDirectory - The path to the folder where the pfs file system is located.
 * MountPoint - The path to the folder where you wish to mount the paranoid file system.
 
 example :
