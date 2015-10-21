@@ -47,7 +47,7 @@ func (pool *connPool) Run() {
 			}
 		// When receiving a message, send it down all active connections
 		case message := <-pool.messages:
-			log.Println("DEBUG: message received:", message)
+			log.Println("DEBUG: message received:", string(message))
 			for conn := range pool.connections {
 				conn.messages <- message
 			}
