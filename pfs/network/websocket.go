@@ -8,7 +8,7 @@ import (
 
 func sendMessage(message []byte, host, port string) {
 	url := url.URL{Scheme: "ws", Host: host + ":" + port, Path: "/connect"}
-	log.Printf("connecting to %s", url.String())
+	log.Println("connecting to:", url.String())
 
 	ws, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 
