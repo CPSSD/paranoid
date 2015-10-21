@@ -13,13 +13,13 @@ func sendMessage(message []byte, host, port string) {
 	ws, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 
 	if err != nil {
-		log.Fatal("dial:", err)
+		log.Fatalln("dial:", err)
 	}
 
 	defer ws.Close()
 
 	err = ws.WriteJSON(message)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

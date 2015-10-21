@@ -56,7 +56,7 @@ func Creat(directory, filename, address, port string) {
 
 func Link(directory, filename, targetName, address, port string) {
 
-  machineID := getUUID(directory)
+	machineID := getUUID(directory)
 	creatStruct := jsonStruct{
 		Sender: machineID,
 		Type:   "link",
@@ -98,7 +98,7 @@ func Truncate(directory, address, port, filename string, offset int) {
 func getUUID(directory string) string {
 	uuid, err := ioutil.ReadFile(path.Join(directory, "meta", "uuid"))
 	if err != nil {
-		log.Fatalln(err)
+		log.Fataln(err)
 	}
 	return string(uuid)
 }
