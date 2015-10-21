@@ -155,7 +155,7 @@ func PerformAction(m MessageData, pfsDir string) error {
 	case "write":
 		data := base64.StdEncoding.EncodeToString(m.Data)
 
-		command := exec.Command("pfs", "-n", "write", pfsDir, m.Name, string(m.Offset), string(m.Length))
+		command := exec.Command("pfs", "-n", "write", pfsDir, m.Name, strconv.Itoa(m.Offset), strconv.Itoa(m.Length))
 		pipe, err := command.StdinPipe()
 		if err != nil {
 			return err
