@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/base64"
+	//"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -153,19 +153,23 @@ func PerformAction(m MessageData, pfsDir string) error {
 			return err
 		}
 	case "write":
-		data := base64.StdEncoding.EncodeToString(m.Data)
+		// data, err := base64.StdEncoding.DecodeString(string(m.Data))
+		// if err != nil {
+		// 	return err
+		// }
 
 		command := exec.Command("pfs", "-n", "write", pfsDir, m.Name, strconv.Itoa(m.Offset), strconv.Itoa(m.Length))
 		pipe, err := command.StdinPipe()
 		if err != nil {
 			return err
 		}
-		io.WriteString(pipe, data)
+		io.WriteString(pipe, string(m.Data))
 		pipe.Close()
 		err = command.Run()
 		if err != nil {
 			return err
 		}
+		command.Wait()
 	}
 
 	return nil
