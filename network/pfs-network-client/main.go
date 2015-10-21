@@ -1,7 +1,6 @@
 package main
 
 import (
-	//"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -37,19 +36,19 @@ func main() {
 
 	serverAddr := address + ":" + strconv.Itoa(port)
 
-	u := url.URL{Scheme: "ws", Host: serverAddr, Path: "/connect"}
+	url := url.URL{Scheme: "ws", Host: serverAddr, Path: "/connect"}
 	log.Println("Connecting to server...")
 
 	dialer := websocket.Dialer{}
-	c, _, err := dialer.Dial(u.String(), nil)
+	conn, _, err := dialer.Dial(url.String(), nil)
 	if err != nil {
 		log.Fatalln("FATAL: Cannot Connect:", err)
 	} else {
-		log.Println("Establised connection with", u.String())
+		log.Println("Establised connection with", url.String())
 	}
 
 	for {
-		_, message, err := c.ReadMessage()
+		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("FATAL: Cannot Read Message:", err)
 			continue
@@ -71,14 +70,14 @@ func main() {
 				continue
 			}
 
-			if err := PerformAction(data, pfsDir); err != nil {
+			if err := RunPfsCommand(data, pfsDir); err != nil {
 				log.Println("FATAL: Cannot perform action", data.Type, ":", err)
 				continue
 			}
 		}
 	}
 
-	c.Close()
+	conn.Close()
 }
 
 // MessageData stores all the values that the server can provide it.
@@ -116,60 +115,58 @@ func GetUUID(pfsDir string) string {
 }
 
 // HasValidFields checks do all messages have required inputs
-func HasValidFields(m MessageData) error {
-	switch m.Type {
+func HasValidFields(message MessageData) error {
+	switch message.Type {
 	case "write":
-		if (len(m.Name) == 0) || (len(m.Data) == 0) {
+		if len(message.Name) == 0 {
 			return errors.New("write")
 		}
 	case "creat":
-		if len(m.Name) == 0 {
+		if len(message.Name) == 0 {
 			return errors.New("creat")
 		}
 	case "link":
-		if (len(m.Name) == 0) || (len(m.Target) == 0) {
+		if (len(message.Name) == 0) || (len(message.Target) == 0) {
 			return errors.New("link")
 		}
 	case "unlink":
-		if len(m.Name) == 0 {
+		if len(message.Name) == 0 {
 			return errors.New("unlink")
 		}
 	case "truncate":
-		if len(m.Name) == 0 {
+		if len(message.Name) == 0 {
 			return errors.New("truncate")
 		}
+	default:
+		return errors.New("No type provided")
 	}
 
 	return nil
 }
 
-// PerformAction calls pfs from the network so the changes can be performed
+// RunPfsCommand calls pfs from the network so the changes can be performed
 // accross all connected devices
-func PerformAction(m MessageData, pfsDir string) error {
-	switch m.Type {
+func RunPfsCommand(message MessageData, pfsDir string) error {
+	switch message.Type {
 	case "creat":
-		command := exec.Command("pfs", "-n", "creat", pfsDir, m.Name)
+		command := exec.Command("pfs", "-n", "creat", pfsDir, message.Name)
 		if err := command.Run(); err != nil {
 			return err
 		}
 	case "write":
-		// data, err := base64.StdEncoding.DecodeString(string(m.Data))
-		// if err != nil {
-		// 	return err
-		// }
-
-		command := exec.Command("pfs", "-n", "write", pfsDir, m.Name, strconv.Itoa(m.Offset), strconv.Itoa(m.Length))
+		command := exec.Command("pfs", "-n", "write", pfsDir, message.Name, strconv.Itoa(message.Offset), strconv.Itoa(message.Length))
 		pipe, err := command.StdinPipe()
 		if err != nil {
 			return err
 		}
-		io.WriteString(pipe, string(m.Data))
+		io.WriteString(pipe, string(message.Data))
 		pipe.Close()
 		err = command.Run()
 		if err != nil {
 			return err
 		}
-		command.Wait()
+	default:
+		return errors.New("command not found")
 	}
 
 	return nil
