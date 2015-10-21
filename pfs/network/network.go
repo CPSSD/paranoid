@@ -38,13 +38,12 @@ func Write(directory, file_name string, offset int, length int, data, address, p
 	}
 
 	createMessage := jsonEncode(creatStruct)
-	SendMessage(createMessage, address, port)
+	sendMessage(createMessage, address, port)
 }
 
 func Creat(directory, filename, address, port string) {
-	//TODO validation on data passed to func
-	machineID := getUUID(directory)
 
+	machineID := getUUID(directory)
 	creatStruct := jsonStruct{
 		Sender: machineID,
 		Name:   filename,
@@ -52,12 +51,12 @@ func Creat(directory, filename, address, port string) {
 	}
 
 	createMessage := jsonEncode(creatStruct)
-	SendMessage(createMessage, address, port)
+	sendMessage(createMessage, address, port)
 }
 
 func Link(directory, filename, targetName, address, port string) {
-	machineID := getUUID(directory)
 
+  machineID := getUUID(directory)
 	creatStruct := jsonStruct{
 		Sender: machineID,
 		Type:   "link",
@@ -66,7 +65,7 @@ func Link(directory, filename, targetName, address, port string) {
 	}
 
 	createMessage := jsonEncode(creatStruct)
-	SendMessage(createMessage, address, port)
+	sendMessage(createMessage, address, port)
 }
 
 func Unlink(directory, filename, address, port string) {
@@ -79,7 +78,7 @@ func Unlink(directory, filename, address, port string) {
 	}
 
 	uLinkMessage := jsonEncode(uLinkStruct)
-	SendMessage(uLinkMessage, address, port)
+	sendMessage(uLinkMessage, address, port)
 }
 
 func Truncate(directory, address, port, filename string, offset int) {
@@ -93,7 +92,7 @@ func Truncate(directory, address, port, filename string, offset int) {
 	}
 
 	truncateMessage := jsonEncode(truncateStruct)
-	SendMessage(truncateMessage, address, port)
+	sendMessage(truncateMessage, address, port)
 }
 
 func getUUID(directory string) string {
