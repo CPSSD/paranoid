@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"github.com/cpssd/paranoid/pfs/network"
 	"io/ioutil"
 	"log"
 	"os"
@@ -41,4 +42,5 @@ func CreatCommand(args []string) {
 	checkErr("creat", err)
 	_, err = os.Create(path.Join(directory, "contents", uuid))
 	checkErr("creat", err)
+	network.Creat(directory, args[1])
 }

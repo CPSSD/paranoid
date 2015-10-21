@@ -28,5 +28,8 @@ func Write(initDir, name string, data []byte, offset, length int64) {
 
 	stdinPipe.Write(data)
 	stdinPipe.Close()
-	command.Wait()
+	err = command.Wait()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
