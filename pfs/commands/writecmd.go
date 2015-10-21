@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/pfs/network"
 	"io/ioutil"
 	"log"
 	"os"
@@ -26,6 +27,7 @@ func WriteCommand(args []string) {
 	if len(args) == 2 {
 		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
 		checkErr("write", err)
+		network.Write(directory, fileName, -1, -1, fileData)
 	} else {
 		contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
 		checkErr("write", err)
@@ -46,5 +48,10 @@ func WriteCommand(args []string) {
 		}
 		_, err = contentsFile.WriteAt(fileData, int64(offset))
 		checkErr("write", err)
+		if len(args) == 3 {
+			network.Write(directory, fileName, offset, -1, fileData)
+		} else {
+			network.Write(directory, fileName, offset, length, fileData)
+		}
 	}
 }
