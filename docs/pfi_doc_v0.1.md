@@ -12,12 +12,11 @@ go build -i
 ##Usage
 ###General
 ```
-pfi [flags] <PfsInitLocation> <MountLocation>
+pfi [flags] <PfsDirectory> <MountPoint>
 ```
 
-* MountLocation - The path to the folder where you wish to mount the paranoid file system.
-* PfsInitLocation - The path to the folder where you initialised pfs with `pfs init initlocation`.
-* PfsBinaryPath - The path to the pfs binary.
+* PfsDirectory - The path to the folder where the pfs file system is located.
+* MountPoint - The path to the folder where you wish to mount the paranoid file system.
 
 example :
 ```
