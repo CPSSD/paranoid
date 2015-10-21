@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-func SendMessage(message []byte, host, port string) {
+func sendMessage(message []byte, host, port string) {
 	url := url.URL{Scheme: "ws", Host: host + ":" + port, Path: "/connect"}
 	log.Printf("connecting to %s", url.String())
 
