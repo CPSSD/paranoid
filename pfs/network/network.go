@@ -25,25 +25,25 @@ func jsonEncode(structure jsonStruct) []byte {
 	return []byte(json)
 }
 
-func Write(directory, file_name string, offset int, length int, data, address, port string) {
-	machineID := getUUID(directory)
+func Write(directory, filename string, offset, length int, data string) {
+	machineID, address, port := getMetaInfo(directory)
 
-	creatStruct := jsonStruct{
+	writeStruct := jsonStruct{
 		Sender: machineID,
 		Type:   "write",
-		Name:   file_name,
+		Name:   filename,
 		Offset: offset,
 		Length: length,
 		Data:   data,
 	}
 
-	createMessage := jsonEncode(creatStruct)
-	sendMessage(createMessage, address, port)
+	writeMessage := jsonEncode(writeStruct)
+	sendMessage(writeMessage, address, port)
 }
 
-func Creat(directory, filename, address, port string) {
+func Creat(directory, filename string) {
+	machineID, address, port := getMetaInfo(directory)
 
-	machineID := getUUID(directory)
 	creatStruct := jsonStruct{
 		Sender: machineID,
 		Name:   filename,
@@ -54,22 +54,22 @@ func Creat(directory, filename, address, port string) {
 	sendMessage(createMessage, address, port)
 }
 
-func Link(directory, filename, targetName, address, port string) {
+func Link(directory, filename, targetName string) {
+	machineID, address, port := getMetaInfo(directory)
 
-	machineID := getUUID(directory)
-	creatStruct := jsonStruct{
+	linkStruct := jsonStruct{
 		Sender: machineID,
 		Type:   "link",
 		Name:   filename,
 		Target: targetName,
 	}
 
-	createMessage := jsonEncode(creatStruct)
-	sendMessage(createMessage, address, port)
+	linkMessage := jsonEncode(linkStruct)
+	sendMessage(linkMessage, address, port)
 }
 
-func Unlink(directory, filename, address, port string) {
-	machineID := getUUID(directory)
+func Unlink(directory, filename string) {
+	machineID, address, port := getMetaInfo(directory)
 
 	uLinkStruct := jsonStruct{
 		Sender: machineID,
@@ -81,8 +81,8 @@ func Unlink(directory, filename, address, port string) {
 	sendMessage(uLinkMessage, address, port)
 }
 
-func Truncate(directory, address, port, filename string, offset int) {
-	machineID := getUUID(directory)
+func Truncate(directory, filename string, offset int) {
+	machineID, address, port := getMetaInfo(directory)
 
 	truncateStruct := jsonStruct{
 		Sender: machineID,
@@ -95,10 +95,14 @@ func Truncate(directory, address, port, filename string, offset int) {
 	sendMessage(truncateMessage, address, port)
 }
 
-func getUUID(directory string) string {
-	uuid, err := ioutil.ReadFile(path.Join(directory, "meta", "uuid"))
+func getMeta(directory, file string) string {
+	fileData, err := ioutil.ReadFile(path.Join(directory, "meta", file))
 	if err != nil {
-		log.Fataln(err)
+		log.Fatalln(err)
 	}
-	return string(uuid)
+	return string(fileData)
+}
+
+func getMetaInfo(directory string) (string, string, string) {
+	return getMeta(directory, "uuid"), getMeta(directory, "ip"), getMeta(directory, "port")
 }
