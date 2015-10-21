@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/cpssd/paranoid/pfi/pfs_interface"
+	"github.com/cpssd/paranoid/pfi/pfsinterface"
 	"log"
 	"path/filepath"
 	"time"
