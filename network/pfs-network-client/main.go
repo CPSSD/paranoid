@@ -160,8 +160,6 @@ func runPfsCommand(message MessageData, pfsDir string) error {
 		io.WriteString(pipe, string(message.Data))
 		pipe.Close()
 		return command.Run() // Returns the error message
-	default:
-		return errors.New("command not found")
 	}
 
 	return nil
