@@ -149,6 +149,7 @@ func runPfsCommand(message MessageData, pfsDir string) error {
 	switch message.Type {
 	case "creat":
 		command := exec.Command("pfs", "-n", "creat", pfsDir, message.Name)
+		command.Stderr = os.Stderr
 		return command.Run() // Returns the error message
 	case "write":
 		var command *exec.Cmd
@@ -161,6 +162,7 @@ func runPfsCommand(message MessageData, pfsDir string) error {
 		} else {
 			command = exec.Command("pfs", "-n", "write", pfsDir, message.Name)
 		}
+		command.Stderr = os.Stderr
 		pipe, err := command.StdinPipe()
 		if err != nil {
 			return err
