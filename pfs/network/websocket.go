@@ -18,7 +18,7 @@ func sendMessage(message []byte, host, port string) {
 
 	defer ws.Close()
 
-	err = ws.WriteJSON(message)
+	err = ws.WriteMessage(websocket.TextMessage, message)
 	if err != nil {
 		log.Fatalln(err)
 	}
