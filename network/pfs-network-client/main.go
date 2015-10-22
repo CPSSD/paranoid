@@ -87,8 +87,8 @@ type MessageData struct {
 	Type   string `json:"type,omitempty"`
 	Name   string `json:"name,omitempty"`
 	Target string `json:"target,omitempty"`
-	Offset int    `json:"offset,omitempty"`
-	Length int    `json:"length,omitempty"`
+	Offset *int   `json:"offset,omitempty"`
+	Length *int   `json:"length,omitempty"`
 	Data   []byte `json:"data,omitempty"`
 }
 
@@ -152,7 +152,16 @@ func runPfsCommand(message MessageData, pfsDir string) error {
 		command := exec.Command("pfs", "-n", "creat", pfsDir, message.Name)
 		return command.Run() // Returns the error message
 	case "write":
-		command := exec.Command("pfs", "-n", "write", pfsDir, message.Name, strconv.Itoa(message.Offset), strconv.Itoa(message.Length))
+		var command *exec.Cmd
+		if message.Offset != nil {
+			if message.Length != nil {
+				command = exec.Command("pfs", "-n", "write", pfsDir, message.Name, strconv.Itoa(*message.Offset), strconv.Itoa(*message.Length))
+			} else {
+				command = exec.Command("pfs", "-n", "write", pfsDir, message.Name, strconv.Itoa(*message.Offset))
+			}
+		} else {
+			command = exec.Command("pfs", "-n", "write", pfsDir, message.Name)
+		}
 		pipe, err := command.StdinPipe()
 		if err != nil {
 			return err
