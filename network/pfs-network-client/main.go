@@ -64,7 +64,7 @@ func main() {
 			continue
 		}
 
-		if data.Sender != GetUUID(pfsDir) {
+		if data.Sender != getUUID(pfsDir) {
 			if err := hasValidFields(data); err != nil {
 				log.Println("ERROR: invalid fields in message:", err)
 				continue
@@ -104,8 +104,8 @@ func parseMessage(messageString []byte) (MessageData, error) {
 	return m, nil
 }
 
-// GetUUID takes the uuid of the pfs from the meta file
-func GetUUID(pfsDir string) string {
+// getUUID takes the uuid of the pfs from the meta file
+func getUUID(pfsDir string) string {
 	uuidBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "uuid"))
 	if err != nil {
 		log.Fatalln("FATAL: Cannot read UUID:", err)
