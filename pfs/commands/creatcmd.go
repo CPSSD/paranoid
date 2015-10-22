@@ -42,5 +42,7 @@ func CreatCommand(args []string) {
 	checkErr("creat", err)
 	_, err = os.Create(path.Join(directory, "contents", uuid))
 	checkErr("creat", err)
-	network.Creat(directory, args[1])
+	if !Flags.Network {
+		network.Creat(directory, args[1])
+	}
 }
