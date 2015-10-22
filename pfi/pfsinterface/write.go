@@ -10,9 +10,9 @@ import (
 func Write(initDir, name string, data []byte, offset, length int64) {
 	var command *exec.Cmd
 	if offset != -1 {
-		command = exec.Command("pfs", "-f", "write", initDir, name, strconv.FormatInt(offset, 10), strconv.FormatInt(length, 10))
+		command = exec.Command("pfs", OriginFlag, "write", initDir, name, strconv.FormatInt(offset, 10), strconv.FormatInt(length, 10))
 	} else {
-		command = exec.Command("pfs", "-f", "write", initDir, name)
+		command = exec.Command("pfs", OriginFlag, "write", initDir, name)
 	}
 
 	stdinPipe, err := command.StdinPipe()

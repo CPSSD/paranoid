@@ -18,8 +18,14 @@ var logOutput *bool
 
 func main() {
 	// parsing flags and args
-	logOutput = flag.Bool("-v", false, "Log opperations in standard output")
+	logOutput = flag.Bool("v", false, "Log opperations in standard output")
+	markNetwork := flag.Bool("n", false, "Mark file system operations as coming from the network")
 	flag.Parse()
+	if *markNetwork {
+		pfsinterface.OriginFlag = "-n"
+	} else {
+		pfsinterface.OriginFlag = "-f"
+	}
 	noFlagArgs := flag.Args()
 
 	if len(noFlagArgs) < 2 {

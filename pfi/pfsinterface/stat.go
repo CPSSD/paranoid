@@ -16,7 +16,7 @@ type statInfo struct {
 
 //Stat gets the attributes of a file or directory from pfs
 func Stat(initDir, name string) (info statInfo, e error) {
-	command := exec.Command("pfs", "-f", "stat", initDir, name)
+	command := exec.Command("pfs", OriginFlag, "stat", initDir, name)
 	output, err := command.Output()
 
 	if err != nil {
