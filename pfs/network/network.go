@@ -11,10 +11,10 @@ type jsonStruct struct {
 	Sender string `json:"sender"`
 	Name   string `json:"name"`
 	Type   string `json:"type"`
-	Length int    `json:"length"`
-	Offset int    `json:"offset"`
-	Data   string `json:"data"`
-	Target string `json:"target"`
+	Length *int   `json:"length,omitempty"`
+	Offset *int   `json:"offset,omitempty"`
+	Data   string `json:"data,omitempty"`
+	Target string `json:"target,omitempty"`
 }
 
 func jsonEncode(structure jsonStruct) []byte {
@@ -25,7 +25,7 @@ func jsonEncode(structure jsonStruct) []byte {
 	return []byte(json)
 }
 
-func Write(directory, filename string, offset, length int, data string) {
+func Write(directory, filename string, offset, length *int, data string) {
 	machineID, address, port := getMetaInfo(directory)
 
 	writeStruct := jsonStruct{
@@ -88,7 +88,7 @@ func Truncate(directory, filename string, offset int) {
 		Sender: machineID,
 		Type:   "truncate",
 		Name:   filename,
-		Offset: offset,
+		Offset: &offset,
 	}
 
 	truncateMessage := jsonEncode(truncateStruct)
