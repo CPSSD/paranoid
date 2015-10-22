@@ -46,6 +46,7 @@ func main() {
 	} else {
 		log.Println("Establised connection with", url.String())
 	}
+	defer conn.Close()
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -76,8 +77,6 @@ func main() {
 			}
 		}
 	}
-
-	conn.Close()
 }
 
 // MessageData stores all the values that the server can provide it.
