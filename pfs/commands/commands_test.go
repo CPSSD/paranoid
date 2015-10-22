@@ -23,12 +23,12 @@ func removeTestDir() {
 }
 
 func doWriteCommand(t *testing.T, file, data string, offset, length int) {
-	cmd := exec.Command("go", "run", "../main.go", "write", path.Join(os.TempDir(), "paranoidTest"), file)
+	cmd := exec.Command("go", "run", "../main.go", "-n", "write", path.Join(os.TempDir(), "paranoidTest"), file)
 	if offset != -1 {
 		if length != -1 {
-			cmd = exec.Command("go", "run", "../main.go", "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset), strconv.Itoa(length))
+			cmd = exec.Command("go", "run", "../main.go", "-n", "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset), strconv.Itoa(length))
 		} else {
-			cmd = exec.Command("go", "run", "../main.go", "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
+			cmd = exec.Command("go", "run", "../main.go", "-n", "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
 		}
 	}
 	stdin, err := cmd.StdinPipe()
@@ -76,6 +76,7 @@ func doReadDirCommand(t *testing.T) []string {
 }
 
 func TestSimpleCommandUsage(t *testing.T) {
+	Flags.Network = true // so that the tests don't try to make a network connection
 	createTestDir(t)
 	defer removeTestDir()
 	args := []string{path.Join(os.TempDir(), "paranoidTest")}
@@ -90,6 +91,7 @@ func TestSimpleCommandUsage(t *testing.T) {
 }
 
 func TestComplexCommandUsage(t *testing.T) {
+	Flags.Network = true
 	createTestDir(t)
 	defer removeTestDir()
 	args := []string{path.Join(os.TempDir(), "paranoidTest")}
