@@ -5,9 +5,11 @@ import (
 	"os/exec"
 )
 
+var OriginFlag string
+
 //Creat tells pfs that a file needs to be created
 func Creat(initDir, name string) {
-	command := exec.Command("pfs", "-f", "creat", initDir, name)
+	command := exec.Command("pfs", OriginFlag, "creat", initDir, name)
 
 	err := command.Run()
 

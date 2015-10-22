@@ -10,9 +10,9 @@ import (
 func Read(initDir, name string, offset, length int64) (bytes []byte) {
 	var command *exec.Cmd
 	if offset != -1 {
-		command = exec.Command("pfs", "-f", "read", initDir, name, strconv.FormatInt(offset, 10), strconv.FormatInt(length, 10))
+		command = exec.Command("pfs", OriginFlag, "read", initDir, name, strconv.FormatInt(offset, 10), strconv.FormatInt(length, 10))
 	} else {
-		command = exec.Command("pfs", "-f", "read", initDir, name)
+		command = exec.Command("pfs", OriginFlag, "read", initDir, name)
 	}
 	output, err := command.Output()
 
