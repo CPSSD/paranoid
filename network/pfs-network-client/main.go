@@ -53,7 +53,7 @@ func main() {
 			log.Println("FATAL: Cannot Read Message:", err)
 			continue
 		}
-		data, err := ParseMessage(message)
+		data, err := parseMessage(message)
 		if err != nil {
 			log.Println("FATAL: Cannot Parse Message:", err)
 			continue
@@ -65,12 +65,12 @@ func main() {
 		}
 
 		if data.Sender != GetUUID(pfsDir) {
-			if err := HasValidFields(data); err != nil {
+			if err := hasValidFields(data); err != nil {
 				log.Println("FATAL: invalid fields in message:", err)
 				continue
 			}
 
-			if err := RunPfsCommand(data, pfsDir); err != nil {
+			if err := runPfsCommand(data, pfsDir); err != nil {
 				log.Println("FATAL: Cannot perform action", data.Type, ":", err)
 				continue
 			}
@@ -93,7 +93,7 @@ type MessageData struct {
 }
 
 // Parse Message converts the input from JSON into the MessageData struct
-func ParseMessage(messageString []byte) (MessageData, error) {
+func parseMessage(messageString []byte) (MessageData, error) {
 	m := MessageData{}
 
 	if err := json.Unmarshal(messageString, &m); err != nil {
@@ -114,8 +114,8 @@ func GetUUID(pfsDir string) string {
 	return string(uuidBytes)
 }
 
-// HasValidFields checks do all messages have required inputs
-func HasValidFields(message MessageData) error {
+// hasValidFields checks do all messages have required inputs
+func hasValidFields(message MessageData) error {
 	switch message.Type {
 	case "write":
 		if len(message.Name) == 0 {
@@ -144,9 +144,9 @@ func HasValidFields(message MessageData) error {
 	return nil
 }
 
-// RunPfsCommand calls pfs from the network so the changes can be performed
+// runPfsCommand calls pfs from the network so the changes can be performed
 // accross all connected devices
-func RunPfsCommand(message MessageData, pfsDir string) error {
+func runPfsCommand(message MessageData, pfsDir string) error {
 	switch message.Type {
 	case "creat":
 		command := exec.Command("pfs", "-n", "creat", pfsDir, message.Name)

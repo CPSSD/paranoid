@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestParseMessage(t *testing.T) {
+func TestparseMessage(t *testing.T) {
 	rawWrite := []byte(`{
 		"sender": "abc",
 		"type": "write",
@@ -41,24 +41,24 @@ func TestParseMessage(t *testing.T) {
 	}`)
 
 	// Check is each message parsed without errors
-	if _, err := ParseMessage(rawWrite); err != nil {
-		t.Error("ParseMessage failed on write")
+	if _, err := parseMessage(rawWrite); err != nil {
+		t.Error("parseMessage failed on write")
 	}
-	if _, err := ParseMessage(rawCreat); err != nil {
-		t.Error("ParseMessage failed on creat")
+	if _, err := parseMessage(rawCreat); err != nil {
+		t.Error("parseMessage failed on creat")
 	}
-	if _, err := ParseMessage(rawLink); err != nil {
-		t.Error("ParseMessage failed on link")
+	if _, err := parseMessage(rawLink); err != nil {
+		t.Error("parseMessage failed on link")
 	}
-	if _, err := ParseMessage(rawUnlink); err != nil {
-		t.Error("ParseMessage failed on unlink")
+	if _, err := parseMessage(rawUnlink); err != nil {
+		t.Error("parseMessage failed on unlink")
 	}
-	if _, err := ParseMessage(rawTruncate); err != nil {
-		t.Error("ParseMessage failed on truncate")
+	if _, err := parseMessage(rawTruncate); err != nil {
+		t.Error("parseMessage failed on truncate")
 	}
 }
 
-func TestHasValidFields(t *testing.T) {
+func TesthasValidFields(t *testing.T) {
 	messageWrite := MessageData{"abc123", "write", "_test.txt", "", 0, 8, []byte("aGVsbG8=")}
 	messageCreat := MessageData{"abc123", "creat", "_test.txt", "", 0, 0, []byte("")}
 	messageLink := MessageData{"abc123", "link", "_test.txt", "_test2.txt", 0, 0, []byte("")}
@@ -66,19 +66,19 @@ func TestHasValidFields(t *testing.T) {
 	messageTruncate := MessageData{"abc123", "truncate", "_test.txt", "", 1, 0, []byte("")}
 
 	// Test if the message has valid fields
-	if err := HasValidFields(messageWrite); err != nil {
-		t.Error("HasValidFields failed on write")
+	if err := hasValidFields(messageWrite); err != nil {
+		t.Error("hasValidFields failed on write")
 	}
-	if err := HasValidFields(messageCreat); err != nil {
-		t.Error("HasValidFields failed on creat")
+	if err := hasValidFields(messageCreat); err != nil {
+		t.Error("hasValidFields failed on creat")
 	}
-	if err := HasValidFields(messageLink); err != nil {
-		t.Error("HasValidFields failed on link")
+	if err := hasValidFields(messageLink); err != nil {
+		t.Error("hasValidFields failed on link")
 	}
-	if err := HasValidFields(messageUnlink); err != nil {
-		t.Error("HasValidFields failed on unlink")
+	if err := hasValidFields(messageUnlink); err != nil {
+		t.Error("hasValidFields failed on unlink")
 	}
-	if err := HasValidFields(messageTruncate); err != nil {
-		t.Error("HasValidFields failed on truncate")
+	if err := hasValidFields(messageTruncate); err != nil {
+		t.Error("hasValidFields failed on truncate")
 	}
 }
