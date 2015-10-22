@@ -45,7 +45,7 @@ func mountpfs(c *cli.Context) {
 	if err != nil {
 		log.Fatalln("FATAL error running pfs mount command : ", err)
 	}
-	cmd = exec.Command("pfs-network-client", "-client", directory, splits[0], splits[1])
+	cmd = exec.Command("pfs-network-client", "--client", directory, splits[0], splits[1])
 	outfile1, err := os.Create("./out1.txt")
 	if err != nil {
 		log.Fatalln("FATAL error creating output file")
