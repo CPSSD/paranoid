@@ -1,6 +1,7 @@
 package network
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -18,6 +19,7 @@ type jsonStruct struct {
 }
 
 func jsonEncode(structure jsonStruct) []byte {
+	structure.Data = base64.StdEncoding.EncodeToString([]byte(structure.Data))
 	json, err := json.Marshal(structure)
 	if err != nil {
 		log.Fatalln(err)
