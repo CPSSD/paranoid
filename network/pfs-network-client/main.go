@@ -71,7 +71,7 @@ func main() {
 			}
 
 			if err := runPfsCommand(data, pfsDir); err != nil {
-				log.Println("ERROR: Cannot perform action", data.Type, ":", err)
+				log.Println("ERROR: Could not perform command", data.Type, ":", err)
 				continue
 			}
 		}
