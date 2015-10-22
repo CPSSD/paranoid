@@ -28,7 +28,7 @@ func WriteCommand(args []string) {
 		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
 		checkErr("write", err)
 		if !Flags.Network {
-			network.Write(directory, fileName, nil, nil, string(fileData))
+			network.Write(directory, args[1], nil, nil, string(fileData))
 		}
 	} else {
 		contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
@@ -52,13 +52,13 @@ func WriteCommand(args []string) {
 		checkErr("write", err)
 		if len(args) == 3 {
 			if !Flags.Network {
-				network.Write(directory, fileName, &offset, nil, string(fileData))
+				network.Write(directory, args[1], &offset, nil, string(fileData))
 			}
 		} else {
 			if !Flags.Network {
 				length, err := strconv.Atoi(args[3])
 				checkErr("write", err)
-				network.Write(directory, fileName, &offset, &length, string(fileData))
+				network.Write(directory, args[1], &offset, &length, string(fileData))
 			}
 		}
 	}
