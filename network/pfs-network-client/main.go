@@ -50,28 +50,28 @@ func main() {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			log.Println("FATAL: Cannot Read Message:", err)
+			log.Println("ERROR: Cannot Read Message:", err)
 			continue
 		}
 		data, err := parseMessage(message)
 		if err != nil {
-			log.Println("FATAL: Cannot Parse Message:", err)
+			log.Println("ERROR: Cannot Parse Message:", err)
 			continue
 		}
 
 		if len(data.Sender) == 0 {
-			log.Println("FATAL: The Sender must be specified")
+			log.Println("ERROR: The Sender must be specified")
 			continue
 		}
 
 		if data.Sender != GetUUID(pfsDir) {
 			if err := hasValidFields(data); err != nil {
-				log.Println("FATAL: invalid fields in message:", err)
+				log.Println("ERROR: invalid fields in message:", err)
 				continue
 			}
 
 			if err := runPfsCommand(data, pfsDir); err != nil {
-				log.Println("FATAL: Cannot perform action", data.Type, ":", err)
+				log.Println("ERROR: Cannot perform action", data.Type, ":", err)
 				continue
 			}
 		}
