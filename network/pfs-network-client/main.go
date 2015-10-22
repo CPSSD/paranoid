@@ -150,9 +150,7 @@ func runPfsCommand(message MessageData, pfsDir string) error {
 	switch message.Type {
 	case "creat":
 		command := exec.Command("pfs", "-n", "creat", pfsDir, message.Name)
-		if err := command.Run(); err != nil {
-			return err
-		}
+		return command.Run() // Returns the error message
 	case "write":
 		command := exec.Command("pfs", "-n", "write", pfsDir, message.Name, strconv.Itoa(message.Offset), strconv.Itoa(message.Length))
 		pipe, err := command.StdinPipe()
@@ -161,10 +159,7 @@ func runPfsCommand(message MessageData, pfsDir string) error {
 		}
 		io.WriteString(pipe, string(message.Data))
 		pipe.Close()
-		err = command.Run()
-		if err != nil {
-			return err
-		}
+		return command.Run() // Returns the error message
 	default:
 		return errors.New("command not found")
 	}
