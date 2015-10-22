@@ -4,116 +4,81 @@ import (
 	"testing"
 )
 
-// Stores the MessageData for each parsed message type
-var (
-	md1 MessageData
-	md2 MessageData
-	md3 MessageData
-	md4 MessageData
-	md5 MessageData
-)
-
 func TestParseMessage(t *testing.T) {
-	// Write
-	fmd1 := []byte(`
-		{
-			"sender": "abc",
-			"type": "write",
-			"name": "_test.txt",
-			"offset": 0,
-			"length": 8,
-			"data":"aGVsbG8="
-		}
-	`)
+	rawWrite := []byte(`{
+		"sender": "abc",
+		"type": "write",
+		"name": "_test.txt",
+		"offset": 0,
+		"length": 8,
+		"data":"aGVsbG8="
+	}`)
 
-	// Creat
-	fmd2 := []byte(`
-		{
-			"sender": "abc",
-			"type": "creat",
-			"name": "_test.txt"
-		}
-	`)
+	rawCreat := []byte(`{
+		"sender": "abc",
+		"type": "creat",
+		"name": "_test.txt"
+	}`)
 
-	// Link
-	fmd3 := []byte(`
-		{
-			"sender": "abc",
-			"type": "link",
-			"name": "_test.txt",
-			"target": "_test2.txt"
-		}
-	`)
+	rawLink := []byte(`{
+		"sender": "abc",
+		"type": "link",
+		"name": "_test.txt",
+		"target": "_test2.txt"
+	}`)
 
-	// Unlink
-	fmd4 := []byte(`
-		{
-			"sender": "abc",
-			"type": "write",
-			"name": "_test.txt"
-		}
-	`)
+	rawUnlink := []byte(`{
+		"sender": "abc",
+		"type": "write",
+		"name": "_test.txt"
+	}`)
 
-	// truncate
-	fmd5 := []byte(`
-		{
-			"sender": "abc",
-			"type": "write",
-			"name": "_test.txt",
-			"offset": 0
-		}
-	`)
+	rawTruncate := []byte(`{
+		"sender": "abc",
+		"type": "write",
+		"name": "_test.txt",
+		"offset": 0
+	}`)
 
 	// Check is each message parsed without errors
-	md1p, err := ParseMessage(fmd1)
-	if err != nil {
+	if _, err := ParseMessage(rawWrite); err != nil {
 		t.Error("ParseMessage failed on write")
 	}
-	md1 = md1p
-
-	md2p, err := ParseMessage(fmd2)
-	if err != nil {
+	if _, err := ParseMessage(rawCreat); err != nil {
 		t.Error("ParseMessage failed on creat")
 	}
-	md2 = md2p
-
-	md3p, err := ParseMessage(fmd3)
-	if err != nil {
+	if _, err := ParseMessage(rawLink); err != nil {
 		t.Error("ParseMessage failed on link")
 	}
-	md3 = md3p
-
-	md4p, err := ParseMessage(fmd4)
-	if err != nil {
+	if _, err := ParseMessage(rawUnlink); err != nil {
 		t.Error("ParseMessage failed on unlink")
 	}
-	md4 = md4p
-
-	md5p, err := ParseMessage(fmd5)
-	if err != nil {
+	if _, err := ParseMessage(rawTruncate); err != nil {
 		t.Error("ParseMessage failed on truncate")
 	}
-	md5 = md5p
 }
 
 func TestHasValidFields(t *testing.T) {
-	if err := HasValidFields(md1); err != nil {
+	messageWrite := MessageData{"abc123", "write", "_test.txt", "", 0, 8, []byte("aGVsbG8=")}
+	messageCreat := MessageData{"abc123", "creat", "_test.txt", "", 0, 0, []byte("")}
+	messageLink := MessageData{"abc123", "link", "_test.txt", "_test2.txt", 0, 0, []byte("")}
+	messageUnlink := MessageData{"abc123", "unlink", "_test.txt", "", 0, 0, []byte("")}
+	messageTruncate := MessageData{"abc123", "truncate", "_test.txt", "", 1, 0, []byte("")}
+
+	// Test if the message has valid fields
+	if err := HasValidFields(messageWrite); err != nil {
 		t.Error("HasValidFields failed on write")
 	}
-
-	if err := HasValidFields(md2); err != nil {
+	if err := HasValidFields(messageCreat); err != nil {
 		t.Error("HasValidFields failed on creat")
 	}
-
-	if err := HasValidFields(md3); err != nil {
+	if err := HasValidFields(messageLink); err != nil {
 		t.Error("HasValidFields failed on link")
 	}
-
-	if err := HasValidFields(md4); err != nil {
+	if err := HasValidFields(messageUnlink); err != nil {
 		t.Error("HasValidFields failed on unlink")
 	}
-
-	if err := HasValidFields(md5); err != nil {
+	if err := HasValidFields(messageTruncate); err != nil {
 		t.Error("HasValidFields failed on truncate")
 	}
 }
