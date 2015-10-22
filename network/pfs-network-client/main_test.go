@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestparseMessage(t *testing.T) {
+func TestParseMessage(t *testing.T) {
 	rawWrite := []byte(`{
 		"sender": "abc",
 		"type": "write",
@@ -58,12 +58,13 @@ func TestparseMessage(t *testing.T) {
 	}
 }
 
-func TesthasValidFields(t *testing.T) {
-	messageWrite := MessageData{"abc123", "write", "_test.txt", "", 0, 8, []byte("aGVsbG8=")}
-	messageCreat := MessageData{"abc123", "creat", "_test.txt", "", 0, 0, []byte("")}
-	messageLink := MessageData{"abc123", "link", "_test.txt", "_test2.txt", 0, 0, []byte("")}
-	messageUnlink := MessageData{"abc123", "unlink", "_test.txt", "", 0, 0, []byte("")}
-	messageTruncate := MessageData{"abc123", "truncate", "_test.txt", "", 1, 0, []byte("")}
+func TestHasValidFields(t *testing.T) {
+	x, y := 0, 8
+	messageWrite := MessageData{"abc123", "write", "_test.txt", "", &x, &y, []byte("aGVsbG8=")}
+	messageCreat := MessageData{"abc123", "creat", "_test.txt", "", nil, nil, []byte("")}
+	messageLink := MessageData{"abc123", "link", "_test.txt", "_test2.txt", nil, nil, []byte("")}
+	messageUnlink := MessageData{"abc123", "unlink", "_test.txt", "", nil, nil, []byte("")}
+	messageTruncate := MessageData{"abc123", "truncate", "_test.txt", "", nil, nil, []byte("")}
 
 	// Test if the message has valid fields
 	if err := hasValidFields(messageWrite); err != nil {
