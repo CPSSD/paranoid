@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 )
 
 //checkErr stops the execution of the program if the given error is not nil.
@@ -54,8 +55,9 @@ func InitCommand(args []string) {
 	metaDir := makeDir(directory, "meta")
 	makeDir(directory, "contents")
 	uuid, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
-	verboseLog("init uuid : " + string(uuid))
+	uuidString := strings.TrimSpace(string(uuid))
+	verboseLog("init uuid : " + uuidString)
 	checkErr("init", err)
-	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), uuid, 0777)
+	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), []byte(uuidString), 0777)
 	checkErr("init", err)
 }
