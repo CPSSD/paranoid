@@ -11,7 +11,6 @@ var OriginFlag string
 //RunCommand runs a pfs command with the given arguments. Gives stdinData on stdIn to pfs if it is not nil.
 func RunCommand(stdinData []byte, cmdArgs ...string) []byte {
 	cmdArgs = append(cmdArgs, OriginFlag)
-	cmdArgs = append(cmdArgs, "-v")
 	command := exec.Command("pfs", cmdArgs...)
 	command.Stderr = os.Stderr
 
