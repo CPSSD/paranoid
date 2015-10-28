@@ -15,9 +15,9 @@ import (
 func main() {
 	// parsing flags and args
 	logOutput := flag.Bool("v", false, "Log operations in standard output")
-	util.LogOutput = *logOutput
 	markNetwork := flag.Bool("n", false, "Mark file system operations as coming from the network")
 	flag.Parse()
+	util.LogOutput = *logOutput
 	if *markNetwork {
 		pfsinterface.OriginFlag = "-n"
 	} else {
