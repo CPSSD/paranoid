@@ -12,10 +12,11 @@ import (
 )
 
 type statInfo struct {
-	Length int64     `json:"length"`
-	Ctime  time.Time `json:"ctime"`
-	Mtime  time.Time `json:"mtime"`
-	Atime  time.Time `json:"atime"`
+	Exists bool      `json:"exists",omitempty`
+	Length int64     `json:"length",omitempty`
+	Ctime  time.Time `json:"ctime",omitempty`
+	Mtime  time.Time `json:"mtime",omitempty`
+	Atime  time.Time `json:"atime",omitempty`
 }
 
 //StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
@@ -27,6 +28,15 @@ func StatCommand(args []string) {
 	}
 	directory := args[0]
 	verboseLog("stat : given directory = " + directory)
+	if _, err := os.Stat(path.Join(directory, "names", args[1])); os.IsNotExist(err) {
+		statData := &statInfo{
+			Exists: false}
+		jsonData, err := json.Marshal(statData)
+		checkErr("stat", err)
+		verboseLog("stat : returning " + string(jsonData))
+		io.WriteString(os.Stdout, string(jsonData))
+		return
+	}
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	checkErr("stat", err)
 	fileName := string(fileNameBytes)
@@ -37,6 +47,7 @@ func StatCommand(args []string) {
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
 	statData := &statInfo{
+		Exists: true,
 		Length: fi.Size(),
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,

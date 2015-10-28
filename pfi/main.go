@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"github.com/cpssd/paranoid/pfi/pfsinterface"
 	"log"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hanwen/go-fuse/fuse"
@@ -62,6 +65,15 @@ type ParanoidFileSystem struct {
 	pathfs.FileSystem
 }
 
+//The structure for processing information returned by a pfs stat command
+type statInfo struct {
+	Exists bool      `json:"exists",omitempty`
+	Length int64     `json:"length",omitempty`
+	Ctime  time.Time `json:"ctime",omitempty`
+	Mtime  time.Time `json:"mtime",omitempty`
+	Atime  time.Time `json:"atime",omitempty`
+}
+
 //GetAttr is called by fuse when the attributes of a
 //file or directory are needed. (pfs stat)
 func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.Status) {
@@ -75,8 +87,15 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		}, fuse.OK
 	}
 
-	stats, err := pfsinterface.Stat(pfsInitPoint, name)
+	output := pfsinterface.RunCommand(nil, "stat", pfsInitPoint, name)
+	stats := statInfo{}
+	err := json.Unmarshal(output, &stats)
 	if err != nil {
+		log.Fatalln("Error processing JSON returned by stat command:", err)
+	}
+
+	if stats.Exists == false {
+		logMessage("stat file doesn't exist " + name)
 		return nil, fuse.ENOENT
 	}
 
@@ -98,10 +117,20 @@ func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fus
 	logMessage("OpenDir called on : " + name)
 	// pfs init point is used instead of a name in pfsinterface.Readdir indicating
 	// the root of the file system (because name == "")
-	fileNames := pfsinterface.Readdir(pfsInitPoint, pfsInitPoint)
+	output := pfsinterface.RunCommand(nil, "readdir", pfsInitPoint)
+	outputString := string(output)
+
+	logMessage("OpenDir returns : " + outputString)
+	if outputString == "" {
+		dirEntries := make([]fuse.DirEntry, 0)
+		return dirEntries, fuse.OK
+	}
+
+	fileNames := strings.Split(outputString, "\n")
 	dirEntries := make([]fuse.DirEntry, len(fileNames))
 
 	for i, dirName := range fileNames {
+		logMessage("OpenDir has " + dirName)
 		dirEntries[i] = fuse.DirEntry{Name: dirName}
 	}
 
@@ -119,7 +148,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
 	logMessage("Create called on : " + name)
-	pfsinterface.Creat(pfsInitPoint, name)
+	pfsinterface.RunCommand(nil, "creat", pfsInitPoint, name)
 	file = NewParanoidFile(name)
 	return file, fuse.OK
 }
@@ -165,14 +194,14 @@ func NewParanoidFile(name string) nodefs.File {
 //Read reads a file and returns an array of bytes
 func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
 	logMessage("Read called on : " + f.Name)
-	data := pfsinterface.Read(pfsInitPoint, f.Name, off, int64(len(buf)))
+	data := pfsinterface.RunCommand(nil, "read", pfsInitPoint, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(buf)), 10))
 	return fuse.ReadResultData(data), fuse.OK
 }
 
 //Write writes to a file
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	logMessage("Write called on : " + f.Name)
-	pfsinterface.Write(pfsInitPoint, f.Name, content, off, int64(len(content)))
+	pfsinterface.RunCommand(content, "write", pfsInitPoint, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(content)), 10))
 	return uint32(len(content)), fuse.OK
 }
 

@@ -36,7 +36,7 @@ func TestFuseUsage(t *testing.T) {
 	if err != nil {
 		t.Error("Unable to start pfi :", err)
 	}
-	time.Sleep(time.Second * 2) //Wait 2 seconds so that file system is mounted before we start testing it.
+	time.Sleep(time.Second * 20) //Wait 2 seconds so that file system is mounted before we start testing it.
 
 	cmd = exec.Command("touch", path.Join(os.TempDir(), "pfiTestMountPoint", "helloworld.txt"))
 	cmd.Stderr = os.Stderr
