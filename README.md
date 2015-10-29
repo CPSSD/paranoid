@@ -1,7 +1,7 @@
 Paranoid
 ========
 
-[![Build Status](http://cpssd1.computing.dcu.ie:8080/buildStatus/icon?job=Paranoid_P2P)](http://cpssd1.computing.dcu.ie:8080/job/Paranoid_P2P/)
+[![Build Status](http://cpssd1-web.computing.dcu.ie/buildStatus/icon?job=Paranoid_P2P)](http://cpssd1-web.computing.dcu.ie/job/Paranoid_P2P/)
 
 ## Build Instructions ##
 
