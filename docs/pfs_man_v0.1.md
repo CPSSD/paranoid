@@ -6,9 +6,15 @@ pfs(1) -- issue commands to a paranoid filesystem
 `pfs` `init` `<pfs-directory>`<br>
 `pfs` `mount` `<pfs-directory>` `<server-ip>` `<server-port>`<br>
 `pfs` [`-f`|`--fuse`] `stat` `<pfs-directory>` `<file>`<br>
+`pfs` [`-n`|`--net`|`-f`|`--fuse`] `utimes` `<pfs-directory>` `<file>`<br>
+`pfs` [`-n`|`--net`|`-f`|`--fuse`] `chmod` `<pfs-directory>` `<file>` `<permflags>`<br>
 `pfs` [`-f`|`--fuse`] `read` `<pfs-directory>` `<file>` [`<offset>` `<length>`]<br>
 `pfs` [`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>`<br>
+`pfs` [`-n`|`--net`|`-f`|`--fuse`] `link` `<pfs-directory>` `<file>` `<target>` <br>
+`pfs` [`-n`|`--net`|`-f`|`--fuse`] `unlink` `<pfs-directory>` `<file>` <br>
+`pfs` [`-n`|`--net`|`-f`|`--fuse`] `rename` `<pfs-directory>` `<file>` `<newname>` <br>
+`pfs` [`-n`|`--net`|`-f`|`--fuse`] `truncate` `<pfs-directory>` `<file>` `<length>` <br>
 `pfs` [`-n`|`--net`|`-f`|`--fuse`] `write` `<pfs-directory>` `<file>` [`<offset>` `<length>]`<br>
 
 ## DESCRIPTION
@@ -29,6 +35,12 @@ It can also be used to test the file system by omitting the
 * `stat`:
     Writes stat information for the indicated file to standard output (in a format to be determined, but must initially include at least the length).
 
+* `utimes`:
+	Updates the atime and mtime of `<file>` to those given as JSON on stdin
+
+* `chmod`:
+	Change the permissions of `<file>` to `<permflags>`
+
 * `read`:
     Reads the file `<file>` and prints it to standard output.  If `<offset>` and `<length>` are omitted, then output all of the file.
 
@@ -37,6 +49,19 @@ It can also be used to test the file system by omitting the
 
 * `creat`:
     Create a new file in the filesystem and create a hard link to it called `<file>`.
+
+* `link`:
+    Create a new link in the filesystem `<file>` to `<target>`.
+
+* `unlink`:
+	Delete the link `<file>` and decrement the reference count of it's file.
+	If the reference count is 0, delete the file.
+
+* `rename`:
+	Change the name of `<file>` to `<newname>`
+
+* `truncate`:
+	Change the size of `<file>` to `<length>` bytes
 
 * `write`:
     Write the data piped in through standard input to the file referenced by `<file>` starting at `<offset>` and
