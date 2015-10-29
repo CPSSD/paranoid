@@ -1,7 +1,7 @@
 Paranoid
 ========
 
-[![Build Status](https://magnum.travis-ci.com/CPSSD/paranoid.svg?token=Ty8HySwL3To4YV7AZfi2&branch=master)](https://magnum.travis-ci.com/CPSSD/paranoid)
+[![Build Status](http://cpssd1.computing.dcu.ie:8080/job/Paranoid_P2P/badge/icon)](http://cpssd1.computing.dcu.ie:8080/job/Paranoid_P2P/)
 
 ## Build Instructions ##
 
