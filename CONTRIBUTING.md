@@ -21,6 +21,14 @@ Commenting will be done in accordance with the standard Go style used for genera
 You should write comments to explain any code you write that does something in a way that may not be obvious.
 An explaination of standard Go commenting practice and Godoc can be found [here](https://blog.golang.org/godoc-documenting-go-code).
 
+## Automated Testing ##
+
+Automated Testing will be done using the [testing](https://golang.org/pkg/testing/) Go package. 
+Unit tests and integration tests should be kept in separate files that are run in separate Jenkins projects.
+Files containing integration tests should be marked by starting with the comment `// +build integration`
+Files containing unit tests should be marked by starting with the comment `// +build !integration`
+Tests will be automatically ran for each pull request and pull requests will failling tests will not be merged.
+
 ## Branching ##
 
 Branches should have a short prefix describing what type of changes are contained in it.
