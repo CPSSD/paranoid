@@ -13,6 +13,7 @@ Useful links
 
 ## Paranoid team planning
 - https://docs.google.com/a/mail.dcu.ie/document/d/1-J_hsxRW9dTLgNuoS-y8Oc83L5n2ytpEAPoJRtwSdCs/edit?usp=docslist_api
+- [sprint 2, 30/10/15](https://docs.google.com/document/d/1jSCyQ6sjyNWsjAb5HSfBhM19MWxcfHeaA2mldhB0gHA)
 
 ## Information on consenus
 - https://en.wikipedia.org/wiki/Consensus_(computer_science)
