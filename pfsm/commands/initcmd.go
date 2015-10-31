@@ -49,7 +49,7 @@ func InitCommand(args []string) {
 	}
 	directory := args[0]
 	checkEmpty(directory)
-	verboseLog("init : creating new pfs directories in " + directory)
+	verboseLog("init : creating new paranoid file system in " + directory)
 	makeDir(directory, "names")
 	makeDir(directory, "inodes")
 	metaDir := makeDir(directory, "meta")

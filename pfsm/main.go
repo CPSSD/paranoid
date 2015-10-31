@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/cpssd/paranoid/pfs/commands"
+	"github.com/cpssd/paranoid/pfsm/commands"
 	"log"
 	"os"
 )
@@ -20,7 +20,7 @@ func main() {
 	}
 	commands.ProcessFlags(onlyFlags)
 	if commands.Flags.Version {
-		fmt.Println("pfs v0.1.0")
+		fmt.Println("pfsm v0.1.0")
 		return
 	}
 	if commands.Flags.Network && commands.Flags.Fuse {

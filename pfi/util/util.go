@@ -6,7 +6,7 @@ import (
 
 var LogOutput bool
 var MountPoint string
-var PfsInitPoint string
+var PfsDirectory string
 
 //LogMessage checks if the -v flag was specified and either logs or doesnt log the message
 func LogMessage(message string) {

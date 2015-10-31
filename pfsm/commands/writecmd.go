@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/cpssd/paranoid/pfs/network"
+	"github.com/cpssd/paranoid/pfsm/network"
 	"io/ioutil"
 	"log"
 	"os"
