@@ -30,7 +30,7 @@ func TestFuseUsage(t *testing.T) {
 	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
 	err := cmd.Run()
 	if err != nil {
-		t.Error("Pfsm setup failed :", err)
+		t.Error("pfsm setup failed :", err)
 	}
 	cmd = exec.Command("go", "run", "main.go", "-n", path.Join(os.TempDir(), "pfiTestPfsDir"), path.Join(os.TempDir(), "pfiTestMountPoint"))
 	cmd.Stderr = os.Stderr
