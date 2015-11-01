@@ -1,26 +1,26 @@
-pfs(1) -- issue commands to a paranoid filesystem
+pfsm(1) -- issue commands to a paranoid filesystem
 =================================================
 
 ## SYNOPSIS
 
-`pfs` `init` `<pfs-directory>`<br>
-`pfs` `mount` `<pfs-directory>` `<server-ip>` `<server-port>`<br>
-`pfs` [`-f`|`--fuse`] `stat` `<pfs-directory>` `<file>`<br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `utimes` `<pfs-directory>` `<file>`<br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `chmod` `<pfs-directory>` `<file>` `<permflags>`<br>
-`pfs` [`-f`|`--fuse`] `read` `<pfs-directory>` `<file>` [`<offset>` `<length>`]<br>
-`pfs` [`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>`<br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `link` `<pfs-directory>` `<file>` `<target>` <br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `unlink` `<pfs-directory>` `<file>` <br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `rename` `<pfs-directory>` `<file>` `<newname>` <br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `truncate` `<pfs-directory>` `<file>` `<length>` <br>
-`pfs` [`-n`|`--net`|`-f`|`--fuse`] `write` `<pfs-directory>` `<file>` [`<offset>` `<length>]`<br>
+`pfsm` `init` `<pfs-directory>`<br>
+`pfsm` `mount` `<pfs-directory>` `<server-ip>` `<server-port>`<br>
+`pfsm` [`-f`|`--fuse`] `stat` `<pfs-directory>` `<file>`<br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `utimes` `<pfs-directory>` `<file>`<br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `chmod` `<pfs-directory>` `<file>` `<permflags>`<br>
+`pfsm` [`-f`|`--fuse`] `read` `<pfs-directory>` `<file>` [`<offset>` `<length>`]<br>
+`pfsm` [`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>`<br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `link` `<pfs-directory>` `<file>` `<target>` <br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `unlink` `<pfs-directory>` `<file>` <br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `rename` `<pfs-directory>` `<file>` `<newname>` <br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `truncate` `<pfs-directory>` `<file>` `<length>` <br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `write` `<pfs-directory>` `<file>` [`<offset>` `<length>]`<br>
 
 ## DESCRIPTION
 
-**pfs** is the control system for the paranoid file storage system. It handles
-communication between the network layers and FUSE and the virtual file system.
+**pfsm** is the control system for the paranoid file storage system. It handles
+communication between the network layers and FUSE and the paranoid file system.
 It can also be used to test the file system by omitting the
 `-n` or `-f` flags.
 
@@ -74,11 +74,11 @@ These options specify the source of the command.
 
   * `-n`, `--net`:
     The source of the command is the network. It is coming from another node. This
-    flag instructs `pfs` not to send a message out on the network after performing the
+    flag instructs `pfsm` not to send a message out on the network after performing the
     operation.
 
   * `-f`, `--fuse`:
-    The source of the command is the FUSE layer. This flag instructs `pfs` to send a message
+    The source of the command is the FUSE layer. This flag instructs `pfsm` to send a message
     out on the network after performing the operation.
 
 These options specify the output of the program.
@@ -95,8 +95,8 @@ These options are miscellaneous options.
 
 Create new file with primary link name of `helloworld.txt` and write the text "Hello World!"
 
-    $ pfs creat ~/.pfs helloworld.txt
-    $ echo "Hello World!" | pfs write ~/.pfs helloworld.txt 0 13
-    $ pfs read ~/.pfs helloworld.txt
+    $ pfsm creat ~/.pfs helloworld.txt
+    $ echo "Hello World!" | pfsm write ~/.pfs helloworld.txt 0 13
+    $ pfsm read ~/.pfs helloworld.txt
     Hello World!
 

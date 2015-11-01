@@ -3,19 +3,19 @@ Other Interfaces/APIs
 
 ## User-Facing FUSE Control
 
-Mounts a PFS file system using FUSE and starts the PFS network client.
+Mounts a Paranoid File System using FUSE and starts the PFS network client.
 
 Notes:
 
 - This is the **only** user-facing utility (??).
 
-- The `mount` functionality should be removed from `pfs`.
+- The `mount` functionality should be removed from `pfsm`.
 
 #### Synopsis
 
     mount.pfs server-address pfs-directory mountpoint
 
-`pfs-directory` must exist.  If the directory is empty, then runs `pfs -f init <pfs-directory>`.
+`pfs-directory` must exist.  If the directory is empty, then runs `pfsm -f init <pfs-directory>`.
 
 (Aside... At some point we will need an `fsck.pfs` utility to first verify/fix the PFS file-system structure.)
 

@@ -30,7 +30,7 @@ func mountpfs(c *cli.Context) {
 		log.Fatalln("FATAL :", err)
 	}
 	if len(files) == 0 {
-		cmd := exec.Command("pfs", "init", directory)
+		cmd := exec.Command("pfsm", "init", directory)
 		err = cmd.Run()
 		if err != nil {
 			log.Fatalln("FATAL : ", err)
@@ -40,10 +40,10 @@ func mountpfs(c *cli.Context) {
 	if len(splits) != 2 {
 		log.Fatalln("FATAL : server-address in wrong format")
 	}
-	cmd := exec.Command("pfs", "mount", directory, splits[0], splits[1])
+	cmd := exec.Command("pfsm", "mount", directory, splits[0], splits[1])
 	err = cmd.Run()
 	if err != nil {
-		log.Fatalln("FATAL error running pfs mount command : ", err)
+		log.Fatalln("FATAL error running pfsm mount command : ", err)
 	}
 	cmd = exec.Command("pfs-network-client", "--client", directory, splits[0], splits[1])
 	outfile1, err := os.Create("./out1.txt")

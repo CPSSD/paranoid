@@ -3,7 +3,7 @@ package filesystem
 import (
 	"encoding/json"
 	"github.com/cpssd/paranoid/pfi/file"
-	"github.com/cpssd/paranoid/pfi/pfsinterface"
+	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
 	"log"
 	"strings"
@@ -42,7 +42,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		}, fuse.OK
 	}
 
-	output := pfsinterface.RunCommand(nil, "stat", util.PfsInitPoint, name)
+	output := pfsminterface.RunCommand(nil, "stat", util.PfsDirectory, name)
 	stats := statInfo{}
 	err := json.Unmarshal(output, &stats)
 	if err != nil {
@@ -70,9 +70,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 //the root directory of the file system.
 func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	util.LogMessage("OpenDir called on : " + name)
-	// pfs init point is used instead of a name in pfsinterface.Readdir indicating
-	// the root of the file system (because name == "")
-	output := pfsinterface.RunCommand(nil, "readdir", util.PfsInitPoint)
+	output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory)
 	outputString := string(output)
 
 	util.LogMessage("OpenDir returns : " + outputString)
@@ -103,7 +101,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (retfile nodefs.File, code fuse.Status) {
 	util.LogMessage("Create called on : " + name)
-	pfsinterface.RunCommand(nil, "creat", util.PfsInitPoint, name)
+	pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name)
 	retfile = file.NewParanoidFile(name)
 	return retfile, fuse.OK
 }

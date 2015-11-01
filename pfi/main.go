@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/cpssd/paranoid/pfi/filesystem"
-	"github.com/cpssd/paranoid/pfi/pfsinterface"
+	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
 	"log"
 	"path/filepath"
@@ -19,9 +19,9 @@ func main() {
 	flag.Parse()
 	util.LogOutput = *logOutput
 	if *markNetwork {
-		pfsinterface.OriginFlag = "-n"
+		pfsminterface.OriginFlag = "-n"
 	} else {
-		pfsinterface.OriginFlag = "-f"
+		pfsminterface.OriginFlag = "-f"
 	}
 	noFlagArgs := flag.Args()
 
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	var err error
-	util.PfsInitPoint, err = filepath.Abs(noFlagArgs[0])
+	util.PfsDirectory, err = filepath.Abs(noFlagArgs[0])
 	if err != nil {
 		log.Fatalln(err)
 	}

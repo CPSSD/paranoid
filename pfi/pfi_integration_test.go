@@ -27,10 +27,10 @@ func TestFuseUsage(t *testing.T) {
 	defer removeTestDir("pfiTestPfsDir")
 	createTestDir(t, "pfiTestMountPoint")
 	defer removeTestDir("pfiTestMountPoint")
-	cmd := exec.Command("pfs", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
 	err := cmd.Run()
 	if err != nil {
-		t.Error("Pfs setup failed :", err)
+		t.Error("pfsm setup failed :", err)
 	}
 	cmd = exec.Command("go", "run", "main.go", "-n", path.Join(os.TempDir(), "pfiTestPfsDir"), path.Join(os.TempDir(), "pfiTestMountPoint"))
 	cmd.Stderr = os.Stderr
@@ -58,7 +58,7 @@ func TestFuseUsage(t *testing.T) {
 		t.Error("ls returned incorrect result")
 	}
 
-	cmd = exec.Command("pfs", "-n", "write", path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt")
+	cmd = exec.Command("pfsm", "-n", "write", path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt")
 	cmd.Stderr = os.Stderr
 	pipe, err := cmd.StdinPipe()
 	if err != nil {
@@ -74,7 +74,7 @@ func TestFuseUsage(t *testing.T) {
 	}
 	err = cmd.Run()
 	if err != nil {
-		t.Error("Error writing to pfs :", err)
+		t.Error("Error writing to pfsm :", err)
 	}
 
 	time.Sleep(time.Second * 1) //Wait before cating or old data may be recieved
