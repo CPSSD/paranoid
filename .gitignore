@@ -22,3 +22,9 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+# Compiled protouf files
+*.pb.go
+
+# Vim swap files
+*.swp

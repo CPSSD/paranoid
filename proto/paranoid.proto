@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package paranoid;
+
+service ParanoidNetwork {
+    // Pings the server to confirm it is up
+    rpc Ping (EmptyMessage) returns (EmptyMessage) {}
+
+    // Creat syscall
+    rpc Creat (CreatRequest) returns (EmptyMessage) {}
+
+    // Write syscall
+    rpc Write (WriteRequest) returns (WriteResponse) {}
+}
+
+message EmptyMessage {}
+
+message CreatRequest {
+    string filename = 1;  // required
+}
+
+message WriteRequest {
+    string filename = 1;  // required
+    bytes data = 2;  // required
+
+    uint64 offset = 3;  // optional
+    uint64 length = 4;  // optional
+}
+
+message WriteResponse {
+    uint64 bytes_written = 1;  // required
+}
