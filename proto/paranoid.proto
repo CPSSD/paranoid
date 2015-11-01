@@ -7,7 +7,7 @@ service ParanoidNetwork {
 
     // Used for health checking and discovery. Sends the IP and port of the
     // PFSD instance running on the client.
-    rpc Ping (EmptyMessage) returns (EmptyMessage) {}
+    rpc Ping (PingRequest) returns (EmptyMessage) {}
 
     // Filesystem calls
     rpc Creat (CreatRequest) returns (EmptyMessage) {}
