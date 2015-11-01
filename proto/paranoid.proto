@@ -26,6 +26,9 @@ service ParanoidNetwork {
 
     // Utimes syscall
     rpc Utimes (UtimesRequest) returns (EmptyMessage) {}
+
+    // Chmod syscall
+    rpc Chmod (ChmodRequest) returns (EmptyMessage) {}
 }
 
 message EmptyMessage {}
@@ -66,9 +69,16 @@ message TruncateRequest {
 }
 
 message UtimesRequest {
-    uint64 access_seconds = 1;  // required
-    uint64 access_microseconds = 2;  // required
+    string path = 1;
 
-    uint64 modify_seconds = 3;  // required
-    uint64 modify_microseconds = 4;  // required
+    uint64 access_seconds = 2;  // required
+    uint64 access_microseconds = 3;  // required
+
+    uint64 modify_seconds = 4;  // required
+    uint64 modify_microseconds = 5;  // required
+}
+
+message ChmodRequest {
+    string path = 1;  // required
+    uint32 mode = 2;  // required
 }
