@@ -117,8 +117,7 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 func (fs *ParanoidFileSystem) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Truncate called on : " + name)
 	pfile := file.NewParanoidFile(name)
-	pfile.Truncate(size)
-	return fuse.OK
+	return pfile.Truncate(size)
 }
 
 //Utimens : We dont have this functionality implemented but
