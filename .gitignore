@@ -23,7 +23,7 @@ _testmain.go
 *.test
 *.prof
 
-# Compiled protouf files
+# Compiled protobuf files
 *.pb.go
 
 # Vim swap files

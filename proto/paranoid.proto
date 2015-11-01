@@ -3,35 +3,29 @@ syntax = "proto3";
 package paranoid;
 
 service ParanoidNetwork {
-    // Pings the server to confirm it is up
+    // Utility calls
+
+    // Used for health checking and discovery. Sends the IP and port of the
+    // PFSD instance running on the client.
     rpc Ping (EmptyMessage) returns (EmptyMessage) {}
 
-    // Creat syscall
+    // Filesystem calls
     rpc Creat (CreatRequest) returns (EmptyMessage) {}
-
-    // Write syscall
     rpc Write (WriteRequest) returns (WriteResponse) {}
-
-    // Link syscall
     rpc Link (LinkRequest) returns (EmptyMessage) {}
-
-    // Unlink syscall
     rpc Unlink (UnlinkRequest) returns (EmptyMessage) {}
-
-    // Rename syscall
     rpc Rename (RenameRequest) returns (EmptyMessage) {}
-
-    // Truncate syscall
     rpc Truncate (TruncateRequest) returns (EmptyMessage) {}
-
-    // Utimes syscall
     rpc Utimes (UtimesRequest) returns (EmptyMessage) {}
-
-    // Chmod syscall
     rpc Chmod (ChmodRequest) returns (EmptyMessage) {}
 }
 
 message EmptyMessage {}
+
+message PingRequest {
+    string ip = 1;  // required
+    string port = 2;  // required
+}
 
 message CreatRequest {
     string path = 1;  // required
