@@ -1,6 +1,9 @@
 Useful links
 =====================
 
+## Project planning docs
+- https://drive.google.com/drive/folders/0B2ROOCl1_18dZDlkZU5Nd291WEU
+
 ## Linux system information
 - http://www.di.uevora.pt/~lmr/syscalls.html
 - https://en.wikipedia.org/wiki/Inode
