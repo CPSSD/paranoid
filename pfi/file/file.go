@@ -38,3 +38,10 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	pfsminterface.RunCommand(content, "write", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(content)), 10))
 	return uint32(len(content)), fuse.OK
 }
+
+//Truncate is called when a file is to be reduced in length to size.
+func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
+	util.LogMessage("Truncate called on file : " + f.Name)
+	pfsminterface.RunCommand(nil, "truncate", util.PfsDirectory, f.Name, strconv.FormatInt(int64(size), 10))
+	return fuse.OK
+}
