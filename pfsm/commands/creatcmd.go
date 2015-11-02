@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ type inode struct {
 //CreatCommand creates a new file with the name args[1] in the pfs directory args[0]
 func CreatCommand(args []string) {
 	verboseLog("creat command called")
-	if len(args) < 2 {
+	if len(args) < 3 {
 		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
@@ -29,10 +30,12 @@ func CreatCommand(args []string) {
 	}
 	verboseLog("creat : creating file " + args[1])
 	uuidbytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
+	checkErr("creat", err)
 	uuid := strings.TrimSpace(string(uuidbytes))
 	verboseLog("creat : uuid = " + uuid)
+	perms, err := strconv.Atoi(args[2])
 	checkErr("creat", err)
-	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), 0777)
+	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), os.FileMode(perms))
 	checkErr("creat", err)
 	nodeData := &inode{
 		Inode: uuid,

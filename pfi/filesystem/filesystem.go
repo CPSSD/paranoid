@@ -6,6 +6,7 @@ import (
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -103,7 +104,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (retfile nodefs.File, code fuse.Status) {
 	util.LogMessage("Create called on : " + name)
-	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name)
+	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name, strconv.Itoa(int(mode)))
 	if retcode == pfsminterface.ENOENT {
 		return nil, fuse.ENOENT
 	}
