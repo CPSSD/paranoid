@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/cpssd/paranoid/pfsm/network"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,6 +18,10 @@ func TruncateCommand(args []string) {
 	}
 	directory := args[0]
 	verboseLog("truncate : given directory = " + directory)
+	if !checkFileExists(path.Join(directory, "names", args[1])) {
+		io.WriteString(os.Stdout, getReturnCode(ENOENT))
+		return
+	}
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	checkErr("truncate", err)
 	fileName := string(fileNameBytes)
@@ -26,6 +31,7 @@ func TruncateCommand(args []string) {
 	contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
 	err = contentsFile.Truncate(int64(newsize))
 	checkErr("truncate", err)
+	io.WriteString(os.Stdout, getReturnCode(OK))
 	if !Flags.Network {
 		network.Truncate(directory, args[1], newsize)
 	}
