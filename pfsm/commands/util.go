@@ -10,6 +10,7 @@ import (
 const (
 	OK     = iota
 	ENOENT //No such file or directory.
+	EACCES //Can not access file
 )
 
 func getReturnCode(code int) string {

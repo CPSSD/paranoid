@@ -111,10 +111,15 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 	return retfile, fuse.OK
 }
 
-//Access is called by fuse to see if it has access to a certain
-//file. In this sprint access will always be granted.
+//Access is called by fuse to see if it has access to a certain file
 func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Access called on : " + name)
+	retcode, _ := pfsminterface.RunCommand(nil, "access", util.PfsDirectory, name)
+	if retcode == pfsminterface.ENOENT {
+		return fuse.ENOENT
+	} else if retcode == pfsminterface.EACCES {
+		return fuse.EACCES
+	}
 	return fuse.OK
 }
 

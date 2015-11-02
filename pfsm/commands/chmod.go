@@ -29,7 +29,7 @@ func ChmodCommand(args []string) {
 	checkErr("chmod", err)
 	contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
 	checkErr("chmod", err)
-	err = contentsFile.Chmod(perms)
+	err = contentsFile.Chmod(os.FileMode(perms))
 	checkErr("chmod", err)
 	io.WriteString(os.Stdout, getReturnCode(OK))
 }
