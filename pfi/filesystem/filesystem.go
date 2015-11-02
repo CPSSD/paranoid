@@ -22,7 +22,6 @@ type ParanoidFileSystem struct {
 
 //The structure for processing information returned by a pfs stat command
 type statInfo struct {
-	Exists bool      `json:"exists",omitempty`
 	Length int64     `json:"length",omitempty`
 	Ctime  time.Time `json:"ctime",omitempty`
 	Mtime  time.Time `json:"mtime",omitempty`
@@ -42,16 +41,16 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		}, fuse.OK
 	}
 
-	output := pfsminterface.RunCommand(nil, "stat", util.PfsDirectory, name)
+	code, output := pfsminterface.RunCommand(nil, "stat", util.PfsDirectory, name)
+	if code == pfsminterface.ENOENT {
+		util.LogMessage("stat file doesn't exist " + name)
+		return nil, fuse.ENOENT
+	}
+
 	stats := statInfo{}
 	err := json.Unmarshal(output, &stats)
 	if err != nil {
 		log.Fatalln("Error processing JSON returned by stat command:", err)
-	}
-
-	if stats.Exists == false {
-		util.LogMessage("stat file doesn't exist " + name)
-		return nil, fuse.ENOENT
 	}
 
 	attr := fuse.Attr{
@@ -70,7 +69,10 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 //the root directory of the file system.
 func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	util.LogMessage("OpenDir called on : " + name)
-	output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory)
+	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory)
+	if code == pfsminterface.ENOENT {
+		return nil, fuse.ENOENT
+	}
 	outputString := string(output)
 
 	util.LogMessage("OpenDir returns : " + outputString)
@@ -101,7 +103,10 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (retfile nodefs.File, code fuse.Status) {
 	util.LogMessage("Create called on : " + name)
-	pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name)
+	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name)
+	if retcode == pfsminterface.ENOENT {
+		return nil, fuse.ENOENT
+	}
 	retfile = file.NewParanoidFile(name)
 	return retfile, fuse.OK
 }

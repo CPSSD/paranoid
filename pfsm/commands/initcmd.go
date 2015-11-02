@@ -1,27 +1,13 @@
 package commands
 
 import (
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"strings"
 )
-
-//checkErr stops the execution of the program if the given error is not nil.
-//Specifies the command where the error occured as cmd
-func checkErr(cmd string, err error) {
-	if err != nil {
-		log.Fatalln(cmd, " error occured: ", err)
-	}
-}
-
-//verboseLog logs a message if the verbose command line flag was set.
-func verboseLog(message string) {
-	if Flags.Verbose {
-		log.Println(message)
-	}
-}
 
 //makeDir creates a new directory with permissions 0777 with the name newDir in parentDir.
 func makeDir(parentDir, newDir string) string {
@@ -60,4 +46,5 @@ func InitCommand(args []string) {
 	checkErr("init", err)
 	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), []byte(uuidString), 0777)
 	checkErr("init", err)
+	io.WriteString(os.Stdout, getReturnCode(OK))
 }

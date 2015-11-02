@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 )
 
@@ -19,4 +21,5 @@ func MountCommand(args []string) {
 	checkErr("mount", err)
 	err = ioutil.WriteFile(path.Join(directory, "meta", "port"), []byte(args[2]), 0777)
 	checkErr("mount", err)
+	io.WriteString(os.Stdout, getReturnCode(OK))
 }

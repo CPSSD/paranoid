@@ -12,7 +12,6 @@ import (
 )
 
 type statInfo struct {
-	Exists bool      `json:"exists",omitempty`
 	Length int64     `json:"length",omitempty`
 	Ctime  time.Time `json:"ctime",omitempty`
 	Mtime  time.Time `json:"mtime",omitempty`
@@ -28,13 +27,8 @@ func StatCommand(args []string) {
 	}
 	directory := args[0]
 	verboseLog("stat : given directory = " + directory)
-	if _, err := os.Stat(path.Join(directory, "names", args[1])); os.IsNotExist(err) {
-		statData := &statInfo{
-			Exists: false}
-		jsonData, err := json.Marshal(statData)
-		checkErr("stat", err)
-		verboseLog("stat : returning " + string(jsonData))
-		io.WriteString(os.Stdout, string(jsonData))
+	if !checkFileExists(path.Join(directory, "names", args[1])) {
+		io.WriteString(os.Stdout, getReturnCode(ENOENT))
 		return
 	}
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
@@ -47,7 +41,6 @@ func StatCommand(args []string) {
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
 	statData := &statInfo{
-		Exists: true,
 		Length: fi.Size(),
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
@@ -55,5 +48,6 @@ func StatCommand(args []string) {
 	jsonData, err := json.Marshal(statData)
 	checkErr("stat", err)
 	verboseLog("stat : returning " + string(jsonData))
+	io.WriteString(os.Stdout, getReturnCode(OK))
 	io.WriteString(os.Stdout, string(jsonData))
 }

@@ -2,8 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 )
 
@@ -17,6 +19,7 @@ func ReadDirCommand(args []string) {
 	verboseLog("readdir : given directory = " + directory)
 	files, err := ioutil.ReadDir(path.Join(directory, "names"))
 	checkErr("readdir", err)
+	io.WriteString(os.Stdout, getReturnCode(OK))
 	for i := 0; i < len(files); i++ {
 		fmt.Println(files[i].Name())
 	}
