@@ -6,6 +6,7 @@ Useful links
 
 ## Linux system information
 - http://www.di.uevora.pt/~lmr/syscalls.html
+- http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
 - https://en.wikipedia.org/wiki/Inode
 - https://en.wikipedia.org/wiki/Inode_pointer_structure
 
