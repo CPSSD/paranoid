@@ -83,7 +83,7 @@ func TestSimpleCommandUsage(t *testing.T) {
 	defer removeTestDir()
 	args := []string{path.Join(os.TempDir(), "paranoidTest")}
 	InitCommand(args)
-	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt"}
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "777"}
 	CreatCommand(args)
 	doWriteCommand(t, "test.txt", "BLAH #1", -1, -1)
 	returnData := strings.TrimRight(doReadCommand(t, "test.txt", -1, -1), "\x00")
@@ -98,7 +98,7 @@ func TestComplexCommandUsage(t *testing.T) {
 	defer removeTestDir()
 	args := []string{path.Join(os.TempDir(), "paranoidTest")}
 	InitCommand(args)
-	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt"}
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "777"}
 	CreatCommand(args)
 	doWriteCommand(t, "test.txt", "START", -1, -1)
 	returnData := strings.TrimRight(doReadCommand(t, "test.txt", 2, 2), "\x00")
