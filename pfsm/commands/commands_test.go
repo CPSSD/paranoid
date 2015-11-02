@@ -61,7 +61,7 @@ func doReadCommand(t *testing.T, file string, offset, length int) string {
 	if err != nil {
 		t.Error("Error running read command: ", err)
 	}
-	return out.String()
+	return string([]byte(out.String())[2:])
 }
 
 func doReadDirCommand(t *testing.T) []string {
@@ -73,7 +73,7 @@ func doReadDirCommand(t *testing.T) []string {
 	if err != nil {
 		t.Error("Error running readdir command: ", err)
 	}
-	anwser := strings.Split(out.String(), "\n")
+	anwser := strings.Split(string([]byte(out.String())[2:]), "\n")
 	return anwser[0 : len(anwser)-1]
 }
 

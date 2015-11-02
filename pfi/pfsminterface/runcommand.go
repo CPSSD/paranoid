@@ -11,7 +11,7 @@ var OriginFlag string
 
 //Current pfsm supported return codes
 const (
-	OK     = 0
+	OK     = iota
 	ENOENT //No such file or directory.
 )
 
