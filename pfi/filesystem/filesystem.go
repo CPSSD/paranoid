@@ -113,11 +113,11 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	return fuse.OK
 }
 
-//Truncate is called when a file is to be truncated. We dont have this functionality
-//yet but its added in here so that if fuse calls it it doesn't break the program.
+//Truncate is called when a file is to be reduced in length to size.
 func (fs *ParanoidFileSystem) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Truncate called on : " + name)
-	return fuse.OK
+	pfile := file.NewParanoidFile(name)
+	return pfile.Truncate(size)
 }
 
 //Utimens : We dont have this functionality implemented but
