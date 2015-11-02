@@ -4,12 +4,19 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 )
 
 var OriginFlag string
 
+//Current pfsm supported return codes
+const (
+	OK     = 0
+	ENOENT //No such file or directory.
+)
+
 //RunCommand runs a pfs command with the given arguments. Gives stdinData on stdIn to pfs if it is not nil.
-func RunCommand(stdinData []byte, cmdArgs ...string) []byte {
+func RunCommand(stdinData []byte, cmdArgs ...string) (int, []byte) {
 	cmdArgs = append(cmdArgs, OriginFlag)
 	command := exec.Command("pfsm", cmdArgs...)
 	command.Stderr = os.Stderr
@@ -33,5 +40,9 @@ func RunCommand(stdinData []byte, cmdArgs ...string) []byte {
 	if err != nil {
 		log.Fatalln("Error running pfsm command :", err)
 	}
-	return output
+	code, err := strconv.Atoi(string(output[0:2]))
+	if err != nil {
+		log.Fatalln("Invalid pfsm return code :", err)
+	}
+	return code, output[2:]
 }
