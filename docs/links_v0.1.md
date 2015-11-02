@@ -13,6 +13,7 @@ Useful links
 - https://www.cs.hmc.edu/~geoff/classes/hmc.cs135.201001/homework/fuse/fuse_doc.html
 - http://fuse.sourceforge.net/doxygen/structfuse__operations.html
 - https://github.com/hanwen/go-fuse/blob/master/fuse/nodefs/api.go
+- https://github.com/hanwen/go-fuse/blob/master/fuse/types.go#L16
 
 ## Paranoid team planning
 - https://docs.google.com/a/mail.dcu.ie/document/d/1-J_hsxRW9dTLgNuoS-y8Oc83L5n2ytpEAPoJRtwSdCs/edit?usp=docslist_api
