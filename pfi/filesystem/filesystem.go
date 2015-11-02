@@ -134,3 +134,10 @@ func (fs *ParanoidFileSystem) Utimens(name string, Atime *time.Time, Mtime *time
 	util.LogMessage("Utimens called on : " + name)
 	return fuse.OK
 }
+
+//Chmod is called when the permissions of a file are to be changed
+func Chmod(name string, perms uint32, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Chmod called on : " + name)
+	pfile := file.NewParanoidFile(name)
+	return pfile.Chmod(perms)
+}
