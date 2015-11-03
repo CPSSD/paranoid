@@ -124,6 +124,20 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	return fuse.OK
 }
 
+//Write content to the given file starting at off
+func (fs *ParanoidFileSystem) Write(name string, content []byte, off int64, context *fuse.Context) (uint32, fuse.Status) {
+	util.LogMessage("Write called on : " + name)
+	pfile := file.NewParanoidFile(name)
+	return pfile.Write(content, off)
+}
+
+//Read a given file starting at off.
+func (fs *ParanoidFileSystem) Read(name string, buf []byte, off int64, context *fuse.Context) (fuse.ReadResult, fuse.Status) {
+	util.LogMessage("Read called on : " + name)
+	pfile := file.NewParanoidFile(name)
+	return pfile.Read(buf, off)
+}
+
 //Truncate is called when a file is to be reduced in length to size.
 func (fs *ParanoidFileSystem) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Truncate called on : " + name)
@@ -131,14 +145,11 @@ func (fs *ParanoidFileSystem) Truncate(name string, size uint64, context *fuse.C
 	return pfile.Truncate(size)
 }
 
-//Utimens : We dont have this functionality implemented but
-//sometimes when calling callind touch on some file
-//fuse leaves behind an annoying message :
-//"touch: setting times of ‘filename’: Function not implemented"
-//I added this function that just returns OK to suppress the annoying message.
-func (fs *ParanoidFileSystem) Utimens(name string, Atime *time.Time, Mtime *time.Time, context *fuse.Context) (code fuse.Status) {
+//Utimens update the Acess time and modified time of a given file.
+func (fs *ParanoidFileSystem) Utimens(name string, atime *time.Time, mtime *time.Time, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Utimens called on : " + name)
-	return fuse.OK
+	pfile := file.NewParanoidFile(name)
+	return pfile.Utimens(atime, mtime)
 }
 
 //Chmod is called when the permissions of a file are to be changed
