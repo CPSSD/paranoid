@@ -1,4 +1,4 @@
-pfsm(1) -- issue commands to a paranoid filesystem
+pfsm(8) -- issue commands to a paranoid filesystem
 =================================================
 
 ## SYNOPSIS
@@ -7,10 +7,11 @@ pfsm(1) -- issue commands to a paranoid filesystem
 `pfsm` `mount` `<pfs-directory>` `<server-ip>` `<server-port>`<br>
 `pfsm` [`-f`|`--fuse`] `stat` `<pfs-directory>` `<file>`<br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `utimes` `<pfs-directory>` `<file>`<br>
+`pfsm` [`-f`|`--fuse`] `access` `<pfs-directory>` `<file>` `<filemode>`<br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `chmod` `<pfs-directory>` `<file>` `<permflags>`<br>
 `pfsm` [`-f`|`--fuse`] `read` `<pfs-directory>` `<file>` [`<offset>` `<length>`]<br>
 `pfsm` [`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
-`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>`<br>
+`pfsm` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>` `<permflags>` <br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `link` `<pfs-directory>` `<file>` `<target>` <br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `unlink` `<pfs-directory>` `<file>` <br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `rename` `<pfs-directory>` `<file>` `<newname>` <br>
@@ -37,6 +38,9 @@ It can also be used to test the file system by omitting the
 
 * `utimes`:
 	Updates the atime and mtime of `<file>` to those given as JSON on stdin
+
+* `access`:
+	Check if the file `<file>` can be acessed in `<filemode>`
 
 * `chmod`:
 	Change the permissions of `<file>` to `<permflags>`

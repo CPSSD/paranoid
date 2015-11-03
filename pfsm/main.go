@@ -41,6 +41,10 @@ func main() {
 			commands.InitCommand(onlyArgs[1:])
 		case "mount":
 			commands.MountCommand(onlyArgs[1:])
+		case "chmod":
+			commands.ChmodCommand(onlyArgs[1:])
+		case "access":
+			commands.AccessCommand(onlyArgs[1:])
 		case "creat":
 			commands.CreatCommand(onlyArgs[1:])
 		case "write":

@@ -79,5 +79,14 @@ func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 		return fuse.ENOENT
 	}
 	return fuse.OK
+}
 
+//Chmod changes the permission flags of the file
+func (f *ParanoidFile) Chmod(perms uint32) fuse.Status {
+	util.LogMessage("Chmod called on file : " + f.Name)
+	code, _ := pfsminterface.RunCommand(nil, "chmod", util.PfsDirectory, f.Name, strconv.FormatInt(int64(perms), 10))
+	if code == pfsminterface.ENOENT {
+		return fuse.ENOENT
+	}
+	return fuse.OK
 }

@@ -29,6 +29,7 @@ func TruncateCommand(args []string) {
 	newsize, err := strconv.Atoi(args[2])
 	checkErr("truncate", err)
 	contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
+	checkErr("truncate", err)
 	err = contentsFile.Truncate(int64(newsize))
 	checkErr("truncate", err)
 	io.WriteString(os.Stdout, getReturnCode(OK))

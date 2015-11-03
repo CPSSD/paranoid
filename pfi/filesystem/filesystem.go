@@ -6,6 +6,7 @@ import (
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -103,7 +104,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (retfile nodefs.File, code fuse.Status) {
 	util.LogMessage("Create called on : " + name)
-	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name)
+	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name, strconv.Itoa(int(mode)))
 	if retcode == pfsminterface.ENOENT {
 		return nil, fuse.ENOENT
 	}
@@ -111,10 +112,15 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 	return retfile, fuse.OK
 }
 
-//Access is called by fuse to see if it has access to a certain
-//file. In this sprint access will always be granted.
+//Access is called by fuse to see if it has access to a certain file
 func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Access called on : " + name)
+	retcode, _ := pfsminterface.RunCommand(nil, "access", util.PfsDirectory, name)
+	if retcode == pfsminterface.ENOENT {
+		return fuse.ENOENT
+	} else if retcode == pfsminterface.EACCES {
+		return fuse.EACCES
+	}
 	return fuse.OK
 }
 
@@ -144,4 +150,11 @@ func (fs *ParanoidFileSystem) Utimens(name string, atime *time.Time, mtime *time
 	util.LogMessage("Utimens called on : " + name)
 	pfile := file.NewParanoidFile(name)
 	return pfile.Utimens(atime, mtime)
+}
+
+//Chmod is called when the permissions of a file are to be changed
+func Chmod(name string, perms uint32, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Chmod called on : " + name)
+	pfile := file.NewParanoidFile(name)
+	return pfile.Chmod(perms)
 }
