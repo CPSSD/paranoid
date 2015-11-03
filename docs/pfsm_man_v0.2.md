@@ -1,4 +1,4 @@
-pfsm(1) -- issue commands to a paranoid filesystem
+pfsm(8) -- issue commands to a paranoid filesystem
 =================================================
 
 ## SYNOPSIS
