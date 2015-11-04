@@ -5,4 +5,4 @@ package pnetserver
 type ParanoidServer struct{}
 
 // Path to the PFS root directory
-var PFSDir string
+var ParanoidDir string

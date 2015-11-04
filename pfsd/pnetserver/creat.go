@@ -10,7 +10,7 @@ import (
 )
 
 func (s *ParanoidServer) Creat(ctx context.Context, req *pb.CreatRequest) (*pb.EmptyMessage, error) {
-	command := exec.Command("pfsm", "-n", "creat", PFSDir, req.Path)
+	command := exec.Command("pfsm", "-n", "creat", ParanoidDir, req.Path)
 	err := command.Run()
 	if err != nil {
 		log.Printf("ERROR: Could not create file %s: %v.\n", req.Path, err)
