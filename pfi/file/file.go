@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"log"
 	"strconv"
 	"time"
@@ -32,7 +33,7 @@ func NewParanoidFile(name string) nodefs.File {
 func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
 	util.LogMessage("Read called on file : " + f.Name)
 	code, data := pfsminterface.RunCommand(nil, "read", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(buf)), 10))
-	if code == pfsminterface.ENOENT {
+	if code == returncodes.ENOENT {
 		return nil, fuse.ENOENT
 	}
 	return fuse.ReadResultData(data), fuse.OK
@@ -42,7 +43,7 @@ func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	util.LogMessage("Write called on file : " + f.Name)
 	code, _ := pfsminterface.RunCommand(content, "write", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(content)), 10))
-	if code == pfsminterface.ENOENT {
+	if code == returncodes.ENOENT {
 		return 0, fuse.ENOENT
 	}
 	return uint32(len(content)), fuse.OK
@@ -52,7 +53,7 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	util.LogMessage("Truncate called on file : " + f.Name)
 	code, _ := pfsminterface.RunCommand(nil, "truncate", util.PfsDirectory, f.Name, strconv.FormatInt(int64(size), 10))
-	if code == pfsminterface.ENOENT {
+	if code == returncodes.ENOENT {
 		return fuse.ENOENT
 	}
 	return fuse.OK
@@ -75,7 +76,7 @@ func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 		log.Fatalln("FATAL : Could not marshal time info")
 	}
 	code, _ := pfsminterface.RunCommand(jsonTimes, "utimes", util.PfsDirectory, f.Name)
-	if code == pfsminterface.ENOENT {
+	if code == returncodes.ENOENT {
 		return fuse.ENOENT
 	}
 	return fuse.OK
@@ -85,7 +86,7 @@ func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 func (f *ParanoidFile) Chmod(perms uint32) fuse.Status {
 	util.LogMessage("Chmod called on file : " + f.Name)
 	code, _ := pfsminterface.RunCommand(nil, "chmod", util.PfsDirectory, f.Name, strconv.FormatInt(int64(perms), 10))
-	if code == pfsminterface.ENOENT {
+	if code == returncodes.ENOENT {
 		return fuse.ENOENT
 	}
 	return fuse.OK

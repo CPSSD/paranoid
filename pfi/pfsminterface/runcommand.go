@@ -9,13 +9,6 @@ import (
 
 var OriginFlag string
 
-//Current pfsm supported return codes
-const (
-	OK     = iota
-	ENOENT //No such file or directory.
-	EACCES //Can not access file
-)
-
 //RunCommand runs a pfs command with the given arguments. Gives stdinData on stdIn to pfs if it is not nil.
 func RunCommand(stdinData []byte, cmdArgs ...string) (int, []byte) {
 	cmdArgs = append(cmdArgs, OriginFlag)
