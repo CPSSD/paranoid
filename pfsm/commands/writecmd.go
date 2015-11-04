@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/cpssd/paranoid/pfsm/network"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -20,7 +21,7 @@ func WriteCommand(args []string) {
 	directory := args[0]
 	verboseLog("write : given directory = " + directory)
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
-		io.WriteString(os.Stdout, getReturnCode(ENOENT))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
@@ -32,7 +33,7 @@ func WriteCommand(args []string) {
 	if len(args) == 2 {
 		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
 		checkErr("write", err)
-		io.WriteString(os.Stdout, getReturnCode(OK))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 		if !Flags.Network {
 			network.Write(directory, args[1], nil, nil, string(fileData))
 		}
@@ -56,7 +57,7 @@ func WriteCommand(args []string) {
 		}
 		_, err = contentsFile.WriteAt(fileData, int64(offset))
 		checkErr("write", err)
-		io.WriteString(os.Stdout, getReturnCode(OK))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 		if len(args) == 3 {
 			if !Flags.Network {
 				network.Write(directory, args[1], &offset, nil, string(fileData))
