@@ -13,7 +13,8 @@ Useful links
 ## Fuse documentation 
 - https://www.cs.hmc.edu/~geoff/classes/hmc.cs135.201001/homework/fuse/fuse_doc.html
 - http://fuse.sourceforge.net/doxygen/structfuse__operations.html
-- https://github.com/hanwen/go-fuse/blob/master/fuse/pathfs/api.go
+- https://github.com/hanwen/go-fuse/blob/master/fuse/pathfs/api.go (we are implementing filesystem from this)
+- https://github.com/hanwen/go-fuse/blob/master/fuse/nodefs/api.go (we are implementing file from this)
 - https://github.com/hanwen/go-fuse/blob/master/fuse/types.go#L16
 
 ## Paranoid team planning
