@@ -12,6 +12,7 @@ import (
 )
 
 func createTestDir(t *testing.T, name string) {
+	os.RemoveAll(path.Join(os.TempDir(), name))
 	err := os.Mkdir(path.Join(os.TempDir(), name), 0777)
 	if err != nil {
 		t.Error(err)

@@ -115,11 +115,13 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 //Access is called by fuse to see if it has access to a certain file
 func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Access called on : " + name)
-	retcode, _ := pfsminterface.RunCommand(nil, "access", util.PfsDirectory, name)
-	if retcode == pfsminterface.ENOENT {
-		return fuse.ENOENT
-	} else if retcode == pfsminterface.EACCES {
-		return fuse.EACCES
+	if name != "" {
+		retcode, _ := pfsminterface.RunCommand(nil, "access", util.PfsDirectory, name, strconv.Itoa(int(mode)))
+		if retcode == pfsminterface.ENOENT {
+			return fuse.ENOENT
+		} else if retcode == pfsminterface.EACCES {
+			return fuse.EACCES
+		}
 	}
 	return fuse.OK
 }
@@ -153,7 +155,7 @@ func (fs *ParanoidFileSystem) Utimens(name string, atime *time.Time, mtime *time
 }
 
 //Chmod is called when the permissions of a file are to be changed
-func Chmod(name string, perms uint32, context *fuse.Context) (code fuse.Status) {
+func (fs *ParanoidFileSystem) Chmod(name string, perms uint32, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Chmod called on : " + name)
 	pfile := file.NewParanoidFile(name)
 	return pfile.Chmod(perms)
