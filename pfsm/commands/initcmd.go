@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -46,5 +47,5 @@ func InitCommand(args []string) {
 	checkErr("init", err)
 	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), []byte(uuidString), 0777)
 	checkErr("init", err)
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

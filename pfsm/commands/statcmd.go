@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -28,7 +29,7 @@ func StatCommand(args []string) {
 	directory := args[0]
 	verboseLog("stat : given directory = " + directory)
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
-		io.WriteString(os.Stdout, getReturnCode(ENOENT))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
@@ -48,6 +49,6 @@ func StatCommand(args []string) {
 	jsonData, err := json.Marshal(statData)
 	checkErr("stat", err)
 	verboseLog("stat : returning " + string(jsonData))
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	io.WriteString(os.Stdout, string(jsonData))
 }

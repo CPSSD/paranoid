@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -25,7 +26,7 @@ func UtimesCommand(args []string) {
 	directory := args[0]
 	verboseLog("utimes : given directory = " + directory)
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
-		io.WriteString(os.Stdout, getReturnCode(ENOENT))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 	input, err := ioutil.ReadAll(os.Stdin)
@@ -52,5 +53,5 @@ func UtimesCommand(args []string) {
 	} else {
 		os.Chtimes(path.Join(directory, "contents", fileName), *times.Atime, *times.Mtime)
 	}
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

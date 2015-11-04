@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,5 +22,5 @@ func MountCommand(args []string) {
 	checkErr("mount", err)
 	err = ioutil.WriteFile(path.Join(directory, "meta", "port"), []byte(args[2]), 0777)
 	checkErr("mount", err)
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }
