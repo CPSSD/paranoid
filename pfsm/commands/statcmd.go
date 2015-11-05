@@ -17,6 +17,7 @@ type statInfo struct {
 	Ctime  time.Time `json:"ctime",omitempty`
 	Mtime  time.Time `json:"mtime",omitempty`
 	Atime  time.Time `json:"atime",omitempty`
+	Perms  int       `json:"perms",omitempty`
 }
 
 //StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
@@ -32,12 +33,13 @@ func StatCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	checkErr("stat", err)
 	fileName := string(fileNameBytes)
-	file, err := os.Open(path.Join(directory, "contents", fileName))
+	fi, err := os.Stat(path.Join(directory, "contents", fileName))
 	checkErr("stat", err)
-	fi, err := file.Stat()
+
 	stat := fi.Sys().(*syscall.Stat_t)
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
@@ -45,7 +47,9 @@ func StatCommand(args []string) {
 		Length: fi.Size(),
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
-		Atime:  atime}
+		Atime:  atime,
+		Perms:  int(fi.Mode().Perm())}
+
 	jsonData, err := json.Marshal(statData)
 	checkErr("stat", err)
 	verboseLog("stat : returning " + string(jsonData))
