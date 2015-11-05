@@ -28,6 +28,7 @@ type statInfo struct {
 	Ctime  time.Time `json:"ctime",omitempty`
 	Mtime  time.Time `json:"mtime",omitempty`
 	Atime  time.Time `json:"atime",omitempty`
+	Perms  int       `json:"perms",omitempty`
 }
 
 //GetAttr is called by fuse when the attributes of a
@@ -60,7 +61,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		Atime: uint64(stats.Atime.Unix()),
 		Ctime: uint64(stats.Ctime.Unix()),
 		Mtime: uint64(stats.Mtime.Unix()),
-		Mode:  fuse.S_IFREG | 0644, // S_IFREG = regular file
+		Mode:  fuse.S_IFREG | uint32(stats.Perms), // S_IFREG = regular file
 	}
 
 	return &attr, fuse.OK
