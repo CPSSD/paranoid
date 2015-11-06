@@ -126,6 +126,11 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	return fuse.OK
 }
 
+func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Rename called on : " + oldName + " to be renamed to " + newName)
+	retcode, _ := pfsminterface
+}
+
 //Write content to the given file starting at off
 func (fs *ParanoidFileSystem) Write(name string, content []byte, off int64, context *fuse.Context) (uint32, fuse.Status) {
 	util.LogMessage("Write called on : " + name)
