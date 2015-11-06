@@ -8,3 +8,7 @@ import (
 	"os"
 	"path"
 )
+
+func RenameCommand(args []string) {
+
+}
