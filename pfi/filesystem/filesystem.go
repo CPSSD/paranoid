@@ -126,6 +126,7 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	return fuse.OK
 }
 
+//Rename is called when renaming a file
 func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Rename called on : " + oldName + " to be renamed to " + newName)
 	retcode, _ := pfsminterface.RunCommand(nil, "rename", util.PfsDirectory, oldName, newName)
