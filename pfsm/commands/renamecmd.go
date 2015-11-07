@@ -23,7 +23,6 @@ func RenameCommand(args []string) {
 		return
 	}
 
-	// renaming file
 	err := os.Rename(oldFilePath, newFilePath)
 	checkErr("rename", err)
 

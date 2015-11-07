@@ -131,13 +131,12 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	util.LogMessage("Rename called on : " + oldName + " to be renamed to " + newName)
 	retcode, _ := pfsminterface.RunCommand(nil, "rename", util.PfsDirectory, oldName, newName)
 
-	if retcode == pfsminterface.ENOENT {
+	switch retcode {
+	case pfsminterface.ENOENT:
 		return fuse.ENOENT
-	} else if retcode == pfsminterface.EACCES {
-		return fuse.EACCES
+	default:
+		return fuse.OK
 	}
-
-	return fuse.OK
 }
 
 //Write content to the given file starting at off
