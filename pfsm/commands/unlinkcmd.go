@@ -61,17 +61,13 @@ func UnlinkCommand(args []string) {
 	} else {
 		// subtracting one from inode count and saving
 		inodeData.Count--
-		verboseLog("unlink : getting stat of file " + inodePath)
-		stat, err := os.Stat(inodePath)
-		checkErr("unlink", err)
-		mode := stat.Mode()
 		verboseLog("unlink : truncating file " + inodePath)
 		err = os.Truncate(inodePath, 0)
 		checkErr("unlink", err)
 		dataToWrite, err := json.Marshal(inodeData)
 		checkErr("unlink", err)
 		verboseLog("unlink : writing to file " + inodePath)
-		err = ioutil.WriteFile(inodePath, dataToWrite, mode)
+		err = ioutil.WriteFile(inodePath, dataToWrite, 0777)
 		checkErr("unlink", err)
 	}
 
