@@ -28,10 +28,8 @@ func AccessCommand(args []string) {
 	fileName := string(fileNameBytes)
 	mode, err := strconv.Atoi(args[2])
 	checkErr("access", err)
-	log.Println("Access called on " + fileName + " with " + args[2])
 	err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))
 	if err != nil {
-		log.Println("Access bad for " + fileName + " with " + args[2])
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
 	}
