@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"log"
 	"os"
@@ -19,12 +20,12 @@ func RenameCommand(args []string) {
 	newFilePath := path.Join(directory, "names", args[2])
 
 	if !checkFileExists(oldFilePath) {
-		io.WriteString(os.Stdout, getReturnCode(ENOENT))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
 	err := os.Rename(oldFilePath, newFilePath)
 	checkErr("rename", err)
 
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

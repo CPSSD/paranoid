@@ -133,12 +133,10 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	util.LogMessage("Rename called on : " + oldName + " to be renamed to " + newName)
 	retcode, _ := pfsminterface.RunCommand(nil, "rename", util.PfsDirectory, oldName, newName)
 
-	switch retcode {
-	case pfsminterface.ENOENT:
+	if retcode == returncodes.ENOENT {
 		return fuse.ENOENT
-	default:
-		return fuse.OK
 	}
+	return fuse.OK
 }
 
 //Truncate is called when a file is to be reduced in length to size.
