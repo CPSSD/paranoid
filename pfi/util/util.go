@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/hanwen/go-fuse/fuse"
 	"log"
 )
 
@@ -12,5 +13,16 @@ var PfsDirectory string
 func LogMessage(message string) {
 	if LogOutput {
 		log.Println(message)
+	}
+}
+
+func GetFuseReturnCode(int retcode) {
+	switch retcode {
+	case returncodes.ENOENT:
+		return fuse.ENOENT
+	case returncodes.EACCES:
+		return fuse.EACCES
+	default:
+		return fuse.OK
 	}
 }

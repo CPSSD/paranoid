@@ -45,9 +45,8 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 	}
 
 	code, output := pfsminterface.RunCommand(nil, "stat", util.PfsDirectory, name)
-	if code == returncodes.ENOENT {
-		util.LogMessage("stat file doesn't exist " + name)
-		return nil, fuse.ENOENT
+	if code != returncodes.OK {
+		return nil, util.GetFuseReturnCode(code)
 	}
 
 	stats := statInfo{}
@@ -73,8 +72,8 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	util.LogMessage("OpenDir called on : " + name)
 	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory)
-	if code == returncodes.ENOENT {
-		return nil, fuse.ENOENT
+	if code != returncodes.OK {
+		return nil, util.GetFuseReturnCode(code)
 	}
 	outputString := string(output)
 
@@ -107,8 +106,8 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (retfile nodefs.File, code fuse.Status) {
 	util.LogMessage("Create called on : " + name)
 	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name, strconv.Itoa(int(mode)))
-	if retcode == returncodes.ENOENT {
-		return nil, fuse.ENOENT
+	if retcode != returncodes.OK {
+		return nil, util.GetFuseReturnCode(retcode)
 	}
 	retfile = file.NewParanoidFile(name)
 	return retfile, fuse.OK
@@ -119,11 +118,7 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	util.LogMessage("Access called on : " + name)
 	if name != "" {
 		retcode, _ := pfsminterface.RunCommand(nil, "access", util.PfsDirectory, name, strconv.Itoa(int(mode)))
-		if retcode == returncodes.ENOENT {
-			return fuse.ENOENT
-		} else if retcode == returncodes.EACCES {
-			return fuse.EACCES
-		}
+		return util.GetFuseReturnCode(retcode)
 	}
 	return fuse.OK
 }
