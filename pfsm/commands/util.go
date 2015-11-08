@@ -3,6 +3,7 @@ package commands
 import (
 	"log"
 	"os"
+	"syscall"
 )
 
 //Check if a given file exists
@@ -11,6 +12,17 @@ func checkFileExists(filepath string) bool {
 		return false
 	}
 	return true
+}
+
+func getAccessMode(flags uint32) uint32 {
+	if flags == syscall.O_RDONLY {
+		return 4
+	} else if flags == syscall.O_WRONLY {
+		return 2
+	} else if flags == syscall.O_RDWR {
+		return 6
+	}
+	return 7
 }
 
 //verboseLog logs a message if the verbose command line flag was set.

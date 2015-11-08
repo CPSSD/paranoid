@@ -41,7 +41,7 @@ func UtimesCommand(args []string) {
 	checkErr("utimes", err)
 	fileName := string(fileNameBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", fileName), syscall.O_WRONLY)
+	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
