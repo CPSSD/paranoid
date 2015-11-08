@@ -139,6 +139,17 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	return fuse.OK
 }
 
+//Unlink is called when deleting a file
+func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Unlink callde on : " + name)
+	retCode, _ := pfsminterface.RunCommand(nil, "unlink", util.PfsDirectory, name)
+
+	if retCode == returncodes.ENOENT {
+		return fuse.ENOENT
+	}
+	return fuse.OK
+}
+
 //Truncate is called when a file is to be reduced in length to size.
 func (fs *ParanoidFileSystem) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Truncate called on : " + name)
