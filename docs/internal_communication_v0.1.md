@@ -15,11 +15,12 @@ PFSM will need to package this information in a JSON string and send it to PFSD 
 
 ```
 {
-    "args" : ["write", "file.txt", "0", "2"],
+    "command" : "write",
+    "args" : ["file.txt", "0", "2"],
     "data" : "hi" // base 64 encoded
 }
 ```
 
 Notice that the `pfsmInitDirectory` and `"-f"` arguments are left out. This is because other nodes will have a different pfsmInitDirectory and there is no need for `"-f"`
 
-Different messages may contain no `data` and it will just be `"data" : nil`.
+Different messages may contain no `data` and it will just be `"data" : null`.
