@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"github.com/hanwen/go-fuse/fuse"
 	"log"
 )
@@ -16,7 +17,7 @@ func LogMessage(message string) {
 	}
 }
 
-func GetFuseReturnCode(int retcode) {
+func GetFuseReturnCode(retcode int) fuse.Status {
 	switch retcode {
 	case returncodes.ENOENT:
 		return fuse.ENOENT
