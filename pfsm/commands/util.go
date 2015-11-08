@@ -15,14 +15,16 @@ func checkFileExists(filepath string) bool {
 }
 
 func getAccessMode(flags uint32) uint32 {
-	if flags == syscall.O_RDONLY {
+	switch flags {
+	case syscall.O_RDONLY:
 		return 4
-	} else if flags == syscall.O_WRONLY {
+	case syscall.O_WRONLY:
 		return 2
-	} else if flags == syscall.O_RDWR {
+	case syscall.O_RDWR:
 		return 6
+	default:
+		return 7
 	}
-	return 7
 }
 
 //verboseLog logs a message if the verbose command line flag was set.
