@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package discoverynetwork;
+
+service DiscoveryNetwork {
+  // Discovery Calls
+  rpc Join (JoinRequest) returns (JoinResponse) {}
+  rpc Disconnect (DisconnectRequest) returns (EmptyMessage) {}
+  rpc Renew (JoinRequest) returns (EmptyMessage) {}
+}
+
+message EmptyMessage {}
+message DisconnectRequest {
+  Node node = 1; // required
+}
+
+message JoinRequest {
+  string pool = 1; // required
+  Node node = 2; // required
+}
+
+message JoinResponse {
+  // The time after which the server will remove the node from the list
+  // if the node doesn't make the Renew RPC call
+  int32 resetInterval = 1; // required
+  repeated Node nodes = 2; // optional
+}
+
+message Node {
+  string ip = 1; // required
+  string port = 2; // required
+}
