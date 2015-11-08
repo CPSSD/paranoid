@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"syscall"
 )
 
 // UnlinkCommand removes a filename link from an inode.
