@@ -29,7 +29,7 @@ func main() {
 		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
 	}
 
-	lis, err := net.Listen("tcp", strconv.Itoa(port))
+	lis, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 	if err != nil {
 		log.Fatalf("FATAL: Failed to listen on port %d: %v.\n", port, err)
 	}
