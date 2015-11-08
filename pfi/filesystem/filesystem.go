@@ -128,20 +128,6 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	return fuse.OK
 }
 
-//Write content to the given file starting at off
-func (fs *ParanoidFileSystem) Write(name string, content []byte, off int64, context *fuse.Context) (uint32, fuse.Status) {
-	util.LogMessage("Write called on : " + name)
-	pfile := file.NewParanoidFile(name)
-	return pfile.Write(content, off)
-}
-
-//Read a given file starting at off.
-func (fs *ParanoidFileSystem) Read(name string, buf []byte, off int64, context *fuse.Context) (fuse.ReadResult, fuse.Status) {
-	util.LogMessage("Read called on : " + name)
-	pfile := file.NewParanoidFile(name)
-	return pfile.Read(buf, off)
-}
-
 //Truncate is called when a file is to be reduced in length to size.
 func (fs *ParanoidFileSystem) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Truncate called on : " + name)
