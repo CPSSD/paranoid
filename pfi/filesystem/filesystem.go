@@ -5,6 +5,7 @@ import (
 	"github.com/cpssd/paranoid/pfi/file"
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"log"
 	"strconv"
 	"strings"
@@ -27,6 +28,7 @@ type statInfo struct {
 	Ctime  time.Time `json:"ctime",omitempty`
 	Mtime  time.Time `json:"mtime",omitempty`
 	Atime  time.Time `json:"atime",omitempty`
+	Perms  int       `json:"perms",omitempty`
 }
 
 //GetAttr is called by fuse when the attributes of a
@@ -43,7 +45,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 	}
 
 	code, output := pfsminterface.RunCommand(nil, "stat", util.PfsDirectory, name)
-	if code == pfsminterface.ENOENT {
+	if code == returncodes.ENOENT {
 		util.LogMessage("stat file doesn't exist " + name)
 		return nil, fuse.ENOENT
 	}
@@ -59,7 +61,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		Atime: uint64(stats.Atime.Unix()),
 		Ctime: uint64(stats.Ctime.Unix()),
 		Mtime: uint64(stats.Mtime.Unix()),
-		Mode:  fuse.S_IFREG | 0644, // S_IFREG = regular file
+		Mode:  fuse.S_IFREG | uint32(stats.Perms), // S_IFREG = regular file
 	}
 
 	return &attr, fuse.OK
@@ -71,7 +73,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	util.LogMessage("OpenDir called on : " + name)
 	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory)
-	if code == pfsminterface.ENOENT {
+	if code == returncodes.ENOENT {
 		return nil, fuse.ENOENT
 	}
 	outputString := string(output)
@@ -105,7 +107,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (retfile nodefs.File, code fuse.Status) {
 	util.LogMessage("Create called on : " + name)
 	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name, strconv.Itoa(int(mode)))
-	if retcode == pfsminterface.ENOENT {
+	if retcode == returncodes.ENOENT {
 		return nil, fuse.ENOENT
 	}
 	retfile = file.NewParanoidFile(name)
@@ -117,9 +119,9 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	util.LogMessage("Access called on : " + name)
 	if name != "" {
 		retcode, _ := pfsminterface.RunCommand(nil, "access", util.PfsDirectory, name, strconv.Itoa(int(mode)))
-		if retcode == pfsminterface.ENOENT {
+		if retcode == returncodes.ENOENT {
 			return fuse.ENOENT
-		} else if retcode == pfsminterface.EACCES {
+		} else if retcode == returncodes.EACCES {
 			return fuse.EACCES
 		}
 	}
@@ -135,20 +137,6 @@ func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code f
 		return fuse.ENOENT
 	}
 	return fuse.OK
-}
-
-//Write content to the given file starting at off
-func (fs *ParanoidFileSystem) Write(name string, content []byte, off int64, context *fuse.Context) (uint32, fuse.Status) {
-	util.LogMessage("Write called on : " + name)
-	pfile := file.NewParanoidFile(name)
-	return pfile.Write(content, off)
-}
-
-//Read a given file starting at off.
-func (fs *ParanoidFileSystem) Read(name string, buf []byte, off int64, context *fuse.Context) (fuse.ReadResult, fuse.Status) {
-	util.LogMessage("Read called on : " + name)
-	pfile := file.NewParanoidFile(name)
-	return pfile.Read(buf, off)
 }
 
 //Truncate is called when a file is to be reduced in length to size.
