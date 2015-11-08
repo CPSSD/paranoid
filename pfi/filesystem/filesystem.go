@@ -133,7 +133,7 @@ func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code f
 	util.LogMessage("Unlink callde on : " + name)
 	retCode, _ := pfsminterface.RunCommand(nil, "unlink", util.PfsDirectory, name)
 
-	if retCode == pfsminterface.ENOENT {
+	if retCode == returncodes.ENOENT {
 		return fuse.ENOENT
 	}
 	return fuse.OK

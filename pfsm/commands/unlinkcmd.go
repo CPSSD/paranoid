@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -25,7 +26,7 @@ func UnlinkCommand(args []string) {
 
 	// checking if file exists
 	if !checkFileExists(fileNamePath) {
-		io.WriteString(os.Stdout, getReturnCode(ENOENT))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
@@ -71,5 +72,5 @@ func UnlinkCommand(args []string) {
 		checkErr("unlink", err)
 	}
 
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }
