@@ -129,7 +129,7 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 //Unlink is called when deleting a file
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Unlink callde on : " + name)
-	retCode, _ := pfsminterface.RunCommand(nil, "unlink", "-v", util.PfsDirectory, name)
+	retCode, _ := pfsminterface.RunCommand(nil, "unlink", util.PfsDirectory, name)
 
 	if retCode == pfsminterface.ENOENT {
 		return fuse.ENOENT
