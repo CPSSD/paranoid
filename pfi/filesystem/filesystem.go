@@ -127,11 +127,7 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Unlink callde on : " + name)
 	retCode, _ := pfsminterface.RunCommand(nil, "unlink", util.PfsDirectory, name)
-
-	if retCode == returncodes.ENOENT {
-		return fuse.ENOENT
-	}
-	return fuse.OK
+	return util.GetFuseReturnCode(retCode)
 }
 
 //Truncate is called when a file is to be reduced in length to size.

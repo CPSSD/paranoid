@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"syscall"
 )
 
 // UnlinkCommand removes a filename link from an inode.
@@ -35,6 +36,13 @@ func UnlinkCommand(args []string) {
 	inodeBytes, err := ioutil.ReadFile(fileNamePath)
 	checkErr("unlink", err)
 	inodeString := string(inodeBytes)
+
+	//checking if we have access to the file.
+	err = syscall.Access(path.Join(directory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
+	if err != nil {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
+		return
+	}
 
 	// removing filename
 	verboseLog("unlink : deleting file " + fileNamePath)
