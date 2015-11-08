@@ -10,7 +10,7 @@ import (
 )
 
 func (s *ParanoidServer) Link(ctx context.Context, req *pb.LinkRequest) (*pb.EmptyMessage, error) {
-	code, _, err := runCommand(nil, "link", req.OldPath, req.NewPath)
+	code, _, err := runCommand(nil, "link", ParanoidDir, req.OldPath, req.NewPath)
 	if err != nil {
 		log.Printf("ERROR: Could not link file %s to %s: %v.\n", req.OldPath, req.NewPath, err)
 		returnError := grpc.Errorf(codes.Internal, "could not link file %s to %s: %v",

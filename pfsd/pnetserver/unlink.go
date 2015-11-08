@@ -10,7 +10,7 @@ import (
 )
 
 func (s *ParanoidServer) Unlink(ctx context.Context, req *pb.UnlinkRequest) (*pb.EmptyMessage, error) {
-	code, _, err := runCommand(nil, "unlink", req.Path)
+	code, _, err := runCommand(nil, "unlink", ParanoidDir, req.Path)
 	if err != nil {
 		log.Printf("ERROR: Could not unlink file %s: %v.\n", req.Path, err)
 		returnError := grpc.Errorf(codes.Internal, "could not unlink file %s: %v", req.Path, err)
