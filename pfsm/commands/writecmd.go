@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"syscall"
 )
 
 //WriteCommand writes data from Stdin to the file given in args[1] in the pfs directory args[0]
@@ -20,20 +21,31 @@ func WriteCommand(args []string) {
 	}
 	directory := args[0]
 	verboseLog("write : given directory = " + directory)
+
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	checkErr("write", err)
 	fileName := string(fileNameBytes)
+
+	err = syscall.Access(path.Join(directory, "contents", fileName), syscall.O_WRONLY)
+	if err != nil {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
+		return
+	}
+
 	verboseLog("write : wrting to " + fileName)
 	fileData, err := ioutil.ReadAll(os.Stdin)
 	checkErr("write", err)
+
 	if len(args) == 2 {
 		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
 		checkErr("write", err)
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+
 		if !Flags.Network {
 			network.Write(directory, args[1], nil, nil, string(fileData))
 		}
@@ -42,6 +54,7 @@ func WriteCommand(args []string) {
 		checkErr("write", err)
 		offset, err := strconv.Atoi(args[2])
 		checkErr("write", err)
+
 		if len(args) == 3 {
 			err = contentsFile.Truncate(int64(offset))
 			checkErr("write", err)
@@ -55,9 +68,11 @@ func WriteCommand(args []string) {
 				fileData = append(fileData, emptyBytes...)
 			}
 		}
+
 		_, err = contentsFile.WriteAt(fileData, int64(offset))
 		checkErr("write", err)
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+
 		if len(args) == 3 {
 			if !Flags.Network {
 				network.Write(directory, args[1], &offset, nil, string(fileData))

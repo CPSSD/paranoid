@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"syscall"
 )
 
 //ReadCommand reads data from a file given as args[1] in pfs directory args[0] and prints it to Stdout
@@ -17,18 +18,29 @@ func ReadCommand(args []string) {
 	if len(args) < 2 {
 		log.Fatalln("Not enough arguments!")
 	}
+
 	directory := args[0]
 	verboseLog("read : given directory = " + directory)
+
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	checkErr("read", err)
 	fileName := string(fileNameBytes)
+
+	err = syscall.Access(path.Join(directory, "contents", fileName), syscall.O_RDONLY)
+	if err != nil {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
+		return
+	}
+
 	file, err := os.Open(path.Join(directory, "contents", fileName))
 	checkErr("read", err)
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+
 	if len(args) == 2 {
 		verboseLog("read : reading whole file")
 		bytesRead := make([]byte, 1024)
@@ -52,6 +64,7 @@ func ReadCommand(args []string) {
 		} else {
 			verboseLog("read : from " + args[2] + " to end of file")
 		}
+
 		off, err := strconv.Atoi(args[2])
 		checkErr("read", err)
 		offset := int64(off)
@@ -62,6 +75,7 @@ func ReadCommand(args []string) {
 				io.WriteString(os.Stdout, string(bytesRead))
 				break
 			}
+
 			maxRead = maxRead - n
 			if err == io.EOF {
 				io.WriteString(os.Stdout, string(bytesRead))
