@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -19,7 +20,7 @@ func AccessCommand(args []string) {
 	directory := args[0]
 	verboseLog("access : given directory = " + directory)
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
-		io.WriteString(os.Stdout, getReturnCode(ENOENT))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
@@ -29,8 +30,8 @@ func AccessCommand(args []string) {
 	checkErr("access", err)
 	err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))
 	if err != nil {
-		io.WriteString(os.Stdout, getReturnCode(EACCES))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
 	}
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -19,7 +20,7 @@ func ReadDirCommand(args []string) {
 	verboseLog("readdir : given directory = " + directory)
 	files, err := ioutil.ReadDir(path.Join(directory, "names"))
 	checkErr("readdir", err)
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	for i := 0; i < len(files); i++ {
 		fmt.Println(files[i].Name())
 	}

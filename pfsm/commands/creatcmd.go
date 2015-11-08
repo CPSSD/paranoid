@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"github.com/cpssd/paranoid/pfsm/network"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -46,7 +47,7 @@ func CreatCommand(args []string) {
 	checkErr("creat", err)
 	_, err = os.Create(path.Join(directory, "contents", uuid))
 	checkErr("creat", err)
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	if !Flags.Network {
 		network.Creat(directory, args[1])
 	}

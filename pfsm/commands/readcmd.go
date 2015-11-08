@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -19,7 +20,7 @@ func ReadCommand(args []string) {
 	directory := args[0]
 	verboseLog("read : given directory = " + directory)
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
-		io.WriteString(os.Stdout, getReturnCode(ENOENT))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
@@ -27,7 +28,7 @@ func ReadCommand(args []string) {
 	fileName := string(fileNameBytes)
 	file, err := os.Open(path.Join(directory, "contents", fileName))
 	checkErr("read", err)
-	io.WriteString(os.Stdout, getReturnCode(OK))
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	if len(args) == 2 {
 		verboseLog("read : reading whole file")
 		bytesRead := make([]byte, 1024)
