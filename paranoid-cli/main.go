@@ -12,7 +12,7 @@ func main() {
 	app.HelpName = "paranoid-cli"
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name:  "verbose, v",
+			Name:  "verbose",
 			Usage: "enable verbose loging",
 		},
 	}
