@@ -2,11 +2,11 @@ package commands
 
 import (
 	"github.com/codegangsta/cli"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 )
@@ -27,17 +27,17 @@ func Mount(c *cli.Context) {
 	}
 
 	directory := args[1]
-	files, err := ioutil.ReadDir(directory)
-	if err != nil {
-		log.Fatalln("FATAL :", err)
+	if _, err := os.Stat(path.Join(directory, "contents")); os.IsNotExist(err) {
+		log.Fatalln("FATAL : directory does not include contents directory")
 	}
-
-	if len(files) == 0 {
-		cmd := exec.Command("pfsm", "init", directory)
-		err = cmd.Run()
-		if err != nil {
-			log.Fatalln("FATAL : ", err)
-		}
+	if _, err := os.Stat(path.Join(directory, "meta")); os.IsNotExist(err) {
+		log.Fatalln("FATAL : directory does not include meta directory")
+	}
+	if _, err := os.Stat(path.Join(directory, "names")); os.IsNotExist(err) {
+		log.Fatalln("FATAL : directory does not include names directory")
+	}
+	if _, err := os.Stat(path.Join(directory, "inodes")); os.IsNotExist(err) {
+		log.Fatalln("FATAL : directory does not include inodes directory")
 	}
 
 	splits := strings.Split(serverAddress, ":")
