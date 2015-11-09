@@ -28,7 +28,7 @@ func RenameCommand(args []string) {
 
 	//Check if we have access to the file to be renamed
 	fileNameBytes, err := ioutil.ReadFile(oldFilePath)
-	checkErr("truncate", err)
+	checkErr("rename", err)
 	fileName := string(fileNameBytes)
 	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
