@@ -123,6 +123,17 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	return fuse.OK
 }
 
+//Rename is called when renaming a file
+func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Rename called on : " + oldName + " to be renamed to " + newName)
+	retcode, _ := pfsminterface.RunCommand(nil, "rename", util.PfsDirectory, oldName, newName)
+
+	if retcode == returncodes.ENOENT {
+		return fuse.ENOENT
+	}
+	return fuse.OK
+}
+
 //Unlink is called when deleting a file
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Unlink callde on : " + name)
