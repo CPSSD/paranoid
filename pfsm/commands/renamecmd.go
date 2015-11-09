@@ -3,9 +3,11 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
+	"syscall"
 )
 
 // RenameCommand is called when renaming a file
@@ -24,7 +26,17 @@ func RenameCommand(args []string) {
 		return
 	}
 
-	err := os.Rename(oldFilePath, newFilePath)
+	//Check if we have access to the file to be renamed
+	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
+	checkErr("truncate", err)
+	fileName := string(fileNameBytes)
+	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
+	if err != nil {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
+		return
+	}
+
+	err = os.Rename(oldFilePath, newFilePath)
 	checkErr("rename", err)
 
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
