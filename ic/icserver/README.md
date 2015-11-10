@@ -17,7 +17,7 @@ To get messages from the server as they come in attach a listener to the `icserv
 ```
 for {
     select {
-        case newMessage <- icserver.MessageChan
+        case newMessage := <- icserver.MessageChan :
             // do something with newMessage
     }
 }
