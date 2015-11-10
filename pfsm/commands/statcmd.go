@@ -13,11 +13,11 @@ import (
 )
 
 type statInfo struct {
-	Length int64     `json:"length",omitempty`
-	Ctime  time.Time `json:"ctime",omitempty`
-	Mtime  time.Time `json:"mtime",omitempty`
-	Atime  time.Time `json:"atime",omitempty`
-	Perms  int       `json:"perms",omitempty`
+	Length int64       `json:"length",omitempty`
+	Ctime  time.Time   `json:"ctime",omitempty`
+	Mtime  time.Time   `json:"mtime",omitempty`
+	Atime  time.Time   `json:"atime",omitempty`
+	Perms  os.FileMode `json:"perms",omitempty`
 }
 
 //StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
@@ -48,7 +48,7 @@ func StatCommand(args []string) {
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
 		Atime:  atime,
-		Perms:  int(fi.Mode().Perm())}
+		Perms:  fi.Mode().Perm()}
 
 	jsonData, err := json.Marshal(statData)
 	checkErr("stat", err)
