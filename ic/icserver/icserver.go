@@ -57,16 +57,16 @@ func handleConnection(conn net.Conn) {
 func RunServer(verboseLogging bool) {
 	verbose = verboseLogging
 
-	sockFIlePath := "/tmp/pfic.sock"
-	listener, err := net.Listen("unix", sockFIlePath)
+	sockFilePath := "/tmp/pfic.sock"
+	listener, err := net.Listen("unix", sockFilePath)
 	if err != nil {
 		log.Fatalln("ic listen error: ", err)
 	}
 
-	defer os.Remove(sockFIlePath)
+	defer os.Remove(sockFilePath)
 	defer verboseLog("icserver no longer listening")
 
-	verboseLog("icserver listening on " + sockFIlePath)
+	verboseLog("icserver listening on " + sockFilePath)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
