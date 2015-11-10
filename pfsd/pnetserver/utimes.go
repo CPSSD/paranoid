@@ -26,8 +26,8 @@ func (s *ParanoidServer) Utimes(ctx context.Context, req *pb.UtimesRequest) (*pb
 	}
 	code, _, err := runCommand(data, "utimes", ParanoidDir, req.Path)
 	if err != nil {
-		log.Printf("ERROR: Could not truncate file %s: %v.\n", req.Path, err)
-		returnError := grpc.Errorf(codes.Internal, "could not truncate file %s: %v",
+		log.Printf("ERROR: Could not modify times of file %s: %v.\n", req.Path, err)
+		returnError := grpc.Errorf(codes.Internal, "could not modify times of file %s: %v",
 			req.Path, err)
 		return &pb.EmptyMessage{}, returnError
 	}
