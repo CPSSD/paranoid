@@ -1,7 +1,6 @@
 package pnetserver
 
 import (
-	"github.com/cpssd/paranoid/pfsm/returncodes"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -17,20 +16,7 @@ func (s *ParanoidServer) Unlink(ctx context.Context, req *pb.UnlinkRequest) (*pb
 		return &pb.EmptyMessage{}, returnError
 	}
 
-	switch code {
-	case returncodes.EACCES:
-		log.Printf("INFO: Do not have permission to edit %s.\n", req.Path)
-		returnError := grpc.Errorf(codes.PermissionDenied,
-			"do not have permission to edit %s",
-			req.Path)
-		return &pb.EmptyMessage{}, returnError
-	case returncodes.ENOENT:
-		log.Printf("INFO: File %s does not exist.\n", req.Path)
-		returnError := grpc.Errorf(codes.NotFound,
-			"file %s does not exist",
-			req.Path)
-		return &pb.EmptyMessage{}, returnError
-	}
-
-	return &pb.EmptyMessage{}, nil
+	returnError := convertCodeToError(code, req.Path)
+	// If returnError is nil here, it's equivalent to returning OK
+	return &pb.EmptyMessage{}, returnError
 }

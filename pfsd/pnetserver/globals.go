@@ -4,6 +4,9 @@ package pnetserver
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"log"
 	"os"
 	"os/exec"
@@ -51,4 +54,22 @@ func runCommand(stdinData []byte, cmdArgs ...string) (int, []byte, error) {
 		return -1, nil, fmt.Errorf("PFSM returned invalid code:", err)
 	}
 	return code, output[2:], nil
+}
+
+func convertCodeToError(code int, path string) error {
+	switch code {
+	case returncodes.EACCES:
+		log.Printf("INFO: Do not have permission to edit %s.\n", path)
+		returnError := grpc.Errorf(codes.PermissionDenied,
+			"do not have permission to edit %s",
+			path)
+		return returnError
+	case returncodes.ENOENT:
+		log.Printf("INFO: File %s does not exist.\n", path)
+		returnError := grpc.Errorf(codes.NotFound,
+			"file %s does not exist",
+			path)
+		return returnError
+	}
+	return nil
 }
