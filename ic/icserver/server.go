@@ -1,19 +1,54 @@
 package icserver
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"log"
 	"net"
 	"os"
 )
 
+// MessageChan is the channel to which incoming messages will be passed
+// Attach a listener to this channel to receive messages
+var MessageChan = make(chan FileSystemMessage)
 var verbose = false
+
+// FileSystemMessage is the structure which represents messages coming from the client
+type FileSystemMessage struct {
+	Command    string   `json:"command"`
+	Args       []string `json:"args"`
+	Base64Data string   `json:"data"`
+	Data       []byte
+}
 
 // handleConnection accepts a connection and handles messages received through the connection
 func handleConnection(conn net.Conn) {
 	verboseLog("icserver new connection")
 	defer verboseLog("icserver connection lost")
 	for {
+		buffer := make([]byte, 1024)
+		mSize, err := conn.Read(buffer)
+		if err != nil {
+			log.Fatalln("icserver message read eror: ", err)
+		}
+		data := buffer[0:mSize]
+		verboseLog("icserver new message:\n" + string(data))
 
+		message := &FileSystemMessage{}
+		err = json.Unmarshal(data, message)
+		if err != nil {
+			log.Fatalln("icserver json unmarshal error: ", err)
+		}
+
+		if len(message.Base64Data) != 0 {
+			message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
+			if err != nil {
+				log.Fatalln("icserver base64 decoding error: ", err)
+			}
+		}
+
+		MessageChan <- *message
+		verboseLog("icserver new message pushed to channel: " + message.Command)
 	}
 }
 
