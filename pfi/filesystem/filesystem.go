@@ -7,6 +7,7 @@ import (
 	"github.com/cpssd/paranoid/pfi/util"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -24,11 +25,11 @@ type ParanoidFileSystem struct {
 
 //The structure for processing information returned by a pfs stat command
 type statInfo struct {
-	Length int64     `json:"length",omitempty`
-	Ctime  time.Time `json:"ctime",omitempty`
-	Mtime  time.Time `json:"mtime",omitempty`
-	Atime  time.Time `json:"atime",omitempty`
-	Perms  int       `json:"perms",omitempty`
+	Length int64       `json:"length",omitempty`
+	Ctime  time.Time   `json:"ctime",omitempty`
+	Mtime  time.Time   `json:"mtime",omitempty`
+	Atime  time.Time   `json:"atime",omitempty`
+	Perms  os.FileMode `json:"perms",omitempty`
 }
 
 //GetAttr is called by fuse when the attributes of a
@@ -105,7 +106,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (retfile nodefs.File, code fuse.Status) {
 	util.LogMessage("Create called on : " + name)
-	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name, strconv.Itoa(int(mode)))
+	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name, strconv.FormatInt(int64(mode), 8))
 	if retcode != returncodes.OK {
 		return nil, util.GetFuseReturnCode(retcode)
 	}
