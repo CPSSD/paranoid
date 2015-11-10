@@ -93,6 +93,9 @@ func doReadDirCommand(t *testing.T) (int, []string) {
 func doStatCommand(t *testing.T, file string) (int, statInfo) {
 	code, data := RunCommand(t, nil, "stat", path.Join(os.TempDir(), "paranoidTest"), file)
 	stats := statInfo{}
+	if code != returncodes.OK {
+		return code, stats
+	}
 	err := json.Unmarshal([]byte(data), &stats)
 	if err != nil {
 		t.Error("Error parsing stat data = ", data)
@@ -202,5 +205,29 @@ func TestFilePermissionsCommands(t *testing.T) {
 	code = doWriteCommand(t, "test.txt", "helloWorld", -1, -1)
 	if code != returncodes.EACCES {
 		t.Error("Should not be able to write file ", statIn.Perms)
+	}
+}
+
+func TestENOENT(t *testing.T) {
+	Flags.Network = true
+	createTestDir(t)
+	defer removeTestDir()
+
+	args := []string{path.Join(os.TempDir(), "paranoidTest")}
+	InitCommand(args)
+
+	code, _ := doReadCommand(t, "test.txt", -1, -1)
+	if code != returncodes.ENOENT {
+		t.Error("Read command got incorrect code")
+	}
+
+	code, _ = doStatCommand(t, "test.txt")
+	if code != returncodes.ENOENT {
+		t.Error("Stat command got incorrect code")
+	}
+
+	code = doWriteCommand(t, "test.txt", "data", -1, -1)
+	if code != returncodes.ENOENT {
+		t.Error("Write command got incorrect code")
 	}
 }
