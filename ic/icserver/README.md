@@ -9,7 +9,7 @@ import "github.com/cpssd/paranoid/ic/icserver"
 please start the server in another gorutine.
 if you want the server to use verbose logging specify true as a parameter to `icserver.RunServer`
 ```
-icserver.RunServer(true)
+go icserver.RunServer(true)
 ```
 
 ## Listening for messages
