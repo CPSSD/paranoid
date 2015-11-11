@@ -36,7 +36,6 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 	}
 
 	nodes := getNodes(req.Pool)
-
 	response := pb.JoinResponse{RenewInterval.Nanoseconds() * 1000 * 1000, nodes}
 
 	if check == 1 {
