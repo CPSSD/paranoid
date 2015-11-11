@@ -34,9 +34,9 @@ func CreatCommand(args []string) {
 	checkErr("creat", err)
 	uuid := strings.TrimSpace(string(uuidbytes))
 	verboseLog("creat : uuid = " + uuid)
-	perms, err := strconv.Atoi(args[2])
+	perms, err := strconv.ParseInt(args[2], 8, 32)
 	checkErr("creat", err)
-	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), os.FileMode(perms))
+	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), 0777)
 	checkErr("creat", err)
 	nodeData := &inode{
 		Inode: uuid,
@@ -45,7 +45,8 @@ func CreatCommand(args []string) {
 	checkErr("creat", err)
 	err = ioutil.WriteFile(path.Join(directory, "inodes", uuid), jsonData, 0777)
 	checkErr("creat", err)
-	_, err = os.Create(path.Join(directory, "contents", uuid))
+	contentsFile, err := os.Create(path.Join(directory, "contents", uuid))
+	contentsFile.Chmod(os.FileMode(perms))
 	checkErr("creat", err)
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	if !Flags.Network {
