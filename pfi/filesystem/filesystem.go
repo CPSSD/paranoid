@@ -85,6 +85,7 @@ func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fus
 	}
 
 	fileNames := strings.Split(outputString, "\n")
+	fileNames = fileNames[:len(fileNames)-1]
 	dirEntries := make([]fuse.DirEntry, len(fileNames))
 
 	for i, dirName := range fileNames {

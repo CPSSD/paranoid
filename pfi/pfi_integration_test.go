@@ -221,3 +221,68 @@ func TestFuseFileOperations(t *testing.T) {
 		t.Error("Data read from file is not correct. Actual : ", data)
 	}
 }
+
+func TestFuseFileSystemOperations(t *testing.T) {
+	createTestDir(t, "pfiTestPfsDir")
+	defer removeTestDir("pfiTestPfsDir")
+	createTestDir(t, "pfiTestMountPoint")
+	defer removeTestDir("pfiTestMountPoint")
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	pfsminterface.OriginFlag = "-n"
+
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	pfs := &filesystem.ParanoidFileSystem{
+		FileSystem: pathfs.NewDefaultFileSystem(),
+	}
+
+	_, code := pfs.Create("file1", 0, uint32(os.FileMode(0777)), nil)
+	if code != fuse.OK {
+		t.Error("Failed to create new file, error : ", code)
+	}
+
+	dirEntries, code := pfs.OpenDir("", nil)
+	if code != fuse.OK {
+		t.Error("Could not open directory, error : ", code)
+	}
+	if len(dirEntries) != 1 {
+		t.Error("Incorrect number of files in directory : ", dirEntries)
+	}
+	if dirEntries[0].Name != "file1" {
+		t.Error("Incorrect file name recieved : ", dirEntries[0].Name)
+	}
+
+	code = pfs.Rename("file1", "file2", nil)
+	if code != fuse.OK {
+		t.Error("Failed to rename file, error : ", code)
+	}
+
+	dirEntries, code = pfs.OpenDir("", nil)
+	if code != fuse.OK {
+		t.Error("Could not open directory, error : ", code)
+	}
+	if len(dirEntries) != 1 {
+		t.Error("Incorrect number of files in directory : ", len(dirEntries))
+	}
+	if dirEntries[0].Name != "file2" {
+		t.Error("Incorrect file name recieved : ", dirEntries[0].Name)
+	}
+
+	code = pfs.Unlink("file2", nil)
+	if code != fuse.OK {
+		t.Error("Failed to unlink file, error : ", code)
+	}
+
+	dirEntries, code = pfs.OpenDir("", nil)
+	if code != fuse.OK {
+		t.Error("Could not open directory, error : ", code)
+	}
+	if len(dirEntries) != 0 {
+		t.Error("Incorrect number of files in directory : ", len(dirEntries))
+	}
+}
