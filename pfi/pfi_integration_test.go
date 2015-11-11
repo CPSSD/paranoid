@@ -158,3 +158,66 @@ func TestFuseFilePerms(t *testing.T) {
 		t.Error("Should not be able to access file error :", canAccess)
 	}
 }
+
+func TestFuseFileOperations(t *testing.T) {
+	createTestDir(t, "pfiTestPfsDir")
+	defer removeTestDir("pfiTestPfsDir")
+	createTestDir(t, "pfiTestMountPoint")
+	defer removeTestDir("pfiTestMountPoint")
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	pfsminterface.OriginFlag = "-n"
+
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	pfs := &filesystem.ParanoidFileSystem{
+		FileSystem: pathfs.NewDefaultFileSystem(),
+	}
+
+	file, code := pfs.Create("helloworld.txt", 0, uint32(os.FileMode(0777)), nil)
+	if code != fuse.OK {
+		t.Error("Failed to create file error : ", code)
+	}
+
+	_, code = file.Write([]byte("TEST"), 0)
+	if code != fuse.OK {
+		t.Error("Failed to write to file error : ", code)
+	}
+
+	buf := make([]byte, 4)
+	readRes, code := file.Read(buf, 0)
+	if code != fuse.OK {
+		t.Error("Failed to read file error : ", code)
+	}
+	data, code := readRes.Bytes(buf)
+	if code != fuse.OK {
+		t.Error("Failed to read file error : ", code)
+	}
+
+	if string(data) != "TEST" {
+		t.Error("Data read from file is not correct. Actual : ", data)
+	}
+
+	code = file.Truncate(2)
+	if code != fuse.OK {
+		t.Error("Failed to truncate file error : ", code)
+	}
+
+	buf = make([]byte, 2)
+	readRes, code = file.Read(buf, 0)
+	if code != fuse.OK {
+		t.Error("Failed to read file error : ", code)
+	}
+	data, code = readRes.Bytes(buf)
+	if code != fuse.OK {
+		t.Error("Failed to read file error : ", code)
+	}
+
+	if string(data) != "TE" {
+		t.Error("Data read from file is not correct. Actual : ", data)
+	}
+}
