@@ -17,26 +17,26 @@ type fileSystemMessage struct {
 
 // SendMessage sends a message to the server
 func SendMessage(pfsDirectory string, command string, arguments []string) {
-	message := &fileSystemMessage{
+	message := fileSystemMessage{
 		Command: command,
 		Args:    arguments,
 		Data:    "",
 	}
 
-	dialAndSend(pfsDirectory, *message)
+	dialAndSend(pfsDirectory, message)
 }
 
 // SendMessageWithData sends a message with data to the server
 func SendMessageWithData(pfsDirectory string, command string, arguments []string, data []byte) {
 	base64Data := base64.StdEncoding.EncodeToString(data)
 
-	message := &fileSystemMessage{
+	message := fileSystemMessage{
 		Command: command,
 		Args:    arguments,
 		Data:    base64Data,
 	}
 
-	dialAndSend(pfsDirectory, *message)
+	dialAndSend(pfsDirectory, message)
 }
 
 // dialAndSend dials the server and sends a message

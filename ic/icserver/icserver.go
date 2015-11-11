@@ -36,7 +36,7 @@ func handleConnection(conn net.Conn) {
 		data := buffer[0:mSize]
 		verboseLog("icserver new message:\n" + string(data))
 
-		message := &FileSystemMessage{}
+		message := FileSystemMessage{}
 		err = json.Unmarshal(data, message)
 		if err != nil {
 			log.Fatalln("icserver json unmarshal error: ", err)
@@ -49,7 +49,7 @@ func handleConnection(conn net.Conn) {
 			}
 		}
 
-		MessageChan <- *message
+		MessageChan <- message
 		verboseLog("icserver new message pushed to channel: " + message.Command)
 	}
 }
@@ -58,7 +58,7 @@ func handleConnection(conn net.Conn) {
 // give a true parameter for verbose logging
 func RunServer(pfsDirectory string, verboseLogging bool) {
 	sockFilePath := path.Join(pfsDirectory, "meta", "pfic.sock")
-	deleteSockFIle(sockFilePath)
+	deleteSockFile(sockFilePath)
 	verbose = verboseLogging
 
 	listener, err := net.Listen("unix", sockFilePath)
@@ -82,7 +82,7 @@ func RunServer(pfsDirectory string, verboseLogging bool) {
 
 // deleteSockFIle deletes the .sock file if it already exists.
 // if one exists already the server cannot start
-func deleteSockFIle(filepath string) {
+func deleteSockFile(filepath string) {
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		return
 	}
