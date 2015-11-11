@@ -11,18 +11,23 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"time"
 )
 
 func main() {
 	var port int
 	var logDir string
-	var renewInterval int64
+	var renewInterval int
 
 	flag.IntVar(&port, "-port", 10101, "Server Port")
 	flag.StringVar(&logDir, "-log-directory", "/var/log", "Log Directory")
-	flag.Int64Var(&renewInterval, "-renew-interval", 5*60*1000, "Time after membership expires, in ms")
+	flag.IntVar(&renewInterval, "-renew-interval", 5*60*1000, "Time after membership expires, in ms")
 
 	flag.Parse()
+
+	renewDuration, _ := time.ParseDuration(strconv.Itoa(renewInterval) + "ms")
+
+	dnetserver.RenewInterval = renewDuration
 
 	if port < 1 || port > 65535 {
 		fmt.Println("FATAL: port must be a number between 1 and 65535, inclusive.")
@@ -56,4 +61,16 @@ func main() {
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})
 	srv.Serve(lis)
 	log.Println("[I] gRPC server created")
+
+	go removeLoop()
+}
+
+// Mark the nodes as inactive if their time expires
+func removeLoop() {
+	for {
+		now := time.Now()
+		for i, node := range dnetserver.Nodes {
+			dnetserver.Nodes[i].Active = node.ExpiryTime.Sub(now) < 0
+		}
+	}
 }
