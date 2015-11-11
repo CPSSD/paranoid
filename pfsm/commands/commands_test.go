@@ -132,11 +132,11 @@ func TestSimpleCommandUsage(t *testing.T) {
 	CreatCommand(args)
 	code := doWriteCommand(t, "test.txt", "BLAH #1", -1, -1)
 	if code != returncodes.OK {
-		t.Error("Write did not return OK")
+		t.Error("Write did not return OK ", code)
 	}
 	code, returnData := doReadCommand(t, "test.txt", -1, -1)
 	if code != returncodes.OK {
-		t.Error("Read did not return OK")
+		t.Error("Read did not return OK ", code)
 	}
 	if returnData != "BLAH #1" {
 		t.Error("Output does not match ", returnData)
@@ -157,25 +157,25 @@ func TestComplexCommandUsage(t *testing.T) {
 	}
 	code, returnData := doReadCommand(t, "test.txt", 2, 2)
 	if code != returncodes.OK {
-		t.Error("Read did not return OK")
+		t.Error("Read did not return OK ", code)
 	}
 	if returnData != "AR" {
-		t.Error("Output from partial read does not match")
+		t.Error("Output from partial read does not match ", returnData)
 	}
 	code = doWriteCommand(t, "test.txt", "END", 5, -1)
 	if code != returncodes.OK {
-		t.Error("Read did not return OK")
+		t.Error("Read did not return OK ", code)
 	}
 	code, returnData = doReadCommand(t, "test.txt", -1, -1)
 	if code != returncodes.OK {
-		t.Error("Read did not return OK")
+		t.Error("Read did not return OK ", code)
 	}
 	if returnData != "STARTEND" {
 		t.Error("Output from full read does not match")
 	}
 	code, files := doReadDirCommand(t)
 	if code != returncodes.OK {
-		t.Error("Read did not return OK")
+		t.Error("Read did not return OK ", code)
 	}
 	if files[0] != "test.txt" || len(files) > 1 {
 		t.Error("Readdir got incorrect result")
@@ -193,7 +193,7 @@ func TestFilePermissionsCommands(t *testing.T) {
 
 	code, statIn := doStatCommand(t, "test.txt")
 	if code != returncodes.OK {
-		t.Error("Stat did not return OK")
+		t.Error("Stat did not return OK ", code)
 	}
 	if statIn.Perms != 0777 {
 		t.Error("Incorrect file permissions = ", statIn.Perms)
@@ -204,7 +204,7 @@ func TestFilePermissionsCommands(t *testing.T) {
 
 	code, statIn = doStatCommand(t, "test.txt")
 	if code != returncodes.OK {
-		t.Error("Stat did not return OK")
+		t.Error("Stat did not return OK ", code)
 	}
 	if statIn.Perms != 0377 {
 		t.Error("Incorrect file permissions = ", statIn.Perms)
@@ -215,7 +215,7 @@ func TestFilePermissionsCommands(t *testing.T) {
 
 	code, statIn = doStatCommand(t, "test.txt")
 	if code != returncodes.OK {
-		t.Error("Stat did not return OK")
+		t.Error("Stat did not return OK ", code)
 	}
 	if statIn.Perms != 0500 {
 		t.Error("Incorrect file permissions = ", statIn.Perms)
@@ -228,11 +228,11 @@ func TestFilePermissionsCommands(t *testing.T) {
 
 	code = doAccessCommand(t, "test.txt", 4)
 	if code != returncodes.OK {
-		t.Error("Access command returned wrong code")
+		t.Error("Access command returned wrong code ", code)
 	}
 	code = doAccessCommand(t, "test.txt", 2)
 	if code != returncodes.EACCES {
-		t.Error("Access command returned wrong code")
+		t.Error("Access command returned wrong code ", code)
 	}
 }
 
@@ -246,17 +246,17 @@ func TestENOENT(t *testing.T) {
 
 	code, _ := doReadCommand(t, "test.txt", -1, -1)
 	if code != returncodes.ENOENT {
-		t.Error("Read command got incorrect code")
+		t.Error("Read command got incorrect code ", code)
 	}
 
 	code, _ = doStatCommand(t, "test.txt")
 	if code != returncodes.ENOENT {
-		t.Error("Stat command got incorrect code")
+		t.Error("Stat command got incorrect code ", code)
 	}
 
 	code = doWriteCommand(t, "test.txt", "data", -1, -1)
 	if code != returncodes.ENOENT {
-		t.Error("Write command got incorrect code")
+		t.Error("Write command got incorrect code ", code)
 	}
 }
 
@@ -272,7 +272,7 @@ func TestFilesystemCommands(t *testing.T) {
 
 	code, files := doReadDirCommand(t)
 	if code != returncodes.OK {
-		t.Error("Readdir did not return OK")
+		t.Error("Readdir did not return OK ", code)
 	}
 	if files[0] != "test.txt" || len(files) > 1 {
 		t.Error("Readdir got incorrect result")
@@ -283,7 +283,7 @@ func TestFilesystemCommands(t *testing.T) {
 
 	code, files = doReadDirCommand(t)
 	if code != returncodes.OK {
-		t.Error("Readdir did not return OK")
+		t.Error("Readdir did not return OK ", code)
 	}
 	if files[0] != "test2.txt" || len(files) > 1 {
 		t.Error("Readdir got incorrect result")
@@ -294,7 +294,7 @@ func TestFilesystemCommands(t *testing.T) {
 
 	code, files = doReadDirCommand(t)
 	if code != returncodes.OK {
-		t.Error("Readdir did not return OK")
+		t.Error("Readdir did not return OK ", code)
 	}
 	if len(files) > 0 {
 		t.Error("Readdir got incorrect result")
@@ -317,7 +317,7 @@ func TestUtimes(t *testing.T) {
 
 	code, statIn := doStatCommand(t, "test.txt")
 	if code != returncodes.OK {
-		t.Error("Stat did not return OK")
+		t.Error("Stat did not return OK ", code)
 	}
 	if statIn.Atime != time.Unix(100, 100) {
 		t.Error("Incorrect stat time", statIn.Atime)
@@ -347,9 +347,9 @@ func TestTruncate(t *testing.T) {
 
 	code, data := doReadCommand(t, "test.txt", -1, -1)
 	if code != returncodes.OK {
-		t.Error("Read command did not return OK")
+		t.Error("Read command did not return OK ", code)
 	}
 	if data != "HI!" {
-		t.Error("Read command returned incorrect output")
+		t.Error("Read command returned incorrect output ", data)
 	}
 }
