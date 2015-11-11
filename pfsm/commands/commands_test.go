@@ -312,3 +312,30 @@ func TestUtimes(t *testing.T) {
 		t.Error("Incorrect stat time", statIn.Atime)
 	}
 }
+
+func TestTruncate(t *testing.T) {
+	Flags.Network = true
+	createTestDir(t)
+	defer removeTestDir()
+
+	args := []string{path.Join(os.TempDir(), "paranoidTest")}
+	InitCommand(args)
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "777"}
+	CreatCommand(args)
+
+	code := doWriteCommand(t, "test.txt", "HI!!!!!", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Write command failed!")
+	}
+
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "3"}
+	TruncateCommand(args)
+
+	code, data := doReadCommand(t, "test.txt", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Read command did not return OK")
+	}
+	if data != "HI!" {
+		t.Error("Read command returned incorrect output")
+	}
+}
