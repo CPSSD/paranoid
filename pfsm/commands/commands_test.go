@@ -231,3 +231,44 @@ func TestENOENT(t *testing.T) {
 		t.Error("Write command got incorrect code")
 	}
 }
+
+func TestFilesystemCommands(t *testing.T) {
+	Flags.Network = true
+	createTestDir(t)
+	defer removeTestDir()
+
+	args := []string{path.Join(os.TempDir(), "paranoidTest")}
+	InitCommand(args)
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "777"}
+	CreatCommand(args)
+
+	code, files := doReadDirCommand(t)
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK")
+	}
+	if files[0] != "test.txt" || len(files) > 1 {
+		t.Error("Readdir got incorrect result")
+	}
+
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "test2.txt"}
+	RenameCommand(args)
+
+	code, files = doReadDirCommand(t)
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK")
+	}
+	if files[0] != "test2.txt" || len(files) > 1 {
+		t.Error("Readdir got incorrect result")
+	}
+
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test2.txt"}
+	UnlinkCommand(args)
+
+	code, files = doReadDirCommand(t)
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK")
+	}
+	if len(files) > 0 {
+		t.Error("Readdir got incorrect result")
+	}
+}
