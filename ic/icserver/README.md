@@ -26,3 +26,20 @@ for {
     }
 }
 ```
+
+## Interpreting messages
+Messages received are of type `icserver.FileSystemMessage` struct.
+
+The structure is outlined below
+```
+for {
+    select {
+        case newMessage := <- icserver.MessageChan :
+            commandType :=  message.Command     // "wrte", "rename" etc...
+            args :=         message.Args        // array of strings representing arguments
+            data :=         message.Data        // array of bytes representing data.
+            base64Data :=   message.Base46Data  // base64 string representation of the data
+    }
+}
+```
+For more detail look at `/ic/icserver/icserver.go`
