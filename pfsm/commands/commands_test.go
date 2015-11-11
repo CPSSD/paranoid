@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func createTestDir(t *testing.T) {
@@ -28,7 +29,7 @@ func removeTestDir() {
 	os.RemoveAll(path.Join(os.TempDir(), "paranoidTest"))
 }
 
-func RunCommand(t *testing.T, stdinData []byte, cmdArgs ...string) (int, string) {
+func runCommand(t *testing.T, stdinData []byte, cmdArgs ...string) (int, string) {
 	cmdArgs = append(cmdArgs, "-n")
 	command := exec.Command("pfsm", cmdArgs...)
 	command.Stderr = os.Stderr
@@ -62,36 +63,36 @@ func RunCommand(t *testing.T, stdinData []byte, cmdArgs ...string) (int, string)
 func doWriteCommand(t *testing.T, file, data string, offset, length int) int {
 	if offset != -1 {
 		if length != -1 {
-			code, _ := RunCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset), strconv.Itoa(length))
+			code, _ := runCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset), strconv.Itoa(length))
 			return code
 		} else {
-			code, _ := RunCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
+			code, _ := runCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
 			return code
 		}
 	}
-	code, _ := RunCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file)
+	code, _ := runCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file)
 	return code
 }
 
 func doReadCommand(t *testing.T, file string, offset, length int) (int, string) {
 	if offset != -1 {
 		if length != -1 {
-			return RunCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset), strconv.Itoa(length))
+			return runCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset), strconv.Itoa(length))
 		} else {
-			return RunCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
+			return runCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
 		}
 	}
-	return RunCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file)
+	return runCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file)
 }
 
 func doReadDirCommand(t *testing.T) (int, []string) {
-	code, data := RunCommand(t, nil, "readdir", path.Join(os.TempDir(), "paranoidTest"))
+	code, data := runCommand(t, nil, "readdir", path.Join(os.TempDir(), "paranoidTest"))
 	anwser := strings.Split(data, "\n")
 	return code, anwser[0 : len(anwser)-1]
 }
 
 func doStatCommand(t *testing.T, file string) (int, statInfo) {
-	code, data := RunCommand(t, nil, "stat", path.Join(os.TempDir(), "paranoidTest"), file)
+	code, data := runCommand(t, nil, "stat", path.Join(os.TempDir(), "paranoidTest"), file)
 	stats := statInfo{}
 	if code != returncodes.OK {
 		return code, stats
@@ -101,6 +102,19 @@ func doStatCommand(t *testing.T, file string) (int, statInfo) {
 		t.Error("Error parsing stat data = ", data)
 	}
 	return code, stats
+}
+
+func doUtimesCommand(t *testing.T, file string, atime, mtime *time.Time) int {
+	timeStuct := &timeInfo{
+		Atime: atime,
+		Mtime: mtime,
+	}
+	data, err := json.Marshal(timeStuct)
+	if err != nil {
+		t.Error("Error marshalling utimes data", err)
+	}
+	code, _ := runCommand(t, data, "utimes", path.Join(os.TempDir(), "paranoidTest"), file)
+	return code
 }
 
 func TestSimpleCommandUsage(t *testing.T) {
@@ -270,5 +284,31 @@ func TestFilesystemCommands(t *testing.T) {
 	}
 	if len(files) > 0 {
 		t.Error("Readdir got incorrect result")
+	}
+}
+
+func TestUtimes(t *testing.T) {
+	Flags.Network = true
+	createTestDir(t)
+	defer removeTestDir()
+
+	args := []string{path.Join(os.TempDir(), "paranoidTest")}
+	InitCommand(args)
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "777"}
+	CreatCommand(args)
+
+	atime := time.Unix(100, 100)
+	mtime := time.Unix(500, 250)
+	code := doUtimesCommand(t, "test.txt", &atime, &mtime)
+
+	code, statIn := doStatCommand(t, "test.txt")
+	if code != returncodes.OK {
+		t.Error("Stat did not return OK")
+	}
+	if statIn.Atime != time.Unix(100, 100) {
+		t.Error("Incorrect stat time", statIn.Atime)
+	}
+	if statIn.Mtime != time.Unix(500, 250) {
+		t.Error("Incorrect stat time", statIn.Atime)
 	}
 }
