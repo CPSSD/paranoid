@@ -117,6 +117,11 @@ func doUtimesCommand(t *testing.T, file string, atime, mtime *time.Time) int {
 	return code
 }
 
+func doAccessCommand(t *testing.T, file string, mode int) int {
+	code, _ := runCommand(t, nil, "access", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(mode))
+	return code
+}
+
 func TestSimpleCommandUsage(t *testing.T) {
 	Flags.Network = true // so that the tests don't try to make a network connection
 	createTestDir(t)
@@ -219,6 +224,15 @@ func TestFilePermissionsCommands(t *testing.T) {
 	code = doWriteCommand(t, "test.txt", "helloWorld", -1, -1)
 	if code != returncodes.EACCES {
 		t.Error("Should not be able to write file ", statIn.Perms)
+	}
+
+	code = doAccessCommand(t, "test.txt", 4)
+	if code != returncodes.OK {
+		t.Error("Access command returned wrong code")
+	}
+	code = doAccessCommand(t, "test.txt", 2)
+	if code != returncodes.EACCES {
+		t.Error("Access command returned wrong code")
 	}
 }
 
