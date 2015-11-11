@@ -7,6 +7,6 @@ icclient is used to send messages to the server.
 usage can be read in the icclient directory.
 
 ## icserver
-icserver is used to liten for messages from clients.
+icserver is used to listen for messages from clients.
 
 usage can be read in the icserver directory
