@@ -6,11 +6,12 @@ import (
 	"log"
 	"net"
 	"os"
+	"path"
 )
 
 // MessageChan is the channel to which incoming messages will be passed
 // Attach a listener to this channel to receive messages
-var MessageChan = make(chan FileSystemMessage)
+var MessageChan = make(chan FileSystemMessage, 100)
 var verbose = false
 
 // FileSystemMessage is the structure which represents messages coming from the client
@@ -29,7 +30,8 @@ func handleConnection(conn net.Conn) {
 		buffer := make([]byte, 1024)
 		mSize, err := conn.Read(buffer)
 		if err != nil {
-			log.Fatalln("icserver message read eror: ", err)
+			// connection closed
+			break
 		}
 		data := buffer[0:mSize]
 		verboseLog("icserver new message:\n" + string(data))
@@ -54,10 +56,11 @@ func handleConnection(conn net.Conn) {
 
 // RunServer runs the server
 // give a true parameter for verbose logging
-func RunServer(verboseLogging bool) {
+func RunServer(pfsDirectory string, verboseLogging bool) {
+	sockFilePath := path.Join(pfsDirectory, "meta", "pfic.sock")
+	deleteSockFIle(sockFilePath)
 	verbose = verboseLogging
 
-	sockFilePath := "/tmp/pfic.sock"
 	listener, err := net.Listen("unix", sockFilePath)
 	if err != nil {
 		log.Fatalln("ic listen error: ", err)
@@ -75,6 +78,21 @@ func RunServer(verboseLogging bool) {
 
 		go handleConnection(conn)
 	}
+}
+
+// deleteSockFIle deletes the .sock file if it already exists.
+// if one exists already the server cannot start
+func deleteSockFIle(filepath string) {
+	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+		return
+	}
+	verboseLog("trailing .sock file detected")
+
+	err := os.Remove(filepath)
+	if err != nil {
+		log.Fatalln("icserver delete sock file error: ", err)
+	}
+	verboseLog("trailing .sock file deleted")
 }
 
 // verboseLog logs what the server is doing if the verboseLogging option was
