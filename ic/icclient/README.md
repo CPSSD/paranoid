@@ -6,15 +6,18 @@ import "github.com/cpssd/paranoid/ic/icclient"
 ```
 
 ## Sending messages with no data
-To send a message to the server that does not contain any date i.e. creat or rename etc..
-use `icclient.SendMessage`. if you wanted to send a rename command :
+To send a message to the server that does not contain any date i.e. creat or rename etc.. use `icclient.SendMessage`. The first parameter is pfsDirectory.
+
+**Example :** To send a rename command do the following
 ```
-icclient.SendMessage("rename", arguments)
+icclient.SendMessage(pfsDirectory, "rename", arguments)
 ```
 
 ## Sending messages with data
 To send a message to the server that contains data i.e. write
-use `icclient.SendMessageWithData`/ if you want to send a write command :
+use `icclient.SendMessageWithData`. The first parameter is pfsDirectory.
+
+**Example :** To send a write command
 ```
-icclient.SendMessageWithData("write", arguments, data)
-``` 
+icclient.SendMessageWithData(pfsDirectory, "write", arguments, data)
+```
