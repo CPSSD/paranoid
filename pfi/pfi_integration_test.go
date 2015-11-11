@@ -139,7 +139,22 @@ func TestFuseFilePerms(t *testing.T) {
 	if status != fuse.OK {
 		t.Error("Error calling GetAttr")
 	}
-	if os.FileMode(attr.Mode) != 0777 {
+	if os.FileMode(attr.Mode).Perm() != 0777 {
 		t.Error("Recieved incorrect permisions", os.FileMode(attr.Mode))
+	}
+
+	canAccess := pfs.Access("helloworld.txt", 4, nil)
+	if canAccess != fuse.OK {
+		t.Error("Should be able to access file")
+	}
+
+	code := pfs.Chmod("helloworld.txt", uint32(os.FileMode(0377)), nil)
+	if code != fuse.OK {
+		t.Error("Chmod failed error : ", code)
+	}
+
+	canAccess = pfs.Access("helloworld.txt", 4, nil)
+	if canAccess != fuse.EACCES {
+		t.Error("Should not be able to access file error :", canAccess)
 	}
 }
