@@ -36,7 +36,7 @@ func ChmodCommand(args []string) {
 	}
 
 	verboseLog("chmod : changing permissions of " + fileName + " to " + args[2])
-	perms, err := strconv.Atoi(args[2])
+	perms, err := strconv.ParseInt(args[2], 8, 32)
 	checkErr("chmod", err)
 
 	contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
