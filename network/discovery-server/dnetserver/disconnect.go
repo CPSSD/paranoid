@@ -12,9 +12,9 @@ import (
 // Disconnect method for Discovery Server
 func (s *DiscoveryServer) Disconnect(ctx context.Context, req *pb.DisconnectRequest) (*pb.EmptyMessage, error) {
 	for i, node := range Nodes {
-		if reflect.DeepEqual(&node, req.Node) {
+		if reflect.DeepEqual(&node.Data, req.Node) {
 			Nodes[i].Active = false
-			log.Printf("[I] Disconnect: Node %s:%s disconnected", req.Node.Ip, req.Node.Port)
+			log.Printf("[I] Disconnect: Node %s:%s disconnected\n", req.Node.Ip, req.Node.Port)
 			return &pb.EmptyMessage{}, nil
 		}
 	}
