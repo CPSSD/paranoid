@@ -29,6 +29,10 @@ func StatCommand(args []string) {
 	}
 	directory := args[0]
 	verboseLog("stat : given directory = " + directory)
+
+	getFileSystemLock(directory, sharedLock)
+	defer unLockFileSystem(directory)
+
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
@@ -37,6 +41,10 @@ func StatCommand(args []string) {
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	checkErr("stat", err)
 	fileName := string(fileNameBytes)
+
+	getFileLock(directory, fileName, sharedLock)
+	defer unLockFile(directory, fileName)
+
 	fi, err := os.Stat(path.Join(directory, "contents", fileName))
 	checkErr("stat", err)
 

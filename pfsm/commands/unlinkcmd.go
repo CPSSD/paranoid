@@ -25,6 +25,9 @@ func UnlinkCommand(args []string) {
 
 	verboseLog("unlink : directory given = " + directory)
 
+	getFileSystemLock(directory, exclusiveLock)
+	defer unLockFileSystem(directory)
+
 	// checking if file exists
 	if !checkFileExists(fileNamePath) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))

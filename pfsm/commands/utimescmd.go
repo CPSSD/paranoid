@@ -26,6 +26,9 @@ func UtimesCommand(args []string) {
 	directory := args[0]
 	verboseLog("utimes : given directory = " + directory)
 
+	getFileSystemLock(directory, sharedLock)
+	defer unLockFileSystem(directory)
+
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
@@ -40,6 +43,9 @@ func UtimesCommand(args []string) {
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	checkErr("utimes", err)
 	fileName := string(fileNameBytes)
+
+	getFileLock(directory, fileName, exclusiveLock)
+	defer unLockFile(directory, fileName)
 
 	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
