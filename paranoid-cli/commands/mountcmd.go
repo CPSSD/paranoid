@@ -52,19 +52,21 @@ func Mount(c *cli.Context) {
 	}
 
 	cmd = exec.Command("pfs-network-client", "--client", directory, splits[0], splits[1])
-	outfile1, err := os.Create("./out1.txt")
 	if err != nil {
 		log.Fatalln("FATAL error creating output file")
 	}
-	cmd.Stderr = outfile1
 	err = cmd.Start()
 
 	cmd = exec.Command("pfi", directory, args[2])
-	outfile2, err := os.Create("./out2.txt")
+	if c.Bool("verbose") {
+		cmd = exec.Command("pfi", "-v", directory, args[2])
+	}
+	outfile, err := os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
+
 	if err != nil {
 		log.Fatalln("FATAL error creating output file")
 	}
-	cmd.Stderr = outfile2
+	cmd.Stderr = outfile
 	err = cmd.Start()
 	if err != nil {
 		log.Fatalln("FATAL error running pfi command : ", err)

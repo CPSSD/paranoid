@@ -27,7 +27,7 @@ func ProcessFlags(toFlags []string) {
 			Flags.Network = true
 		} else if strings.ToLower(toFlags[i]) == "--version" {
 			Flags.Version = true
-		} else if strings.ToLower(toFlags[i]) == "--verbose" {
+		} else if strings.ToLower(toFlags[i]) == "--verbose" || strings.ToLower(toFlags[i]) == "-v" {
 			Flags.Verbose = true
 		}
 	}

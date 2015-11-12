@@ -40,6 +40,7 @@ func InitCommand(args []string) {
 	makeDir(directory, "names")
 	makeDir(directory, "inodes")
 	metaDir := makeDir(directory, "meta")
+	makeDir(metaDir, "logs")
 	makeDir(directory, "contents")
 	uuid, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	uuidString := strings.TrimSpace(string(uuid))

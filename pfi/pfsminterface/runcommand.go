@@ -1,6 +1,7 @@
 package pfsminterface
 
 import (
+	"github.com/cpssd/paranoid/pfi/util"
 	"log"
 	"os"
 	"os/exec"
@@ -12,6 +13,9 @@ var OriginFlag string
 //RunCommand runs a pfs command with the given arguments. Gives stdinData on stdIn to pfs if it is not nil.
 func RunCommand(stdinData []byte, cmdArgs ...string) (int, []byte) {
 	cmdArgs = append(cmdArgs, OriginFlag)
+	if util.LogOutput {
+		cmdArgs = append(cmdArgs, "-v")
+	}
 	command := exec.Command("pfsm", cmdArgs...)
 	command.Stderr = os.Stderr
 
