@@ -23,7 +23,7 @@ func ProcessFlags(toFlags []string) {
 	for i := 0; i < len(toFlags); i++ {
 		if strings.ToLower(toFlags[i]) == "-f" || strings.ToLower(toFlags[i]) == "--fuse" {
 			Flags.Fuse = true
-		} else if strings.ToLower(toFlags[i]) == "-n" || strings.ToLower(toFlags[i]) == "--network" {
+		} else if strings.ToLower(toFlags[i]) == "-n" || strings.ToLower(toFlags[i]) == "--net" {
 			Flags.Network = true
 		} else if strings.ToLower(toFlags[i]) == "--version" {
 			Flags.Version = true
