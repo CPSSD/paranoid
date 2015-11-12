@@ -6,7 +6,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"log"
-	"reflect"
 	"time"
 )
 
@@ -16,7 +15,7 @@ func (s *DiscoveryServer) Renew(ctx context.Context, req *pb.JoinRequest) (*pb.E
 	isActiveNode := false
 
 	for i, node := range Nodes {
-		if reflect.DeepEqual(&node.Data, req.Node) {
+		if &node.Data == req.Node {
 			if node.Active {
 				Nodes[i].ExpiryTime = time.Now().Add(RenewInterval)
 				isActiveNode = true
