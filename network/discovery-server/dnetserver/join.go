@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"log"
 	"reflect"
 	"time"
 )
@@ -18,12 +19,14 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 	for _, node := range Nodes {
 		if reflect.DeepEqual(&node.Data, req.Node) {
 			if node.Active {
+				log.Printf("[E] Join: node %s:%s is already part of the cluster\n", req.Node.Ip, req.Node.Port)
 				returnError := grpc.Errorf(codes.AlreadyExists,
 					"node is already part of the cluster")
 				return &pb.JoinResponse{}, returnError
 			}
 
 			if node.Pool != req.Pool {
+				log.Printf("[E] Join: node belongs to pool %s but tried to join pool %s\n", node.Pool, req.Pool)
 				returnError := grpc.Errorf(codes.Internal,
 					"node belongs to pool %s, but tried to join pool %s",
 					node.Pool, req.Pool)

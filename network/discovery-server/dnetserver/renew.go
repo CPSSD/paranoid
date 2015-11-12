@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"log"
 	"reflect"
 	"time"
 )
@@ -27,6 +28,7 @@ func (s *DiscoveryServer) Renew(ctx context.Context, req *pb.JoinRequest) (*pb.E
 
 	var returnError error
 	if !isInNodes {
+		log.Printf("[E] Renew: node %s:%s not found\n", req.Node.Ip, req.Node.Port)
 		returnError = grpc.Errorf(codes.NotFound, "node was not found")
 	}
 	if !isActiveNode {

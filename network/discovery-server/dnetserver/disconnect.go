@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"log"
 	"reflect"
 )
 
@@ -22,6 +23,7 @@ func (s *DiscoveryServer) Disconnect(ctx context.Context, req *pb.DisconnectRequ
 
 	var returnError error
 	if !isInNodes {
+		log.Printf("[E] Disconnect: Node %s:%s was not found\n", req.Node.Ip, req.Node.Port)
 		returnError = grpc.Errorf(codes.NotFound, "node was not found")
 	}
 	return &pb.EmptyMessage{}, returnError // returns nil if no error
