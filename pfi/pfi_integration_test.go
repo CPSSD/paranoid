@@ -286,3 +286,47 @@ func TestFuseFileSystemOperations(t *testing.T) {
 		t.Error("Incorrect number of files in directory : ", len(dirEntries))
 	}
 }
+
+func TestFuseUtimes(t *testing.T) {
+	createTestDir(t, "pfiTestPfsDir")
+	defer removeTestDir("pfiTestPfsDir")
+	createTestDir(t, "pfiTestMountPoint")
+	defer removeTestDir("pfiTestMountPoint")
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	pfsminterface.OriginFlag = "-n"
+
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	pfs := &filesystem.ParanoidFileSystem{
+		FileSystem: pathfs.NewDefaultFileSystem(),
+	}
+
+	file, code := pfs.Create("helloworld.txt", 0, uint32(os.FileMode(0777)), nil)
+	if code != fuse.OK {
+		t.Error("Failed to create file, error : ", code)
+	}
+
+	atime := time.Unix(100, 101*1000)
+	mtime := time.Unix(500, 530*1000)
+	roundFactor := time.Duration(1 * time.Second)
+	code = file.Utimens(&atime, &mtime)
+	if code != fuse.OK {
+		t.Error("Failed to utimens file, error : ", code)
+	}
+
+	attr, code := pfs.GetAttr("helloworld.txt", nil)
+	if code != fuse.OK {
+		t.Error("Failed to stat file, error : ", code)
+	}
+	if attr.ModTime().Round(roundFactor) != mtime.Round(roundFactor) {
+		t.Error("Incorrect mtime received : ", attr.ModTime().Round(roundFactor))
+	}
+	if attr.AccessTime().Round(roundFactor) != atime.Round(roundFactor) {
+		t.Error("Incorrect atime recieved : ", attr.AccessTime().Round(roundFactor))
+	}
+}
