@@ -49,7 +49,7 @@ func ReadCommand(args []string) {
 			if err != io.EOF {
 				checkErr("read", err)
 			}
-			io.WriteString(os.Stdout, string(bytesRead))
+			io.WriteString(os.Stdout, string(bytesRead[:n]))
 			if n < 1024 {
 				break
 			}
@@ -78,11 +78,11 @@ func ReadCommand(args []string) {
 
 			maxRead = maxRead - n
 			if err == io.EOF {
-				io.WriteString(os.Stdout, string(bytesRead))
+				io.WriteString(os.Stdout, string(bytesRead[:n]))
 				break
 			}
 			checkErr("read", err)
-			io.WriteString(os.Stdout, string(bytesRead))
+			io.WriteString(os.Stdout, string(bytesRead[:n]))
 		}
 	}
 }

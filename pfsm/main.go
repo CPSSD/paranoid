@@ -59,6 +59,8 @@ func main() {
 			commands.TruncateCommand(onlyArgs[1:])
 		case "utimes":
 			commands.UtimesCommand(onlyArgs[1:])
+		case "rename":
+			commands.RenameCommand(onlyArgs[1:])
 		case "unlink":
 			commands.UnlinkCommand(onlyArgs[1:])
 		default:

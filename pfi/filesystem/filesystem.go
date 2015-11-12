@@ -7,6 +7,7 @@ import (
 	"github.com/cpssd/paranoid/pfi/util"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -24,11 +25,11 @@ type ParanoidFileSystem struct {
 
 //The structure for processing information returned by a pfs stat command
 type statInfo struct {
-	Length int64     `json:"length",omitempty`
-	Ctime  time.Time `json:"ctime",omitempty`
-	Mtime  time.Time `json:"mtime",omitempty`
-	Atime  time.Time `json:"atime",omitempty`
-	Perms  int       `json:"perms",omitempty`
+	Length int64       `json:"length",omitempty`
+	Ctime  time.Time   `json:"ctime",omitempty`
+	Mtime  time.Time   `json:"mtime",omitempty`
+	Atime  time.Time   `json:"atime",omitempty`
+	Perms  os.FileMode `json:"perms",omitempty`
 }
 
 //GetAttr is called by fuse when the attributes of a
@@ -105,7 +106,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (retfile nodefs.File, code fuse.Status) {
 	util.LogMessage("Create called on : " + name)
-	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name, strconv.Itoa(int(mode)))
+	retcode, _ := pfsminterface.RunCommand(nil, "creat", util.PfsDirectory, name, strconv.FormatInt(int64(mode), 8))
 	if retcode != returncodes.OK {
 		return nil, util.GetFuseReturnCode(retcode)
 	}
@@ -123,11 +124,18 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 	return fuse.OK
 }
 
+//Rename is called when renaming a file
+func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Rename called on : " + oldName + " to be renamed to " + newName)
+	retcode, _ := pfsminterface.RunCommand(nil, "rename", util.PfsDirectory, oldName, newName)
+	return util.GetFuseReturnCode(retcode)
+}
+
 //Unlink is called when deleting a file
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Unlink callde on : " + name)
-	retCode, _ := pfsminterface.RunCommand(nil, "unlink", util.PfsDirectory, name)
-	return util.GetFuseReturnCode(retCode)
+	retcode, _ := pfsminterface.RunCommand(nil, "unlink", util.PfsDirectory, name)
+	return util.GetFuseReturnCode(retcode)
 }
 
 //Truncate is called when a file is to be reduced in length to size.

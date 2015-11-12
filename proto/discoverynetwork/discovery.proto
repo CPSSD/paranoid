@@ -22,7 +22,7 @@ message JoinRequest {
 message JoinResponse {
   // The time after which the server will remove the node from the list
   // if the node doesn't make the Renew RPC call
-  int32 resetInterval = 1; // required
+  int64 resetInterval = 1; // required
   repeated Node nodes = 2; // optional
 }
 
