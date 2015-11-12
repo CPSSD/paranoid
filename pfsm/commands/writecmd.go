@@ -45,6 +45,7 @@ func WriteCommand(args []string) {
 		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
 		checkErr("write", err)
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+		io.WriteString(os.Stdout, strconv.Itoa(len(fileData)))
 
 		if !Flags.Network {
 			network.Write(directory, args[1], nil, nil, string(fileData))
@@ -69,9 +70,10 @@ func WriteCommand(args []string) {
 			}
 		}
 
-		_, err = contentsFile.WriteAt(fileData, int64(offset))
+		wroteLen, err := contentsFile.WriteAt(fileData, int64(offset))
 		checkErr("write", err)
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+		io.WriteString(os.Stdout, strconv.Itoa(wroteLen))
 
 		if len(args) == 3 {
 			if !Flags.Network {
