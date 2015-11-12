@@ -54,7 +54,8 @@ func (m *PingRequest) String() string { return proto.CompactTextString(m) }
 func (*PingRequest) ProtoMessage()    {}
 
 type CreatRequest struct {
-	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	Path        string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	Permissions uint32 `protobuf:"varint,2,opt,name=permissions" json:"permissions,omitempty"`
 }
 
 func (m *CreatRequest) Reset()         { *m = CreatRequest{} }
@@ -115,6 +116,8 @@ func (m *TruncateRequest) Reset()         { *m = TruncateRequest{} }
 func (m *TruncateRequest) String() string { return proto.CompactTextString(m) }
 func (*TruncateRequest) ProtoMessage()    {}
 
+// TODO(terry): Update this message to use microseconds by the end of
+// sprint 2.
 type UtimesRequest struct {
 	Path               string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
 	AccessSeconds      uint64 `protobuf:"varint,2,opt,name=access_seconds" json:"access_seconds,omitempty"`
