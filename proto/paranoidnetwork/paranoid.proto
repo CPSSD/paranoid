@@ -1,3 +1,5 @@
+// ParanoidNetwork API v0.1.1
+
 syntax = "proto3";
 
 package paranoid;
@@ -29,6 +31,7 @@ message PingRequest {
 
 message CreatRequest {
     string path = 1;  // required
+    uint32 permissions = 2;  // required
 }
 
 message WriteRequest {

@@ -10,7 +10,7 @@ import (
 )
 
 func (s *ParanoidServer) Chmod(ctx context.Context, req *pb.ChmodRequest) (*pb.EmptyMessage, error) {
-	code, _, err := runCommand(nil, "chmod", ParanoidDir, req.Path, strconv.FormatUint(uint64(req.Mode), 10))
+	code, _, err := runCommand(nil, "chmod", ParanoidDir, req.Path, strconv.FormatUint(uint64(req.Mode), 8))
 	if err != nil {
 		log.Printf("ERROR: Could not change permissions on file %s: %v.\n", req.Path, err)
 		returnError := grpc.Errorf(codes.Internal, "could not change permissions on file %s: %v",
