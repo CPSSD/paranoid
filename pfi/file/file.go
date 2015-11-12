@@ -42,11 +42,16 @@ func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status
 //Write writes to a file
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	util.LogMessage("Write called on file : " + f.Name)
-	code, _ := pfsminterface.RunCommand(content, "write", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(content)), 10))
+	code, output := pfsminterface.RunCommand(content, "write", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(content)), 10))
 	if code != returncodes.OK {
 		return 0, util.GetFuseReturnCode(code)
 	}
-	return uint32(len(content)), fuse.OK
+
+	lenReturn, err := strconv.ParseInt(string(output), 10, 64)
+	if err != nil {
+		return 0, fuse.EIO
+	}
+	return uint32(lenReturn), fuse.OK
 }
 
 //Truncate is called when a file is to be reduced in length to size.
