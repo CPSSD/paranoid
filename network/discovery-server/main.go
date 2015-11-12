@@ -62,15 +62,16 @@ func main() {
 	srv.Serve(lis)
 	log.Println("[I] gRPC server created")
 
-	go removeLoop()
+	go markInactiveNodes()
 }
 
 // Mark the nodes as inactive if their time expires
-func removeLoop() {
+func markInactiveNodes() {
 	for {
 		now := time.Now()
 		for i, node := range dnetserver.Nodes {
 			dnetserver.Nodes[i].Active = node.ExpiryTime.Sub(now) < 0
 		}
+		time.Sleep(time.Second * 10)
 	}
 }
