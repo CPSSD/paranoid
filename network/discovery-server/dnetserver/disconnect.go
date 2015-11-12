@@ -16,6 +16,7 @@ func (s *DiscoveryServer) Disconnect(ctx context.Context, req *pb.DisconnectRequ
 		if reflect.DeepEqual(&node, req.Node) {
 			Nodes[i].Active = false
 			isInNodes = true
+			break
 		}
 	}
 
