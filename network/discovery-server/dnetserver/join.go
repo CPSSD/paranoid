@@ -6,18 +6,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"log"
-	"reflect"
 	"time"
 )
 
 // Join method for Discovery Server
 func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
-	// Check was the node there
-	check := 1
+	nodes := getNodes(req.Pool)
+	response := pb.JoinResponse{RenewInterval.Nanoseconds() * 1000 * 1000, nodes}
 
 	// Go through each node and check was the node there
 	for _, node := range Nodes {
-		if reflect.DeepEqual(&node.Data, req.Node) {
+		if &node.Data == req.Node {
 			if node.Active {
 				log.Printf("[E] Join: node %s:%s is already part of the cluster\n", req.Node.Ip, req.Node.Port)
 				returnError := grpc.Errorf(codes.AlreadyExists,
@@ -34,23 +33,12 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 			}
 
 			node.Active = true
-			check = 0
-			break
+			return &response, nil
 		}
 	}
 
-	nodes := getNodes(req.Pool)
-	response := pb.JoinResponse{RenewInterval.Nanoseconds() * 1000 * 1000, nodes}
-
-	if check == 1 {
-		newNode := Node{
-			true,
-			req.Pool,
-			time.Now().Add(RenewInterval),
-			*req.Node}
-
-		Nodes = append(Nodes, newNode)
-	}
+	newNode := Node{true, req.Pool, time.Now().Add(RenewInterval), *req.Node}
+	Nodes = append(Nodes, newNode)
 
 	return &response, nil
 }
