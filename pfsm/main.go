@@ -65,6 +65,8 @@ func main() {
 			commands.RenameCommand(onlyArgs[1:])
 		case "unlink":
 			commands.UnlinkCommand(onlyArgs[1:])
+		case "link":
+			commands.LinkCommand(onlyArgs[1:])
 		default:
 			log.Fatalln("Given command not recognised")
 		}

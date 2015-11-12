@@ -132,6 +132,18 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	return util.GetFuseReturnCode(retcode)
 }
 
+func (fs *ParanoidFileSystem) Symlink(value string, linkName string, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Symlink called")
+	retcode, _ := pfsminterface.RunCommand(nil, "link", value, linkName)
+	return util.GetFuseReturnCode(retcode)
+}
+
+func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Link called")
+	retcode, _ := pfsminterface.RunCommand(nil, "link", oldName, newName)
+	return util.GetFuseReturnCode(retcode)
+}
+
 //Unlink is called when deleting a file
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Unlink callde on : " + name)
