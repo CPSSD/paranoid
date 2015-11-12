@@ -3,6 +3,11 @@
 package main
 
 import (
+	"github.com/cpssd/paranoid/pfi/filesystem"
+	"github.com/cpssd/paranoid/pfi/pfsminterface"
+	"github.com/cpssd/paranoid/pfi/util"
+	"github.com/hanwen/go-fuse/fuse"
+	"github.com/hanwen/go-fuse/fuse/pathfs"
 	"os"
 	"os/exec"
 	"path"
@@ -23,7 +28,7 @@ func removeTestDir(name string) {
 	os.RemoveAll(path.Join(os.TempDir(), name))
 }
 
-func TestFuseUsage(t *testing.T) {
+func TestFuseExternalUsage(t *testing.T) {
 	createTestDir(t, "pfiTestPfsDir")
 	defer removeTestDir("pfiTestPfsDir")
 	createTestDir(t, "pfiTestMountPoint")
@@ -89,10 +94,239 @@ func TestFuseUsage(t *testing.T) {
 		t.Error("Unexpected output from cat command")
 	}
 
+	cmd = exec.Command("stat", path.Join(os.TempDir(), "pfiTestMountPoint", "helloworld.txt"))
+	cmd.Stderr = os.Stderr
+	output, err = cmd.Output()
+	if err != nil || len(output) == 0 {
+		t.Error("Error running stat command :", err)
+	}
+
 	cmd = exec.Command("fusermount", "-u", "-z", path.Join(os.TempDir(), "pfiTestMountPoint"))
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
 		t.Error("could not dismount filesystem", err)
+	}
+}
+
+func TestFuseFilePerms(t *testing.T) {
+	createTestDir(t, "pfiTestPfsDir")
+	defer removeTestDir("pfiTestPfsDir")
+	createTestDir(t, "pfiTestMountPoint")
+	defer removeTestDir("pfiTestMountPoint")
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	pfsminterface.OriginFlag = "-n"
+
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	cmd = exec.Command("pfsm", "-n", "creat", path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", "0777")
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	pfs := &filesystem.ParanoidFileSystem{
+		FileSystem: pathfs.NewDefaultFileSystem(),
+	}
+
+	attr, status := pfs.GetAttr("helloworld.txt", nil)
+	if status != fuse.OK {
+		t.Error("Error calling GetAttr")
+	}
+	if os.FileMode(attr.Mode).Perm() != 0777 {
+		t.Error("Recieved incorrect permisions", os.FileMode(attr.Mode))
+	}
+
+	canAccess := pfs.Access("helloworld.txt", 4, nil)
+	if canAccess != fuse.OK {
+		t.Error("Should be able to access file")
+	}
+
+	code := pfs.Chmod("helloworld.txt", uint32(os.FileMode(0377)), nil)
+	if code != fuse.OK {
+		t.Error("Chmod failed error : ", code)
+	}
+
+	canAccess = pfs.Access("helloworld.txt", 4, nil)
+	if canAccess != fuse.EACCES {
+		t.Error("Should not be able to access file error :", canAccess)
+	}
+}
+
+func TestFuseFileOperations(t *testing.T) {
+	createTestDir(t, "pfiTestPfsDir")
+	defer removeTestDir("pfiTestPfsDir")
+	createTestDir(t, "pfiTestMountPoint")
+	defer removeTestDir("pfiTestMountPoint")
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	pfsminterface.OriginFlag = "-n"
+
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	pfs := &filesystem.ParanoidFileSystem{
+		FileSystem: pathfs.NewDefaultFileSystem(),
+	}
+
+	file, code := pfs.Create("helloworld.txt", 0, uint32(os.FileMode(0777)), nil)
+	if code != fuse.OK {
+		t.Error("Failed to create file error : ", code)
+	}
+
+	_, code = file.Write([]byte("TEST"), 0)
+	if code != fuse.OK {
+		t.Error("Failed to write to file error : ", code)
+	}
+
+	buf := make([]byte, 4)
+	readRes, code := file.Read(buf, 0)
+	if code != fuse.OK {
+		t.Error("Failed to read file error : ", code)
+	}
+	data, code := readRes.Bytes(buf)
+	if code != fuse.OK {
+		t.Error("Failed to read file error : ", code)
+	}
+
+	if string(data) != "TEST" {
+		t.Error("Data read from file is not correct. Actual : ", data)
+	}
+
+	code = file.Truncate(2)
+	if code != fuse.OK {
+		t.Error("Failed to truncate file error : ", code)
+	}
+
+	buf = make([]byte, 2)
+	readRes, code = file.Read(buf, 0)
+	if code != fuse.OK {
+		t.Error("Failed to read file error : ", code)
+	}
+	data, code = readRes.Bytes(buf)
+	if code != fuse.OK {
+		t.Error("Failed to read file error : ", code)
+	}
+
+	if string(data) != "TE" {
+		t.Error("Data read from file is not correct. Actual : ", data)
+	}
+}
+
+func TestFuseFileSystemOperations(t *testing.T) {
+	createTestDir(t, "pfiTestPfsDir")
+	defer removeTestDir("pfiTestPfsDir")
+	createTestDir(t, "pfiTestMountPoint")
+	defer removeTestDir("pfiTestMountPoint")
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	pfsminterface.OriginFlag = "-n"
+
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	pfs := &filesystem.ParanoidFileSystem{
+		FileSystem: pathfs.NewDefaultFileSystem(),
+	}
+
+	_, code := pfs.Create("file1", 0, uint32(os.FileMode(0777)), nil)
+	if code != fuse.OK {
+		t.Error("Failed to create new file, error : ", code)
+	}
+
+	dirEntries, code := pfs.OpenDir("", nil)
+	if code != fuse.OK {
+		t.Error("Could not open directory, error : ", code)
+	}
+	if len(dirEntries) != 1 {
+		t.Error("Incorrect number of files in directory : ", dirEntries)
+	}
+	if dirEntries[0].Name != "file1" {
+		t.Error("Incorrect file name recieved : ", dirEntries[0].Name)
+	}
+
+	code = pfs.Rename("file1", "file2", nil)
+	if code != fuse.OK {
+		t.Error("Failed to rename file, error : ", code)
+	}
+
+	dirEntries, code = pfs.OpenDir("", nil)
+	if code != fuse.OK {
+		t.Error("Could not open directory, error : ", code)
+	}
+	if len(dirEntries) != 1 {
+		t.Error("Incorrect number of files in directory : ", len(dirEntries))
+	}
+	if dirEntries[0].Name != "file2" {
+		t.Error("Incorrect file name recieved : ", dirEntries[0].Name)
+	}
+
+	code = pfs.Unlink("file2", nil)
+	if code != fuse.OK {
+		t.Error("Failed to unlink file, error : ", code)
+	}
+
+	dirEntries, code = pfs.OpenDir("", nil)
+	if code != fuse.OK {
+		t.Error("Could not open directory, error : ", code)
+	}
+	if len(dirEntries) != 0 {
+		t.Error("Incorrect number of files in directory : ", len(dirEntries))
+	}
+}
+
+func TestFuseUtimes(t *testing.T) {
+	createTestDir(t, "pfiTestPfsDir")
+	defer removeTestDir("pfiTestPfsDir")
+	createTestDir(t, "pfiTestMountPoint")
+	defer removeTestDir("pfiTestMountPoint")
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	pfsminterface.OriginFlag = "-n"
+
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	pfs := &filesystem.ParanoidFileSystem{
+		FileSystem: pathfs.NewDefaultFileSystem(),
+	}
+
+	file, code := pfs.Create("helloworld.txt", 0, uint32(os.FileMode(0777)), nil)
+	if code != fuse.OK {
+		t.Error("Failed to create file, error : ", code)
+	}
+
+	atime := time.Unix(100, 101*1000)
+	mtime := time.Unix(500, 530*1000)
+	roundFactor := time.Duration(1 * time.Second)
+	code = file.Utimens(&atime, &mtime)
+	if code != fuse.OK {
+		t.Error("Failed to utimens file, error : ", code)
+	}
+
+	attr, code := pfs.GetAttr("helloworld.txt", nil)
+	if code != fuse.OK {
+		t.Error("Failed to stat file, error : ", code)
+	}
+	if attr.ModTime().Round(roundFactor) != mtime.Round(roundFactor) {
+		t.Error("Incorrect mtime received : ", attr.ModTime().Round(roundFactor))
+	}
+	if attr.AccessTime().Round(roundFactor) != atime.Round(roundFactor) {
+		t.Error("Incorrect atime recieved : ", attr.AccessTime().Round(roundFactor))
 	}
 }
