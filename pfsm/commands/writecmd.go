@@ -22,6 +22,9 @@ func WriteCommand(args []string) {
 	directory := args[0]
 	verboseLog("write : given directory = " + directory)
 
+	getFileSystemLock(directory, sharedLock)
+	defer unLockFileSystem(directory)
+
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
@@ -36,6 +39,9 @@ func WriteCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
 	}
+
+	getFileLock(directory, fileName, exclusiveLock)
+	defer unLockFile(directory, fileName)
 
 	verboseLog("write : wrting to " + fileName)
 	fileData, err := ioutil.ReadAll(os.Stdin)

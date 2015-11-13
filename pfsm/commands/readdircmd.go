@@ -17,6 +17,10 @@ func ReadDirCommand(args []string) {
 		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
+
+	getFileSystemLock(directory, sharedLock)
+	defer unLockFileSystem(directory)
+
 	verboseLog("readdir : given directory = " + directory)
 	files, err := ioutil.ReadDir(path.Join(directory, "names"))
 	checkErr("readdir", err)
