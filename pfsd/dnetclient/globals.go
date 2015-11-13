@@ -1,14 +1,22 @@
 package dnetclient
 
 import (
-	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
+	"time"
 )
 
+// Node struct containing the node information
+type Node struct {
+	IP   string
+	Port string
+}
+
 // Nodes array
-var Nodes []*pb.Node
+var Nodes []Node
 
-var thisNode pb.Node
+// ThisNode has to be set before calling Join
+var ThisNode Node
 
+// DiscoveryAddr public string
 var DiscoveryAddr string
 
-var resetInterval int64
+var resetInterval time.Duration
