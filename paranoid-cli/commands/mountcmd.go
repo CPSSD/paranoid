@@ -52,13 +52,10 @@ func Mount(c *cli.Context) {
 	}
 
 	cmd = exec.Command("pfs-network-client", "--client", directory, splits[0], splits[1])
-	if err != nil {
-		log.Fatalln("FATAL error creating output file")
-	}
 	err = cmd.Start()
 
 	cmd = exec.Command("pfi", directory, args[2])
-	if c.Bool("verbose") {
+	if c.GlobalBool("verbose") {
 		cmd = exec.Command("pfi", "-v", directory, args[2])
 	}
 	outfile, err := os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
