@@ -32,9 +32,6 @@ func AccessCommand(args []string) {
 	checkErr("access", err)
 	fileName := string(fileNameBytes)
 
-	getFileLock(directory, fileName, exclusiveLock)
-	defer unLockFile(directory, fileName)
-
 	mode, err := strconv.Atoi(args[2])
 	checkErr("access", err)
 	err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))

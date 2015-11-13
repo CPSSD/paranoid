@@ -33,14 +33,14 @@ func TruncateCommand(args []string) {
 	checkErr("truncate", err)
 	fileName := string(fileNameBytes)
 
-	getFileLock(directory, fileName, exclusiveLock)
-	defer unLockFile(directory, fileName)
-
 	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
 	}
+
+	getFileLock(directory, fileName, exclusiveLock)
+	defer unLockFile(directory, fileName)
 
 	verboseLog("truncate : truncating " + fileName)
 	newsize, err := strconv.Atoi(args[2])

@@ -34,14 +34,14 @@ func ReadCommand(args []string) {
 	checkErr("read", err)
 	fileName := string(fileNameBytes)
 
-	getFileLock(directory, fileName, sharedLock)
-	defer unLockFile(directory, fileName)
-
 	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_RDONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
 	}
+
+	getFileLock(directory, fileName, sharedLock)
+	defer unLockFile(directory, fileName)
 
 	file, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_RDONLY, 0777)
 	checkErr("read", err)

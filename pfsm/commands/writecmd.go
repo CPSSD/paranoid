@@ -34,14 +34,14 @@ func WriteCommand(args []string) {
 	checkErr("write", err)
 	fileName := string(fileNameBytes)
 
-	getFileLock(directory, fileName, exclusiveLock)
-	defer unLockFile(directory, fileName)
-
 	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
 	}
+
+	getFileLock(directory, fileName, exclusiveLock)
+	defer unLockFile(directory, fileName)
 
 	verboseLog("write : wrting to " + fileName)
 	fileData, err := ioutil.ReadAll(os.Stdin)

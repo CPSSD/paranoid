@@ -42,9 +42,6 @@ func StatCommand(args []string) {
 	checkErr("stat", err)
 	fileName := string(fileNameBytes)
 
-	getFileLock(directory, fileName, sharedLock)
-	defer unLockFile(directory, fileName)
-
 	fi, err := os.Stat(path.Join(directory, "contents", fileName))
 	checkErr("stat", err)
 
