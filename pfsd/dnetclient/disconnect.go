@@ -7,6 +7,7 @@ import (
 	"log"
 )
 
+// Disconnect function used to disconnect from the server
 func Disconnect() {
 	conn, err := grpc.Dial(DiscoveryAddr, grpc.WithInsecure())
 	if err != nil {
@@ -17,7 +18,7 @@ func Disconnect() {
 
 	dclient := pb.NewDiscoveryNetworkClient(conn)
 
-	_, err = dclient.Disconnect(context.Background(), &pb.DisconnectRequest{Node: &thisNode})
+	_, err = dclient.Disconnect(context.Background(), &pb.DisconnectRequest{Node: &pb.Node{ThisNode.IP, ThisNode.Port}})
 	if err != nil {
 		log.Println("[D] [E] could not send disconnect message")
 		return
