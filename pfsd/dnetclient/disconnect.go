@@ -10,7 +10,7 @@ import (
 func Disconnect() {
 	conn, err := grpc.Dial(DiscoveryAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Printf("[D] [E] failed to dial discovery server at ", DiscoveryAddr)
+		log.Println("[D] [E] failed to dial discovery server at ", DiscoveryAddr)
 		return
 	}
 	defer conn.Close()
@@ -19,7 +19,7 @@ func Disconnect() {
 
 	_, err = dclient.Disconnect(context.Background(), &pb.DisconnectRequest{Node: &thisNode})
 	if err != nil {
-		log.Print("[D] [E] could not send disconnect message")
+		log.Println("[D] [E] could not send disconnect message")
 		return
 	}
 }
