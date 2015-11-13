@@ -29,6 +29,11 @@ func RenameCommand(args []string) {
 		return
 	}
 
+	if _, err := os.Stat(newFilePath); !os.IsNotExist(err) {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
+		return
+	}
+
 	//Check if we have access to the file to be renamed
 	fileNameBytes, err := ioutil.ReadFile(oldFilePath)
 	checkErr("rename", err)
