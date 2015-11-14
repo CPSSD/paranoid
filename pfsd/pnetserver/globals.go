@@ -70,6 +70,12 @@ func convertCodeToError(code int, path string) error {
 			"file %s does not exist",
 			path)
 		return returnError
+	case returncodes.EEXIST:
+		log.Printf("INFO: File %s already exists.\n", path)
+		returnError := grpc.Errorf(codes.AlreadyExists,
+			"file %s already exists",
+			path)
+		return returnError
 	}
 	return nil
 }
