@@ -14,8 +14,8 @@ import (
 func Renew() error {
 	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Println("[D] [E] failed to dial discovery server at ", globals.DiscoveryAddr)
-		return errors.New("[D] [E] failed to dial discovery server")
+		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
+		return errors.New("failed to dial discovery server")
 	}
 	defer conn.Close()
 
@@ -24,10 +24,10 @@ func Renew() error {
 
 	_, err = dclient.Renew(context.Background(), &pb.JoinRequest{Node: &pbNode})
 	if err != nil {
-		log.Println("[D] [E] could not join")
-		return errors.New("[D] [E] could not renew")
+		log.Println("ERROR: could not renew discovery memenbership")
+		return errors.New("could not renew discovery membership")
 	}
 
-	log.Println("[D] [I] Renewed discovery membership")
+	log.Println("INFO: Renewed discovery membership")
 	return nil
 }

@@ -15,7 +15,7 @@ import (
 func Join(pool string) error {
 	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Println("[D] [E] failed to dial discovery server at ", globals.DiscoveryAddr)
+		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
 		return errors.New("Failed to dial discovery server")
 	}
 	defer conn.Close()
@@ -25,7 +25,7 @@ func Join(pool string) error {
 	response, err := dclient.Join(context.Background(),
 		&pb.JoinRequest{Pool: pool, Node: &pb.Node{Ip: ThisNode.IP, Port: ThisNode.Port}})
 	if err != nil {
-		log.Println("[D] [E] could not join")
+		log.Println("ERROR: could not join discovery server")
 		return errors.New("Could not join the pool")
 	}
 
@@ -36,6 +36,6 @@ func Join(pool string) error {
 		globals.Nodes.Add(globals.Node{IP: node.Ip, Port: node.Port})
 	}
 
-	log.Println("[D] [I] Successfully joined")
+	log.Println("INFO: Successfully joined")
 	return nil
 }
