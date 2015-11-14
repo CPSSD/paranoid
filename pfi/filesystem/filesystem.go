@@ -132,15 +132,10 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	return util.GetFuseReturnCode(retcode)
 }
 
-func (fs *ParanoidFileSystem) Symlink(value string, linkName string, context *fuse.Context) (code fuse.Status) {
-	util.LogMessage("Symlink called")
-	retcode, _ := pfsminterface.RunCommand(nil, "link", value, linkName)
-	return util.GetFuseReturnCode(retcode)
-}
-
+//Create a hard link from newName to oldName
 func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Link called")
-	retcode, _ := pfsminterface.RunCommand(nil, "link", oldName, newName)
+	retcode, _ := pfsminterface.RunCommand(nil, "link", util.PfsDirectory, oldName, newName)
 	return util.GetFuseReturnCode(retcode)
 }
 
