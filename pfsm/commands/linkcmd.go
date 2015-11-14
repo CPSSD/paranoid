@@ -30,7 +30,8 @@ func LinkCommand(args []string) {
 		return
 	}
 	if checkFileExists(targetFilePath) {
-		log.Fatalln("File already exists : " + targetFileName)
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
+		return
 	}
 
 	// getting inode and fileMode of existing file
