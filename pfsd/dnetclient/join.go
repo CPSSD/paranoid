@@ -22,18 +22,19 @@ func Join(pool string) error {
 	dclient := pb.NewDiscoveryNetworkClient(conn)
 
 	response, err := dclient.Join(context.Background(),
-		&pb.JoinRequest{Pool: pool, Node: &pb.Node{ThisNode.IP, ThisNode.Port}})
+		&pb.JoinRequest{Pool: pool, Node: &pb.Node{Ip: ThisNode.IP, Port: ThisNode.Port}})
 	if err != nil {
 		log.Println("[D] [E] could not join")
 		return errors.New("Could not join the pool")
 	}
 
 	interval := response.ResetInterval / 10 * 9
-	resetInterval, _ = time.ParseDuration(strconv.FormatInt(interval, 10) + "ms")
+	ResetInterval, _ = time.ParseDuration(strconv.FormatInt(interval, 10) + "ms")
 
 	for _, node := range response.Nodes {
 		Nodes = append(Nodes, Node{node.Ip, node.Port})
 	}
 
+	log.Println("[D] [I] Successfully joined")
 	return nil
 }

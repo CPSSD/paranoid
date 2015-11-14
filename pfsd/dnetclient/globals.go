@@ -19,4 +19,4 @@ var ThisNode Node
 // DiscoveryAddr public string
 var DiscoveryAddr string
 
-var resetInterval time.Duration
+var ResetInterval time.Duration
