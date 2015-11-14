@@ -4,6 +4,7 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"github.com/hanwen/go-fuse/fuse"
 	"log"
+	"syscall"
 )
 
 var LogOutput bool
@@ -23,6 +24,8 @@ func GetFuseReturnCode(retcode int) fuse.Status {
 		return fuse.ENOENT
 	case returncodes.EACCES:
 		return fuse.EACCES
+	case returncodes.EEXIST:
+		return fuse.Status(syscall.EEXIST)
 	default:
 		return fuse.OK
 	}

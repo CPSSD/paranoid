@@ -31,7 +31,8 @@ func CreatCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	if _, err := os.Stat(path.Join(directory, "names", args[1])); !os.IsNotExist(err) {
-		log.Fatalln("creat : file already exits")
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
+		return
 	}
 	verboseLog("creat : creating file " + args[1])
 
