@@ -42,10 +42,6 @@ func (ns *nodes) Remove(n Node) {
 	delete(ns.m, n)
 }
 
-func (ns *nodes) Delete(n Node) {
-	ns.Remove(n)
-}
-
 func (ns *nodes) GetAll() []Node {
 	ns.lock.Lock()
 	defer ns.lock.Unlock()
