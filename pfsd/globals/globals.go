@@ -18,7 +18,7 @@ var ResetInterval time.Duration
 // DiscoveryAddr contains the connection sting to the discovery server
 var DiscoveryAddr string
 
-// Nodes class containing all methods necessary to maniplate the nodes
+// Nodes instance which controls all the information about other pfsd instances
 var Nodes = nodes{m: make(map[Node]bool)}
 
 // --------------------------------------------
