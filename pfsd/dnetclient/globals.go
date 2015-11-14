@@ -1,22 +1,11 @@
 package dnetclient
 
 import (
-	"time"
+	"github.com/cpssd/paranoid/pfsd/globals"
 )
 
-// Node struct containing the node information
-type Node struct {
-	IP   string
-	Port string
-}
-
-// Nodes array
-var Nodes []Node
-
 // ThisNode has to be set before calling Join
-var ThisNode Node
+var ThisNode globals.Node
 
 // DiscoveryAddr public string
 var DiscoveryAddr string
-
-var ResetInterval time.Duration

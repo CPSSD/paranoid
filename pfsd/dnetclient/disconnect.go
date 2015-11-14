@@ -2,6 +2,7 @@ package dnetclient
 
 import (
 	"errors"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -10,7 +11,7 @@ import (
 
 // Disconnect function used to disconnect from the server
 func Disconnect() error {
-	conn, err := grpc.Dial(DiscoveryAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
 	if err != nil {
 		log.Println("[D] [E] failed to dial discovery server at ", DiscoveryAddr)
 		return errors.New("Failed to dial discovery server")

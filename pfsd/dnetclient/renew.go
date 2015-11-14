@@ -2,6 +2,7 @@ package dnetclient
 
 import (
 	"errors"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -11,9 +12,9 @@ import (
 // Renew function. Will create a goroutine which will send renew to server
 // 1/10 before expriration
 func Renew() error {
-	conn, err := grpc.Dial(DiscoveryAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Println("[D] [E] failed to dial discovery server at ", DiscoveryAddr)
+		log.Println("[D] [E] failed to dial discovery server at ", globals.DiscoveryAddr)
 		return errors.New("[D] [E] failed to dial discovery server")
 	}
 	defer conn.Close()

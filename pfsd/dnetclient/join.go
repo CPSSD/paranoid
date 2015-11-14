@@ -2,6 +2,7 @@ package dnetclient
 
 import (
 	"errors"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -12,9 +13,9 @@ import (
 
 // Join function to call in order to join the server
 func Join(pool string) error {
-	conn, err := grpc.Dial(DiscoveryAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Println("[D] [E] failed to dial discovery server at ", DiscoveryAddr)
+		log.Println("[D] [E] failed to dial discovery server at ", globals.DiscoveryAddr)
 		return errors.New("Failed to dial discovery server")
 	}
 	defer conn.Close()
@@ -29,10 +30,10 @@ func Join(pool string) error {
 	}
 
 	interval := response.ResetInterval / 10 * 9
-	ResetInterval, _ = time.ParseDuration(strconv.FormatInt(interval, 10) + "ms")
+	globals.ResetInterval, _ = time.ParseDuration(strconv.FormatInt(interval, 10) + "ms")
 
 	for _, node := range response.Nodes {
-		Nodes = append(Nodes, Node{node.Ip, node.Port})
+		globals.Nodes.Add(globals.Node{IP: node.Ip, Port: node.Port})
 	}
 
 	log.Println("[D] [I] Successfully joined")
