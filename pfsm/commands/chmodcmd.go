@@ -20,6 +20,9 @@ func ChmodCommand(args []string) {
 	directory := args[0]
 	verboseLog("chmod : given directory = " + directory)
 
+	getFileSystemLock(directory, exclusiveLock)
+	defer unLockFileSystem(directory)
+
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
