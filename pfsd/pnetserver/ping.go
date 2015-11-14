@@ -1,12 +1,15 @@
 package pnetserver
 
 import (
+	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"log"
 )
 
 func (s *ParanoidServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.EmptyMessage, error) {
-	log.Printf("ERROR: Ping not yet implemented.")
-	return nil, nil
+	node := globals.Node{IP: req.Ip, Port: req.Port}
+	log.Println("INFO: Got Ping from Node:", node)
+	globals.Nodes.Add(node)
+	return &pb.EmptyMessage{}, nil
 }

@@ -2,6 +2,7 @@
 package globals
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -10,6 +11,10 @@ import (
 type Node struct {
 	IP   string
 	Port string
+}
+
+func (n Node) String() string {
+	return fmt.Sprintf("%s:%s", n.IP, n.Port)
 }
 
 // ResetInterval containing how often the Renew function has to be called
