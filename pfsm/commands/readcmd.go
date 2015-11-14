@@ -22,6 +22,9 @@ func ReadCommand(args []string) {
 	directory := args[0]
 	verboseLog("read : given directory = " + directory)
 
+	getFileSystemLock(directory, sharedLock)
+	defer unLockFileSystem(directory)
+
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
@@ -36,6 +39,9 @@ func ReadCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
 	}
+
+	getFileLock(directory, fileName, sharedLock)
+	defer unLockFile(directory, fileName)
 
 	file, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_RDONLY, 0777)
 	checkErr("read", err)

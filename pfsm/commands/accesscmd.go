@@ -19,16 +19,23 @@ func AccessCommand(args []string) {
 	}
 	directory := args[0]
 	verboseLog("access : given directory = " + directory)
+
+	getFileSystemLock(directory, sharedLock)
+	defer unLockFileSystem(directory)
+
 	if !checkFileExists(path.Join(directory, "names", args[1])) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+
 	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
 	checkErr("access", err)
 	fileName := string(fileNameBytes)
+
 	mode, err := strconv.Atoi(args[2])
 	checkErr("access", err)
 	err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))
+
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return

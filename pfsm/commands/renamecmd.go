@@ -21,6 +21,9 @@ func RenameCommand(args []string) {
 	oldFilePath := path.Join(directory, "names", args[1])
 	newFilePath := path.Join(directory, "names", args[2])
 
+	getFileSystemLock(directory, exclusiveLock)
+	defer unLockFileSystem(directory)
+
 	if !checkFileExists(oldFilePath) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
