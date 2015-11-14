@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"google.golang.org/grpc"
@@ -22,6 +23,7 @@ func main() {
 		log.Fatalln("FATAL: port must be a number between 1 and 65535, inclusive.")
 	}
 	pnetserver.ParanoidDir = os.Args[2]
+	globals.Port = port
 	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
 		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "does not exist.")
 	}

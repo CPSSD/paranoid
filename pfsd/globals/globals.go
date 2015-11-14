@@ -1,4 +1,3 @@
-// Package globals contains the shared variables and functions in pfsd
 package globals
 
 import (
@@ -20,6 +19,8 @@ var DiscoveryAddr string
 
 // Nodes instance which controls all the information about other pfsd instances
 var Nodes = nodes{m: make(map[Node]bool)}
+
+var Port int
 
 // --------------------------------------------
 // ---- nodes ---- //
