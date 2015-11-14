@@ -38,7 +38,7 @@ func (ns *nodes) Add(n Node) {
 
 func (ns *nodes) Remove(n Node) {
 	ns.lock.Lock()
-	ns.lock.Unlock()
+	defer ns.lock.Unlock()
 	delete(ns.m, n)
 }
 
