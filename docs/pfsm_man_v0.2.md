@@ -43,7 +43,7 @@ It can also be used to test the file system by omitting the
 	Check if the file `<file>` can be acessed in `<filemode>`
 
 * `chmod`:
-	Change the permissions of `<file>` to `<permflags>`
+	Change the permissions of `<file>` to `<permflags>` (A base 8 integer)
 
 * `read`:
     Reads the file `<file>` and prints it to standard output.  If `<offset>` and `<length>` are omitted, then output all of the file.
@@ -52,7 +52,7 @@ It can also be used to test the file system by omitting the
     Returns a list of all files in the filesystem to standard output one per line. 
 
 * `creat`:
-    Create a new file in the filesystem and create a hard link to it called `<file>`.
+    Create a new file in the filesystem and create a hard link to it called `<file>` with permissions `<permflags>` (A base 8 integer).
 
 * `link`:
     Create a new link in the filesystem `<file>` to `<target>`.
