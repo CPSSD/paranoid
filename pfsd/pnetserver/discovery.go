@@ -32,7 +32,7 @@ func JoinDiscovery(pool string) {
 func renew() {
 	for { //Cant be terminated right now. Going to write a call to check if Disconnect has been called
 		if err := dnetclient.Renew(); err != nil {
-			log.Println("failure")
+			log.Println("Failed to Renew Session")
 		}
 		globals.ResetInterval = 5000 // this is hard coded while I wait for interval fix
 		time.Sleep(globals.ResetInterval * time.Millisecond)

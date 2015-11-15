@@ -30,7 +30,7 @@ func sendChmodRequest(ipAddress globals.Node, path, mode string) {
 
 	response, err := client.Chmod(context.Background(), &pb.ChmodRequest{path, modeInt})
 	if err != nil {
-		log.Fatalln("Chmod Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+		log.Println("Chmod Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 	}
 	log.Println(response)
 }
