@@ -10,7 +10,7 @@ import (
 
 func SetDiscovery(ip, port, serverPort string) {
 	log.Println(serverPort)
-	ipClient := network.GetIP()
+	ipClient, _ := network.GetIP()
 	dnetclient.ThisNode = globals.Node{IP: ipClient, Port: serverPort}
 	globals.DiscoveryAddr = ip + ":" + port
 }
