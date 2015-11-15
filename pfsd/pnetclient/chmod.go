@@ -17,7 +17,7 @@ func chmod(ips []globals.Node, path string, mode string) {
 
 func sendChmodRequest(ipAddress globals.Node, path, mode string) {
 	var modeInt uint32
-	mode64, _ := strconv.ParseUint(mode, 10, 32)
+	mode64, _ := strconv.ParseUint(mode, 8, 32)
 	modeInt = uint32(mode64)
 
 	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, grpc.WithInsecure())

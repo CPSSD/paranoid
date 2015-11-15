@@ -1,19 +1,27 @@
 package network
 
 import (
+	"errors"
 	"net"
+	"strings"
 )
 
-func GetIP() string {
+func GetIP() (string, error) {
 	ifaces, _ := net.Interfaces()
-	// handle err
-	addrs, _ := ifaces[1].Addrs()
-	var ip net.IP
-	switch v := addrs[0].(type) {
-	case *net.IPNet:
-		ip = v.IP
-	case *net.IPAddr:
-		ip = v.IP
+	for _, i := range ifaces {
+		addrs, _ := i.Addrs()
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if strings.Contains(ip.String(), "192.168.") {
+				return ip.String(), nil
+			}
+		}
 	}
-	return ip.String()
+	return "", errors.New("No IP found")
 }

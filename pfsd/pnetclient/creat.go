@@ -20,7 +20,7 @@ func creat(ips []globals.Node, filename, permissions string) {
 
 func sendCreateRequest(ipAddress globals.Node, filename, permissions string, opts []grpc.DialOption) {
 	var permissionsInt uint32
-	permissions64, _ := strconv.ParseUint(permissions, 10, 32)
+	permissions64, _ := strconv.ParseUint(permissions, 8, 32)
 	permissionsInt = uint32(permissions64)
 
 	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)

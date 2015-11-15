@@ -18,7 +18,7 @@ func ping(ips []globals.Node) {
 }
 
 func pingServer(ipAddress globals.Node, opts []grpc.DialOption) {
-	ip := GetIP()
+	ip, _ := GetIP()
 	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)
 	if err != nil {
 		log.Fatalln("fail to dial: ", err)
