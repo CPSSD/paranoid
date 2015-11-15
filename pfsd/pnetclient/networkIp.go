@@ -21,6 +21,12 @@ func GetIP() (string, error) {
 			if strings.Contains(ip.String(), "192.168.") {
 				return ip.String(), nil
 			}
+			if strings.Contains(ip.String(), "10.") {
+				return ip.String(), nil
+			}
+			if strings.Contains(ip.String(), "17.16.") {
+				return ip.String(), nil
+			}
 		}
 	}
 	return "", errors.New("No IP found")
