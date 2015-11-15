@@ -14,14 +14,15 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Print("Usage:\n\tpfsd <port> <paranoid_directory>\n")
+	if len(os.Args) < 4 {
+		fmt.Print("Usage:\n\tpfsd <port> <paranoid_directory> <Discovery Server> <Discovery Port>\n")
 		os.Exit(1)
 	}
 	port, err := strconv.Atoi(os.Args[1])
 	if err != nil || port < 1 || port > 65535 {
 		log.Fatalln("FATAL: port must be a number between 1 and 65535, inclusive.")
 	}
+	pnetserver.SetDiscovery(os.Args[3], os.Args[4], os.Args[1])
 	pnetserver.ParanoidDir = os.Args[2]
 	globals.Port = port
 	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
@@ -35,6 +36,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("FATAL: Failed to listen on port %d: %v.\n", port, err)
 	}
+
+	pnetserver.JoinDiscovery("_")
 	srv := grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	srv.Serve(lis)

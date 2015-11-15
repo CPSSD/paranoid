@@ -33,6 +33,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 			}
 
 			node.Active = true
+			log.Printf(node)
 			return &response, nil
 		}
 	}
