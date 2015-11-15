@@ -22,7 +22,7 @@ func sendChmodRequest(ipAddress globals.Node, path, mode string) {
 
 	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalln("fail to dial: ", err)
+		log.Println("fail to dial: ", err)
 	}
 
 	defer conn.Close()
