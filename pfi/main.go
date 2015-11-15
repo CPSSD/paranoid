@@ -43,9 +43,11 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime)
 
 	// setting up with fuse
+	opts := pathfs.PathNodeFsOptions{}
+	opts.ClientInodes = true
 	nfs := pathfs.NewPathNodeFs(&filesystem.ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
-	}, nil)
+	}, &opts)
 	server, _, err := nodefs.MountRoot(util.MountPoint, nfs.Root(), nil)
 	if err != nil {
 		log.Fatalf("Mount fail: %v\n", err)
