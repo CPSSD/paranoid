@@ -15,8 +15,7 @@ func (s *DiscoveryServer) Renew(ctx context.Context, req *pb.JoinRequest) (*pb.E
 	isActiveNode := false
 
 	for i, node := range Nodes {
-		log.Println(node)
-		if &node.Data == req.Node {
+		if node.Data == *req.Node {
 			if node.Active {
 				Nodes[i].ExpiryTime = time.Now().Add(RenewInterval)
 				isActiveNode = true

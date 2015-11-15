@@ -16,7 +16,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 
 	// Go through each node and check was the node there
 	for _, node := range Nodes {
-		if &node.Data == req.Node {
+		if node.Data == *req.Node {
 			if node.Active {
 				log.Printf("[E] Join: node %s:%s is already part of the cluster\n", req.Node.Ip, req.Node.Port)
 				returnError := grpc.Errorf(codes.AlreadyExists,
@@ -33,7 +33,6 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 			}
 
 			node.Active = true
-			log.Printf(node)
 			return &response, nil
 		}
 	}
