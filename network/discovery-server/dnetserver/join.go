@@ -39,6 +39,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 
 	newNode := Node{true, req.Pool, time.Now().Add(RenewInterval), *req.Node}
 	Nodes = append(Nodes, newNode)
+	log.Printf("[I] Join: Node %s:%s joined \n", req.Node.Ip, req.Node.Port)
 
 	return &response, nil
 }
