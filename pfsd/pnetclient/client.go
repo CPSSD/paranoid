@@ -1,4 +1,4 @@
-package network
+package pnetclient
 
 import (
 	"github.com/cpssd/paranoid/ic/icserver"

@@ -29,7 +29,7 @@ func main() {
 	}
 	pnetserver.SetDiscovery(os.Args[3], os.Args[4], os.Args[1])
 	pnetserver.ParanoidDir = os.Args[2]
-	globals.Server, err = network.GetIP()
+	globals.Server, err = pnetclient.GetIP()
 	if err != nil {
 		log.Fatalln("FATAL: Cant get internal IP.")
 	}
