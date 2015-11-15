@@ -25,6 +25,10 @@ func LinkCommand(args []string) {
 	targetFilePath := path.Join(directory, "names", targetFileName)
 
 	verboseLog("link : given directory = " + directory)
+
+	getFileSystemLock(directory, exclusiveLock)
+	defer unLockFileSystem(directory)
+
 	if !checkFileExists(existingFilePath) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
