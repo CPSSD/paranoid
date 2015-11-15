@@ -11,7 +11,7 @@ import (
 
 func chmod(ips []globals.Node, path string, mode string) {
 	for _, ipAddress := range ips {
-		sendChmodMessage(ipAddress, path, mode)
+		sendChmodRequest(ipAddress, path, mode)
 	}
 }
 

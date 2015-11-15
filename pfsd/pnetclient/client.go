@@ -2,9 +2,7 @@ package network
 
 import (
 	"github.com/cpssd/paranoid/ic/icserver"
-	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
-	"log"
 )
 
 func SendRequest(socket icserver.FileSystemMessage) {

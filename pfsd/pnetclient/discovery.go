@@ -17,8 +17,8 @@ func Join(pool string) {
 	if err := dnetclient.Join(pool); err != nil {
 		connectionBuffer := 30
 		// Going to attempt connecting 30 times before I give up
-		for sum > 1 {
-			err := dnetclient.Join(pool)
+		for connectionBuffer > 1 {
+			err = dnetclient.Join(pool)
 		}
 	} else {
 		go renew()
@@ -27,7 +27,10 @@ func Join(pool string) {
 
 func renew() {
 	for true { //noway to break this except forcefully
-		time.sleep(globals.ResetInterval)
-		err := Renew()
+		time.Sleep(globals.ResetInterval)
+		err := dnetclient.Renew()
+		if err != nil {
+			log.Println("failure to renew connection")
+		}
 	}
 }
