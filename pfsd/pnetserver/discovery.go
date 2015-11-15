@@ -17,7 +17,6 @@ func SetDiscovery(ip, port, serverPort string) {
 
 func JoinDiscovery(pool string) {
 	if err := dnetclient.Join(pool); err != nil {
-		log.Println("I'm an error ")
 		connectionBuffer := 10
 		log.Println("Error Connecting to Server, Attempting to reconnect")
 		for connectionBuffer > 1 {
