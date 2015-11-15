@@ -25,9 +25,9 @@ func sendTruncateRequest(ipAddress globals.Node, path string, length string, opt
 
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
-	lenghtInt, _ := strconv.ParseUint(length, 10, 64)
+	lengthInt, _ := strconv.ParseUint(length, 10, 64)
 
-	response, err := client.Truncate(context.Background(), &pb.TruncateRequest{path, lenghtInt})
+	response, err := client.Truncate(context.Background(), &pb.TruncateRequest{path, lengthInt})
 	if err != nil {
 		log.Fatalln("Truncate Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 	}

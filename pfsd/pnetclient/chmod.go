@@ -15,7 +15,7 @@ func chmod(ips []globals.Node, path string, mode string) {
 	}
 }
 
-func sendChmodMessage(ipAddress globals.Node, path, mode string) {
+func sendChmodRequest(ipAddress globals.Node, path, mode string) {
 	var modeInt uint32
 	mode64, _ := strconv.ParseUint(mode, 10, 32)
 	modeInt = uint32(mode64)

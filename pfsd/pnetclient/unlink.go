@@ -27,7 +27,7 @@ func sendUnlinkRequest(ipAddress globals.Node, path string, opts []grpc.DialOpti
 
 	response, err := client.Unlink(context.Background(), &pb.UnlinkRequest{path})
 	if err != nil {
-		log.Fatalln("Unlink Error on ", ipAddress, "Error:", err)
+		log.Fatalln("Unlink Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 	}
 	log.Println(response)
 }

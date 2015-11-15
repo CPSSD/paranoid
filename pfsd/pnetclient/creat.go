@@ -18,14 +18,14 @@ func creat(ips []globals.Node, filename, permissions string) {
 	}
 }
 
-func sendCreateMessage(ipAddress globals.Node, filename, permissions string, opts []grpc.DialOption) {
+func sendCreateRequest(ipAddress globals.Node, filename, permissions string, opts []grpc.DialOption) {
 	var permissionsInt uint32
 	permissions64, _ := strconv.ParseUint(permissions, 10, 32)
 	permissionsInt = uint32(permissions64)
 
 	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)
 	if err != nil {
-		log.Fatalln("fail to dial: ", err)
+		log.Println("fail to dial: ", err)
 	}
 
 	defer conn.Close()
@@ -33,7 +33,7 @@ func sendCreateMessage(ipAddress globals.Node, filename, permissions string, opt
 
 	response, err := client.Creat(context.Background(), &pb.CreatRequest{filename, permissionsInt})
 	if err != nil {
-		log.Println("Failure connecting to", ipAddress.IP+":"+ipAddress.Port)
+		log.Println("Failure Sending Message to", ipAddress.IP+":"+ipAddress.Port+" Error"+err)
 	}
 	log.Println(response)
 }

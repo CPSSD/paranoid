@@ -2,6 +2,7 @@ package network
 
 import (
 	"github.com/cpssd/paranoid/ic/icserver"
+	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"log"
 )
@@ -31,7 +32,6 @@ func SendRequest(socket icserver.FileSystemMessage) {
 			socket.Args[3],
 			socket.Args[4])
 	case "write":
-		log.Println("Write")
 		write(ips, socket.Args[0], socket.Data, socket.Args[1], socket.Args[2])
 	}
 }
