@@ -9,17 +9,15 @@ import (
 )
 
 func link(ips []globals.Node, oldPath, newPath string) {
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
 	for _, ipAddress := range ips {
-		sendLinkRequest(ipAddress, oldPath, newPath, opts)
+		sendLinkRequest(ipAddress, oldPath, newPath)
 	}
 }
 
-func sendLinkRequest(ipAddress globals.Node, oldPath, newPath string, opts []grpc.DialOption) {
-	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)
+func sendLinkRequest(ipAddress globals.Node, oldPath, newPath string) {
+	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalln("fail to dial: ", err)
+		log.Println("fail to dial: ", err)
 	}
 
 	defer conn.Close()
@@ -27,7 +25,7 @@ func sendLinkRequest(ipAddress globals.Node, oldPath, newPath string, opts []grp
 
 	response, err := client.Link(context.Background(), &pb.LinkRequest{oldPath, newPath})
 	if err != nil {
-		log.Fatalln("Link Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+		log.Println("Link Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 	}
 	log.Println(response)
 }

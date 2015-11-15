@@ -10,17 +10,15 @@ import (
 )
 
 func truncate(ips []globals.Node, path string, length string) {
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
 	for _, ipAddress := range ips {
-		sendTruncateRequest(ipAddress, path, length, opts)
+		sendTruncateRequest(ipAddress, path, length)
 	}
 }
 
-func sendTruncateRequest(ipAddress globals.Node, path string, length string, opts []grpc.DialOption) {
-	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)
+func sendTruncateRequest(ipAddress globals.Node, path string, length string) {
+	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalln("fail to dial: ", err)
+		log.Println("fail to dial: ", err)
 	}
 
 	defer conn.Close()
@@ -29,7 +27,7 @@ func sendTruncateRequest(ipAddress globals.Node, path string, length string, opt
 
 	response, err := client.Truncate(context.Background(), &pb.TruncateRequest{path, lengthInt})
 	if err != nil {
-		log.Fatalln("Truncate Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+		log.Println("Truncate Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 	}
 	log.Println(response)
 }

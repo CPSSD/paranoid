@@ -9,17 +9,15 @@ import (
 )
 
 func unlink(ips []globals.Node, path string) {
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
 	for _, ipAddress := range ips {
-		sendUnlinkRequest(ipAddress, path, opts)
+		sendUnlinkRequest(ipAddress, path)
 	}
 }
 
-func sendUnlinkRequest(ipAddress globals.Node, path string, opts []grpc.DialOption) {
-	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)
+func sendUnlinkRequest(ipAddress globals.Node, path string) {
+	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalln("fail to dial: ", err)
+		log.Println("fail to dial: ", err)
 	}
 
 	defer conn.Close()
@@ -27,7 +25,7 @@ func sendUnlinkRequest(ipAddress globals.Node, path string, opts []grpc.DialOpti
 
 	response, err := client.Unlink(context.Background(), &pb.UnlinkRequest{path})
 	if err != nil {
-		log.Fatalln("Unlink Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+		log.Println("Unlink Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 	}
 	log.Println(response)
 }

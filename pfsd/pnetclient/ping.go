@@ -10,18 +10,16 @@ import (
 )
 
 func ping(ips []globals.Node) {
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
 	for _, value := range ips {
-		pingServer(value, opts)
+		pingServer(value)
 	}
 }
 
-func pingServer(ipAddress globals.Node, opts []grpc.DialOption) {
+func pingServer(ipAddress globals.Node) {
 	ip, _ := GetIP()
-	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)
+	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalln("fail to dial: ", err)
+		log.Println("fail to dial: ", err)
 	}
 
 	defer conn.Close()
@@ -30,7 +28,7 @@ func pingServer(ipAddress globals.Node, opts []grpc.DialOption) {
 	port := strconv.Itoa(globals.Port)
 	response, err := client.Ping(context.Background(), &pb.PingRequest{ip, port})
 	if err != nil {
-		log.Fatalln("Cant Ping ", ipAddress.IP+":"+ipAddress.Port)
+		log.Println("Cant Ping ", ipAddress.IP+":"+ipAddress.Port)
 	}
 	log.Println(response)
 }

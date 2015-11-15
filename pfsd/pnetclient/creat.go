@@ -10,20 +10,18 @@ import (
 )
 
 func creat(ips []globals.Node, filename, permissions string) {
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
 	for _, ipAddr := range ips {
-		sendCreateRequest(ipAddr, filename, permissions, opts)
+		sendCreateRequest(ipAddr, filename, permissions)
 		log.Println("Connecting to: ", ipAddr)
 	}
 }
 
-func sendCreateRequest(ipAddress globals.Node, filename, permissions string, opts []grpc.DialOption) {
+func sendCreateRequest(ipAddress globals.Node, filename, permissions string) {
 	var permissionsInt uint32
 	permissions64, _ := strconv.ParseUint(permissions, 8, 32)
 	permissionsInt = uint32(permissions64)
 
-	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)
+	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, grpc.WithInsecure())
 	if err != nil {
 		log.Println("fail to dial: ", err)
 	}

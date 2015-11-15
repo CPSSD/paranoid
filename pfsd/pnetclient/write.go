@@ -11,20 +11,21 @@ import (
 
 func write(ips []globals.Node, path string, data []byte, offset, length string) {
 
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
 	for _, ipAddress := range ips {
-		response, err := sendWriteRequest(ipAddress, path, data, offset, length, opts)
-		log.Println(response)
-		log.Println(err)
+		response, err := sendWriteRequest(ipAddress, path, data, offset, length)
+		if err != nil {
+			log.Println("Error Sending Message: ", err)
+		} else {
+			log.Println(response)
+		}
 	}
 }
 
-func sendWriteRequest(ipAddress globals.Node, path string, data []byte, offset, length string, opts []grpc.DialOption) (string, error) {
+func sendWriteRequest(ipAddress globals.Node, path string, data []byte, offset, length string) (string, error) {
 
-	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, opts...)
+	conn, err := grpc.Dial(ipAddress.IP+":"+ipAddress.Port, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalln("fail to dial: ", err)
+		log.Println("fail to dial: ", err)
 		return "", err
 	}
 
@@ -35,7 +36,7 @@ func sendWriteRequest(ipAddress globals.Node, path string, data []byte, offset, 
 	lengthInt, _ := strconv.ParseUint(length, 10, 64)
 	response, err := client.Write(context.Background(), &pb.WriteRequest{path, data, offsetInt, lengthInt})
 	if err != nil {
-		log.Fatalln("Write Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+		log.Println("Write Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 
 	}
 	return response.String(), err
