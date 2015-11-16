@@ -4,7 +4,7 @@ paranoid-cli(8) -- interact with a paranoid filesystem
 ## SYNOPSIS
 
 `paranoid-cli` `init` `<pfs-directory>`<br>
-`paranoid-cli` `mount` `port` `<discovery-server-address>` `<paranoid-directory>` `<mountpoint>`<br>
+`paranoid-cli` `mount` `<port>` `<discovery-server-address>` `<paranoid-directory>` `<mountpoint>`<br>
 `paranoid-cli` `unmount` `<mountpoint>`<br>
 
 ## DESCRIPTION
