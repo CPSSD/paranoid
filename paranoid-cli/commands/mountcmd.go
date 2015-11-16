@@ -57,14 +57,21 @@ func Mount(c *cli.Context) {
 		log.Fatalln("FATAL: port must be a number between 1 and 65535, inclusive.")
 	}
 
+	outfile, err := os.Create(path.Join(directory, "meta", "logs", "pfsdLog.txt"))
+
+	if err != nil {
+		log.Fatalln("FATAL error creating output file")
+	}
+
 	cmd = exec.Command("pfsd", args[0], directory, splits[0], splits[1])
+	cmd.Stderr = outfile
 	err = cmd.Start()
 
 	cmd = exec.Command("pfi", directory, args[3])
 	if c.GlobalBool("verbose") {
 		cmd = exec.Command("pfi", "-v", directory, args[3])
 	}
-	outfile, err := os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
+	outfile, err = os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
 
 	if err != nil {
 		log.Fatalln("FATAL error creating output file")
