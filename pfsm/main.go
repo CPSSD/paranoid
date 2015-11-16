@@ -12,12 +12,10 @@ func main() {
 	var onlyArgs []string
 	var onlyFlags []string
 	for i := 0; i < len(args); i++ {
-		if len(args[i]) > 0 {
-			if args[i][0] == '-' {
-				onlyFlags = append(onlyFlags, args[i])
-			} else {
-				onlyArgs = append(onlyArgs, args[i])
-			}
+		if len(args[i]) > 0 && args[i][0] == '-' {
+			onlyFlags = append(onlyFlags, args[i])
+		} else {
+			onlyArgs = append(onlyArgs, args[i])
 		}
 	}
 	commands.ProcessFlags(onlyFlags)
