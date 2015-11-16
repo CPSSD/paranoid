@@ -17,21 +17,16 @@ func (s *ParanoidServer) Write(ctx context.Context, req *pb.WriteRequest) (*pb.W
 		log.Println("WARNING: Could not decode base64 data:", err)
 	}
 
-	var offset string
-	// Go assumes a nil int field in a protobuf is 0
-	if req.Offset != 0 {
-		offset = strconv.FormatUint(req.Offset, 10)
-	} else {
-		offset = ""
-	}
-	var length string
+	var code int
+	var output []byte
 	if req.Length != 0 {
-		length = strconv.FormatUint(req.Length, 10)
+		code, output, err = runCommand(data, "write", ParanoidDir, req.Path, strconv.FormatUint(req.Offset, 10), strconv.FormatUint(req.Length, 10))
+	} else if req.Offset != 0 {
+		code, output, err = runCommand(data, "write", ParanoidDir, req.Path, strconv.FormatUint(req.Offset, 10))
 	} else {
-		length = ""
+		code, output, err = runCommand(data, "write", ParanoidDir, req.Path)
 	}
 
-	code, output, err := runCommand(data, "write", ParanoidDir, req.Path, length, offset)
 	if err != nil {
 		log.Printf("ERROR: Could not write to file %s: %v.\n", req.Path, err)
 		returnError := grpc.Errorf(codes.Internal, "could not write to file %s: %v",
