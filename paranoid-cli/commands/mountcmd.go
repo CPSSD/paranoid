@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -15,18 +16,18 @@ import (
 //If the file system doesn't exist it creates it.
 func Mount(c *cli.Context) {
 	args := c.Args()
-	if len(args) < 3 {
+	if len(args) < 4 {
 		cli.ShowAppHelp(c)
 		os.Exit(0)
 	}
 
-	serverAddress := args[0]
+	serverAddress := args[1]
 	_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
 	if err != nil {
 		log.Fatalln("FATAL : unable to reach server", err)
 	}
 
-	directory := args[1]
+	directory := args[2]
 	if _, err := os.Stat(path.Join(directory, "contents")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : directory does not include contents directory")
 	}
@@ -51,12 +52,17 @@ func Mount(c *cli.Context) {
 		log.Fatalln("FATAL error running pfsm mount command : ", err)
 	}
 
-	cmd = exec.Command("pfs-network-client", "--client", directory, splits[0], splits[1])
+	port, err := strconv.Atoi(args[0])
+	if err != nil || port < 1 || port > 65535 {
+		log.Fatalln("FATAL: port must be a number between 1 and 65535, inclusive.")
+	}
+
+	cmd = exec.Command("pfsd", args[0], directory, splits[0], splits[1])
 	err = cmd.Start()
 
-	cmd = exec.Command("pfi", directory, args[2])
+	cmd = exec.Command("pfi", directory, args[3])
 	if c.GlobalBool("verbose") {
-		cmd = exec.Command("pfi", "-v", directory, args[2])
+		cmd = exec.Command("pfi", "-v", directory, args[3])
 	}
 	outfile, err := os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
 
