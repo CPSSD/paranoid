@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"strconv"
 )
 
 // MessageChan is the channel to which incoming messages will be passed
@@ -26,6 +27,8 @@ type FileSystemMessage struct {
 func handleConnection(conn net.Conn) {
 	verboseLog("icserver new connection")
 	defer verboseLog("icserver connection lost")
+
+	messageBuffer := make([]byte, 0)
 	for {
 		buffer := make([]byte, 1024)
 		mSize, err := conn.Read(buffer)
@@ -34,23 +37,34 @@ func handleConnection(conn net.Conn) {
 			break
 		}
 		data := buffer[0:mSize]
-		verboseLog("icserver new message:\n" + string(data))
-
-		message := FileSystemMessage{}
+		verboseLog("icserver new message:\n" + string(data) + "\nLength: " + strconv.Itoa(len(data)))
+		if len(messageBuffer) != 0 {
+			data = append(messageBuffer, data...)
+		}
+		message := &FileSystemMessage{}
 		err = json.Unmarshal(data, message)
 		if err != nil {
-			log.Fatalln("icserver json unmarshal error: ", err)
-		}
-
-		if len(message.Base64Data) != 0 {
-			message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
-			if err != nil {
-				log.Fatalln("icserver base64 decoding error: ", err)
+			if err.Error() == "unexpected end of JSON input" {
+				// more of the message is to come.
+				messageBuffer = data
+			} else {
+				log.Fatalln("icserver json unmarshal error: ", err)
 			}
+		} else {
+			messageBuffer = make([]byte, 0)
 		}
 
-		MessageChan <- message
-		verboseLog("icserver new message pushed to channel: " + message.Command)
+		if len(messageBuffer) == 0 {
+			if len(message.Base64Data) != 0 {
+				message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
+				if err != nil {
+					log.Fatalln("icserver base64 decoding error: ", err)
+				}
+			}
+
+			MessageChan <- *message
+			verboseLog("icserver new message pushed to channel: " + message.Command)
+		}
 	}
 }
 
