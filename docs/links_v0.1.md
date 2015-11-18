@@ -24,5 +24,6 @@ Useful links
 ## Information on consenus
 - https://www.youtube.com/watch?v=YbZ3zDzDnrw (Raft lecture)
 - https://ramcloud.stanford.edu/raft.pdf (Raft paper)
+- http://thesecretlivesofdata.com/raft/ (Raft visual representation)
 - https://en.wikipedia.org/wiki/Consensus_(computer_science)
 - https://en.wikipedia.org/wiki/Byzantine_fault_tolerance
