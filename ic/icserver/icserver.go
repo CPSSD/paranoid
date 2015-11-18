@@ -28,7 +28,7 @@ func handleConnection(conn net.Conn) {
 	verboseLog("icserver new connection")
 	defer verboseLog("icserver connection lost")
 
-	messageBuffer := make([]byte, 0)
+	var messageBuffer []byte
 	for {
 		buffer := make([]byte, 1024)
 		mSize, err := conn.Read(buffer)
