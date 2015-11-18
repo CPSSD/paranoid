@@ -26,9 +26,11 @@ func Mount(c *cli.Context) {
 
 func doMount(c *cli.Context, args []string) {
 	serverAddress := args[1]
-	_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
-	if err != nil {
-		log.Fatalln("FATAL : unable to reach server", err)
+	if c.GlobalBool("networkoff") == false {
+		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
+		if err != nil {
+			log.Fatalln("FATAL : unable to reach server", err)
+		}
 	}
 
 	usr, err := user.Current()
@@ -72,14 +74,21 @@ func doMount(c *cli.Context, args []string) {
 		log.Fatalln("FATAL error creating output file")
 	}
 
-	cmd = exec.Command("pfsd", args[0], directory, splits[0], splits[1])
-	cmd.Stderr = outfile
-	err = cmd.Start()
-
-	cmd = exec.Command("pfi", directory, args[3])
-	if c.GlobalBool("verbose") {
-		cmd = exec.Command("pfi", "-v", directory, args[3])
+	if c.GlobalBool("networkoff") == false {
+		cmd = exec.Command("pfsd", args[0], directory, splits[0], splits[1])
+		cmd.Stderr = outfile
+		err = cmd.Start()
 	}
+
+	pfiArgs := []string{directory, args[3]}
+	if c.GlobalBool("verbose") {
+		pfiArgs = append(pfiArgs, "-v")
+	}
+	if c.GlobalBool("networkoff") {
+		pfiArgs = append(pfiArgs, "-n")
+	}
+
+	cmd = exec.Command("pfi", pfiArgs...)
 	outfile, err = os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
 
 	if err != nil {

@@ -15,6 +15,10 @@ func main() {
 			Name:  "verbose",
 			Usage: "enable verbose loging",
 		},
+		cli.BoolFlag{
+			Name:  "networkoff",
+			Usage: "turn off networking",
+		},
 	}
 	app.Commands = []cli.Command{
 		{

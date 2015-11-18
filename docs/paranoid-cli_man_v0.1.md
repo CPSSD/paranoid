@@ -31,3 +31,6 @@ mount or unmount a paranoid file system.
 
   * `--verbose`:
     This enables debug logging to standard error.
+
+  * `--networkoff`:
+	This disables networking for testing purposes
