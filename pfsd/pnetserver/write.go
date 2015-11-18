@@ -11,8 +11,9 @@ import (
 )
 
 func (s *ParanoidServer) Write(ctx context.Context, req *pb.WriteRequest) (*pb.WriteResponse, error) {
-	var data []byte
-	_, err := base64.StdEncoding.Decode(data, req.Data)
+	data := make([]byte, base64.StdEncoding.DecodedLen(len(req.Data)))
+	realDecodedLen, err := base64.StdEncoding.Decode(data, req.Data)
+	data = data[:realDecodedLen]
 	if err != nil {
 		log.Println("WARNING: Could not decode base64 data:", err)
 	}
