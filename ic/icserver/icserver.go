@@ -33,8 +33,8 @@ func handleConnection(conn net.Conn) {
 
 	for {
 		buffer := make([]byte, 1024)
-		mSize, err := conn.Read(buffer)
 		endOfMessage := true
+		mSize, err := conn.Read(buffer)
 		if err != nil {
 			// connection closed
 			break
