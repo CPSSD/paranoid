@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/ic/icserver"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
@@ -29,6 +30,7 @@ func main() {
 	}
 	pnetserver.SetDiscovery(os.Args[3], os.Args[4], os.Args[1])
 	pnetserver.ParanoidDir = os.Args[2]
+	go startIcAndListen(pnetserver.ParanoidDir)
 	globals.Server, err = pnetclient.GetIP()
 	if err != nil {
 		log.Fatalln("FATAL: Cant get internal IP.")
@@ -50,4 +52,15 @@ func main() {
 	srv := grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	srv.Serve(lis)
+}
+
+func startIcAndListen(pfsDir string) {
+	go icserver.RunServer(pfsDir, true)
+
+	for {
+		select {
+		case message := <-icserver.MessageChan:
+			pnetclient.SendRequest(message)
+		}
+	}
 }
