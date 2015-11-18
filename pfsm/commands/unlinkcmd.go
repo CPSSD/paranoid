@@ -83,5 +83,8 @@ func UnlinkCommand(args []string) {
 		checkErr("unlink", err)
 	}
 
+	if !Flags.Network {
+		sendToServer(directory, "unlink", args[1:], nil)
+	}
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

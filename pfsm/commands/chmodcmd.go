@@ -47,5 +47,8 @@ func ChmodCommand(args []string) {
 	err = contentsFile.Chmod(os.FileMode(perms))
 	checkErr("chmod", err)
 
+	if !Flags.Network {
+		sendToServer(directory, "chmod", args[1:], nil)
+	}
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

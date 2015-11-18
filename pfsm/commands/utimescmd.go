@@ -72,5 +72,8 @@ func UtimesCommand(args []string) {
 		os.Chtimes(path.Join(directory, "contents", fileName), *times.Atime, *times.Mtime)
 	}
 
+	if !Flags.Network {
+		sendToServer(directory, "utimes", args[1:], nil)
+	}
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

@@ -82,5 +82,8 @@ func LinkCommand(args []string) {
 	err = openedFile.Close()
 	checkErr("link", err)
 
+	if !Flags.Network {
+		sendToServer(directory, "link", args[1:], nil)
+	}
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }
