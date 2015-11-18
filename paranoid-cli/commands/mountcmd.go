@@ -81,14 +81,15 @@ func doMount(c *cli.Context, args []string) {
 	}
 
 	pfiArgs := []string{directory, args[3]}
+	var pfiFlags []string
 	if c.GlobalBool("verbose") {
-		pfiArgs = append(pfiArgs, "-v")
+		pfiFlags = append(pfiFlags, "-v")
 	}
 	if c.GlobalBool("networkoff") {
-		pfiArgs = append(pfiArgs, "-n")
+		pfiFlags = append(pfiFlags, "-n")
 	}
 
-	cmd = exec.Command("pfi", pfiArgs...)
+	cmd = exec.Command("pfi", append(pfiFlags, pfiArgs...)...)
 	outfile, err = os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
 
 	if err != nil {
