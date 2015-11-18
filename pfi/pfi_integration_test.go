@@ -112,8 +112,6 @@ func TestFuseExternalUsage(t *testing.T) {
 func TestFuseFilePerms(t *testing.T) {
 	createTestDir(t, "pfiTestPfsDir")
 	defer removeTestDir("pfiTestPfsDir")
-	createTestDir(t, "pfiTestMountPoint")
-	defer removeTestDir("pfiTestMountPoint")
 	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
 	pfsminterface.OriginFlag = "-n"
 
@@ -162,8 +160,6 @@ func TestFuseFilePerms(t *testing.T) {
 func TestFuseFileOperations(t *testing.T) {
 	createTestDir(t, "pfiTestPfsDir")
 	defer removeTestDir("pfiTestPfsDir")
-	createTestDir(t, "pfiTestMountPoint")
-	defer removeTestDir("pfiTestMountPoint")
 	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
 	pfsminterface.OriginFlag = "-n"
 
@@ -225,8 +221,6 @@ func TestFuseFileOperations(t *testing.T) {
 func TestFuseFileSystemOperations(t *testing.T) {
 	createTestDir(t, "pfiTestPfsDir")
 	defer removeTestDir("pfiTestPfsDir")
-	createTestDir(t, "pfiTestMountPoint")
-	defer removeTestDir("pfiTestMountPoint")
 	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
 	pfsminterface.OriginFlag = "-n"
 
@@ -287,11 +281,57 @@ func TestFuseFileSystemOperations(t *testing.T) {
 	}
 }
 
+func TestFuseLink(t *testing.T) {
+	createTestDir(t, "pfiTestPfsDir")
+	defer removeTestDir("pfiTestPfsDir")
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	pfsminterface.OriginFlag = "-n"
+
+	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		t.Error("pfsm setup failed :", err)
+	}
+
+	pfs := &filesystem.ParanoidFileSystem{
+		FileSystem: pathfs.NewDefaultFileSystem(),
+	}
+
+	_, code := pfs.Create("file1", 0, uint32(os.FileMode(0777)), nil)
+	if code != fuse.OK {
+		t.Error("Create did not return OK. Actual : ", code)
+	}
+
+	code = pfs.Link("file1", "file2", nil)
+	if code != fuse.OK {
+		t.Error("Link did not return OK. Actual : ", code)
+	}
+
+	file, code := pfs.Open("file2", uint32(os.O_RDWR), nil)
+	if code != fuse.OK {
+		t.Error("Did not get OK opening file. Actual :", code)
+	}
+
+	_, code = file.Write([]byte("testhello"), 0)
+	if code != fuse.OK {
+		t.Error("Write did not return OK. Actual :", code)
+	}
+
+	buf := make([]byte, 9)
+	_, code = file.Read(buf, 0)
+	if code != fuse.OK {
+		t.Error("Read did not return OK. Actual :", code)
+	}
+
+	if string(buf) != "testhello" {
+		t.Error("Read did not return correct result. Actual :", string(buf))
+	}
+}
+
 func TestFuseUtimes(t *testing.T) {
 	createTestDir(t, "pfiTestPfsDir")
 	defer removeTestDir("pfiTestPfsDir")
-	createTestDir(t, "pfiTestMountPoint")
-	defer removeTestDir("pfiTestMountPoint")
 	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
 	pfsminterface.OriginFlag = "-n"
 

@@ -301,6 +301,69 @@ func TestFilesystemCommands(t *testing.T) {
 	}
 }
 
+func TestLinkCommand(t *testing.T) {
+	Flags.Network = true
+	createTestDir(t)
+	defer removeTestDir()
+
+	args := []string{path.Join(os.TempDir(), "paranoidTest")}
+	InitCommand(args)
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "777"}
+	CreatCommand(args)
+
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "test2.txt"}
+	LinkCommand(args)
+
+	code, files := doReadDirCommand(t)
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK. Actual:", code)
+	}
+	if files[0] != "test.txt" && files[1] != "test.txt" {
+		t.Error("Readdir got incorrect result")
+	}
+	if files[0] != "test2.txt" && files[1] != "test2.txt" {
+		t.Error("Readdir got incorrect result")
+	}
+	if len(files) != 2 {
+		t.Error("Readdir got incorrect results")
+	}
+
+	code = doWriteCommand(t, "test2.txt", "hellotest", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Write did not return OK. Actual:", code)
+	}
+
+	code, data := doReadCommand(t, "test.txt", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Read did not return OK. Actual:", code)
+	}
+	if data != "hellotest" {
+		t.Error("Read did not return correct result")
+	}
+
+	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt"}
+	UnlinkCommand(args)
+
+	code, files = doReadDirCommand(t)
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK. Actual:", code)
+	}
+	if files[0] != "test2.txt" {
+		t.Error("Readdir got incorrect result")
+	}
+	if len(files) != 1 {
+		t.Error("Readdir got incorrect result")
+	}
+
+	code, data = doReadCommand(t, "test2.txt", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Read did not return OK. Actual:", code)
+	}
+	if data != "hellotest" {
+		t.Error("Read did not return correct result")
+	}
+}
+
 func TestUtimes(t *testing.T) {
 	Flags.Network = true
 	createTestDir(t)
