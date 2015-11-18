@@ -1,6 +1,7 @@
 package icserver
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"log"
@@ -28,33 +29,31 @@ func handleConnection(conn net.Conn) {
 	verboseLog("icserver new connection")
 	defer verboseLog("icserver connection lost")
 
-	var messageBuffer []byte
+	var messageBuffer bytes.Buffer
+
 	for {
 		buffer := make([]byte, 1024)
 		mSize, err := conn.Read(buffer)
+		endOfMessage := true
 		if err != nil {
 			// connection closed
 			break
 		}
 		data := buffer[0:mSize]
 		verboseLog("icserver new message:\n" + string(data) + "\nLength: " + strconv.Itoa(len(data)))
-		if len(messageBuffer) != 0 {
-			data = append(messageBuffer, data...)
-		}
+		messageBuffer.Write(data)
 		message := &FileSystemMessage{}
-		err = json.Unmarshal(data, message)
-		if err != nil {
-			if err.Error() == "unexpected end of JSON input" {
-				// more of the message is to come.
-				messageBuffer = data
-			} else {
-				log.Fatalln("icserver json unmarshal error: ", err)
-			}
-		} else {
-			messageBuffer = make([]byte, 0)
+		if string(data[len(data)-1]) != "}" {
+			endOfMessage = false
 		}
 
-		if len(messageBuffer) == 0 {
+		if endOfMessage {
+			fullMessageData := messageBuffer.Bytes()
+			messageBuffer.Reset()
+			err = json.Unmarshal(fullMessageData, message)
+			if err != nil {
+				log.Fatalln("icserver json unmarshal error: ", err)
+			}
 			if len(message.Base64Data) != 0 {
 				message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
 				if err != nil {
