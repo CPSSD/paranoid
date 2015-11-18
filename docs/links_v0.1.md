@@ -22,5 +22,7 @@ Useful links
 - [sprint 2, 30/10/15](https://docs.google.com/document/d/1jSCyQ6sjyNWsjAb5HSfBhM19MWxcfHeaA2mldhB0gHA)
 
 ## Information on consenus
+- https://www.youtube.com/watch?v=YbZ3zDzDnrw (Raft lecture)
+- https://ramcloud.stanford.edu/raft.pdf (Raft paper)
 - https://en.wikipedia.org/wiki/Consensus_(computer_science)
 - https://en.wikipedia.org/wiki/Byzantine_fault_tolerance
