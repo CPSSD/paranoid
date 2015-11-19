@@ -33,6 +33,7 @@ func NewParanoidFile(name string) nodefs.File {
 func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
 	util.LogMessage("Read called on file : " + f.Name)
 	code, data := pfsminterface.RunCommand(nil, "read", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(buf)), 10))
+	copy(buf, data)
 	if code != returncodes.OK {
 		return nil, util.GetFuseReturnCode(code)
 	}

@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/user"
 	"path"
 	"strconv"
 	"strings"
@@ -20,14 +21,24 @@ func Mount(c *cli.Context) {
 		cli.ShowAppHelp(c)
 		os.Exit(0)
 	}
+	doMount(c, args)
+}
 
+func doMount(c *cli.Context, args []string) {
 	serverAddress := args[1]
-	_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
-	if err != nil {
-		log.Fatalln("FATAL : unable to reach server", err)
+	if c.GlobalBool("networkoff") == false {
+		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
+		if err != nil {
+			log.Fatalln("FATAL : unable to reach server", err)
+		}
 	}
 
-	directory := args[2]
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	directory := path.Join(usr.HomeDir, "pfs", args[2])
+
 	if _, err := os.Stat(path.Join(directory, "contents")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : directory does not include contents directory")
 	}
@@ -46,7 +57,7 @@ func Mount(c *cli.Context) {
 		log.Fatalln("FATAL : server-address in wrong format")
 	}
 
-	cmd := exec.Command("pfsm", "mount", directory, splits[0], splits[1])
+	cmd := exec.Command("pfsm", "mount", directory, splits[0], splits[1], args[3], args[0])
 	err = cmd.Run()
 	if err != nil {
 		log.Fatalln("FATAL error running pfsm mount command : ", err)
@@ -63,14 +74,22 @@ func Mount(c *cli.Context) {
 		log.Fatalln("FATAL error creating output file")
 	}
 
-	cmd = exec.Command("pfsd", args[0], directory, splits[0], splits[1])
-	cmd.Stderr = outfile
-	err = cmd.Start()
-
-	cmd = exec.Command("pfi", directory, args[3])
-	if c.GlobalBool("verbose") {
-		cmd = exec.Command("pfi", "-v", directory, args[3])
+	if c.GlobalBool("networkoff") == false {
+		cmd = exec.Command("pfsd", args[0], directory, splits[0], splits[1])
+		cmd.Stderr = outfile
+		err = cmd.Start()
 	}
+
+	pfiArgs := []string{directory, args[3]}
+	var pfiFlags []string
+	if c.GlobalBool("verbose") {
+		pfiFlags = append(pfiFlags, "-v")
+	}
+	if c.GlobalBool("networkoff") {
+		pfiFlags = append(pfiFlags, "-n")
+	}
+
+	cmd = exec.Command("pfi", append(pfiFlags, pfiArgs...)...)
 	outfile, err = os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
 
 	if err != nil {
