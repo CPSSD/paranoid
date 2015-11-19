@@ -2,6 +2,7 @@ package logger
 
 import (
 	"log"
+	"os"
 )
 
 // Logger stuct containing the variables necessary for the logger
@@ -59,16 +60,24 @@ func (l *paranoidLogger) Errorf(format string, v ...interface{}) {
 	log.Printf(format, v...)
 }
 
+// Debug only prints if DEBUG env var is set
 func (l *paranoidLogger) Debug(v ...interface{}) {
-	format := "[DEBUG] " + l.component + ":"
-	args := make([]interface{}, 0)
-	args = append(args, format)
-	args = append(args, v...)
+	if os.Getenv("DEBUG") == "true" {
+		format := "[DEBUG] " + l.component + ":"
+		args := make([]interface{}, 0)
+		args = append(args, format)
+		args = append(args, v...)
 
-	log.Println(args...)
+		log.Println(args...)
+	}
+
 }
 
+// Debug only prints if DEBUG env var is set
 func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
-	format = "[DEBUG] " + l.component + ": " + format
-	log.Printf(format, v...)
+	if os.Getenv("DEBUG") == "true" {
+		format = "[DEBUG] " + l.component + ": " + format
+		log.Printf(format, v...)
+	}
+
 }
