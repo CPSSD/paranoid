@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 	// Make sure we start with an empty directory
 	os.RemoveAll(tmpdir)
 	os.Mkdir(tmpdir, 0777)
-	init := exec.Command("paranoid-cli", "init", tmpdir)
+	init := exec.Command("pfsm", "init", tmpdir)
 	init.Run()
 	pnetserver.ParanoidDir = tmpdir
 	globals.Port = 10101
