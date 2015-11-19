@@ -20,8 +20,9 @@ import (
 var tmpdir = path.Join(os.TempDir(), "pfs")
 
 func TestMain(m *testing.M) {
+	// Make sure we start with an empty directory
+	os.RemoveAll(tmpdir)
 	os.Mkdir(tmpdir, 0777)
-	defer os.RemoveAll(tmpdir)
 	init := exec.Command("paranoid-cli", "init", tmpdir)
 	init.Run()
 	pnetserver.ParanoidDir = tmpdir
