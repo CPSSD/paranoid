@@ -16,11 +16,14 @@ type utimesTime struct {
 }
 
 func (s *ParanoidServer) Utimes(ctx context.Context, req *pb.UtimesRequest) (*pb.EmptyMessage, error) {
-	time := &utimesTime{
-		Atime: time.Unix(int64(req.AccessSeconds), int64(req.AccessMicroseconds)*1000),
-		Mtime: time.Unix(int64(req.ModifySeconds), int64(req.ModifyMicroseconds)*1000),
+	timeStruct := &utimesTime{}
+	if req.AccessSeconds != 0 || req.AccessMicroseconds != 0 {
+		timeStruct.Atime = time.Unix(int64(req.AccessSeconds), int64(req.AccessMicroseconds)*1000)
 	}
-	data, err := json.Marshal(time)
+	if req.ModifySeconds != 0 || req.ModifyMicroseconds != 0 {
+		timeStruct.Mtime = time.Unix(int64(req.ModifySeconds), int64(req.ModifyMicroseconds)*1000)
+	}
+	data, err := json.Marshal(timeStruct)
 	if err != nil {
 		log.Printf("WARNING: Error marshaling time to JSON:", err)
 	}
