@@ -79,5 +79,18 @@ func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
 		format = "[DEBUG] " + l.component + ": " + format
 		log.Printf(format, v...)
 	}
+}
 
+func (l *paranoidLogger) Fatal(v ...interface{}) {
+	format := "[FATAL] " + l.component + ":"
+	args := make([]interface{}, 0)
+	args = append(args, format)
+	args = append(args, v...)
+
+	log.Fatalln(args...)
+}
+
+func (l *paranoidLogger) Fatalf(format string, v ...interface{}) {
+	format = "[FATAL] " + l.component + ": " + format
+	log.Fatalf(format, v...)
 }
