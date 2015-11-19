@@ -43,7 +43,7 @@ func CreatCommand(args []string) {
 
 	perms, err := strconv.ParseInt(args[2], 8, 32)
 	checkErr("creat", err)
-	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), 0777)
+	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), 0600)
 	checkErr("creat", err)
 
 	nodeData := &inode{
@@ -51,7 +51,7 @@ func CreatCommand(args []string) {
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	checkErr("creat", err)
-	err = ioutil.WriteFile(path.Join(directory, "inodes", uuid), jsonData, 0777)
+	err = ioutil.WriteFile(path.Join(directory, "inodes", uuid), jsonData, 0600)
 	checkErr("creat", err)
 
 	contentsFile, err := os.Create(path.Join(directory, "contents", uuid))

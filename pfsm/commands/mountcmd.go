@@ -19,16 +19,16 @@ func MountCommand(args []string) {
 	directory := args[0]
 	verboseLog("mount : given directory = " + directory)
 
-	err := ioutil.WriteFile(path.Join(directory, "meta", "ip"), []byte(args[1]), 0777)
+	err := ioutil.WriteFile(path.Join(directory, "meta", "ip"), []byte(args[1]), 0600)
 	checkErr("mount", err)
 
-	err = ioutil.WriteFile(path.Join(directory, "meta", "port"), []byte(args[2]), 0777)
+	err = ioutil.WriteFile(path.Join(directory, "meta", "port"), []byte(args[2]), 0600)
 	checkErr("mount", err)
 
-	err = ioutil.WriteFile(path.Join(directory, "meta", "mountpoint"), []byte(args[3]), 0777)
+	err = ioutil.WriteFile(path.Join(directory, "meta", "mountpoint"), []byte(args[3]), 0600)
 	checkErr("mount", err)
 
-	err = ioutil.WriteFile(path.Join(directory, "meta", "pfsdport"), []byte(args[4]), 0777)
+	err = ioutil.WriteFile(path.Join(directory, "meta", "pfsdport"), []byte(args[4]), 0600)
 	checkErr("mount", err)
 
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))

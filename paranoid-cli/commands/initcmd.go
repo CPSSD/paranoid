@@ -26,7 +26,7 @@ func Init(c *cli.Context) {
 	homeDir := usr.HomeDir
 
 	if _, err := os.Stat(path.Join(homeDir, "pfs")); os.IsNotExist(err) {
-		err = os.Mkdir(path.Join(homeDir, "pfs"), 0777)
+		err = os.Mkdir(path.Join(homeDir, "pfs"), 0700)
 		if err != nil {
 			log.Fatalln("FATAL : Error making pfs directory")
 		}
@@ -36,7 +36,7 @@ func Init(c *cli.Context) {
 	if _, err := os.Stat(directory); !os.IsNotExist(err) {
 		log.Fatalln("FATAL : a paranoid file system with that name already exists")
 	}
-	err = os.Mkdir(directory, 0777)
+	err = os.Mkdir(directory, 0700)
 	if err != nil {
 		log.Fatalln("FATAL : Error making pfs directory")
 	}
