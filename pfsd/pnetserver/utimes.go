@@ -11,14 +11,14 @@ import (
 )
 
 type utimesTime struct {
-	atime time.Time `json:"atime",omitempty`
-	mtime time.Time `json:"mtime",omitempty`
+	Atime time.Time `json:"atime",omitempty`
+	Mtime time.Time `json:"mtime",omitempty`
 }
 
 func (s *ParanoidServer) Utimes(ctx context.Context, req *pb.UtimesRequest) (*pb.EmptyMessage, error) {
 	time := &utimesTime{
-		atime: time.Unix(int64(req.AccessSeconds), int64(req.AccessMicroseconds)*1000),
-		mtime: time.Unix(int64(req.ModifySeconds), int64(req.ModifyMicroseconds)*1000),
+		Atime: time.Unix(int64(req.AccessSeconds), int64(req.AccessMicroseconds)*1000),
+		Mtime: time.Unix(int64(req.ModifySeconds), int64(req.ModifyMicroseconds)*1000),
 	}
 	data, err := json.Marshal(time)
 	if err != nil {
