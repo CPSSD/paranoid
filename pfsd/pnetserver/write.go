@@ -21,7 +21,8 @@ func (s *ParanoidServer) Write(ctx context.Context, req *pb.WriteRequest) (*pb.W
 	var code int
 	var output []byte
 	if req.Length != 0 {
-		code, output, err = runCommand(data, "write", ParanoidDir, req.Path, strconv.FormatUint(req.Offset, 10), strconv.FormatUint(req.Length, 10))
+		code, output, err = runCommand(data, "write", ParanoidDir, req.Path, strconv.FormatUint(req.Offset, 10),
+			strconv.FormatUint(req.Length, 10))
 	} else if req.Offset != 0 {
 		code, output, err = runCommand(data, "write", ParanoidDir, req.Path, strconv.FormatUint(req.Offset, 10))
 	} else {
