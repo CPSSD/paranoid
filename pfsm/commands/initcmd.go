@@ -13,7 +13,7 @@ import (
 //makeDir creates a new directory with permissions 0777 with the name newDir in parentDir.
 func makeDir(parentDir, newDir string) string {
 	newDirPath := path.Join(parentDir, newDir)
-	err := os.Mkdir(newDirPath, 0777)
+	err := os.Mkdir(newDirPath, 0700)
 	checkErr("init", err)
 	return newDirPath
 }
@@ -46,7 +46,7 @@ func InitCommand(args []string) {
 	uuidString := strings.TrimSpace(string(uuid))
 	verboseLog("init uuid : " + uuidString)
 	checkErr("init", err)
-	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), []byte(uuidString), 0777)
+	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), []byte(uuidString), 0600)
 	checkErr("init", err)
 	_, err = os.Create(path.Join(metaDir, "lock"))
 	checkErr("init", err)

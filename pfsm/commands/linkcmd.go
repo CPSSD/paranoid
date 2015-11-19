@@ -66,7 +66,7 @@ func LinkCommand(args []string) {
 	// itterating count and saving
 	nodeData.Count++
 	verboseLog("link : opening file " + inodePath)
-	openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0777)
+	openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0600)
 	checkErr("link", err)
 	verboseLog("link : truncating file " + inodePath)
 	err = openedFile.Truncate(0)
