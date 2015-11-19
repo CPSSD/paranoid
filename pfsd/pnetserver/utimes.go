@@ -17,10 +17,10 @@ type utimesTime struct {
 
 func (s *ParanoidServer) Utimes(ctx context.Context, req *pb.UtimesRequest) (*pb.EmptyMessage, error) {
 	timeStruct := &utimesTime{}
-	if req.AccessSeconds != 0 && req.AccessMicroseconds != 0 {
+	if req.AccessSeconds != 0 || req.AccessMicroseconds != 0 {
 		timeStruct.Atime = time.Unix(int64(req.AccessSeconds), int64(req.AccessMicroseconds)*1000)
 	}
-	if req.ModifySeconds != 0 && req.ModifyMicroseconds != 0 {
+	if req.ModifySeconds != 0 || req.ModifyMicroseconds != 0 {
 		timeStruct.Mtime = time.Unix(int64(req.ModifySeconds), int64(req.ModifyMicroseconds)*1000)
 	}
 	data, err := json.Marshal(timeStruct)
