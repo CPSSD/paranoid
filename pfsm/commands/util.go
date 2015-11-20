@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/cpssd/paranoid/ic/icclient"
+	"github.com/cpssd/paranoid/pfsm/icclient"
 	"log"
 	"os"
 	"path"

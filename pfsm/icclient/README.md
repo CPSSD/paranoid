@@ -2,7 +2,7 @@
 
 ## Importing
 ```
-import "github.com/cpssd/paranoid/ic/icclient"
+import "github.com/cpssd/paranoid/pfsm/icclient"
 ```
 
 ## Sending messages with no data
