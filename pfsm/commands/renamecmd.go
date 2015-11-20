@@ -47,5 +47,8 @@ func RenameCommand(args []string) {
 	err = os.Rename(oldFilePath, newFilePath)
 	checkErr("rename", err)
 
+	if !Flags.Network {
+		sendToServer(directory, "rename", args[1:], nil)
+	}
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

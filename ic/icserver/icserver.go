@@ -1,12 +1,14 @@
 package icserver
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net"
 	"os"
 	"path"
+	"strconv"
 )
 
 // MessageChan is the channel to which incoming messages will be passed
@@ -26,31 +28,49 @@ type FileSystemMessage struct {
 func handleConnection(conn net.Conn) {
 	verboseLog("icserver new connection")
 	defer verboseLog("icserver connection lost")
+
+	var messageBuffer bytes.Buffer
+
 	for {
 		buffer := make([]byte, 1024)
+		endOfMessage := true
 		mSize, err := conn.Read(buffer)
 		if err != nil {
 			// connection closed
 			break
 		}
 		data := buffer[0:mSize]
-		verboseLog("icserver new message:\n" + string(data))
-
-		message := FileSystemMessage{}
-		err = json.Unmarshal(data, message)
-		if err != nil {
-			log.Fatalln("icserver json unmarshal error: ", err)
+		verboseLog("icserver new message:\n" + string(data) + "\nLength: " + strconv.Itoa(len(data)))
+		messageBuffer.Write(data)
+		message := &FileSystemMessage{}
+		if string(data[len(data)-1]) != "}" {
+			endOfMessage = false
 		}
 
-		if len(message.Base64Data) != 0 {
-			message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
+		if endOfMessage {
+			fullMessageData := messageBuffer.Bytes()
+			messageBuffer.Reset()
+			err = json.Unmarshal(fullMessageData, message)
 			if err != nil {
-				log.Fatalln("icserver base64 decoding error: ", err)
+				if err.Error() == "unexpected end of JSON input" {
+					endOfMessage = false
+					messageBuffer.Write(fullMessageData)
+				} else {
+					log.Fatalln("icserver json unmarshal error: ", err)
+				}
+			}
+			if endOfMessage {
+				if len(message.Base64Data) != 0 {
+					message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
+					if err != nil {
+						log.Fatalln("icserver base64 decoding error: ", err)
+					}
+				}
+
+				MessageChan <- *message
+				verboseLog("icserver new message pushed to channel: " + message.Command)
 			}
 		}
-
-		MessageChan <- message
-		verboseLog("icserver new message pushed to channel: " + message.Command)
 	}
 }
 

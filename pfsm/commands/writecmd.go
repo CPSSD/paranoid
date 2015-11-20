@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/cpssd/paranoid/pfsm/network"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
@@ -52,10 +51,6 @@ func WriteCommand(args []string) {
 		checkErr("write", err)
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 		io.WriteString(os.Stdout, strconv.Itoa(len(fileData)))
-
-		if !Flags.Network {
-			network.Write(directory, args[1], nil, nil, string(fileData))
-		}
 	} else {
 		contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
 		checkErr("write", err)
@@ -80,17 +75,9 @@ func WriteCommand(args []string) {
 		checkErr("write", err)
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 		io.WriteString(os.Stdout, strconv.Itoa(wroteLen))
+	}
 
-		if len(args) == 3 {
-			if !Flags.Network {
-				network.Write(directory, args[1], &offset, nil, string(fileData))
-			}
-		} else {
-			if !Flags.Network {
-				length, err := strconv.Atoi(args[3])
-				checkErr("write", err)
-				network.Write(directory, args[1], &offset, &length, string(fileData))
-			}
-		}
+	if !Flags.Network {
+		sendToServer(directory, "write", args[1:], fileData)
 	}
 }
