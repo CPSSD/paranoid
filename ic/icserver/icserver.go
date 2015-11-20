@@ -52,17 +52,24 @@ func handleConnection(conn net.Conn) {
 			messageBuffer.Reset()
 			err = json.Unmarshal(fullMessageData, message)
 			if err != nil {
-				log.Fatalln("icserver json unmarshal error: ", err)
-			}
-			if len(message.Base64Data) != 0 {
-				message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
-				if err != nil {
-					log.Fatalln("icserver base64 decoding error: ", err)
+				if err.Error() == "unexpected end of JSON input" {
+					endOfMessage = false
+					messageBuffer.Write(fullMessageData)
+				} else {
+					log.Fatalln("icserver json unmarshal error: ", err)
 				}
 			}
+			if endOfMessage {
+				if len(message.Base64Data) != 0 {
+					message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
+					if err != nil {
+						log.Fatalln("icserver base64 decoding error: ", err)
+					}
+				}
 
-			MessageChan <- *message
-			verboseLog("icserver new message pushed to channel: " + message.Command)
+				MessageChan <- *message
+				verboseLog("icserver new message pushed to channel: " + message.Command)
+			}
 		}
 	}
 }
