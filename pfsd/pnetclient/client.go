@@ -1,7 +1,7 @@
 package pnetclient
 
 import (
-	"github.com/cpssd/paranoid/ic/icserver"
+	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/globals"
 )
 
