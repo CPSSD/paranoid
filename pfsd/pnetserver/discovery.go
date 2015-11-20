@@ -23,17 +23,23 @@ func JoinDiscovery(pool string) {
 			err = dnetclient.Join(pool)
 			connectionBuffer--
 		}
+		log.Println("Failure to connect to Discovery Server, Giving Up")
 	} else {
 		go renew()
 	}
 }
 
 func renew() {
-	for { //Cant be terminated right now. Going to write a call to check if Disconnect has been called
+	for !globals.Disconnecting { //TODO change this to an async listener
 		if err := dnetclient.Renew(); err != nil {
 			log.Println("Failed to Renew Session")
 		}
-		globals.ResetInterval = 5000 // this is hard coded while I wait for interval fix
+		globals.ResetInterval = 30000 // this is hard coded while I wait for interval fix
 		time.Sleep(globals.ResetInterval * time.Millisecond)
 	}
+}
+
+func Disconnect() {
+	globals.Disconnecting = false
+	dnetclient.Disconnect()
 }
