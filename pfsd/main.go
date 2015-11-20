@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/cpssd/paranoid/ic/icserver"
+	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
