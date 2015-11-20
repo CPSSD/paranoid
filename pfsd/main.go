@@ -45,7 +45,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("FATAL: Failed to start listening : %v.\n", err)
 	}
-
 	splits := strings.Split(lis.Addr().String(), ":")
 	port, err := strconv.Atoi(splits[len(splits)-1])
 	if err != nil {
@@ -53,8 +52,8 @@ func main() {
 	}
 	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
 	globals.Port = port
-
 	dnetclient.JoinDiscovery("_")
+	go HandleSignals()
 	srv := grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	srv.Serve(lis)
