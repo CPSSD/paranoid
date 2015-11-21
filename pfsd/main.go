@@ -39,6 +39,7 @@ func main() {
 		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
 	}
 
+	//Asking for port 0 requests a random free port from the OS.
 	lis, err := net.Listen("tcp", ":0")
 	if err != nil {
 		log.Fatalf("FATAL: Failed to start listening : %v.\n", err)
