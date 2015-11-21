@@ -30,7 +30,7 @@ func main() {
 		{
 			Name:      "mount",
 			Usage:     "mount a paranoid file system",
-			ArgsUsage: "port discovery-server-address pfs-name mountpoint",
+			ArgsUsage: "discovery-server-address pfs-name mountpoint",
 			Action:    commands.Mount,
 		},
 		{
