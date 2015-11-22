@@ -20,7 +20,7 @@ func AutoMount(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	pfsMeta := path.Join(usr.HomeDir, "pfs", args[0], "meta")
+	pfsMeta := path.Join(usr.HomeDir, ".pfs", args[0], "meta")
 
 	ip, err := ioutil.ReadFile(path.Join(pfsMeta, "ip"))
 	if err != nil {

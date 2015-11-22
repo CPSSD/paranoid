@@ -36,7 +36,7 @@ func doMount(c *cli.Context, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	directory := path.Join(usr.HomeDir, "pfs", args[1])
+	directory := path.Join(usr.HomeDir, ".pfs", args[1])
 
 	if _, err := os.Stat(path.Join(directory, "contents")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : directory does not include contents directory")
