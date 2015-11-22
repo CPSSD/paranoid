@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/pfsm/icclient"
 	"log"
 	"os"
 	"path"
@@ -95,4 +96,12 @@ func unLockFile(paranoidDir, fileName string) {
 	}
 	defer file.Close()
 	syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
+}
+
+func sendToServer(paranoidDir, command string, args []string, data []byte) {
+	if data == nil {
+		icclient.SendMessage(paranoidDir, command, args)
+	} else {
+		icclient.SendMessageWithData(paranoidDir, command, args, data)
+	}
 }

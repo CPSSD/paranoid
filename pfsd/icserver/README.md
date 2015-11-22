@@ -2,7 +2,7 @@
 ## Importing
 Import like this.
 ```
-import "github.com/cpssd/paranoid/ic/icserver"
+import "github.com/cpssd/paranoid/pfsd/icserver"
 ```
 
 ## Starting the server

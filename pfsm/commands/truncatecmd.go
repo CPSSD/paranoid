@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"github.com/cpssd/paranoid/pfsm/network"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
@@ -50,8 +49,8 @@ func TruncateCommand(args []string) {
 	err = contentsFile.Truncate(int64(newsize))
 	checkErr("truncate", err)
 
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	if !Flags.Network {
-		network.Truncate(directory, args[1], newsize)
+		sendToServer(directory, "truncate", args[1:], nil)
 	}
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

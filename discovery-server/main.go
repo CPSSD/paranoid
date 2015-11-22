@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/cpssd/paranoid/network/discovery-server/dnetserver"
+	"github.com/cpssd/paranoid/discovery-server/dnetserver"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"google.golang.org/grpc"
 	"log"
