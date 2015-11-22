@@ -12,7 +12,7 @@ import (
 type fileSystemMessage struct {
 	Command string   `json:"command"`
 	Args    []string `json:"args"`
-	Data    string   `json:"data"`
+	Data    []byte   `json:"data"`
 }
 
 // SendMessage sends a message to the server
@@ -20,7 +20,7 @@ func SendMessage(pfsDirectory string, command string, arguments []string) {
 	message := fileSystemMessage{
 		Command: command,
 		Args:    arguments,
-		Data:    "",
+		Data:    []byte(""),
 	}
 
 	dialAndSend(pfsDirectory, message)
@@ -33,7 +33,7 @@ func SendMessageWithData(pfsDirectory string, command string, arguments []string
 	message := fileSystemMessage{
 		Command: command,
 		Args:    arguments,
-		Data:    base64Data,
+		Data:    []byte(base64Data),
 	}
 
 	dialAndSend(pfsDirectory, message)

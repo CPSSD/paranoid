@@ -2,7 +2,6 @@ package icserver
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net"
@@ -18,10 +17,9 @@ var verbose = false
 
 // FileSystemMessage is the structure which represents messages coming from the client
 type FileSystemMessage struct {
-	Command    string   `json:"command"`
-	Args       []string `json:"args"`
-	Base64Data string   `json:"data"`
-	Data       []byte
+	Command string   `json:"command"`
+	Args    []string `json:"args"`
+	Data    []byte   `json:"data"`
 }
 
 // handleConnection accepts a connection and handles messages received through the connection
@@ -60,13 +58,6 @@ func handleConnection(conn net.Conn) {
 				}
 			}
 			if endOfMessage {
-				if len(message.Base64Data) != 0 {
-					message.Data, err = base64.StdEncoding.DecodeString(message.Base64Data)
-					if err != nil {
-						log.Fatalln("icserver base64 decoding error: ", err)
-					}
-				}
-
 				MessageChan <- *message
 				verboseLog("icserver new message pushed to channel: " + message.Command)
 			}
