@@ -3,6 +3,7 @@ package icserver
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	"log"
 	"net"
 	"os"
@@ -68,6 +69,7 @@ func handleConnection(conn net.Conn) {
 // RunServer runs the server
 // give a true parameter for verbose logging
 func RunServer(pfsDirectory string, verboseLogging bool) {
+	defer globals.Wait.Done()
 	sockFilePath := path.Join(pfsDirectory, "meta", "pfic.sock")
 	deleteSockFile(sockFilePath)
 	verbose = verboseLogging
@@ -77,17 +79,24 @@ func RunServer(pfsDirectory string, verboseLogging bool) {
 		log.Fatalln("ic listen error: ", err)
 	}
 
+	defer listener.Close()
 	defer os.Remove(sockFilePath)
 	defer verboseLog("icserver no longer listening")
 
 	verboseLog("icserver listening on " + sockFilePath)
 	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Fatalln("ic accept error: ", err)
+		select {
+		case _, ok := <-globals.Quit:
+			if !ok {
+				return
+			}
+		default:
+			conn, err := listener.Accept()
+			if err != nil {
+				log.Fatalln("ic accept error: ", err)
+			}
+			go handleConnection(conn)
 		}
-
-		go handleConnection(conn)
 	}
 }
 
