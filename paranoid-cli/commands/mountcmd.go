@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -17,7 +16,7 @@ import (
 //If the file system doesn't exist it creates it.
 func Mount(c *cli.Context) {
 	args := c.Args()
-	if len(args) < 4 {
+	if len(args) < 3 {
 		cli.ShowAppHelp(c)
 		os.Exit(0)
 	}
@@ -25,7 +24,7 @@ func Mount(c *cli.Context) {
 }
 
 func doMount(c *cli.Context, args []string) {
-	serverAddress := args[1]
+	serverAddress := args[0]
 	if c.GlobalBool("networkoff") == false {
 		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
 		if err != nil {
@@ -37,7 +36,7 @@ func doMount(c *cli.Context, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	directory := path.Join(usr.HomeDir, "pfs", args[2])
+	directory := path.Join(usr.HomeDir, "pfs", args[1])
 
 	if _, err := os.Stat(path.Join(directory, "contents")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : directory does not include contents directory")
@@ -57,15 +56,10 @@ func doMount(c *cli.Context, args []string) {
 		log.Fatalln("FATAL : server-address in wrong format")
 	}
 
-	cmd := exec.Command("pfsm", "mount", directory, splits[0], splits[1], args[3], args[0])
+	cmd := exec.Command("pfsm", "mount", directory, splits[0], splits[1], args[2])
 	err = cmd.Run()
 	if err != nil {
 		log.Fatalln("FATAL error running pfsm mount command : ", err)
-	}
-
-	port, err := strconv.Atoi(args[0])
-	if err != nil || port < 1 || port > 65535 {
-		log.Fatalln("FATAL: port must be a number between 1 and 65535, inclusive.")
 	}
 
 	outfile, err := os.Create(path.Join(directory, "meta", "logs", "pfsdLog.txt"))
@@ -75,12 +69,12 @@ func doMount(c *cli.Context, args []string) {
 	}
 
 	if c.GlobalBool("networkoff") == false {
-		cmd = exec.Command("pfsd", args[0], directory, splits[0], splits[1])
+		cmd = exec.Command("pfsd", directory, splits[0], splits[1])
 		cmd.Stderr = outfile
 		err = cmd.Start()
 	}
 
-	pfiArgs := []string{directory, args[3]}
+	pfiArgs := []string{directory, args[2]}
 	var pfiFlags []string
 	if c.GlobalBool("verbose") {
 		pfiFlags = append(pfiFlags, "-v")

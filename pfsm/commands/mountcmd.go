@@ -13,7 +13,7 @@ import (
 //Stores the ip given as args[1] and the port given as args[2] in files in the meta directory.
 func MountCommand(args []string) {
 	verboseLog("mount command called")
-	if len(args) < 5 {
+	if len(args) < 4 {
 		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
@@ -26,9 +26,6 @@ func MountCommand(args []string) {
 	checkErr("mount", err)
 
 	err = ioutil.WriteFile(path.Join(directory, "meta", "mountpoint"), []byte(args[3]), 0600)
-	checkErr("mount", err)
-
-	err = ioutil.WriteFile(path.Join(directory, "meta", "pfsdport"), []byte(args[4]), 0600)
 	checkErr("mount", err)
 
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
