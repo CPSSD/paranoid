@@ -37,6 +37,6 @@ func AutoMount(c *cli.Context) {
 		log.Fatalln("FATAL : Could not get mountpoint", err)
 	}
 
-	mountArgs := []string{string(ip) + string(port), args[0], string(mountpoint)}
+	mountArgs := []string{string(ip) + ":" + string(port), args[0], string(mountpoint)}
 	doMount(c, mountArgs)
 }

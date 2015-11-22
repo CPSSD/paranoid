@@ -7,6 +7,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
+	"github.com/prestonTao/upnp"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -27,9 +28,11 @@ func main() {
 	}
 	pnetserver.ParanoidDir = os.Args[1]
 	go startIcAndListen(pnetserver.ParanoidDir)
+	globals.UpnpMapping = new(upnp.Upnp)
+
 	globals.Server, err = pnetclient.GetIP()
 	if err != nil {
-		log.Fatalln("FATAL: Cant get internal IP.")
+		log.Fatalln("FATAL: Cant get external IP. Error : ", err)
 	}
 
 	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
@@ -49,6 +52,13 @@ func main() {
 	port, err := strconv.Atoi(splits[len(splits)-1])
 	if err != nil {
 		log.Fatalln("Could not parse port", splits[len(splits)-1], " Error :", err)
+	}
+
+	if globals.UpnpMapping.Active {
+		err = globals.UpnpMapping.AddPortMapping(port, port, "TCP")
+		if err != nil {
+			log.Fatalln("Could not add Upnp port mapping. Error :", err)
+		}
 	}
 
 	pnetserver.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
