@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func ping(ips []globals.Node) {
+func Ping(ips []globals.Node) {
 	for _, ipAddress := range ips {
 		ip, _ := GetIP()
 		conn := Dial(ipAddress)

@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func link(ips []globals.Node, oldPath, newPath string) {
+func Link(ips []globals.Node, oldPath, newPath string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 

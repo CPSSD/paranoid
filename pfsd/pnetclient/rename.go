@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func rename(ips []globals.Node, oldPath, newPath string) {
+func Rename(ips []globals.Node, oldPath, newPath string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 

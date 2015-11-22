@@ -9,27 +9,27 @@ func SendRequest(socket icserver.FileSystemMessage) {
 	ips := globals.Nodes.GetAll()
 	switch socket.Command {
 	case "chmod":
-		chmod(ips, socket.Args[0], socket.Args[1])
+		Chmod(ips, socket.Args[0], socket.Args[1])
 	case "creat":
-		creat(ips, socket.Args[0], socket.Args[1])
+		Creat(ips, socket.Args[0], socket.Args[1])
 	case "link":
-		link(ips, socket.Args[0], socket.Args[1])
+		Link(ips, socket.Args[0], socket.Args[1])
 	case "ping":
-		ping(ips)
+		Ping(ips)
 	case "rename":
-		rename(ips, socket.Args[0], socket.Args[1])
+		Rename(ips, socket.Args[0], socket.Args[1])
 	case "truncate":
-		truncate(ips, socket.Args[0], socket.Args[1])
+		Truncate(ips, socket.Args[0], socket.Args[1])
 	case "unlink":
-		unlink(ips, socket.Args[0])
+		Unlink(ips, socket.Args[0])
 	case "utimes":
-		utimes(ips,
+		Utimes(ips,
 			socket.Args[0],
 			socket.Args[1],
 			socket.Args[2],
 			socket.Args[3],
 			socket.Args[4])
 	case "write":
-		write(ips, socket.Args[0], socket.Data, socket.Args[1], socket.Args[2])
+		Write(ips, socket.Args[0], socket.Data, socket.Args[1], socket.Args[2])
 	}
 }

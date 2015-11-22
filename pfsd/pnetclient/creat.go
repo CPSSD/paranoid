@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func creat(ips []globals.Node, filename, permissions string) {
+func Creat(ips []globals.Node, filename, permissions string) {
 	for _, ipAddress := range ips {
 		permissions64, _ := strconv.ParseUint(permissions, 8, 32)
 		permissionsInt := uint32(permissions64)

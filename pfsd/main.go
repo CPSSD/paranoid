@@ -27,7 +27,7 @@ func main() {
 	if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
 		log.Fatalln("FATAL: Discovery port must be a number between 1 and 65535, inclusive.")
 	}
-	pnetserver.SetDiscovery(os.Args[3], os.Args[4], os.Args[1])
+	pnetclient.SetDiscovery(os.Args[3], os.Args[4], os.Args[1])
 	pnetserver.ParanoidDir = os.Args[2]
 	globals.Server, err = pnetclient.GetIP()
 	if err != nil {
@@ -46,7 +46,7 @@ func main() {
 		log.Fatalf("FATAL: Failed to listen on port %d: %v.\n", port, err)
 	}
 
-	pnetserver.JoinDiscovery("_")
+	pnetclient.JoinDiscovery("_")
 	srv := grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	srv.Serve(lis)

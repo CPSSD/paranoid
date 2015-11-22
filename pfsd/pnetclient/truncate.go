@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func truncate(ips []globals.Node, path string, length string) {
+func Truncate(ips []globals.Node, path string, length string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 

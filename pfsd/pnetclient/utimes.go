@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func utimes(ips []globals.Node, path,
+func Utimes(ips []globals.Node, path,
 	accessSeconds, accessMicroseconds, modifySeconds, modifyMicroseconds string) {
 
 	for _, ipAddress := range ips {

@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func unlink(ips []globals.Node, path string) {
+func Unlink(ips []globals.Node, path string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 

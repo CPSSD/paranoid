@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func chmod(ips []globals.Node, path string, mode string) {
+func Chmod(ips []globals.Node, path string, mode string) {
 	for _, ipAddress := range ips {
 		mode64, _ := strconv.ParseUint(mode, 8, 32)
 		modeInt := uint32(mode64)

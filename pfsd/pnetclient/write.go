@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func write(ips []globals.Node, path string, data []byte, offset, length string) {
+func Write(ips []globals.Node, path string, data []byte, offset, length string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 
