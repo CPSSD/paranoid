@@ -1,8 +1,10 @@
 package logger
 
 import (
+	"io"
 	"log"
 	"os"
+	"path"
 )
 
 type loggerFlags struct {
@@ -17,17 +19,24 @@ type paranoidLogger struct {
 	curPack   string
 	logDir    string
 	flags     loggerFlags
+	writer    io.Writer
 }
 
 // New creates a new logger and returns a new logger
 func New(component string, currentPackage string, logDirectory string) paranoidLogger {
-	return paranoidLogger{
+	l := paranoidLogger{
 		component: component,
 		curPack:   currentPackage,
 		logDir:    logDirectory,
 		flags: loggerFlags{
 			debug:  os.Getenv("DEBUG") == "true",
-			output: "both"}}
+			output: "stderr"}}
+
+	if _, err := os.Stat(logDirectory); err != nil {
+		l.Fatalf("Log directory %s not found\n", logDirectory)
+	}
+	l.SetOutput(l.flags.output)
+	return l
 }
 
 func (l *paranoidLogger) SetFlag(flag string, value bool) bool {
@@ -40,6 +49,35 @@ func (l *paranoidLogger) SetFlag(flag string, value bool) bool {
 		return false
 	}
 	return true
+}
+
+// SetOutput sets the default output for the
+func (l *paranoidLogger) SetOutput(output string) {
+	l.flags.output = output
+	var writers = make([]io.Writer, 0)
+
+	switch l.flags.output {
+	case "both":
+		w, err := createFileWriter(l.logDir, l.curPack)
+		if err != nil {
+			l.Fatal("Cannot write to log file: ", err)
+		}
+		writers = append(writers, w)
+		writers = append(writers, os.Stderr)
+	case "stderr":
+		writers = append(writers, os.Stderr)
+	case "logfile":
+		w, err := createFileWriter(l.logDir, l.curPack)
+		if err != nil {
+			l.Fatal("Cannot write to log file: ", err)
+		}
+		writers = append(writers, w)
+	default:
+		writers = append(writers, os.Stderr)
+	}
+
+	l.writer = io.MultiWriter(writers...)
+	log.SetOutput(l.writer)
 }
 
 // Info logs as type info
@@ -131,4 +169,9 @@ func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
 	if l.flags.verbose {
 		l.Infof(format, v...)
 	}
+}
+
+func createFileWriter(logPath string, packageName string) (io.Writer, error) {
+	return os.OpenFile(path.Join(logPath, packageName+".log"),
+		os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
 }
