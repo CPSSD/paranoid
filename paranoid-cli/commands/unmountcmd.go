@@ -23,7 +23,7 @@ func Unmount(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mountpoint, err := ioutil.ReadFile(path.Join(usr.HomeDir, "pfs", args[0], "meta", "mountpoint"))
+	mountpoint, err := ioutil.ReadFile(path.Join(usr.HomeDir, ".pfs", args[0], "meta", "mountpoint"))
 	if err != nil {
 		log.Fatalln("FATAL : Could not get mountpoint ", err)
 	}
