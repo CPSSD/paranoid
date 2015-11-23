@@ -55,10 +55,13 @@ func main() {
 	}
 
 	if globals.UpnpMapping.Active {
+		log.Println("Upnp mapping active")
 		err = globals.UpnpMapping.AddPortMapping(port, port, "TCP")
 		if err != nil {
 			log.Fatalln("Could not add Upnp port mapping. Error :", err)
 		}
+	} else {
+		log.Println("Upnp mapping not active")
 	}
 
 	pnetserver.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
