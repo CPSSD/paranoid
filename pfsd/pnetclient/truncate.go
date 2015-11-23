@@ -14,10 +14,13 @@ func Truncate(ips []globals.Node, path string, length string) {
 
 		defer conn.Close()
 		client := pb.NewParanoidNetworkClient(conn)
-		lengthInt, _ := strconv.ParseUint(length, 10, 64)
-
-		_, err := client.Truncate(context.Background(), &pb.TruncateRequest{path, lengthInt})
+		lengthInt, err := strconv.ParseUint(length, 10, 64)
 		if err != nil {
+			log.Println("Error parsing intergers.")
+		}
+
+		_, clientErr := client.Truncate(context.Background(), &pb.TruncateRequest{path, lengthInt})
+		if clientErr != nil {
 			log.Println("Truncate Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 		}
 	}

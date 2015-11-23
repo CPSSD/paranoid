@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
@@ -50,10 +51,10 @@ func main() {
 	if err != nil {
 		log.Fatalln("Could not parse port", splits[len(splits)-1], " Error :", err)
 	}
-	pnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
+	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
 	globals.Port = port
 
-	pnetclient.JoinDiscovery("_")
+	dnetclient.JoinDiscovery("_")
 	srv := grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	srv.Serve(lis)

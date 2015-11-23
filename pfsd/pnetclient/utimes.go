@@ -12,19 +12,22 @@ func Utimes(ips []globals.Node, path,
 	accessSeconds, accessMicroseconds, modifySeconds, modifyMicroseconds string) {
 
 	for _, ipAddress := range ips {
-		accessSecondsInt, _ := strconv.ParseUint(accessSeconds, 10, 64)
-		accessMicrosecondsInt, _ := strconv.ParseUint(accessMicroseconds, 10, 64)
-		modifySecondsInt, _ := strconv.ParseUint(modifySeconds, 10, 64)
-		modifyMicrosecondsInt, _ := strconv.ParseUint(modifyMicroseconds, 10, 64)
+		accessSecondsInt, err := strconv.ParseUint(accessSeconds, 10, 64)
+		accessMicrosecondsInt, err := strconv.ParseUint(accessMicroseconds, 10, 64)
+		modifySecondsInt, err := strconv.ParseUint(modifySeconds, 10, 64)
+		modifyMicrosecondsInt, err := strconv.ParseUint(modifyMicroseconds, 10, 64)
+		if err != nil {
+			log.Println("Error parsing intergers.")
+		}
 
 		conn := Dial(ipAddress)
 
 		defer conn.Close()
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err := client.Utimes(context.Background(),
+		_, clientErr := client.Utimes(context.Background(),
 			&pb.UtimesRequest{path, accessSecondsInt, accessMicrosecondsInt, modifySecondsInt, modifyMicrosecondsInt})
-		if err != nil {
+		if clientErr != nil {
 			log.Println("Utimes Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 		}
 	}

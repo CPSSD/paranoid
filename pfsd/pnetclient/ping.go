@@ -19,11 +19,7 @@ func Ping(ips []globals.Node) {
 		port := strconv.Itoa(globals.Port)
 		_, err := client.Ping(context.Background(), &pb.PingRequest{ip, port})
 		if err != nil {
-			log.Println("Cant Ping ", ipAddress.IP+":"+ipAddress.Port)
+			log.Println("Can't Ping ", ipAddress.IP+":"+ipAddress.Port)
 		}
 	}
-}
-
-func pingServer(ipAddress globals.Node) {
-
 }
