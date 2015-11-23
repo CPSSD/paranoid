@@ -11,7 +11,6 @@ import (
 
 // Disconnect function used to disconnect from the server
 func Disconnect() error {
-	globals.Disconnecting = false
 	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
 	if err != nil {
 		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
