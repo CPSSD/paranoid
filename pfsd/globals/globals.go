@@ -27,7 +27,6 @@ var Nodes = nodes{m: make(map[Node]bool)}
 
 var Server string
 var Port int
-var Disconnecting bool = false
 
 // --------------------------------------------
 // ---- nodes ---- //
