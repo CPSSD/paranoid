@@ -23,16 +23,26 @@ func JoinDiscovery(pool string) {
 		}
 		log.Println("Failure to connect to Discovery Server, Giving Up")
 	} else {
+		globals.Wait.Add(1)
 		go renew()
 	}
 }
 
 func renew() {
+	defer globals.Wait.Done()
 	for {
-		if err := Renew(); err != nil {
-			log.Println("Failed to Renew Session")
+		select {
+		case _, ok := <-globals.Quit:
+			if !ok {
+				log.Println("INFO: Disconnected from discovery server.")
+				return
+			}
+		default:
+			if err := Renew(); err != nil {
+				log.Println("Failed to Renew Session")
+			}
+			globals.ResetInterval = 30000 // this is hard coded while I wait for interval fix
+			time.Sleep(globals.ResetInterval * time.Millisecond)
 		}
-		globals.ResetInterval = 30000 // this is hard coded while I wait for interval fix
-		time.Sleep(globals.ResetInterval * time.Millisecond)
 	}
 }

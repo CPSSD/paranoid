@@ -55,14 +55,12 @@ func main() {
 	}
 	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
 	globals.Port = port
-	globals.Wait.Add(1)
-	go HandleSignals()
 	dnetclient.JoinDiscovery("_")
 	srv = grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	globals.Wait.Add(1)
 	go srv.Serve(lis)
-	globals.Wait.Wait()
+	HandleSignals()
 }
 
 func startIcAndListen(pfsDir string) {
