@@ -23,7 +23,7 @@ type paranoidLogger struct {
 }
 
 // New creates a new logger and returns a new logger
-func New(component string, currentPackage string, logDirectory string) paranoidLogger {
+func New(component string, currentPackage string, logDirectory string) *paranoidLogger {
 	l := paranoidLogger{
 		component: component,
 		curPack:   currentPackage,
@@ -36,7 +36,7 @@ func New(component string, currentPackage string, logDirectory string) paranoidL
 		l.Fatalf("Log directory %s not found\n", logDirectory)
 	}
 	l.SetOutput(l.flags.output)
-	return l
+	return &l
 }
 
 func (l *paranoidLogger) SetFlag(flag string, value bool) bool {
@@ -173,5 +173,5 @@ func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
 
 func createFileWriter(logPath string, packageName string) (io.Writer, error) {
 	return os.OpenFile(path.Join(logPath, packageName+".log"),
-		os.O_RDWR|os.O_CREATE|os.O_APPEND, 0777)
+		os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 }
