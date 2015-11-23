@@ -45,6 +45,17 @@ func main() {
 			Usage:     "unmount a paranoid file system",
 			Action:    commands.Unmount,
 		},
+		{
+			Name:   "list",
+			Usage:  "list all paranoid file systems",
+			Action: commands.List,
+		},
+		{
+			Name:      "delete",
+			ArgsUsage: "pfs-name",
+			Usage:     "delete a paranoid file system",
+			Action:    commands.Delete,
+		},
 	}
 	app.Run(os.Args)
 }
