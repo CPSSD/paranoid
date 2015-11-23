@@ -54,7 +54,7 @@ func (l *paranoidLogger) SetFlag(flag string, value bool) bool {
 // SetOutput sets the default output for the
 func (l *paranoidLogger) SetOutput(output string) {
 	l.flags.output = output
-	var writers = make([]io.Writer, 0)
+	var writers []io.Writer
 
 	switch l.flags.output {
 	case "both":
@@ -83,7 +83,7 @@ func (l *paranoidLogger) SetOutput(output string) {
 // Info logs as type info
 func (l *paranoidLogger) Info(v ...interface{}) {
 	format := "[INFO]  " + l.component + ":"
-	args := make([]interface{}, 0)
+	var args []interface{}
 	args = append(args, format)
 	args = append(args, v...)
 
@@ -97,7 +97,7 @@ func (l *paranoidLogger) Infof(format string, v ...interface{}) {
 
 func (l *paranoidLogger) Warn(v ...interface{}) {
 	format := "[WARN]  " + l.component + ":"
-	args := make([]interface{}, 0)
+	var args []interface{}
 	args = append(args, format)
 	args = append(args, v...)
 
@@ -111,7 +111,7 @@ func (l *paranoidLogger) Warnf(format string, v ...interface{}) {
 
 func (l *paranoidLogger) Error(v ...interface{}) {
 	format := "[ERROR] " + l.component + ":"
-	args := make([]interface{}, 0)
+	var args []interface{}
 	args = append(args, format)
 	args = append(args, v...)
 
@@ -129,7 +129,7 @@ func (l *paranoidLogger) Debug(v ...interface{}) {
 		return
 	}
 	format := "[DEBUG] " + l.component + ":"
-	args := make([]interface{}, 0)
+	var args []interface{}
 	args = append(args, format)
 	args = append(args, v...)
 
@@ -147,7 +147,7 @@ func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
 
 func (l *paranoidLogger) Fatal(v ...interface{}) {
 	format := "[FATAL] " + l.component + ":"
-	args := make([]interface{}, 0)
+	var args []interface{}
 	args = append(args, format)
 	args = append(args, v...)
 
