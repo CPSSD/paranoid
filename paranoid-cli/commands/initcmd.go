@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
+	"path/filepath"
 )
 
 //Init a new paranoid file system
@@ -32,7 +33,14 @@ func Init(c *cli.Context) {
 		}
 	}
 
-	directory := path.Join(homeDir, ".pfs", pfsname)
+	directory, err := filepath.Abs(path.Join(homeDir, ".pfs", pfsname))
+	if err != nil {
+		log.Fatalln("Given pfs-name is in incorrect format. Error : ", err)
+	}
+	if path.Base(directory) != args[0] {
+		log.Fatalln("Given pfs-name is in incorrect format")
+	}
+
 	if _, err := os.Stat(directory); !os.IsNotExist(err) {
 		log.Fatalln("FATAL : a paranoid file system with that name already exists")
 	}

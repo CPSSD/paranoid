@@ -9,7 +9,7 @@ import (
 	"path"
 )
 
-//Lists all paranoid file systems
+//List lists all paranoid file systems
 func List(c *cli.Context) {
 	usr, err := user.Current()
 	if err != nil {
@@ -20,7 +20,7 @@ func List(c *cli.Context) {
 	if err != nil {
 		log.Fatalln("FATAL : could not get list of paranoid file systems")
 	}
-	for i := 0; i < len(files); i++ {
-		fmt.Println(files[i].Name())
+	for _, file := range files {
+		fmt.Println(file.Name())
 	}
 }
