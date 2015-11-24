@@ -82,45 +82,27 @@ func (l *paranoidLogger) SetOutput(output string) {
 
 // Info logs as type info
 func (l *paranoidLogger) Info(v ...interface{}) {
-	format := "[INFO]  " + l.component + ":"
-	var args []interface{}
-	args = append(args, format)
-	args = append(args, v...)
-
-	log.Println(args...)
+	l.output("INFO", v...)
 }
 
 func (l *paranoidLogger) Infof(format string, v ...interface{}) {
-	format = "[INFO]  " + l.component + ": " + format
-	log.Printf(format, v...)
+	l.outputf("INFO", format, v...)
 }
 
 func (l *paranoidLogger) Warn(v ...interface{}) {
-	format := "[WARN]  " + l.component + ":"
-	var args []interface{}
-	args = append(args, format)
-	args = append(args, v...)
-
-	log.Println(args...)
+	l.output("WARN", v...)
 }
 
 func (l *paranoidLogger) Warnf(format string, v ...interface{}) {
-	format = "[WARN]  " + l.component + ": " + format
-	log.Printf(format, v...)
+	l.outputf("WARN", format, v...)
 }
 
 func (l *paranoidLogger) Error(v ...interface{}) {
-	format := "[ERROR] " + l.component + ":"
-	var args []interface{}
-	args = append(args, format)
-	args = append(args, v...)
-
-	log.Println(args...)
+	l.output("ERROR", v...)
 }
 
 func (l *paranoidLogger) Errorf(format string, v ...interface{}) {
-	format = "[ERROR] " + l.component + ": " + format
-	log.Printf(format, v...)
+	l.outputf("ERROR", format, v...)
 }
 
 // Debug only prints if DEBUG env var is set
@@ -128,12 +110,7 @@ func (l *paranoidLogger) Debug(v ...interface{}) {
 	if !l.flags.debug {
 		return
 	}
-	format := "[DEBUG] " + l.component + ":"
-	var args []interface{}
-	args = append(args, format)
-	args = append(args, v...)
-
-	log.Println(args...)
+	l.output("DEBUG", v...)
 }
 
 // Debug only prints if DEBUG env var is set
@@ -141,22 +118,17 @@ func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
 	if !l.flags.debug {
 		return
 	}
-	format = "[DEBUG] " + l.component + ": " + format
-	log.Printf(format, v...)
+	l.outputf("DEBUG", format, v...)
 }
 
 func (l *paranoidLogger) Fatal(v ...interface{}) {
-	format := "[FATAL] " + l.component + ":"
-	var args []interface{}
-	args = append(args, format)
-	args = append(args, v...)
-
-	log.Fatalln(args...)
+	l.output("FATAL", v...)
+	os.Exit(1)
 }
 
 func (l *paranoidLogger) Fatalf(format string, v ...interface{}) {
-	format = "[FATAL] " + l.component + ": " + format
-	log.Fatalf(format, v...)
+	l.outputf("FATAL", format, v...)
+	os.Exit(1)
 }
 
 func (l *paranoidLogger) Verbose(v ...interface{}) {
@@ -169,6 +141,34 @@ func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
 	if l.flags.verbose {
 		l.Infof(format, v...)
 	}
+}
+
+func (l *paranoidLogger) output(mtype string, v ...interface{}) {
+	fmt := "[" + mtype + "] "
+	// Add an extra space if the message type (mtype) is only 4 letters long
+	if len(mtype) == 4 {
+		fmt += " " + l.component + ":"
+	} else {
+		fmt += l.component + ":"
+	}
+
+	var args []interface{}
+	args = append(args, fmt)
+	args = append(args, v...)
+
+	log.Println(args...)
+}
+
+func (l *paranoidLogger) outputf(mtype string, format string, v ...interface{}) {
+	fmt := "[" + mtype + "] "
+	// Add an extra space if the message type (mtype) is only 4 letters long
+	if len(mtype) == 4 {
+		fmt += " " + l.component + ": " + format
+	} else {
+		fmt += l.component + ": " + format
+	}
+
+	log.Printf(fmt, v...)
 }
 
 func createFileWriter(logPath string, packageName string) (io.Writer, error) {
