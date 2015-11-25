@@ -18,7 +18,7 @@ func Mount(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 3 {
 		cli.ShowAppHelp(c)
-		os.Exit(0)
+		os.Exit(1)
 	}
 	doMount(c, args)
 }
