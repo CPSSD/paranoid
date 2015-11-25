@@ -3,17 +3,23 @@ package icserver
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	"log"
 	"net"
 	"os"
 	"path"
 	"strconv"
+	"time"
 )
 
-// MessageChan is the channel to which incoming messages will be passed
-// Attach a listener to this channel to receive messages
-var MessageChan = make(chan FileSystemMessage, 100)
-var verbose = false
+var (
+	// MessageChan is the channel to which incoming messages will be passed
+	// Attach a listener to this channel to receive messages
+	MessageChan = make(chan FileSystemMessage, 100)
+	verbose     = false
+
+	listener *net.UnixListener
+)
 
 // FileSystemMessage is the structure which represents messages coming from the client
 type FileSystemMessage struct {
@@ -65,28 +71,40 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
+// StopAccept tells the server to stop accepting connections.
+// Used when terminating PFSD.
+func StopAccept() {
+	listener.SetDeadline(time.Now())
+}
+
 // RunServer runs the server
 // give a true parameter for verbose logging
 func RunServer(pfsDirectory string, verboseLogging bool) {
+	defer globals.Wait.Done()
 	sockFilePath := path.Join(pfsDirectory, "meta", "pfic.sock")
 	deleteSockFile(sockFilePath)
 	verbose = verboseLogging
 
-	listener, err := net.Listen("unix", sockFilePath)
+	tmplis, err := net.Listen("unix", sockFilePath)
+	// Need to assert to a UnixListener to access the SetDeadline method
+	listener = tmplis.(*net.UnixListener)
 	if err != nil {
 		log.Fatalln("ic listen error: ", err)
 	}
 
+	defer listener.Close()
 	defer os.Remove(sockFilePath)
-	defer verboseLog("icserver no longer listening")
 
 	verboseLog("icserver listening on " + sockFilePath)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatalln("ic accept error: ", err)
+			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
+				log.Println("INFO: IC server has stopped accepting connections.")
+				return
+			}
+			log.Println("ERROR: IC accept:", err)
 		}
-
 		go handleConnection(conn)
 	}
 }

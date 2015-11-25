@@ -28,6 +28,10 @@ var Nodes = nodes{m: make(map[Node]bool)}
 var Server string
 var Port int
 
+// Global waitgroup for all goroutines in PFSD
+var Wait sync.WaitGroup
+var Quit = make(chan bool) // Doesn't matter what the channel holds
+
 // --------------------------------------------
 // ---- nodes ---- //
 // --------------------------------------------
