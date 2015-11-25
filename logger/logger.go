@@ -7,19 +7,21 @@ import (
 	"path"
 )
 
-type loggerFlags struct {
-	verbose bool
-	debug   bool
-	output  string
-}
+const (
+	DEBUG = iota
+	VERBOSE
+	INFO
+	WARNING
+	ERROR
+)
 
 // Logger stuct containing the variables necessary for the logger
 type paranoidLogger struct {
 	component string
 	curPack   string
 	logDir    string
-	flags     loggerFlags
 	writer    io.Writer
+	logLevel  int
 }
 
 // New creates a new logger and returns a new logger
@@ -28,35 +30,24 @@ func New(component string, currentPackage string, logDirectory string) *paranoid
 		component: component,
 		curPack:   currentPackage,
 		logDir:    logDirectory,
-		flags: loggerFlags{
-			debug:  os.Getenv("DEBUG") == "true",
-			output: "stderr"}}
+		logLevel:  INFO}
 
 	if _, err := os.Stat(logDirectory); err != nil {
 		l.Fatalf("Log directory %s not found\n", logDirectory)
 	}
-	l.SetOutput(l.flags.output)
+	l.SetOutput("stderr")
 	return &l
 }
 
-func (l *paranoidLogger) SetFlag(flag string, value bool) bool {
-	switch flag {
-	case "verbose":
-		l.flags.verbose = value
-	case "debug":
-		l.flags.debug = value
-	default:
-		return false
-	}
-	return true
+func (l *paranoidLogger) SetLogLevel(level int) {
+	l.logLevel = level
 }
 
 // SetOutput sets the default output for the
 func (l *paranoidLogger) SetOutput(output string) {
-	l.flags.output = output
 	var writers []io.Writer
 
-	switch l.flags.output {
+	switch output {
 	case "both":
 		w, err := createFileWriter(l.logDir, l.curPack)
 		if err != nil {
@@ -80,46 +71,80 @@ func (l *paranoidLogger) SetOutput(output string) {
 	log.SetOutput(l.writer)
 }
 
-// Info logs as type info
-func (l *paranoidLogger) Info(v ...interface{}) {
-	l.output("INFO", v...)
-}
-
-func (l *paranoidLogger) Infof(format string, v ...interface{}) {
-	l.outputf("INFO", format, v...)
-}
-
-func (l *paranoidLogger) Warn(v ...interface{}) {
-	l.output("WARN", v...)
-}
-
-func (l *paranoidLogger) Warnf(format string, v ...interface{}) {
-	l.outputf("WARN", format, v...)
-}
-
-func (l *paranoidLogger) Error(v ...interface{}) {
-	l.output("ERROR", v...)
-}
-
-func (l *paranoidLogger) Errorf(format string, v ...interface{}) {
-	l.outputf("ERROR", format, v...)
-}
+///////////////////////////////// DEBUG /////////////////////////////////
 
 // Debug only prints if DEBUG env var is set
 func (l *paranoidLogger) Debug(v ...interface{}) {
-	if !l.flags.debug {
-		return
+	if l.logLevel <= DEBUG {
+		l.output("DEBUG", v...)
 	}
-	l.output("DEBUG", v...)
 }
 
 // Debug only prints if DEBUG env var is set
 func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
-	if !l.flags.debug {
-		return
+	if l.logLevel <= DEBUG {
+		l.outputf("DEBUG", format, v...)
 	}
-	l.outputf("DEBUG", format, v...)
 }
+
+///////////////////////////////// VERBOSE /////////////////////////////////
+
+func (l *paranoidLogger) Verbose(v ...interface{}) {
+	if l.logLevel <= VERBOSE {
+		l.Info(v...)
+	}
+}
+
+func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
+	if l.logLevel <= VERBOSE {
+		l.Infof(format, v...)
+	}
+}
+
+///////////////////////////////// INFO /////////////////////////////////
+
+// Info logs as type info
+func (l *paranoidLogger) Info(v ...interface{}) {
+	if l.logLevel <= INFO {
+		l.output("INFO", v...)
+	}
+}
+
+func (l *paranoidLogger) Infof(format string, v ...interface{}) {
+	if l.logLevel <= INFO {
+		l.outputf("INFO", format, v...)
+	}
+}
+
+///////////////////////////////// WARN /////////////////////////////////
+
+func (l *paranoidLogger) Warn(v ...interface{}) {
+	if l.logLevel <= WARNING {
+		l.output("WARN", v...)
+	}
+}
+
+func (l *paranoidLogger) Warnf(format string, v ...interface{}) {
+	if l.logLevel <= WARNING {
+		l.outputf("WARN", format, v...)
+	}
+}
+
+///////////////////////////////// ERROR /////////////////////////////////
+
+func (l *paranoidLogger) Error(v ...interface{}) {
+	if l.logLevel <= ERROR {
+		l.output("ERROR", v...)
+	}
+}
+
+func (l *paranoidLogger) Errorf(format string, v ...interface{}) {
+	if l.logLevel <= ERROR {
+		l.outputf("ERROR", format, v...)
+	}
+}
+
+///////////////////////////////// FATAL /////////////////////////////////
 
 func (l *paranoidLogger) Fatal(v ...interface{}) {
 	l.output("FATAL", v...)
@@ -131,17 +156,7 @@ func (l *paranoidLogger) Fatalf(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
-func (l *paranoidLogger) Verbose(v ...interface{}) {
-	if l.flags.verbose {
-		l.Info(v...)
-	}
-}
-
-func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
-	if l.flags.verbose {
-		l.Infof(format, v...)
-	}
-}
+///////////////////////////////// GENERAL /////////////////////////////////
 
 func (l *paranoidLogger) output(mtype string, v ...interface{}) {
 	fmt := "[" + mtype + "] "
