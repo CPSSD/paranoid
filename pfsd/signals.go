@@ -32,7 +32,7 @@ func handleSIGHUP() {
 	// We also wait to give it some time to stop itself.
 	time.Sleep(time.Millisecond * 10)
 	globals.Wait.Done()
-	log.Println("INFO: gRPC server stopped.")
+	log.Println("INFO: ParanoidNetwork server stopped.")
 	globals.Wait.Wait()
 	log.Println("INFO: All services stopped. Forking process.")
 	execSpec := &syscall.ProcAttr{
