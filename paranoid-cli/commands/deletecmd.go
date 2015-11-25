@@ -14,7 +14,7 @@ func Delete(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 1 {
 		cli.ShowAppHelp(c)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	usr, err := user.Current()

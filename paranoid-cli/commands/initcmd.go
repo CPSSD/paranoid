@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-//Init a new paranoid file system
+//Init inits a new paranoid file system
 func Init(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 1 {
@@ -38,7 +38,7 @@ func Init(c *cli.Context) {
 		log.Fatalln("Given pfs-name is in incorrect format. Error : ", err)
 	}
 	if path.Base(directory) != args[0] {
-		log.Fatalln("Given pfs-name is in incorrect format")
+		log.Fatalln("Given pfs-name is in incorrect format.")
 	}
 
 	if _, err := os.Stat(directory); !os.IsNotExist(err) {
