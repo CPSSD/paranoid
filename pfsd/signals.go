@@ -11,19 +11,7 @@ import (
 	"time"
 )
 
-// Listens for SIGTERM and SIGHUP. Should be run in own goroutine.
-func HandleSignals() {
-	incoming := make(chan os.Signal, 1)
-	signal.Notify(incoming, syscall.SIGHUP)
-	sig := <-incoming
-	switch sig {
-	case syscall.SIGHUP:
-		handleSIGHUP()
-	}
-}
-
-func handleSIGHUP() {
-	log.Println("INFO: SIGHUP received. Restarting.")
+func stopAllServices() {
 	close(globals.Quit)     // Sends stop signal to all goroutines
 	dnetclient.Disconnect() // Disconnect from the discovery server
 	icserver.StopAccept()
@@ -34,6 +22,25 @@ func handleSIGHUP() {
 	globals.Wait.Done()
 	log.Println("INFO: ParanoidNetwork server stopped.")
 	globals.Wait.Wait()
+}
+
+// HandleSignals listens for SIGTERM and SIGHUP, and dispatches to handler
+// functions when a signal is received.
+func HandleSignals() {
+	incoming := make(chan os.Signal, 1)
+	signal.Notify(incoming, syscall.SIGHUP, syscall.SIGTERM)
+	sig := <-incoming
+	switch sig {
+	case syscall.SIGHUP:
+		handleSIGHUP()
+	case syscall.SIGTERM:
+		handleSIGTERM()
+	}
+}
+
+func handleSIGHUP() {
+	log.Println("INFO: SIGHUP received. Restarting.")
+	stopAllServices()
 	log.Println("INFO: All services stopped. Forking process.")
 	execSpec := &syscall.ProcAttr{
 		Env: os.Environ(),
@@ -44,4 +51,10 @@ func handleSIGHUP() {
 	} else {
 		log.Println("INFO: Forked successfully. New PID:", fork)
 	}
+}
+
+func handleSIGTERM() {
+	log.Println("INFO: SIGTERM received. Exiting.")
+	stopAllServices()
+	log.Println("INFO: All services stopped. Have a nice day.")
 }
