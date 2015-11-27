@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
@@ -9,6 +10,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"log"
 	"net"
 	"os"
@@ -17,9 +19,48 @@ import (
 	"strings"
 )
 
-var srv *grpc.Server
+var (
+	srv *grpc.Server
+
+	certFile = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
+	keyFile  = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+)
+
+func startIcAndListen(pfsDir string) {
+	defer globals.Wait.Done()
+
+	globals.Wait.Add(1)
+	go icserver.RunServer(pfsDir, true)
+
+	for {
+		select {
+		case message := <-icserver.MessageChan:
+			pnetclient.SendRequest(message)
+		case _, ok := <-globals.Quit:
+			if !ok {
+				return
+			}
+		}
+	}
+}
+
+func startRPCServer(lis *net.Listener) {
+	var opts []grpc.ServerOption
+	if *certFile != "" && *keyFile != "" {
+		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
+		if err != nil {
+			log.Fatalln("FATAL: Failed to generate TLS credentials:", err)
+		}
+		opts = []grpc.ServerOption{grpc.Creds(creds)}
+	}
+	srv = grpc.NewServer(opts...)
+	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
+	globals.Wait.Add(1)
+	go srv.Serve(*lis)
+}
 
 func main() {
+	flag.Parse()
 	if len(os.Args) < 4 {
 		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <Discovery Server> <Discovery Port>\n")
 		os.Exit(1)
@@ -56,27 +97,6 @@ func main() {
 	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
 	globals.Port = port
 	dnetclient.JoinDiscovery("_")
-	srv = grpc.NewServer()
-	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
-	globals.Wait.Add(1)
-	go srv.Serve(lis)
+	startRPCServer(&lis)
 	HandleSignals()
-}
-
-func startIcAndListen(pfsDir string) {
-	defer globals.Wait.Done()
-
-	globals.Wait.Add(1)
-	go icserver.RunServer(pfsDir, true)
-
-	for {
-		select {
-		case message := <-icserver.MessageChan:
-			pnetclient.SendRequest(message)
-		case _, ok := <-globals.Quit:
-			if !ok {
-				return
-			}
-		}
-	}
 }
