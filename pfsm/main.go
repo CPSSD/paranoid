@@ -65,6 +65,8 @@ func main() {
 			commands.UnlinkCommand(onlyArgs[1:])
 		case "link":
 			commands.LinkCommand(onlyArgs[1:])
+		case "mkdir":
+			commands.MkdirCommand(onlyArgs[1:])
 		default:
 			log.Fatalln("Given command not recognised")
 		}

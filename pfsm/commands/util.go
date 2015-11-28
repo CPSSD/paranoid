@@ -2,9 +2,11 @@ package commands
 
 import (
 	"github.com/cpssd/paranoid/pfsm/icclient"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
+	"strings"
 	"syscall"
 )
 
@@ -104,4 +106,26 @@ func sendToServer(paranoidDir, command string, args []string, data []byte) {
 	} else {
 		icclient.SendMessageWithData(paranoidDir, command, args, data)
 	}
+}
+
+func getParanoidPath(paranoidDir, realPath string) (lastNode string, paranoidPath string) {
+	split := strings.Split(realPath, "/")
+	paranoidPath = ""
+	lastNode = ""
+	for i := range split {
+		paranoidPath += split[i] + "-file"
+		if i != len(split)-1 {
+			paranoidPath += "/"
+		} else {
+			lastNode = split[i] + "-file"
+		}
+	}
+	return lastNode, path.Join(paranoidDir, "names", paranoidPath)
+}
+
+func generateNewInode() ([]byte, string) {
+	uuidbytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
+	checkErr("util, generateNewInode", err)
+	uuidString := strings.TrimSpace(string(uuidbytes))
+	return []byte(uuidString), uuidString
 }

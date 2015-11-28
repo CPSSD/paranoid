@@ -132,7 +132,7 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	return util.GetFuseReturnCode(retcode)
 }
 
-//Create a hard link from newName to oldName
+//Link creates a hard link from newName to oldName
 func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Link called")
 	retcode, _ := pfsminterface.RunCommand(nil, "link", util.PfsDirectory, oldName, newName)
@@ -143,6 +143,13 @@ func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Unlink callde on : " + name)
 	retcode, _ := pfsminterface.RunCommand(nil, "unlink", util.PfsDirectory, name)
+	return util.GetFuseReturnCode(retcode)
+}
+
+//Mkdir is called when creating a directory
+func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Context) fuse.Status {
+	util.LogMessage("Mkdir called on : " + name)
+	retcode, _ := pfsminterface.RunCommand(nil, "mkdir", util.PfsDirectory, name, strconv.Itoa(int(mode)))
 	return util.GetFuseReturnCode(retcode)
 }
 
