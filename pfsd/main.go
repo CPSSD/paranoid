@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
@@ -17,6 +18,8 @@ import (
 	"strings"
 )
 
+var srv *grpc.Server
+
 func main() {
 	if len(os.Args) < 4 {
 		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <Discovery Server> <Discovery Port>\n")
@@ -27,6 +30,7 @@ func main() {
 		log.Fatalln("FATAL: Discovery port must be a number between 1 and 65535, inclusive.")
 	}
 	pnetserver.ParanoidDir = os.Args[1]
+	globals.Wait.Add(1)
 	go startIcAndListen(pnetserver.ParanoidDir)
 	globals.UpnpMapping = new(upnp.Upnp)
 
@@ -47,7 +51,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("FATAL: Failed to start listening : %v.\n", err)
 	}
-
 	splits := strings.Split(lis.Addr().String(), ":")
 	port, err := strconv.Atoi(splits[len(splits)-1])
 	if err != nil {
@@ -64,22 +67,30 @@ func main() {
 		log.Println("Upnp mapping not active")
 	}
 
-	pnetserver.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
+	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
 	globals.Port = port
-
-	pnetserver.JoinDiscovery("_")
-	srv := grpc.NewServer()
+	dnetclient.JoinDiscovery("_")
+	srv = grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
-	srv.Serve(lis)
+	globals.Wait.Add(1)
+	go srv.Serve(lis)
+	HandleSignals()
 }
 
 func startIcAndListen(pfsDir string) {
+	defer globals.Wait.Done()
+
+	globals.Wait.Add(1)
 	go icserver.RunServer(pfsDir, true)
 
 	for {
 		select {
 		case message := <-icserver.MessageChan:
 			pnetclient.SendRequest(message)
+		case _, ok := <-globals.Quit:
+			if !ok {
+				return
+			}
 		}
 	}
 }

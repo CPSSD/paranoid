@@ -9,18 +9,19 @@ import (
 	"path"
 )
 
+//AutoMount mounts a file system with the last used settings.
 func AutoMount(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 1 {
 		cli.ShowAppHelp(c)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
 	}
-	pfsMeta := path.Join(usr.HomeDir, "pfs", args[0], "meta")
+	pfsMeta := path.Join(usr.HomeDir, ".pfs", args[0], "meta")
 
 	ip, err := ioutil.ReadFile(path.Join(pfsMeta, "ip"))
 	if err != nil {
