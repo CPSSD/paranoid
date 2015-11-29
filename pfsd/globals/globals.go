@@ -8,8 +8,9 @@ import (
 
 // Node struct
 type Node struct {
-	IP   string
-	Port string
+	IP         string
+	Port       string
+	CommonName string
 }
 
 func (n Node) String() string {
