@@ -26,6 +26,8 @@ func GetFuseReturnCode(retcode int) fuse.Status {
 		return fuse.EACCES
 	case returncodes.EEXIST:
 		return fuse.Status(syscall.EEXIST)
+	case returncodes.ENOTEMPTY:
+		return fuse.Status(syscall.ENOTEMPTY)
 	default:
 		return fuse.OK
 	}

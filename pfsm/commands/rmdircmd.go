@@ -3,6 +3,7 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -19,14 +20,25 @@ func RmdirCommand(args []string) {
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	dirName, dirToDelete := getParanoidPath(directory, args[1])
-	dirInfoFilePath := path.Join(dirToDelete, (dirName + "-info"))
-	_, dirInodeString, retCode := getFileInode(dirInfoFilePath)
+	dirToDelete := getParanoidPath(directory, args[1])
+	dirInfoFilePath := path.Join(dirToDelete, (path.Base(dirToDelete) + "-info"))
+	dirInodeBytes, retCode := getFileInode(dirInfoFilePath)
 	if retCode != returncodes.OK {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(retCode))
 		return
 	}
-	dirInodePath := path.Join(directory, "inodes", dirInodeString)
+	if !checkFileExists(dirToDelete) {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
+		return
+	}
+	names, err := ioutil.ReadDir(dirToDelete)
+	checkErr("rmdir", err)
+	if len(names) > 1 {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTEMPTY))
+		return
+	}
+	checkErr("rmdir", err)
+	dirInodePath := path.Join(directory, "inodes", string(dirInodeBytes))
 
 	code := deleteFile(dirInfoFilePath)
 	if code != returncodes.OK {

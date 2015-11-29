@@ -19,8 +19,8 @@ func LinkCommand(args []string) {
 	}
 
 	directory := args[0]
-	_, existingFilePath := getParanoidPath(directory, args[1])
-	_, targetFilePath := getParanoidPath(directory, args[2])
+	existingFilePath := getParanoidPath(directory, args[1])
+	targetFilePath := getParanoidPath(directory, args[2])
 
 	verboseLog("link : given directory = " + directory)
 
@@ -37,7 +37,7 @@ func LinkCommand(args []string) {
 	}
 
 	// getting inode and fileMode of existing file
-	inodeBytes, inodeString, code := getFileInode(existingFilePath)
+	inodeBytes, code := getFileInode(existingFilePath)
 	if code != returncodes.OK {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
 		return
@@ -51,7 +51,7 @@ func LinkCommand(args []string) {
 	checkErr("link", err)
 
 	// getting contents of inode
-	inodePath := path.Join(directory, "inodes", inodeString)
+	inodePath := path.Join(directory, "inodes", string(inodeBytes))
 	verboseLog("link : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	checkErr("link", err)

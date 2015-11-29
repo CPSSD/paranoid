@@ -13,11 +13,11 @@ import (
 )
 
 type statInfo struct {
-	Length int64       `json:"length",omitempty`
-	Ctime  time.Time   `json:"ctime",omitempty`
-	Mtime  time.Time   `json:"mtime",omitempty`
-	Atime  time.Time   `json:"atime",omitempty`
-	Perms  os.FileMode `json:"perms",omitempty`
+	Length int64     `json:"length",omitempty`
+	Ctime  time.Time `json:"ctime",omitempty`
+	Mtime  time.Time `json:"mtime",omitempty`
+	Atime  time.Time `json:"atime",omitempty`
+	Mode   uint32    `json:"mode",omitempty`
 }
 
 //StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
@@ -33,18 +33,23 @@ func StatCommand(args []string) {
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	_, namepath := getParanoidPath(directory, args[1])
-
+	namepath := getParanoidPath(directory, args[1])
 	if !checkFileExists(namepath) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
-	fileNameBytes, err := ioutil.ReadFile(namepath)
-	checkErr("stat", err)
-	fileName := string(fileNameBytes)
+	var pathToStat string
+	if isDirectory(namepath) {
+		pathToStat = namepath
+	} else {
+		fileNameBytes, err := ioutil.ReadFile(namepath)
+		checkErr("stat", err)
+		fileName := string(fileNameBytes)
+		pathToStat = path.Join(directory, "contents", fileName)
+	}
 
-	fi, err := os.Stat(path.Join(directory, "contents", fileName))
+	fi, err := os.Stat(pathToStat)
 	checkErr("stat", err)
 
 	stat := fi.Sys().(*syscall.Stat_t)
@@ -55,7 +60,7 @@ func StatCommand(args []string) {
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
 		Atime:  atime,
-		Perms:  fi.Mode().Perm()}
+		Mode:   stat.Mode}
 
 	jsonData, err := json.Marshal(statData)
 	checkErr("stat", err)

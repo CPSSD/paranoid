@@ -22,7 +22,7 @@ func ReadCommand(args []string) {
 	directory := args[0]
 	verboseLog("read : given directory = " + directory)
 
-	_, namepath := getParanoidPath(directory, args[1])
+	namepath := getParanoidPath(directory, args[1])
 
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)

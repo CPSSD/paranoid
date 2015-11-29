@@ -11,14 +11,6 @@ import (
 	"syscall"
 )
 
-//Check if a given file exists
-func checkFileExists(filepath string) bool {
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
-
 func getAccessMode(flags uint32) uint32 {
 	switch flags {
 	case syscall.O_RDONLY:
@@ -109,18 +101,13 @@ func sendToServer(paranoidDir, command string, args []string, data []byte) {
 	}
 }
 
-func getParanoidPath(paranoidDir, realPath string) (lastNode string, paranoidPath string) {
+func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
 	split := strings.Split(realPath, "/")
 	paranoidPath = path.Join(paranoidDir, "names")
-	lastNode = ""
 	for i := range split {
-		current := split[i] + "-file"
-		paranoidPath = path.Join(paranoidPath, current)
-		if i == len(split)-1 {
-			lastNode = current
-		}
+		paranoidPath = path.Join(paranoidPath, (split[i] + "-file"))
 	}
-	return lastNode, paranoidPath
+	return paranoidPath
 }
 
 func generateNewInode() (inodeBytes []byte, inodeString string) {
@@ -130,16 +117,22 @@ func generateNewInode() (inodeBytes []byte, inodeString string) {
 	return []byte(inodeString), inodeString
 }
 
-func getFileInode(filePath string) (inodeBytes []byte, inodeString string, errorCode int) {
+func getFileInode(filePath string) (inodeBytes []byte, errorCode int) {
+	if getFileType(filePath) == typeDir {
+		filePath = path.Join(filePath, "-info")
+	}
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, "", returncodes.ENOENT
+			return nil, returncodes.ENOENT
 		} else if os.IsPermission(err) {
-			return nil, "", returncodes.EACCES
+			return nil, returncodes.EACCES
+		} else if os.IsNotExist(err) {
+			return nil, returncodes.ENOENT
 		}
+		log.Fatalln("util, getFileInode", " error occured: ", err)
 	}
-	return bytes, string(bytes), returncodes.OK
+	return bytes, returncodes.OK
 }
 
 func deleteFile(filePath string) (returncode int) {
@@ -149,16 +142,29 @@ func deleteFile(filePath string) (returncode int) {
 			return returncodes.ENOENT
 		} else if os.IsPermission(err) {
 			return returncodes.EACCES
+		} else if os.IsNotExist(err) {
+			return returncodes.ENOENT
 		}
+		log.Fatalln("util, deleteFile", " error occured: ", err)
 	}
 	return returncodes.OK
 }
 
-func isDirectory(path string) bool {
-	f, err := os.Open(path)
-	checkErr("util, isDirectory", err)
-	defer f.Close()
-	fi, err := f.Stat()
-	checkErr("util, isDirectory", err)
-	return fi.Mode().IsDir()
+const (
+	typeFile = iota
+	typeDir
+	typeENOENT
+)
+
+func getFileType(path string) int {
+	f, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return typeENOENT
+		}
+	}
+	if f.Mode().IsDir() {
+		return typeDir
+	}
+	return typeFile
 }

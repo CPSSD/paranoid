@@ -6,10 +6,11 @@ import (
 
 //Current pfsm supported return codes
 const (
-	OK     = iota
-	ENOENT //No such file or directory.
-	EACCES //Can not access file
-	EEXIST //File already exists
+	OK        = iota
+	ENOENT    //No such file or directory.
+	EACCES    //Can not access file
+	EEXIST    //File already exists
+	ENOTEMPTY //Directory not empty
 )
 
 //Gets the integer return code for a given Enum of the code represented as a 2 byte string.

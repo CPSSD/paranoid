@@ -7,7 +7,6 @@ import (
 	"github.com/cpssd/paranoid/pfi/util"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -25,11 +24,11 @@ type ParanoidFileSystem struct {
 
 //The structure for processing information returned by a pfs stat command
 type statInfo struct {
-	Length int64       `json:"length",omitempty`
-	Ctime  time.Time   `json:"ctime",omitempty`
-	Mtime  time.Time   `json:"mtime",omitempty`
-	Atime  time.Time   `json:"atime",omitempty`
-	Perms  os.FileMode `json:"perms",omitempty`
+	Length int64     `json:"length",omitempty`
+	Ctime  time.Time `json:"ctime",omitempty`
+	Mtime  time.Time `json:"mtime",omitempty`
+	Atime  time.Time `json:"atime",omitempty`
+	Mode   uint32    `json:"mode",omitempty`
 }
 
 //GetAttr is called by fuse when the attributes of a
@@ -37,8 +36,7 @@ type statInfo struct {
 func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.Status) {
 	util.LogMessage("GetAttr called on : " + name)
 
-	// Special case : "" is the root of our flat
-	// file system (Only directory GetAttr can be called on)
+	// Special case : "" is the root of our filesystem
 	if name == "" {
 		return &fuse.Attr{
 			Mode: fuse.S_IFDIR | 0755,
@@ -55,31 +53,22 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 	if err != nil {
 		log.Fatalln("Error processing JSON returned by stat command:", err)
 	}
-
 	attr := fuse.Attr{
 		Size:  uint64(stats.Length),
 		Atime: uint64(stats.Atime.Unix()),
 		Ctime: uint64(stats.Ctime.Unix()),
 		Mtime: uint64(stats.Mtime.Unix()),
-		Mode:  fuse.S_IFREG | uint32(stats.Perms), // S_IFREG = regular file
+		Mode:  stats.Mode,
 	}
 
 	return &attr, fuse.OK
 }
 
-//OpenDir is called when the contents of a directory are needed. There
-//is only one directory this can be called on in this sprint. i.e
-//the root directory of the file system.
+//OpenDir is called when the contents of a directory are needed.
 func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	util.LogMessage("OpenDir called on : " + name)
-	dirname := ""
-	if name == "" {
-		dirname = util.PfsDirectory
-	} else {
-		dirname = name
-	}
 
-	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory, dirname)
+	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory, name)
 	if code != returncodes.OK {
 		return nil, util.GetFuseReturnCode(code)
 	}
@@ -87,7 +76,7 @@ func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fus
 
 	util.LogMessage("OpenDir returns : " + outputString)
 	if outputString == "" {
-		dirEntries := make([]fuse.DirEntry, 0)
+		var dirEntries []fuse.DirEntry
 		return dirEntries, fuse.OK
 	}
 

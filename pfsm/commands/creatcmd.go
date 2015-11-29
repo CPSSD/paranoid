@@ -28,7 +28,7 @@ func CreatCommand(args []string) {
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	_, namepath := getParanoidPath(directory, args[1])
+	namepath := getParanoidPath(directory, args[1])
 
 	if _, err := os.Stat(namepath); !os.IsNotExist(err) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))

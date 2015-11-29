@@ -17,8 +17,8 @@ func RenameCommand(args []string) {
 	}
 
 	directory := args[0]
-	_, oldFilePath := getParanoidPath(directory, args[1])
-	_, newFilePath := getParanoidPath(directory, args[2])
+	oldFilePath := getParanoidPath(directory, args[1])
+	newFilePath := getParanoidPath(directory, args[2])
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
@@ -34,19 +34,28 @@ func RenameCommand(args []string) {
 	}
 
 	//Check if we have access to the file to be renamed
-	_, inodeString, code := getFileInode(oldFilePath)
-	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
-	}
-	err := syscall.Access(path.Join(directory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
-	if err != nil {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-		return
-	}
+	if isDirectory(oldFilePath) {
+		err := os.Rename(oldFilePath, newFilePath)
+		checkErr("rename", err)
+		oldInfoFilePath := path.Join(newFilePath, (path.Base(oldFilePath) + "-info"))
+		newInfoFilePath := path.Join(newFilePath, (path.Base(newFilePath) + "-info"))
+		err = os.Rename(oldInfoFilePath, newInfoFilePath)
+		checkErr("rename", err)
+	} else {
+		inodeBytes, code := getFileInode(oldFilePath)
+		if code != returncodes.OK {
+			io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+			return
+		}
+		err := syscall.Access(path.Join(directory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
+		if err != nil {
+			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
+			return
+		}
 
-	err = os.Rename(oldFilePath, newFilePath)
-	checkErr("rename", err)
+		err = os.Rename(oldFilePath, newFilePath)
+		checkErr("rename", err)
+	}
 
 	if !Flags.Network {
 		sendToServer(directory, "rename", args[1:], nil)

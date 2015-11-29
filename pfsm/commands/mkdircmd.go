@@ -21,8 +21,8 @@ func MkdirCommand(args []string) {
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	dirName, dirPath := getParanoidPath(directory, args[1])
-	dirInfoPath := path.Join(dirPath, (dirName + "-info"))
+	dirPath := getParanoidPath(directory, args[1])
+	dirInfoPath := path.Join(dirPath, (path.Base(dirPath) + "-info"))
 	inodeBytes, inodeString := generateNewInode()
 	inodePath := path.Join(directory, "inodes", inodeString)
 	mode, err := strconv.Atoi(args[2])

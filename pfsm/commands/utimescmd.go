@@ -29,7 +29,7 @@ func UtimesCommand(args []string) {
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	_, namepath := getParanoidPath(directory, args[1])
+	namepath := getParanoidPath(directory, args[1])
 
 	if !checkFileExists(namepath) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
