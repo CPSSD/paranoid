@@ -27,6 +27,7 @@ message EmptyMessage {}
 message PingRequest {
     string ip = 1;  // required
     string port = 2;  // required
+    string common_name = 3; // required
 }
 
 message CreatRequest {
