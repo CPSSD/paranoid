@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/codegangsta/cli"
+	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"io/ioutil"
 	"log"
 	"os"
@@ -32,5 +33,8 @@ func Unmount(c *cli.Context) {
 	err = cmd.Run()
 	if err != nil {
 		log.Fatalln("FATAL : unmount failed ", err)
+	}
+	if dnetclient.Disconnect() != nil {
+		log.Fatalln("Can't Disconnect from Discovery Server")
 	}
 }
