@@ -5,13 +5,12 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"log"
 )
 
 // Disconnect function used to disconnect from the server
 func Disconnect() error {
-	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
+	conn, err := dialDiscovery()
 	if err != nil {
 		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
 		return errors.New("Failed to dial discovery server")

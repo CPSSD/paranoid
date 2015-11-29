@@ -8,17 +8,19 @@ import (
 	"log"
 )
 
-var SkipVerify bool
-
-func Dial(ipAddress globals.Node) *grpc.ClientConn {
+func Dial(node globals.Node) *grpc.ClientConn {
 	var opts []grpc.DialOption
-	creds := credentials.NewTLS(&tls.Config{
-		ServerName:         "",
-		InsecureSkipVerify: SkipVerify,
-	})
-	opts = append(opts, grpc.WithTransportCredentials(creds))
+	if globals.TLSEnabled {
+		creds := credentials.NewTLS(&tls.Config{
+			ServerName:         node.CommonName,
+			InsecureSkipVerify: globals.TLSSkipVerify,
+		})
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
 
-	conn, err := grpc.Dial(ipAddress.String(), opts...)
+	conn, err := grpc.Dial(node.String(), opts...)
 	if err != nil {
 		log.Println("fail to dial: ", err)
 	}

@@ -29,6 +29,12 @@ var Nodes = nodes{m: make(map[Node]bool)}
 var Server string
 var Port int
 
+// If true, TLS is being used in all connections to and from PFSD
+var TLSEnabled bool
+
+// If true, PFSD will not verify the TLS credentials of anything it connects to
+var TLSSkipVerify bool
+
 // Global waitgroup for all goroutines in PFSD
 var Wait sync.WaitGroup
 var Quit = make(chan bool) // Doesn't matter what the channel holds

@@ -4,15 +4,34 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"log"
+	"net"
 	"time"
 )
 
-const peerPingInterval time.Duration = time.Minute
-
-func SetDiscovery(ip, port, serverPort string) {
+func SetDiscovery(host, port, serverPort string) {
 	ipClient, _ := pnetclient.GetIP()
 	ThisNode = globals.Node{IP: ipClient, Port: serverPort}
-	globals.DiscoveryAddr = ip + ":" + port
+	globals.DiscoveryAddr = host + ":" + port
+
+	if globals.TLSEnabled && !globals.TLSSkipVerify {
+		// If host is an IP, we need to get the hostname via DNS
+		ip := net.ParseIP(host)
+		var dnsAddr string
+		var err error
+		if ip != nil {
+			var dnsAddrs []string
+			dnsAddrs, err = net.LookupAddr(ip.String())
+			dnsAddr = dnsAddrs[0]
+		} else {
+			dnsAddr, err = net.LookupCNAME(host)
+		}
+		if err != nil {
+			log.Println("ERROR: Could not complete DNS lookup:", err)
+		}
+		if dnsAddr == "" { // If no DNS entries exist
+			log.Fatalln("FATAL: Can not find DNS entry for discovery server:", host)
+		}
+	}
 }
 
 func JoinDiscovery(pool string) {

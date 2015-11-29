@@ -5,14 +5,13 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"log"
 )
 
 // Renew function. Will create a goroutine which will send renew to server
 // 1/10 before expriration
 func Renew() error {
-	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
+	conn, err := dialDiscovery()
 	if err != nil {
 		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
 		return errors.New("failed to dial discovery server")
