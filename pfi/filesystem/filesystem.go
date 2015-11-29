@@ -72,7 +72,14 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 //the root directory of the file system.
 func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	util.LogMessage("OpenDir called on : " + name)
-	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory)
+	dirname := ""
+	if name == "" {
+		dirname = util.PfsDirectory
+	} else {
+		dirname = name
+	}
+
+	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory, dirname)
 	if code != returncodes.OK {
 		return nil, util.GetFuseReturnCode(code)
 	}

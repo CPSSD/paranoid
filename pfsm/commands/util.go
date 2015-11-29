@@ -153,3 +153,12 @@ func deleteFile(filePath string) (returncode int) {
 	}
 	return returncodes.OK
 }
+
+func isDirectory(path string) bool {
+	f, err := os.Open(path)
+	checkErr("util, isDirectory", err)
+	defer f.Close()
+	fi, err := f.Stat()
+	checkErr("util, isDirectory", err)
+	return fi.Mode().IsDir()
+}

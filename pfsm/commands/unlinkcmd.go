@@ -20,8 +20,7 @@ func UnlinkCommand(args []string) {
 	}
 
 	directory := args[0]
-	fileName := args[1]
-	fileNamePath := path.Join(directory, "names", fileName)
+	_, fileNamePath := getParanoidPath(directory, args[1])
 
 	verboseLog("unlink : directory given = " + directory)
 
@@ -35,13 +34,14 @@ func UnlinkCommand(args []string) {
 	}
 
 	// getting file inode
-	verboseLog("unlink : reading file " + fileNamePath)
-	inodeBytes, err := ioutil.ReadFile(fileNamePath)
-	checkErr("unlink", err)
-	inodeString := string(inodeBytes)
+	_, inodeString, code := getFileInode(fileNamePath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
 
 	//checking if we have access to the file.
-	err = syscall.Access(path.Join(directory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
+	err := syscall.Access(path.Join(directory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return

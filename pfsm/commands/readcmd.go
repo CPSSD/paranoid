@@ -22,15 +22,17 @@ func ReadCommand(args []string) {
 	directory := args[0]
 	verboseLog("read : given directory = " + directory)
 
+	_, namepath := getParanoidPath(directory, args[1])
+
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(path.Join(directory, "names", args[1])) {
+	if !checkFileExists(namepath) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
-	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
+	fileNameBytes, err := ioutil.ReadFile(namepath)
 	checkErr("read", err)
 	fileName := string(fileNameBytes)
 

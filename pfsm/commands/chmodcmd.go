@@ -23,12 +23,14 @@ func ChmodCommand(args []string) {
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(path.Join(directory, "names", args[1])) {
+	_, namepath := getParanoidPath(directory, args[1])
+
+	if !checkFileExists(namepath) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
-	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
+	fileNameBytes, err := ioutil.ReadFile(namepath)
 	checkErr("chmod", err)
 	fileName := string(fileNameBytes)
 

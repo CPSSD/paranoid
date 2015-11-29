@@ -16,16 +16,34 @@ func ReadDirCommand(args []string) {
 	if len(args) < 1 {
 		log.Fatalln("Not enough arguments!")
 	}
-	directory := args[0]
 
+	directory := args[0]
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
-
 	verboseLog("readdir : given directory = " + directory)
-	files, err := ioutil.ReadDir(path.Join(directory, "names"))
+
+	dirpath := ""
+	dirInfoName := ""
+
+	if args[1] == directory {
+		dirpath = path.Join(directory, "names")
+	} else {
+		dirname, dirp := getParanoidPath(directory, args[1])
+		dirpath = dirp
+		dirInfoName = dirname + "-info"
+	}
+
+	files, err := ioutil.ReadDir(dirpath)
 	checkErr("readdir", err)
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	for i := 0; i < len(files); i++ {
-		fmt.Println(files[i].Name())
+		file := files[i].Name()
+		if dirInfoName != "" {
+			if file != dirInfoName {
+				fmt.Println(files[i].Name())
+			}
+		} else {
+			fmt.Println(files[i].Name())
+		}
 	}
 }

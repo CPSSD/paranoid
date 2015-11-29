@@ -24,12 +24,14 @@ func WriteCommand(args []string) {
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(path.Join(directory, "names", args[1])) {
+	_, namepath := getParanoidPath(directory, args[1])
+
+	if !checkFileExists(namepath) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
-	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
+	fileNameBytes, err := ioutil.ReadFile(namepath)
 	checkErr("write", err)
 	fileName := string(fileNameBytes)
 

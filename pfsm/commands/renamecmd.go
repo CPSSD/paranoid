@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -18,8 +17,8 @@ func RenameCommand(args []string) {
 	}
 
 	directory := args[0]
-	oldFilePath := path.Join(directory, "names", args[1])
-	newFilePath := path.Join(directory, "names", args[2])
+	_, oldFilePath := getParanoidPath(directory, args[1])
+	_, newFilePath := getParanoidPath(directory, args[2])
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
@@ -35,10 +34,12 @@ func RenameCommand(args []string) {
 	}
 
 	//Check if we have access to the file to be renamed
-	fileNameBytes, err := ioutil.ReadFile(oldFilePath)
-	checkErr("rename", err)
-	fileName := string(fileNameBytes)
-	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
+	_, inodeString, code := getFileInode(oldFilePath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
+	err := syscall.Access(path.Join(directory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
