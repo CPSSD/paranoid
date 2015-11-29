@@ -13,7 +13,7 @@ func Disconnect() error {
 	conn, err := dialDiscovery()
 	if err != nil {
 		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
-		return errors.New("Failed to dial discovery server")
+		return errors.New("failed to dial discovery server")
 	}
 	defer conn.Close()
 
@@ -23,7 +23,7 @@ func Disconnect() error {
 		&pb.DisconnectRequest{Node: &pb.Node{Ip: ThisNode.IP, Port: ThisNode.Port}})
 	if err != nil {
 		log.Println("ERROR: could not send disconnect message")
-		return errors.New("Could not send disconnect message")
+		return errors.New("could not send disconnect message")
 	}
 
 	return nil

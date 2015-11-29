@@ -48,17 +48,15 @@ func startIcAndListen(pfsDir string) {
 
 func startRPCServer(lis *net.Listener) {
 	var opts []grpc.ServerOption
-	if *certFile != "" && *keyFile != "" {
-		globals.TLSEnabled = true
-		log.Println("Starting ParanoidNetwork server with TLS.")
+	if globals.TLSEnabled {
+		log.Println("INFO: Starting ParanoidNetwork server with TLS.")
 		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
 		if err != nil {
 			log.Fatalln("FATAL: Failed to generate TLS credentials:", err)
 		}
 		opts = []grpc.ServerOption{grpc.Creds(creds)}
 	} else {
-		globals.TLSEnabled = false
-		log.Println("Starting ParanoidNetwork server without TLS.")
+		log.Println("INFO: Starting ParanoidNetwork server without TLS.")
 	}
 	srv = grpc.NewServer(opts...)
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
@@ -69,6 +67,12 @@ func startRPCServer(lis *net.Listener) {
 func main() {
 	flag.Parse()
 	globals.TLSSkipVerify = *skipVerify
+	if *certFile != "" && *keyFile != "" {
+		globals.TLSEnabled = true
+	} else {
+		globals.TLSEnabled = false
+	}
+
 	if len(flag.Args()) < 3 {
 		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <Discovery Server> <Discovery Port>\n")
 		os.Exit(1)

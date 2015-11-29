@@ -22,7 +22,14 @@ func Join(pool string) error {
 	dclient := pb.NewDiscoveryNetworkClient(conn)
 
 	response, err := dclient.Join(context.Background(),
-		&pb.JoinRequest{Pool: pool, Node: &pb.Node{Ip: ThisNode.IP, Port: ThisNode.Port}})
+		&pb.JoinRequest{
+			Pool: pool,
+			Node: &pb.Node{
+				Ip:         ThisNode.IP,
+				Port:       ThisNode.Port,
+				CommonName: ThisNode.CommonName,
+			},
+		})
 	if err != nil {
 		log.Println("ERROR: could not join discovery server")
 		return errors.New("Could not join the pool")
@@ -35,6 +42,6 @@ func Join(pool string) error {
 		globals.Nodes.Add(globals.Node{IP: node.Ip, Port: node.Port})
 	}
 
-	log.Println("INFO: Successfully joined")
+	log.Println("INFO: Successfully joined discovery network")
 	return nil
 }

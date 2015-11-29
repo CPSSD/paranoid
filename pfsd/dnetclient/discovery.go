@@ -5,12 +5,21 @@ import (
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"log"
 	"net"
+	"os"
 	"time"
 )
 
 func SetDiscovery(host, port, serverPort string) {
 	ipClient, _ := pnetclient.GetIP()
-	ThisNode = globals.Node{IP: ipClient, Port: serverPort}
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Println("ERROR: Could not get machine hostname.")
+	}
+	ThisNode = globals.Node{
+		IP:         ipClient,
+		Port:       serverPort,
+		CommonName: hostname,
+	}
 	globals.DiscoveryAddr = host + ":" + port
 
 	if globals.TLSEnabled && !globals.TLSSkipVerify {
@@ -31,6 +40,7 @@ func SetDiscovery(host, port, serverPort string) {
 		if dnsAddr == "" { // If no DNS entries exist
 			log.Fatalln("FATAL: Can not find DNS entry for discovery server:", host)
 		}
+		discoveryCommonName = dnsAddr
 	}
 }
 
