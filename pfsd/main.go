@@ -22,8 +22,10 @@ import (
 var (
 	srv *grpc.Server
 
-	certFile = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
-	keyFile  = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+	certFile   = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
+	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+	skipVerify = flag.Bool("skip_verification", false,
+		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
 )
 
 func startIcAndListen(pfsDir string) {
@@ -47,11 +49,14 @@ func startIcAndListen(pfsDir string) {
 func startRPCServer(lis *net.Listener) {
 	var opts []grpc.ServerOption
 	if *certFile != "" && *keyFile != "" {
+		log.Println("Starting ParanoidNetwork server with TLS.")
 		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
 		if err != nil {
 			log.Fatalln("FATAL: Failed to generate TLS credentials:", err)
 		}
 		opts = []grpc.ServerOption{grpc.Creds(creds)}
+	} else {
+		log.Println("Starting ParanoidNetwork server without TLS.")
 	}
 	srv = grpc.NewServer(opts...)
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
@@ -61,15 +66,16 @@ func startRPCServer(lis *net.Listener) {
 
 func main() {
 	flag.Parse()
-	if len(os.Args) < 4 {
+	pnetclient.SkipVerify = *skipVerify
+	if len(flag.Args()) < 3 {
 		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <Discovery Server> <Discovery Port>\n")
 		os.Exit(1)
 	}
-	discoveryPort, err := strconv.Atoi(os.Args[3])
+	discoveryPort, err := strconv.Atoi(flag.Arg(2))
 	if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
 		log.Fatalln("FATAL: Discovery port must be a number between 1 and 65535, inclusive.")
 	}
-	pnetserver.ParanoidDir = os.Args[1]
+	pnetserver.ParanoidDir = flag.Arg(0)
 	globals.Wait.Add(1)
 	go startIcAndListen(pnetserver.ParanoidDir)
 	globals.Server, err = pnetclient.GetIP()
@@ -94,7 +100,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("Could not parse port", splits[len(splits)-1], " Error :", err)
 	}
-	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
+	dnetclient.SetDiscovery(flag.Arg(1), flag.Arg(2), strconv.Itoa(port))
 	globals.Port = port
 	dnetclient.JoinDiscovery("_")
 	startRPCServer(&lis)
