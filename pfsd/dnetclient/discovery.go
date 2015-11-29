@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const peerPingInterval time.Duration = time.Minute
+
 func SetDiscovery(ip, port, serverPort string) {
 	ipClient, _ := pnetclient.GetIP()
 	ThisNode = globals.Node{IP: ipClient, Port: serverPort}
@@ -22,9 +24,30 @@ func JoinDiscovery(pool string) {
 			connectionBuffer--
 		}
 		log.Println("Failure to connect to Discovery Server, Giving Up")
-	} else {
-		globals.Wait.Add(1)
-		go renew()
+		return
+	}
+	globals.Wait.Add(2)
+	go pingPeers()
+	go renew()
+}
+
+// Periodically pings all known nodes on the network. Lives here and not
+// in pnetclient since pnetclient is stateless and this function is more
+// relevant to discovery.
+func pingPeers() {
+	timer := time.NewTimer(peerPingInterval)
+	defer timer.Stop()
+	defer globals.Wait.Done()
+	for {
+		select {
+		case _, ok := <-globals.Quit:
+			if !ok {
+				return
+			}
+		case <-timer.C:
+			pnetclient.Ping(globals.Nodes.GetAll())
+			timer.Reset(peerPingInterval)
+		}
 	}
 }
 
