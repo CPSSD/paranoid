@@ -153,6 +153,13 @@ func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Cont
 	return util.GetFuseReturnCode(retcode)
 }
 
+//Rmdir is called when deleting a directory
+func (fs *ParanoidFileSystem) Rmdir(name string, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Rmdir called on : " + name)
+	retcode, _ := pfsminterface.RunCommand(nil, "rmdir", util.PfsDirectory, name)
+	return util.GetFuseReturnCode(retcode)
+}
+
 //Truncate is called when a file is to be reduced in length to size.
 func (fs *ParanoidFileSystem) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Truncate called on : " + name)

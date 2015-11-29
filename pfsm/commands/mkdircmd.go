@@ -18,10 +18,13 @@ func MkdirCommand(args []string) {
 	}
 
 	directory := args[0]
+	getFileSystemLock(directory, exclusiveLock)
+	defer unLockFileSystem(directory)
+
 	dirName, dirPath := getParanoidPath(directory, args[1])
 	dirInfoPath := path.Join(dirPath, (dirName + "-info"))
 	inodeBytes, inodeString := generateNewInode()
-	inodePath := path.Join(dirPath, "inodes", inodeString)
+	inodePath := path.Join(directory, "inodes", inodeString)
 	mode, err := strconv.Atoi(args[2])
 	checkErr("mkdir", err)
 

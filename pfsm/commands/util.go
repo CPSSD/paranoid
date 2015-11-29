@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/cpssd/paranoid/pfsm/icclient"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io/ioutil"
 	"log"
 	"os"
@@ -110,22 +111,45 @@ func sendToServer(paranoidDir, command string, args []string, data []byte) {
 
 func getParanoidPath(paranoidDir, realPath string) (lastNode string, paranoidPath string) {
 	split := strings.Split(realPath, "/")
-	paranoidPath = ""
+	paranoidPath = path.Join(paranoidDir, "names")
 	lastNode = ""
 	for i := range split {
-		paranoidPath += split[i] + "-file"
-		if i != len(split)-1 {
-			paranoidPath += "/"
-		} else {
-			lastNode = split[i] + "-file"
+		current := split[i] + "-file"
+		paranoidPath = path.Join(paranoidPath, current)
+		if i == len(split)-1 {
+			lastNode = current
 		}
 	}
-	return lastNode, path.Join(paranoidDir, "names", paranoidPath)
+	return lastNode, paranoidPath
 }
 
-func generateNewInode() ([]byte, string) {
-	uuidbytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
+func generateNewInode() (inodeBytes []byte, inodeString string) {
+	inodeBytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	checkErr("util, generateNewInode", err)
-	uuidString := strings.TrimSpace(string(uuidbytes))
-	return []byte(uuidString), uuidString
+	inodeString = strings.TrimSpace(string(inodeBytes))
+	return []byte(inodeString), inodeString
+}
+
+func getFileInode(filePath string) (inodeBytes []byte, inodeString string, errorCode int) {
+	bytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, "", returncodes.ENOENT
+		} else if os.IsPermission(err) {
+			return nil, "", returncodes.EACCES
+		}
+	}
+	return bytes, string(bytes), returncodes.OK
+}
+
+func deleteFile(filePath string) (returncode int) {
+	err := os.Remove(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return returncodes.ENOENT
+		} else if os.IsPermission(err) {
+			return returncodes.EACCES
+		}
+	}
+	return returncodes.OK
 }
