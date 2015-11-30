@@ -27,7 +27,7 @@ type paranoidLogger struct {
 }
 
 // New creates a new logger and returns a new logger
-func New(component string, currentPackage string, logDirectory string) *paranoidLogger {
+func New(currentPackage string, component string, logDirectory string) *paranoidLogger {
 	l := paranoidLogger{
 		component: component,
 		curPack:   currentPackage,
@@ -52,7 +52,7 @@ func (l *paranoidLogger) SetOutput(output string) {
 
 	switch output {
 	case "both":
-		w, err := createFileWriter(l.logDir, l.curPack)
+		w, err := createFileWriter(l.logDir, l.component)
 		if err != nil {
 			l.Fatal("Cannot write to log file: ", err)
 		}
@@ -61,7 +61,7 @@ func (l *paranoidLogger) SetOutput(output string) {
 	case "stderr":
 		writers = append(writers, os.Stderr)
 	case "logfile":
-		w, err := createFileWriter(l.logDir, l.curPack)
+		w, err := createFileWriter(l.logDir, l.component)
 		if err != nil {
 			l.Fatal("Cannot write to log file: ", err)
 		}
@@ -172,9 +172,9 @@ func (l *paranoidLogger) output(mtype string, v ...interface{}) {
 	fmt := "[" + mtype + "] "
 	// Add an extra space if the message type (mtype) is only 4 letters long
 	if len(mtype) == 4 {
-		fmt += " " + l.component + ":"
+		fmt += " " + l.curPack + ":"
 	} else {
-		fmt += l.component + ":"
+		fmt += l.curPack + ":"
 	}
 
 	var args []interface{}
@@ -188,15 +188,15 @@ func (l *paranoidLogger) outputf(mtype string, format string, v ...interface{}) 
 	fmt := "[" + mtype + "] "
 	// Add an extra space if the message type (mtype) is only 4 letters long
 	if len(mtype) == 4 {
-		fmt += " " + l.component + ": " + format
+		fmt += " " + l.curPack + ": " + format
 	} else {
-		fmt += l.component + ": " + format
+		fmt += l.curPack + ": " + format
 	}
 
 	log.Printf(fmt, v...)
 }
 
-func createFileWriter(logPath string, packageName string) (io.Writer, error) {
-	return os.OpenFile(path.Join(logPath, packageName+".log"),
+func createFileWriter(logPath string, component string) (io.Writer, error) {
+	return os.OpenFile(path.Join(logPath, component+".log"),
 		os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 }
