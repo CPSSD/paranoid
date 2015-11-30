@@ -69,6 +69,13 @@ func main() {
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {
 		globals.TLSEnabled = true
+		if !globals.TLSSkipVerify {
+			cn, err := getCommonNameFromCert(*certFile)
+			if err != nil {
+				log.Fatalln("FATAL: Could not get CN from provided TLS cert:", err)
+			}
+			globals.CommonName = cn
+		}
 	} else {
 		globals.TLSEnabled = false
 	}
