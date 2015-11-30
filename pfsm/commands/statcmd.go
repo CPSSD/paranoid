@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -13,11 +12,11 @@ import (
 )
 
 type statInfo struct {
-	Length int64     `json:"length",omitempty`
-	Ctime  time.Time `json:"ctime",omitempty`
-	Mtime  time.Time `json:"mtime",omitempty`
-	Atime  time.Time `json:"atime",omitempty`
-	Mode   uint32    `json:"mode",omitempty`
+	Length int64       `json:"length",omitempty`
+	Ctime  time.Time   `json:"ctime",omitempty`
+	Mtime  time.Time   `json:"mtime",omitempty`
+	Atime  time.Time   `json:"atime",omitempty`
+	Mode   os.FileMode `json:"mode",omitempty`
 }
 
 //StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
@@ -54,11 +53,11 @@ func StatCommand(args []string) {
 	stat := fi.Sys().(*syscall.Stat_t)
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
-	var mode uint32
+	var mode os.FileMode
 	if namePathType == typeFile {
-		mode = 0 | uint32(fi.Mode().Perm())
+		mode = os.FileMode(stat.Mode)
 	} else {
-		mode = uint32(os.ModeDir) | uint32(fi.Mode().Perm())
+		mode = os.FileMode(syscall.S_IFDIR | fi.Mode().Perm())
 	}
 	statData := &statInfo{
 		Length: fi.Size(),

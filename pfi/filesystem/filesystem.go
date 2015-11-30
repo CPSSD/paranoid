@@ -6,14 +6,14 @@ import (
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"log"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 //ParanoidFileSystem is the struct which holds all
@@ -24,11 +24,11 @@ type ParanoidFileSystem struct {
 
 //The structure for processing information returned by a pfs stat command
 type statInfo struct {
-	Length int64     `json:"length",omitempty`
-	Ctime  time.Time `json:"ctime",omitempty`
-	Mtime  time.Time `json:"mtime",omitempty`
-	Atime  time.Time `json:"atime",omitempty`
-	Mode   uint32    `json:"mode",omitempty`
+	Length int64       `json:"length",omitempty`
+	Ctime  time.Time   `json:"ctime",omitempty`
+	Mtime  time.Time   `json:"mtime",omitempty`
+	Atime  time.Time   `json:"atime",omitempty`
+	Mode   os.FileMode `json:"mode",omitempty`
 }
 
 //GetAttr is called by fuse when the attributes of a
@@ -58,7 +58,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		Atime: uint64(stats.Atime.Unix()),
 		Ctime: uint64(stats.Ctime.Unix()),
 		Mtime: uint64(stats.Mtime.Unix()),
-		Mode:  stats.Mode,
+		Mode:  uint32(stats.Mode),
 	}
 
 	return &attr, fuse.OK
@@ -145,7 +145,7 @@ func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code f
 //Mkdir is called when creating a directory
 func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Context) fuse.Status {
 	util.LogMessage("Mkdir called on : " + name)
-	retcode, _ := pfsminterface.RunCommand(nil, "mkdir", util.PfsDirectory, name, strconv.Itoa(int(mode)))
+	retcode, _ := pfsminterface.RunCommand(nil, "mkdir", util.PfsDirectory, name, strconv.FormatInt(int64(mode), 8))
 	return util.GetFuseReturnCode(retcode)
 }
 

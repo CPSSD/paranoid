@@ -42,7 +42,7 @@ func RmdirCommand(args []string) {
 			return
 		}
 	}
-	infoFileToDelete := path.Join(dirToDelete, "-info")
+	infoFileToDelete := path.Join(dirToDelete, "info")
 	inodeBytes, err := getFileInode(dirToDelete)
 	inodeString := string(inodeBytes)
 	if err != returncodes.OK {

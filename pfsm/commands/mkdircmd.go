@@ -22,12 +22,12 @@ func MkdirCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	dirPath := getParanoidPath(directory, args[1])
-	dirInfoPath := path.Join(dirPath, "-info")
+	dirInfoPath := path.Join(dirPath, "info")
 	inodeBytes := generateNewInode()
 	inodeString := string(inodeBytes)
 	inodePath := path.Join(directory, "inodes", inodeString)
 	contentsPath := path.Join(directory, "contents", inodeString)
-	mode, err := strconv.Atoi(args[2])
+	mode, err := strconv.ParseInt(args[2], 8, 32)
 	checkErr("mkdir", err)
 
 	if getFileType(dirPath) != typeENOENT {

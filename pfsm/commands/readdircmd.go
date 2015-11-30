@@ -24,7 +24,6 @@ func ReadDirCommand(args []string) {
 	verboseLog("readdir : given directory = " + directory)
 
 	dirpath := ""
-	dirInfoName := ""
 
 	if args[1] == "" {
 		dirpath = path.Join(directory, "names")
@@ -46,13 +45,8 @@ func ReadDirCommand(args []string) {
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	for i := 0; i < len(files); i++ {
 		file := files[i].Name()
-		realFileName := file[:strings.LastIndex(file, "-")]
-		if dirInfoName != "" {
-			if file != "-info" {
-				fmt.Println(realFileName)
-			}
-		} else {
-			fmt.Println(realFileName)
+		if file != "info" {
+			fmt.Println(file[:strings.LastIndex(file, "-")])
 		}
 	}
 }

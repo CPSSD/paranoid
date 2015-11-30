@@ -113,13 +113,12 @@ func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
 func generateNewInode() (inodeBytes []byte) {
 	inodeBytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	checkErr("util, generateNewInode", err)
-	inodeString = strings.TrimSpace(string(inodeBytes))
-	return []byte(inodeString)
+	return []byte(strings.TrimSpace(string(inodeBytes)))
 }
 
 func getFileInode(filePath string) (inodeBytes []byte, errorCode int) {
 	if getFileType(filePath) == typeDir {
-		filePath = path.Join(filePath, "-info")
+		filePath = path.Join(filePath, "info")
 	}
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -127,8 +126,6 @@ func getFileInode(filePath string) (inodeBytes []byte, errorCode int) {
 			return nil, returncodes.ENOENT
 		} else if os.IsPermission(err) {
 			return nil, returncodes.EACCES
-		} else if os.IsNotExist(err) {
-			return nil, returncodes.ENOENT
 		}
 		log.Fatalln("util, getFileInode", " error occured: ", err)
 	}
@@ -142,8 +139,6 @@ func deleteFile(filePath string) (returncode int) {
 			return returncodes.ENOENT
 		} else if os.IsPermission(err) {
 			return returncodes.EACCES
-		} else if os.IsNotExist(err) {
-			return returncodes.ENOENT
 		}
 		log.Fatalln("util, deleteFile", " error occured: ", err)
 	}
@@ -162,6 +157,7 @@ func getFileType(path string) int {
 		if os.IsNotExist(err) {
 			return typeENOENT
 		}
+		log.Fatalln("util, getFileType", " error occured: ", err)
 	}
 	if f.Mode().IsDir() {
 		return typeDir

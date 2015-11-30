@@ -195,8 +195,8 @@ func TestFilePermissionsCommands(t *testing.T) {
 	if code != returncodes.OK {
 		t.Error("Stat did not return OK. Actual:", code)
 	}
-	if os.FileMode(statIn.Mode).Perm() != 0777 {
-		t.Error("Incorrect file permissions = ", os.FileMode(statIn.Mode).Perm())
+	if statIn.Mode.Perm() != 0777 {
+		t.Error("Incorrect file permissions = ", statIn.Mode.Perm())
 	}
 
 	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "377"}
@@ -206,8 +206,8 @@ func TestFilePermissionsCommands(t *testing.T) {
 	if code != returncodes.OK {
 		t.Error("Stat did not return OK. Actual:", code)
 	}
-	if os.FileMode(statIn.Mode).Perm() != 0377 {
-		t.Error("Incorrect file permissions = ", os.FileMode(statIn.Mode).Perm())
+	if statIn.Mode.Perm() != 0377 {
+		t.Error("Incorrect file permissions = ", statIn.Mode.Perm())
 	}
 
 	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "500"}
@@ -217,13 +217,13 @@ func TestFilePermissionsCommands(t *testing.T) {
 	if code != returncodes.OK {
 		t.Error("Stat did not return OK. Actual:", code)
 	}
-	if os.FileMode(statIn.Mode).Perm() != 0500 {
-		t.Error("Incorrect file permissions = ", os.FileMode(statIn.Mode).Perm())
+	if statIn.Mode.Perm() != 0500 {
+		t.Error("Incorrect file permissions = ", statIn.Mode.Perm())
 	}
 
 	code = doWriteCommand(t, "test.txt", "helloWorld", -1, -1)
 	if code != returncodes.EACCES {
-		t.Error("Should not be able to write file ", os.FileMode(statIn.Mode).Perm())
+		t.Error("Should not be able to write file ", statIn.Mode.Perm())
 	}
 
 	code = doAccessCommand(t, "test.txt", 4)
