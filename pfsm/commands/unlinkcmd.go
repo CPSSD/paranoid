@@ -21,6 +21,7 @@ func UnlinkCommand(args []string) {
 
 	directory := args[0]
 	fileNamePath := getParanoidPath(directory, args[1])
+	fileNamePathType := getFileType(fileNamePath)
 
 	verboseLog("unlink : directory given = " + directory)
 
@@ -28,8 +29,12 @@ func UnlinkCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	// checking if file exists
-	if !checkFileExists(fileNamePath) {
+	if fileNamePathType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
+		return
+	}
+	if fileNamePathType == typeDir {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
 		return
 	}
 

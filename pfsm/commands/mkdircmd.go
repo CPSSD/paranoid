@@ -22,22 +22,27 @@ func MkdirCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	dirPath := getParanoidPath(directory, args[1])
-	dirInfoPath := path.Join(dirPath, (path.Base(dirPath) + "-info"))
-	inodeBytes, inodeString := generateNewInode()
+	dirInfoPath := path.Join(dirPath, "-info")
+	inodeBytes := generateNewInode()
+	inodeString := string(inodeBytes)
 	inodePath := path.Join(directory, "inodes", inodeString)
+	contentsPath := path.Join(directory, "contents", inodeString)
 	mode, err := strconv.Atoi(args[2])
 	checkErr("mkdir", err)
 
-	if checkFileExists(dirPath) {
+	if getFileType(dirPath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}
 	err = os.Mkdir(dirPath, os.FileMode(mode))
 	checkErr("mkdir", err)
 
-	dirInfoFile, err := os.Create(dirInfoPath)
+	contentsFile, err := os.Create(contentsPath)
 	checkErr("mkdir", err)
-	err = dirInfoFile.Chmod(os.FileMode(mode))
+	err = contentsFile.Chmod(os.FileMode(mode))
+	checkErr("mkdir", err)
+
+	dirInfoFile, err := os.Create(dirInfoPath)
 	checkErr("mkdir", err)
 	_, err = dirInfoFile.Write(inodeBytes)
 	checkErr("mkdir", err)

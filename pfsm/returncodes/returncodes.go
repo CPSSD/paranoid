@@ -11,6 +11,8 @@ const (
 	EACCES    //Can not access file
 	EEXIST    //File already exists
 	ENOTEMPTY //Directory not empty
+	EISDIR    //Is Directory
+	ENOTDIR   //Isn't Directory
 )
 
 //Gets the integer return code for a given Enum of the code represented as a 2 byte string.

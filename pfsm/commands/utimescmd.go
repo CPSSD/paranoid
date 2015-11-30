@@ -31,7 +31,7 @@ func UtimesCommand(args []string) {
 
 	namepath := getParanoidPath(directory, args[1])
 
-	if !checkFileExists(namepath) {
+	if getFileType(namepath) == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
@@ -42,8 +42,11 @@ func UtimesCommand(args []string) {
 	err = json.Unmarshal(input, &times)
 	checkErr("utimes", err)
 
-	fileNameBytes, err := ioutil.ReadFile(namepath)
-	checkErr("utimes", err)
+	fileNameBytes, code := getFileInode(namepath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
 	fileName := string(fileNameBytes)
 
 	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))

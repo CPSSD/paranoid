@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -25,32 +24,25 @@ func AccessCommand(args []string) {
 
 	namePath := getParanoidPath(directory, args[1])
 
-	if !checkFileExists(namePath) {
+	if getFileType(namePath) == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
-	if isDirectory(namePath) {
-		mode, err := strconv.Atoi(args[2])
-		checkErr("access", err)
-		err = syscall.Access(namePath, uint32(mode))
-		if err != nil {
-			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-			return
-		}
-	} else {
-		fileNameBytes, err := ioutil.ReadFile(namePath)
-		checkErr("access", err)
-		fileName := string(fileNameBytes)
+	fileNameBytes, code := getFileInode(namePath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
+	fileName := string(fileNameBytes)
 
-		mode, err := strconv.Atoi(args[2])
-		checkErr("access", err)
-		err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))
+	mode, err := strconv.Atoi(args[2])
+	checkErr("access", err)
+	err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))
 
-		if err != nil {
-			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-			return
-		}
+	if err != nil {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
+		return
 	}
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

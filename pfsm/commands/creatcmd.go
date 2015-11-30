@@ -30,13 +30,14 @@ func CreatCommand(args []string) {
 
 	namepath := getParanoidPath(directory, args[1])
 
-	if _, err := os.Stat(namepath); !os.IsNotExist(err) {
+	if getFileType(namepath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}
 	verboseLog("creat : creating file " + args[1])
 
-	uuidbytes, uuidstring := generateNewInode()
+	uuidbytes := generateNewInode()
+	uuidstring := string(uuidbytes)
 	verboseLog("creat : uuid = " + uuidstring)
 
 	perms, err := strconv.ParseInt(args[2], 8, 32)

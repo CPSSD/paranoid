@@ -34,33 +34,38 @@ func StatCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	namepath := getParanoidPath(directory, args[1])
-	if !checkFileExists(namepath) {
+	namePathType := getFileType(namepath)
+	if namePathType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
-	var pathToStat string
-	if isDirectory(namepath) {
-		pathToStat = namepath
-	} else {
-		fileNameBytes, err := ioutil.ReadFile(namepath)
-		checkErr("stat", err)
-		fileName := string(fileNameBytes)
-		pathToStat = path.Join(directory, "contents", fileName)
+	fileNameBytes, code := getFileInode(namepath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
 	}
+	fileName := string(fileNameBytes)
+	contentsFile := path.Join(directory, "contents", fileName)
 
-	fi, err := os.Stat(pathToStat)
+	fi, err := os.Stat(contentsFile)
 	checkErr("stat", err)
 
 	stat := fi.Sys().(*syscall.Stat_t)
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
+	var mode uint32
+	if namePathType == typeFile {
+		mode = 0 | uint32(fi.Mode().Perm())
+	} else {
+		mode = uint32(os.ModeDir) | uint32(fi.Mode().Perm())
+	}
 	statData := &statInfo{
 		Length: fi.Size(),
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
 		Atime:  atime,
-		Mode:   stat.Mode}
+		Mode:   mode}
 
 	jsonData, err := json.Marshal(statData)
 	checkErr("stat", err)

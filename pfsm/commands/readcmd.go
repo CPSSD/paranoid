@@ -27,16 +27,24 @@ func ReadCommand(args []string) {
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(namepath) {
+	fileType := getFileType(namepath)
+	if fileType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+	if fileType == typeDir {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
+		return
+	}
 
-	fileNameBytes, err := ioutil.ReadFile(namepath)
-	checkErr("read", err)
+	fileNameBytes, code := getFileInode(namepath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
 	fileName := string(fileNameBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_RDONLY))
+	err := syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_RDONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return

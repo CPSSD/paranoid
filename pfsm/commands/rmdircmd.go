@@ -21,38 +21,58 @@ func RmdirCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	dirToDelete := getParanoidPath(directory, args[1])
-	dirInfoFilePath := path.Join(dirToDelete, (path.Base(dirToDelete) + "-info"))
-	dirInodeBytes, retCode := getFileInode(dirInfoFilePath)
-	if retCode != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(retCode))
-		return
-	}
-	if !checkFileExists(dirToDelete) {
+	dirType := getFileType(dirToDelete)
+	if dirType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
+	} else if dirType == typeFile {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTDIR))
+		return
+	} else {
+		files, err := ioutil.ReadDir(dirToDelete)
+		if err != nil {
+			if os.IsPermission(err) {
+				io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
+				return
+			}
+			checkErr("rmdir", err)
+		}
+		if len(files) > 1 {
+			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTEMPTY))
+			return
+		}
 	}
-	names, err := ioutil.ReadDir(dirToDelete)
-	checkErr("rmdir", err)
-	if len(names) > 1 {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTEMPTY))
+	infoFileToDelete := path.Join(dirToDelete, "-info")
+	inodeBytes, err := getFileInode(dirToDelete)
+	inodeString := string(inodeBytes)
+	if err != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(err))
 		return
 	}
-	checkErr("rmdir", err)
-	dirInodePath := path.Join(directory, "inodes", string(dirInodeBytes))
+	inodeFileToDelete := path.Join(directory, "inodes", inodeString)
+	contentsFileToDelete := path.Join(directory, "contents", inodeString)
 
-	code := deleteFile(dirInfoFilePath)
+	code := deleteFile(contentsFileToDelete)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(retCode))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
 		return
 	}
-	code = deleteFile(dirInodePath)
+
+	code = deleteFile(inodeFileToDelete)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(retCode))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
 		return
 	}
+
+	code = deleteFile(infoFileToDelete)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
+
 	code = deleteFile(dirToDelete)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(retCode))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
 		return
 	}
 

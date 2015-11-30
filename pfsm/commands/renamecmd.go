@@ -19,43 +19,34 @@ func RenameCommand(args []string) {
 	directory := args[0]
 	oldFilePath := getParanoidPath(directory, args[1])
 	newFilePath := getParanoidPath(directory, args[2])
+	oldFileType := getFileType(oldFilePath)
+	newFileType := getFileType(newFilePath)
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(oldFilePath) {
+	if oldFileType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
-
-	if _, err := os.Stat(newFilePath); !os.IsNotExist(err) {
+	if newFileType != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}
 
-	//Check if we have access to the file to be renamed
-	if isDirectory(oldFilePath) {
-		err := os.Rename(oldFilePath, newFilePath)
-		checkErr("rename", err)
-		oldInfoFilePath := path.Join(newFilePath, (path.Base(oldFilePath) + "-info"))
-		newInfoFilePath := path.Join(newFilePath, (path.Base(newFilePath) + "-info"))
-		err = os.Rename(oldInfoFilePath, newInfoFilePath)
-		checkErr("rename", err)
-	} else {
-		inodeBytes, code := getFileInode(oldFilePath)
-		if code != returncodes.OK {
-			io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-			return
-		}
-		err := syscall.Access(path.Join(directory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
-		if err != nil {
-			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-			return
-		}
-
-		err = os.Rename(oldFilePath, newFilePath)
-		checkErr("rename", err)
+	inodeBytes, code := getFileInode(oldFilePath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
 	}
+	err := syscall.Access(path.Join(directory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
+	if err != nil {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
+		return
+	}
+
+	err = os.Rename(oldFilePath, newFilePath)
+	checkErr("rename", err)
 
 	if !Flags.Network {
 		sendToServer(directory, "rename", args[1:], nil)

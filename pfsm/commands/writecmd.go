@@ -25,17 +25,25 @@ func WriteCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	namepath := getParanoidPath(directory, args[1])
+	namepathType := getFileType(namepath)
 
-	if !checkFileExists(namepath) {
+	if namepathType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+	if namepathType == typeDir {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
+		return
+	}
 
-	fileNameBytes, err := ioutil.ReadFile(namepath)
-	checkErr("write", err)
+	fileNameBytes, code := getFileInode(namepath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
 	fileName := string(fileNameBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
+	err := syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return

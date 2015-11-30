@@ -29,9 +29,16 @@ func ReadDirCommand(args []string) {
 	if args[1] == "" {
 		dirpath = path.Join(directory, "names")
 	} else {
-		dirp := getParanoidPath(directory, args[1])
-		dirpath = dirp
-		dirInfoName = path.Base(dirp) + "-info"
+		dirpath = getParanoidPath(directory, args[1])
+		pathFileType := getFileType(dirpath)
+		if pathFileType == typeENOENT {
+			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
+			return
+		}
+		if pathFileType == typeFile {
+			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTDIR))
+			return
+		}
 	}
 
 	files, err := ioutil.ReadDir(dirpath)
@@ -41,7 +48,7 @@ func ReadDirCommand(args []string) {
 		file := files[i].Name()
 		realFileName := file[:strings.LastIndex(file, "-")]
 		if dirInfoName != "" {
-			if file != dirInfoName {
+			if file != "-info" {
 				fmt.Println(realFileName)
 			}
 		} else {
