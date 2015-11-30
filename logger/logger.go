@@ -24,6 +24,7 @@ type paranoidLogger struct {
 	logDir    string
 	writer    io.Writer
 	logLevel  LogLevel
+	native    *log.Logger
 }
 
 // New creates a new logger and returns a new logger
@@ -32,7 +33,8 @@ func New(currentPackage string, component string, logDirectory string) *paranoid
 		component: component,
 		curPack:   currentPackage,
 		logDir:    logDirectory,
-		logLevel:  INFO}
+		logLevel:  INFO,
+		native:    log.New(nil, "", log.LstdFlags)}
 
 	if _, err := os.Stat(logDirectory); err != nil {
 		l.Fatalf("Log directory %s not found\n", logDirectory)
@@ -71,14 +73,14 @@ func (l *paranoidLogger) SetOutput(output string) {
 	}
 
 	l.writer = io.MultiWriter(writers...)
-	log.SetOutput(l.writer)
+	l.native.SetOutput(l.writer)
 }
 
 // AddAdditionalWriter allows to add a custom writer to the logger.
 // This can be cleared by calling logger.SetOutput() again
 func (l *paranoidLogger) AddAdditionalWriter(writer io.Writer) {
 	l.writer = io.MultiWriter(l.writer, writer)
-	log.SetOutput(l.writer)
+	l.native.SetOutput(l.writer)
 }
 
 ///////////////////////////////// DEBUG /////////////////////////////////
@@ -181,7 +183,7 @@ func (l *paranoidLogger) output(mtype string, v ...interface{}) {
 	args = append(args, fmt)
 	args = append(args, v...)
 
-	log.Println(args...)
+	l.native.Println(args...)
 }
 
 func (l *paranoidLogger) outputf(mtype string, format string, v ...interface{}) {
@@ -193,7 +195,7 @@ func (l *paranoidLogger) outputf(mtype string, format string, v ...interface{}) 
 		fmt += l.curPack + ": " + format
 	}
 
-	log.Printf(fmt, v...)
+	l.native.Printf(fmt, v...)
 }
 
 func createFileWriter(logPath string, component string) (io.Writer, error) {
