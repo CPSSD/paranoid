@@ -9,7 +9,7 @@ import (
 
 func TestOutput(t *testing.T) {
 	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput("stderr")
+	log.SetOutput(STDERR)
 
 	const testString = "test"
 
@@ -28,7 +28,7 @@ func TestOutput(t *testing.T) {
 
 func TestOutputf(t *testing.T) {
 	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput("stderr")
+	log.SetOutput(STDERR)
 
 	testArgs := []string{"testy %s", "test"}
 
@@ -47,7 +47,7 @@ func TestOutputf(t *testing.T) {
 
 func TestLogLevel(t *testing.T) {
 	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput("stderr")
+	log.SetOutput(STDERR)
 	log.SetLogLevel(INFO)
 
 	var b bytes.Buffer
@@ -63,7 +63,7 @@ func TestLogFile(t *testing.T) {
 	os.Mkdir("/tmp/pfsLogTest", 0777)
 	defer os.RemoveAll("/tmp/pfsLogTest")
 	log := New("testPackage", "testComponent", "/tmp/pfsLogTest")
-	log.SetOutput("both")
+	log.SetOutput(STDERR | LOGFILE)
 	// Remove the file that the logger is saving to after testing
 
 	const testString = "test"

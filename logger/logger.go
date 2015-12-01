@@ -7,14 +7,24 @@ import (
 	"path"
 )
 
+// LogLevel is an abstraction over int that allows to better undestand the
+// input of SetLogLevel
 type LogLevel int
 
 const (
-	DEBUG   LogLevel = 1
-	VERBOSE LogLevel = 2
-	INFO    LogLevel = 3
-	WARNING LogLevel = 4
-	ERROR   LogLevel = 5
+	DEBUG   LogLevel = iota
+	VERBOSE LogLevel = iota
+	INFO    LogLevel = iota
+	WARNING LogLevel = iota
+	ERROR   LogLevel = iota
+)
+
+// Output enums to set the outputs
+type LogOutput int
+
+const (
+	STDERR  LogOutput = iota << 1
+	LOGFILE LogOutput = iota << 1
 )
 
 // Logger stuct containing the variables necessary for the logger
@@ -39,7 +49,7 @@ func New(currentPackage string, component string, logDirectory string) *paranoid
 	if _, err := os.Stat(logDirectory); err != nil {
 		l.Fatalf("Log directory %s not found\n", logDirectory)
 	}
-	l.SetOutput("stderr")
+	l.SetOutput(STDERR)
 	return &l
 }
 
@@ -49,20 +59,20 @@ func (l *paranoidLogger) SetLogLevel(level LogLevel) {
 }
 
 // SetOutput sets the default output for the
-func (l *paranoidLogger) SetOutput(output string) {
+func (l *paranoidLogger) SetOutput(output LogOutput) {
 	var writers []io.Writer
 
-	switch output {
-	case "both":
+	switch {
+	case STDERR|LOGFILE == output:
 		w, err := createFileWriter(l.logDir, l.component)
 		if err != nil {
 			l.Fatal("Cannot write to log file: ", err)
 		}
 		writers = append(writers, w)
 		writers = append(writers, os.Stderr)
-	case "stderr":
+	case STDERR == output:
 		writers = append(writers, os.Stderr)
-	case "logfile":
+	case LOGFILE == output:
 		w, err := createFileWriter(l.logDir, l.component)
 		if err != nil {
 			l.Fatal("Cannot write to log file: ", err)
