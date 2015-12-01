@@ -141,44 +141,6 @@ func TestSimpleCommandUsage(t *testing.T) {
 	}
 }
 
-func TestSimpleDirectoryUsage(t *testing.T) {
-	Flags.Network = true
-	createTestDir(t)
-	defer removeTestDir()
-	paranoidDir := path.Join(os.TempDir(), "paranoidTest")
-	args := []string{paranoidDir}
-	InitCommand(args)
-
-	code, _ := runCommand(t, nil, "mkdir", paranoidDir, "documents", "0777")
-	if code != returncodes.OK {
-		t.Error("Mkdir did not return OK. Actual:", code)
-	}
-
-	code, files := doReadDirCommand(t, "")
-	if code != returncodes.OK {
-		t.Error("Mkdir did not return OK. Actual:", code)
-	}
-	if len(files) != 1 {
-		t.Error("Readdir returned something other than one file: ", files)
-	}
-	if files[0] != "documents" {
-		t.Error("File is not equal to 'documents':", files[0])
-	}
-
-	code, _ = runCommand(t, nil, "rmdir", paranoidDir, "documents")
-	if code != returncodes.OK {
-		t.Error("rmdir did not return OK. Actual:", code)
-	}
-
-	code, files = doReadDirCommand(t, "")
-	if code != returncodes.OK {
-		t.Error("Mkdir did not return OK. Actual:", code)
-	}
-	if len(files) != 0 {
-		t.Error("Readdir returned more than 0: ", files)
-	}
-}
-
 func TestComplexCommandUsage(t *testing.T) {
 	Flags.Network = true
 	createTestDir(t)
@@ -450,5 +412,158 @@ func TestTruncate(t *testing.T) {
 	}
 	if data != "HI!" {
 		t.Error("Read command returned incorrect output ", data)
+	}
+}
+
+func TestSimpleDirectoryUsage(t *testing.T) {
+	Flags.Network = true
+	createTestDir(t)
+	defer removeTestDir()
+	paranoidDir := path.Join(os.TempDir(), "paranoidTest")
+	args := []string{paranoidDir}
+	InitCommand(args)
+
+	code, _ := runCommand(t, nil, "mkdir", paranoidDir, "documents", "0777")
+	if code != returncodes.OK {
+		t.Error("Mkdir did not return OK. Actual:", code)
+	}
+
+	code, files := doReadDirCommand(t, "")
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK. Actual:", code)
+	}
+	if len(files) != 1 {
+		t.Error("Readdir returned something other than one file: ", files)
+	}
+	if files[0] != "documents" {
+		t.Error("File is not equal to 'documents':", files[0])
+	}
+
+	code, _ = runCommand(t, nil, "rmdir", paranoidDir, "documents")
+	if code != returncodes.OK {
+		t.Error("rmdir did not return OK. Actual:", code)
+	}
+
+	code, files = doReadDirCommand(t, "")
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK. Actual:", code)
+	}
+	if len(files) != 0 {
+		t.Error("Readdir returned more than 0: ", files)
+	}
+}
+
+func TestComplexDirectoryUsage(t *testing.T) {
+	Flags.Network = true
+	createTestDir(t)
+	defer removeTestDir()
+	paranoidDir := path.Join(os.TempDir(), "paranoidTest")
+	args := []string{paranoidDir}
+	InitCommand(args)
+
+	// directory within directory
+	code, _ := runCommand(t, nil, "mkdir", paranoidDir, "documents", "0777")
+	if code != returncodes.OK {
+		t.Error("Mkdir did not return OK. Actual:", code)
+	}
+	code, _ = runCommand(t, nil, "mkdir", paranoidDir, "documents/work_docs", "0777")
+	if code != returncodes.OK {
+		t.Error("Mkdir did not return OK. Actual:", code)
+	}
+	code, files := doReadDirCommand(t, "documents")
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK. Actual:", code)
+	}
+	if len(files) != 1 {
+		t.Error("Readdir returned something other than one file: ", files)
+	}
+	if files[0] != "work_docs" {
+		t.Error("File is not equal to 'work_docs':", files[0])
+	}
+	// file within directory
+	code, _ = runCommand(t, nil, "creat", paranoidDir, "documents/important_links.txt", "0777")
+	if code != returncodes.OK {
+		t.Error("Mkdir did not return OK. Actual:", code)
+	}
+	code, files = doReadDirCommand(t, "documents")
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK. Actual:", code)
+	}
+	if len(files) != 2 {
+		t.Error("Readdir returned something other than 2 files: ", files)
+	}
+	if files[0] != "important_links.txt" && files[1] != "important_links.txt" {
+		t.Error("File is not equal to 'important_links.txt':", files[0])
+	}
+	// writing and reading from file within directory
+	code = doWriteCommand(t, "documents/important_links.txt", "https://www.google.com/", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Write did not return OK. Actual:", code)
+	}
+	code, data := doReadCommand(t, "documents/important_links.txt", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Read did not return OK. Actual:", code)
+	}
+	if data != "https://www.google.com/" {
+		t.Error("Read did not return 'https://www.google.com/', Actual:", data)
+	}
+	// link files in different directories
+	code, _ = runCommand(t, nil, "link", paranoidDir, "documents/important_links.txt", "documents/work_docs/worklinks.txt")
+	if code != returncodes.OK {
+		t.Error("Link did not return OK. Actual:", code)
+	}
+	code, data = doReadCommand(t, "documents/work_docs/worklinks.txt", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Read did not return OK. Actual:", code)
+	}
+	if data != "https://www.google.com/" {
+		t.Error("Read did not return 'https://www.google.com/', Actual:", data)
+	}
+	// remove directory with contents inside
+	code, _ = runCommand(t, nil, "rmdir", paranoidDir, "documents/work_docs")
+	if code == returncodes.OK {
+		t.Error("Rmdir returned ok when it should have returned ENOTEMPTY")
+	}
+	code, _ = runCommand(t, nil, "unlink", paranoidDir, "documents/work_docs/worklinks.txt")
+	if code != returncodes.OK {
+		t.Error("Unlink failed to unlink: ", code)
+	}
+	code, _ = runCommand(t, nil, "rmdir", paranoidDir, "documents/work_docs")
+	if code != returncodes.OK {
+		t.Error("Rmdir failed on empty directory:", code)
+	}
+	code, files = doReadDirCommand(t, "documents")
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK. Actual:", code)
+	}
+	if len(files) != 1 {
+		t.Error("Readdir returned something other than 1 file: ", files)
+	}
+	if files[0] != "important_links.txt" {
+		t.Error("File is not equal to 'important_links.txt':", files[0])
+	}
+	// writing and reading from a directory
+	code = doWriteCommand(t, "documents", "Should Not Work", -1, -1)
+	if code == returncodes.OK {
+		t.Error("Succeeded to write to a directory")
+	}
+	code, _ = doReadCommand(t, "documents", -1, -1)
+	if code == returncodes.OK {
+		t.Error("Succeeded to read from a directory")
+	}
+	// renaming a directory
+	code, _ = runCommand(t, nil, "rename", paranoidDir, "documents", "docs")
+	if code != returncodes.OK {
+		t.Error("Rename failed on a directory:", code)
+	}
+	code, files = doReadDirCommand(t, "")
+	if code != returncodes.OK {
+		t.Error("Readdir did not return OK. Actual:", code)
+	}
+	if len(files) != 1 {
+		t.Error("Readdir returned something other than 1 file: ", files)
+	}
+	if files[0] != "docs" {
+		t.Error("File is not equal to 'docs':", files[0])
 	}
 }
