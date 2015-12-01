@@ -492,7 +492,7 @@ func TestComplexDirectoryUsage(t *testing.T) {
 	if len(files) != 2 {
 		t.Error("Readdir returned something other than 2 files: ", files)
 	}
-	if files[0] != "important_links.txt" && files[1] != "important_links.txt" {
+	if (files[0] != "important_links.txt" && files[1] != "work_docs") && (files[1] != "important_links.txt" && files[0] != "work_docs") {
 		t.Error("File is not equal to 'important_links.txt':", files[0])
 	}
 	// writing and reading from file within directory
