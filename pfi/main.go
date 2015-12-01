@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfi/filesystem"
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
@@ -17,7 +18,13 @@ func main() {
 	logOutput := flag.Bool("v", false, "Log operations in standard output")
 	markNetwork := flag.Bool("n", false, "Mark file system operations as coming from the network")
 	flag.Parse()
-	util.LogOutput = *logOutput
+
+	// Create a logger
+	util.Log = logger.New("main", "pfi", "/dev/null")
+	if *logOutput {
+		util.Log.SetLogLevel(logger.VERBOSE)
+	}
+
 	if *markNetwork {
 		pfsminterface.OriginFlag = "-n"
 	} else {
@@ -39,9 +46,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	// configuring log
-	log.SetFlags(log.Ldate | log.Ltime)
-
 	// setting up with fuse
 	opts := pathfs.PathNodeFsOptions{}
 	opts.ClientInodes = true
@@ -50,7 +54,7 @@ func main() {
 	}, &opts)
 	server, _, err := nodefs.MountRoot(util.MountPoint, nfs.Root(), nil)
 	if err != nil {
-		log.Fatalf("Mount fail: %v\n", err)
+		util.Log.Fatalf("Mount fail: %v\n", err)
 	}
 	server.Serve()
 }
