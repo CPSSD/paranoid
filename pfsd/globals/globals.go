@@ -2,7 +2,6 @@ package globals
 
 import (
 	"fmt"
-	"github.com/prestonTao/upnp"
 	"sync"
 	"time"
 )
@@ -17,8 +16,8 @@ func (n Node) String() string {
 	return fmt.Sprintf("%s:%s", n.IP, n.Port)
 }
 
-// UpnpMapping
-var UpnpMapping *upnp.Upnp
+// If Upnp is enabled and a port mapping has been establised.
+var UpnpEnabled bool
 
 // ResetInterval containing how often the Renew function has to be called
 var ResetInterval time.Duration

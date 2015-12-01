@@ -20,7 +20,7 @@ func main() {
 	var renewInterval int
 
 	flag.IntVar(&port, "-port", 10101, "Server Port")
-	flag.StringVar(&logDir, "-log-directory", "/var/log", "Log Directory")
+	flag.StringVar(&logDir, "log-directory", "/var/log", "Log Directory")
 	flag.IntVar(&renewInterval, "-renew-interval", 5*60*1000, "Time after membership expires, in ms")
 
 	flag.Parse()

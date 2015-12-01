@@ -4,6 +4,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/icserver"
+	"github.com/cpssd/paranoid/pfsd/upnp"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +13,7 @@ import (
 )
 
 func stopAllServices() {
+	upnp.ClearPortMapping(globals.Port)
 	close(globals.Quit)     // Sends stop signal to all goroutines
 	dnetclient.Disconnect() // Disconnect from the discovery server
 	icserver.StopAccept()

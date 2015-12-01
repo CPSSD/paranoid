@@ -7,8 +7,8 @@ import (
 	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
+	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
-	"github.com/prestonTao/upnp"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -32,19 +32,6 @@ func main() {
 	pnetserver.ParanoidDir = os.Args[1]
 	globals.Wait.Add(1)
 	go startIcAndListen(pnetserver.ParanoidDir)
-	globals.UpnpMapping = new(upnp.Upnp)
-
-	globals.Server, err = pnetclient.GetIP()
-	if err != nil {
-		log.Fatalln("FATAL: Cant get external IP. Error : ", err)
-	}
-
-	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
-		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "does not exist.")
-	}
-	if _, err := os.Stat(path.Join(pnetserver.ParanoidDir, "meta")); os.IsNotExist(err) {
-		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
-	}
 
 	//Asking for port 0 requests a random free port from the OS.
 	lis, err := net.Listen("tcp", ":0")
@@ -56,19 +43,34 @@ func main() {
 	if err != nil {
 		log.Fatalln("Could not parse port", splits[len(splits)-1], " Error :", err)
 	}
+	globals.Port = port
 
-	if globals.UpnpMapping.Active {
-		log.Println("Upnp mapping active")
-		err = globals.UpnpMapping.AddPortMapping(port, port, "TCP")
-		if err != nil {
-			log.Fatalln("Could not add Upnp port mapping. Error :", err)
+	//Try and set up uPnP. Otherwise use internal IP.
+	globals.UpnpEnabled = false
+	err = upnp.DiscoverDevices()
+	if err == nil {
+		log.Println("uPnP devices available")
+		externalPort, err := upnp.AddPortMapping(port)
+		if err == nil {
+			log.Println("uPnP port mapping enabled")
+			globals.Port = externalPort
+			globals.UpnpEnabled = false
 		}
-	} else {
-		log.Println("Upnp mapping not active")
+	}
+
+	globals.Server, err = upnp.GetIP()
+	if err != nil {
+		log.Fatalln("FATAL: Cant get IP. Error : ", err)
+	}
+
+	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
+		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "does not exist.")
+	}
+	if _, err := os.Stat(path.Join(pnetserver.ParanoidDir, "meta")); os.IsNotExist(err) {
+		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
 	}
 
 	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
-	globals.Port = port
 	dnetclient.JoinDiscovery("_")
 	srv = grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
