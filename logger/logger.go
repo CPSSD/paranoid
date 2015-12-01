@@ -23,11 +23,11 @@ const (
 type LogOutput int
 
 const (
-	STDERR  LogOutput = iota << 1
-	LOGFILE LogOutput = iota << 1
+	STDERR  LogOutput = 1 << (iota + 1)
+	LOGFILE LogOutput = 1 << (iota + 1)
 )
 
-// Logger stuct containing the variables necessary for the logger
+// Logger struct containing the variables necessary for the logger
 type paranoidLogger struct {
 	component string
 	curPack   string
@@ -62,24 +62,15 @@ func (l *paranoidLogger) SetLogLevel(level LogLevel) {
 func (l *paranoidLogger) SetOutput(output LogOutput) {
 	var writers []io.Writer
 
-	switch {
-	case STDERR|LOGFILE == output:
+	if STDERR&output == STDERR {
+		writers = append(writers, os.Stderr)
+	}
+	if LOGFILE&output == LOGFILE {
 		w, err := createFileWriter(l.logDir, l.component)
 		if err != nil {
 			l.Fatal("Cannot write to log file: ", err)
 		}
 		writers = append(writers, w)
-		writers = append(writers, os.Stderr)
-	case STDERR == output:
-		writers = append(writers, os.Stderr)
-	case LOGFILE == output:
-		w, err := createFileWriter(l.logDir, l.component)
-		if err != nil {
-			l.Fatal("Cannot write to log file: ", err)
-		}
-		writers = append(writers, w)
-	default:
-		writers = append(writers, os.Stderr)
 	}
 
 	l.writer = io.MultiWriter(writers...)
