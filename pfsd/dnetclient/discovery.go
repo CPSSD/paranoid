@@ -2,15 +2,42 @@ package dnetclient
 
 import (
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	"log"
+	"net"
 	"time"
 )
 
-func SetDiscovery(ip, port, serverPort string) {
+func SetDiscovery(host, port, serverPort string) {
 	ipClient, _ := upnp.GetIP()
-	ThisNode = globals.Node{IP: ipClient, Port: serverPort}
-	globals.DiscoveryAddr = ip + ":" + port
+	ThisNode = globals.Node{
+		IP:         ipClient,
+		Port:       serverPort,
+		CommonName: globals.CommonName,
+	}
+	globals.DiscoveryAddr = host + ":" + port
+
+	if globals.TLSEnabled && !globals.TLSSkipVerify {
+		// If host is an IP, we need to get the hostname via DNS
+		ip := net.ParseIP(host)
+		var dnsAddr string
+		var err error
+		if ip != nil {
+			var dnsAddrs []string
+			dnsAddrs, err = net.LookupAddr(ip.String())
+			dnsAddr = dnsAddrs[0]
+		} else {
+			dnsAddr, err = net.LookupCNAME(host)
+		}
+		if err != nil {
+			log.Println("ERROR: Could not complete DNS lookup:", err)
+		}
+		if dnsAddr == "" { // If no DNS entries exist
+			log.Fatalln("FATAL: Can not find DNS entry for discovery server:", host)
+		}
+		discoveryCommonName = dnsAddr
+	}
 }
 
 func JoinDiscovery(pool string) {
@@ -22,9 +49,30 @@ func JoinDiscovery(pool string) {
 			connectionBuffer--
 		}
 		log.Println("Failure to connect to Discovery Server, Giving Up")
-	} else {
-		globals.Wait.Add(1)
-		go renew()
+		return
+	}
+	globals.Wait.Add(2)
+	go pingPeers()
+	go renew()
+}
+
+// Periodically pings all known nodes on the network. Lives here and not
+// in pnetclient since pnetclient is stateless and this function is more
+// relevant to discovery.
+func pingPeers() {
+	timer := time.NewTimer(peerPingInterval)
+	defer timer.Stop()
+	defer globals.Wait.Done()
+	for {
+		select {
+		case _, ok := <-globals.Quit:
+			if !ok {
+				return
+			}
+		case <-timer.C:
+			pnetclient.Ping(globals.Nodes.GetAll())
+			timer.Reset(peerPingInterval)
+		}
 	}
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
@@ -10,6 +11,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"log"
 	"net"
 	"os"
@@ -18,18 +20,76 @@ import (
 	"strings"
 )
 
-var srv *grpc.Server
+var (
+	srv *grpc.Server
+
+	certFile   = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
+	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+	skipVerify = flag.Bool("skip_verification", false,
+		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
+)
+
+func startIcAndListen(pfsDir string) {
+	defer globals.Wait.Done()
+
+	globals.Wait.Add(1)
+	go icserver.RunServer(pfsDir, true)
+
+	for {
+		select {
+		case message := <-icserver.MessageChan:
+			pnetclient.SendRequest(message)
+		case _, ok := <-globals.Quit:
+			if !ok {
+				return
+			}
+		}
+	}
+}
+
+func startRPCServer(lis *net.Listener) {
+	var opts []grpc.ServerOption
+	if globals.TLSEnabled {
+		log.Println("INFO: Starting ParanoidNetwork server with TLS.")
+		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
+		if err != nil {
+			log.Fatalln("FATAL: Failed to generate TLS credentials:", err)
+		}
+		opts = []grpc.ServerOption{grpc.Creds(creds)}
+	} else {
+		log.Println("INFO: Starting ParanoidNetwork server without TLS.")
+	}
+	srv = grpc.NewServer(opts...)
+	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
+	globals.Wait.Add(1)
+	go srv.Serve(*lis)
+}
 
 func main() {
-	if len(os.Args) < 4 {
+	flag.Parse()
+	globals.TLSSkipVerify = *skipVerify
+	if *certFile != "" && *keyFile != "" {
+		globals.TLSEnabled = true
+		if !globals.TLSSkipVerify {
+			cn, err := getCommonNameFromCert(*certFile)
+			if err != nil {
+				log.Fatalln("FATAL: Could not get CN from provided TLS cert:", err)
+			}
+			globals.CommonName = cn
+		}
+	} else {
+		globals.TLSEnabled = false
+	}
+
+	if len(flag.Args()) < 3 {
 		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <Discovery Server> <Discovery Port>\n")
 		os.Exit(1)
 	}
-	discoveryPort, err := strconv.Atoi(os.Args[3])
+	discoveryPort, err := strconv.Atoi(flag.Arg(2))
 	if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
 		log.Fatalln("FATAL: Discovery port must be a number between 1 and 65535, inclusive.")
 	}
-	pnetserver.ParanoidDir = os.Args[1]
+	pnetserver.ParanoidDir = flag.Arg(0)
 	globals.Wait.Add(1)
 	go startIcAndListen(pnetserver.ParanoidDir)
 
@@ -72,27 +132,6 @@ func main() {
 
 	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
 	dnetclient.JoinDiscovery("_")
-	srv = grpc.NewServer()
-	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
-	globals.Wait.Add(1)
-	go srv.Serve(lis)
+	startRPCServer(&lis)
 	HandleSignals()
-}
-
-func startIcAndListen(pfsDir string) {
-	defer globals.Wait.Done()
-
-	globals.Wait.Add(1)
-	go icserver.RunServer(pfsDir, true)
-
-	for {
-		select {
-		case message := <-icserver.MessageChan:
-			pnetclient.SendRequest(message)
-		case _, ok := <-globals.Quit:
-			if !ok {
-				return
-			}
-		}
-	}
 }

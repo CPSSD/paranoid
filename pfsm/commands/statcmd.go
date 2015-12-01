@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -17,7 +16,7 @@ type statInfo struct {
 	Ctime  time.Time   `json:"ctime",omitempty`
 	Mtime  time.Time   `json:"mtime",omitempty`
 	Atime  time.Time   `json:"atime",omitempty`
-	Perms  os.FileMode `json:"perms",omitempty`
+	Mode   os.FileMode `json:"mode",omitempty`
 }
 
 //StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
@@ -33,27 +32,39 @@ func StatCommand(args []string) {
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(path.Join(directory, "names", args[1])) {
+	namepath := getParanoidPath(directory, args[1])
+	namePathType := getFileType(namepath)
+	if namePathType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
-	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
-	checkErr("stat", err)
+	fileNameBytes, code := getFileInode(namepath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
 	fileName := string(fileNameBytes)
+	contentsFile := path.Join(directory, "contents", fileName)
 
-	fi, err := os.Stat(path.Join(directory, "contents", fileName))
+	fi, err := os.Stat(contentsFile)
 	checkErr("stat", err)
 
 	stat := fi.Sys().(*syscall.Stat_t)
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
+	var mode os.FileMode
+	if namePathType == typeFile {
+		mode = os.FileMode(stat.Mode)
+	} else {
+		mode = os.FileMode(syscall.S_IFDIR | fi.Mode().Perm())
+	}
 	statData := &statInfo{
 		Length: fi.Size(),
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
 		Atime:  atime,
-		Perms:  fi.Mode().Perm()}
+		Mode:   mode}
 
 	jsonData, err := json.Marshal(statData)
 	checkErr("stat", err)

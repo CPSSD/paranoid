@@ -20,8 +20,8 @@ func UnlinkCommand(args []string) {
 	}
 
 	directory := args[0]
-	fileName := args[1]
-	fileNamePath := path.Join(directory, "names", fileName)
+	fileNamePath := getParanoidPath(directory, args[1])
+	fileNamePathType := getFileType(fileNamePath)
 
 	verboseLog("unlink : directory given = " + directory)
 
@@ -29,19 +29,24 @@ func UnlinkCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	// checking if file exists
-	if !checkFileExists(fileNamePath) {
+	if fileNamePathType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
+		return
+	}
+	if fileNamePathType == typeDir {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
 		return
 	}
 
 	// getting file inode
-	verboseLog("unlink : reading file " + fileNamePath)
-	inodeBytes, err := ioutil.ReadFile(fileNamePath)
-	checkErr("unlink", err)
-	inodeString := string(inodeBytes)
+	inodeBytes, code := getFileInode(fileNamePath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
 
 	//checking if we have access to the file.
-	err = syscall.Access(path.Join(directory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
+	err := syscall.Access(path.Join(directory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return
@@ -53,7 +58,7 @@ func UnlinkCommand(args []string) {
 	checkErr("unlink", err)
 
 	// getting inode contents
-	inodePath := path.Join(directory, "inodes", inodeString)
+	inodePath := path.Join(directory, "inodes", string(inodeBytes))
 	verboseLog("unlink : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	checkErr("unlink", err)
@@ -63,7 +68,7 @@ func UnlinkCommand(args []string) {
 
 	if inodeData.Count == 1 {
 		// remove inode and contents
-		contentsPath := path.Join(directory, "contents", inodeString)
+		contentsPath := path.Join(directory, "contents", string(inodeBytes))
 		verboseLog("unlink : removing file " + contentsPath)
 		err = os.Remove(contentsPath)
 		checkErr("unlink", err)

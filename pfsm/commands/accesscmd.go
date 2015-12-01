@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -23,13 +22,18 @@ func AccessCommand(args []string) {
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(path.Join(directory, "names", args[1])) {
+	namePath := getParanoidPath(directory, args[1])
+
+	if getFileType(namePath) == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
 
-	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
-	checkErr("access", err)
+	fileNameBytes, code := getFileInode(namePath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
 	fileName := string(fileNameBytes)
 
 	mode, err := strconv.Atoi(args[2])

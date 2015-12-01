@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	"strings"
 )
 
 type inode struct {
@@ -29,31 +28,32 @@ func CreatCommand(args []string) {
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	if _, err := os.Stat(path.Join(directory, "names", args[1])); !os.IsNotExist(err) {
+	namepath := getParanoidPath(directory, args[1])
+
+	if getFileType(namepath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}
 	verboseLog("creat : creating file " + args[1])
 
-	uuidbytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
-	checkErr("creat", err)
-	uuid := strings.TrimSpace(string(uuidbytes))
-	verboseLog("creat : uuid = " + uuid)
+	uuidbytes := generateNewInode()
+	uuidstring := string(uuidbytes)
+	verboseLog("creat : uuid = " + uuidstring)
 
 	perms, err := strconv.ParseInt(args[2], 8, 32)
 	checkErr("creat", err)
-	err = ioutil.WriteFile(path.Join(directory, "names", args[1]), []byte(uuid), 0600)
+	err = ioutil.WriteFile(namepath, uuidbytes, 0600)
 	checkErr("creat", err)
 
 	nodeData := &inode{
-		Inode: uuid,
+		Inode: uuidstring,
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	checkErr("creat", err)
-	err = ioutil.WriteFile(path.Join(directory, "inodes", uuid), jsonData, 0600)
+	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidstring), jsonData, 0600)
 	checkErr("creat", err)
 
-	contentsFile, err := os.Create(path.Join(directory, "contents", uuid))
+	contentsFile, err := os.Create(path.Join(directory, "contents", uuidstring))
 	contentsFile.Chmod(os.FileMode(perms))
 	checkErr("creat", err)
 

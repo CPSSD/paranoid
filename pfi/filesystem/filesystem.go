@@ -6,15 +6,14 @@ import (
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
+	"github.com/hanwen/go-fuse/fuse"
+	"github.com/hanwen/go-fuse/fuse/nodefs"
+	"github.com/hanwen/go-fuse/fuse/pathfs"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/hanwen/go-fuse/fuse"
-	"github.com/hanwen/go-fuse/fuse/nodefs"
-	"github.com/hanwen/go-fuse/fuse/pathfs"
 )
 
 //ParanoidFileSystem is the struct which holds all
@@ -29,7 +28,7 @@ type statInfo struct {
 	Ctime  time.Time   `json:"ctime",omitempty`
 	Mtime  time.Time   `json:"mtime",omitempty`
 	Atime  time.Time   `json:"atime",omitempty`
-	Perms  os.FileMode `json:"perms",omitempty`
+	Mode   os.FileMode `json:"mode",omitempty`
 }
 
 //GetAttr is called by fuse when the attributes of a
@@ -37,8 +36,7 @@ type statInfo struct {
 func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.Status) {
 	util.LogMessage("GetAttr called on : " + name)
 
-	// Special case : "" is the root of our flat
-	// file system (Only directory GetAttr can be called on)
+	// Special case : "" is the root of our filesystem
 	if name == "" {
 		return &fuse.Attr{
 			Mode: fuse.S_IFDIR | 0755,
@@ -55,24 +53,22 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 	if err != nil {
 		log.Fatalln("Error processing JSON returned by stat command:", err)
 	}
-
 	attr := fuse.Attr{
 		Size:  uint64(stats.Length),
 		Atime: uint64(stats.Atime.Unix()),
 		Ctime: uint64(stats.Ctime.Unix()),
 		Mtime: uint64(stats.Mtime.Unix()),
-		Mode:  fuse.S_IFREG | uint32(stats.Perms), // S_IFREG = regular file
+		Mode:  uint32(stats.Mode),
 	}
 
 	return &attr, fuse.OK
 }
 
-//OpenDir is called when the contents of a directory are needed. There
-//is only one directory this can be called on in this sprint. i.e
-//the root directory of the file system.
+//OpenDir is called when the contents of a directory are needed.
 func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
 	util.LogMessage("OpenDir called on : " + name)
-	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory)
+
+	code, output := pfsminterface.RunCommand(nil, "readdir", util.PfsDirectory, name)
 	if code != returncodes.OK {
 		return nil, util.GetFuseReturnCode(code)
 	}
@@ -80,7 +76,7 @@ func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fus
 
 	util.LogMessage("OpenDir returns : " + outputString)
 	if outputString == "" {
-		dirEntries := make([]fuse.DirEntry, 0)
+		var dirEntries []fuse.DirEntry
 		return dirEntries, fuse.OK
 	}
 
@@ -132,7 +128,7 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	return util.GetFuseReturnCode(retcode)
 }
 
-//Create a hard link from newName to oldName
+//Link creates a hard link from newName to oldName
 func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Link called")
 	retcode, _ := pfsminterface.RunCommand(nil, "link", util.PfsDirectory, oldName, newName)
@@ -143,6 +139,20 @@ func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) (code fuse.Status) {
 	util.LogMessage("Unlink callde on : " + name)
 	retcode, _ := pfsminterface.RunCommand(nil, "unlink", util.PfsDirectory, name)
+	return util.GetFuseReturnCode(retcode)
+}
+
+//Mkdir is called when creating a directory
+func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Context) fuse.Status {
+	util.LogMessage("Mkdir called on : " + name)
+	retcode, _ := pfsminterface.RunCommand(nil, "mkdir", util.PfsDirectory, name, strconv.FormatInt(int64(mode), 8))
+	return util.GetFuseReturnCode(retcode)
+}
+
+//Rmdir is called when deleting a directory
+func (fs *ParanoidFileSystem) Rmdir(name string, context *fuse.Context) (code fuse.Status) {
+	util.LogMessage("Rmdir called on : " + name)
+	retcode, _ := pfsminterface.RunCommand(nil, "rmdir", util.PfsDirectory, name)
 	return util.GetFuseReturnCode(retcode)
 }
 

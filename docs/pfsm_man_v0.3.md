@@ -9,8 +9,10 @@ pfsm(8) -- issue commands to a paranoid filesystem
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `utimes` `<pfs-directory>` `<file>`<br>
 `pfsm` [`-f`|`--fuse`] `access` `<pfs-directory>` `<file>` `<filemode>`<br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `chmod` `<pfs-directory>` `<file>` `<permflags>`<br>
+`pfsm` [`-f`|`--fuse`] `mkdir` `<pfs-directory>` `<directory>`<br>
+`pfsm` [`-f`|`--fuse`] `rmdir` `<pfs-directory>` `<directory>`<br>
 `pfsm` [`-f`|`--fuse`] `read` `<pfs-directory>` `<file>` [`<offset>` `<length>`]<br>
-`pfsm` [`-f`|`--fuse`] `readdir` `<pfs-directory>`<br>
+`pfsm` [`-f`|`--fuse`] `readdir` `<pfs-directory>` `<directory>`<br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `creat` `<pfs-directory>` `<file>` `<permflags>` <br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `link` `<pfs-directory>` `<file>` `<target>` <br>
 `pfsm` [`-n`|`--net`|`-f`|`--fuse`] `unlink` `<pfs-directory>` `<file>` <br>
@@ -45,11 +47,17 @@ It can also be used to test the file system by omitting the
 * `chmod`:
 	Change the permissions of `<file>` to `<permflags>` (A base 8 integer)
 
+* `mkdir`:
+    Creates the directory `<directory>`
+
+* `rmdir`:
+    Deletes the directory '<directory>'
+
 * `read`:
     Reads the file `<file>` and prints it to standard output.  If `<offset>` and `<length>` are omitted, then output all of the file.
 
 * `readdir`:
-    Returns a list of all files in the filesystem to standard output one per line. 
+    Returns a list of all files in the <directory> specified.
 
 * `creat`:
     Create a new file in the filesystem and create a hard link to it called `<file>` with permissions `<permflags>` (A base 8 integer).
@@ -103,4 +111,3 @@ Create new file with primary link name of `helloworld.txt` and write the text "H
     $ echo "Hello World!" | pfsm write ~/.pfs helloworld.txt 0 13
     $ pfsm read ~/.pfs helloworld.txt
     Hello World!
-

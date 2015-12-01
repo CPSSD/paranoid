@@ -8,7 +8,11 @@ import (
 )
 
 func (s *ParanoidServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.EmptyMessage, error) {
-	node := globals.Node{IP: req.Ip, Port: req.Port}
+	node := globals.Node{
+		IP:         req.Ip,
+		Port:       req.Port,
+		CommonName: req.CommonName,
+	}
 	log.Println("INFO: Got Ping from Node:", node)
 	globals.Nodes.Add(node)
 	return &pb.EmptyMessage{}, nil

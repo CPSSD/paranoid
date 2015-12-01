@@ -8,8 +8,9 @@ import (
 
 // Node struct
 type Node struct {
-	IP   string
-	Port string
+	IP         string
+	Port       string
+	CommonName string
 }
 
 func (n Node) String() string {
@@ -30,6 +31,15 @@ var Nodes = nodes{m: make(map[Node]bool)}
 
 var Server string
 var Port int
+
+// Common Name of the cert PFSD is using
+var CommonName string
+
+// If true, TLS is being used in all connections to and from PFSD
+var TLSEnabled bool
+
+// If true, PFSD will not verify the TLS credentials of anything it connects to
+var TLSSkipVerify bool
 
 // Global waitgroup for all goroutines in PFSD
 var Wait sync.WaitGroup

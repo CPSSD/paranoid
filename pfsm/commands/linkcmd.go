@@ -19,43 +19,44 @@ func LinkCommand(args []string) {
 	}
 
 	directory := args[0]
-	existingFileName := args[1]
-	targetFileName := args[2]
-	existingFilePath := path.Join(directory, "names", existingFileName)
-	targetFilePath := path.Join(directory, "names", targetFileName)
+	existingFilePath := getParanoidPath(directory, args[1])
+	targetFilePath := getParanoidPath(directory, args[2])
 
 	verboseLog("link : given directory = " + directory)
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(existingFilePath) {
+	existingFileType := getFileType(existingFilePath)
+	if existingFileType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
-	if checkFileExists(targetFilePath) {
+	if existingFileType == typeDir {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
+		return
+	}
+	if getFileType(targetFilePath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}
 
 	// getting inode and fileMode of existing file
-	existingFileNamePath := path.Join(directory, "names", existingFileName)
-	verboseLog("link : reading file " + existingFileNamePath)
-	inodeBytes, err := ioutil.ReadFile(existingFileNamePath)
-	checkErr("link", err)
-	inodeString := string(inodeBytes)
-	fileInfo, err := os.Stat(existingFileNamePath)
+	inodeBytes, code := getFileInode(existingFilePath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
+	fileInfo, err := os.Stat(existingFilePath)
 	checkErr("link", err)
 	fileMode := fileInfo.Mode()
 
 	// creating target file pointing to same inode
-	targetFileNamePath := path.Join(directory, "names", targetFileName)
-	verboseLog("link : creating file " + targetFileNamePath)
-	err = ioutil.WriteFile(targetFileNamePath, inodeBytes, fileMode)
+	err = ioutil.WriteFile(targetFilePath, inodeBytes, fileMode)
 	checkErr("link", err)
 
 	// getting contents of inode
-	inodePath := path.Join(directory, "inodes", inodeString)
+	inodePath := path.Join(directory, "inodes", string(inodeBytes))
 	verboseLog("link : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	checkErr("link", err)

@@ -12,13 +12,13 @@ import (
 func Ping(ips []globals.Node) {
 	ip, _ := upnp.GetIP()
 	for _, ipAddress := range ips {
-		conn := Dial(ipAddress)
+		port := strconv.Itoa(globals.Port)
 
+		conn := Dial(ipAddress)
 		defer conn.Close()
 		client := pb.NewParanoidNetworkClient(conn)
 
-		port := strconv.Itoa(globals.Port)
-		_, err := client.Ping(context.Background(), &pb.PingRequest{ip, port})
+		_, err := client.Ping(context.Background(), &pb.PingRequest{ip, port, globals.CommonName})
 		if err != nil {
 			log.Println("Can't Ping ", ipAddress.IP+":"+ipAddress.Port)
 		}
