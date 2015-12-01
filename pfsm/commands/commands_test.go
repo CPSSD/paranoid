@@ -65,10 +65,9 @@ func doWriteCommand(t *testing.T, file, data string, offset, length int) int {
 		if length != -1 {
 			code, _ := runCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset), strconv.Itoa(length))
 			return code
-		} else {
-			code, _ := runCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
-			return code
 		}
+		code, _ := runCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
+		return code
 	}
 	code, _ := runCommand(t, []byte(data), "write", path.Join(os.TempDir(), "paranoidTest"), file)
 	return code
@@ -78,15 +77,14 @@ func doReadCommand(t *testing.T, file string, offset, length int) (int, string) 
 	if offset != -1 {
 		if length != -1 {
 			return runCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset), strconv.Itoa(length))
-		} else {
-			return runCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
 		}
+		return runCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file, strconv.Itoa(offset))
 	}
 	return runCommand(t, nil, "read", path.Join(os.TempDir(), "paranoidTest"), file)
 }
 
-func doReadDirCommand(t *testing.T) (int, []string) {
-	code, data := runCommand(t, nil, "readdir", path.Join(os.TempDir(), "paranoidTest"), "")
+func doReadDirCommand(t *testing.T, directory string) (int, []string) {
+	code, data := runCommand(t, nil, "readdir", path.Join(os.TempDir(), "paranoidTest"), directory)
 	anwser := strings.Split(data, "\n")
 	return code, anwser[0 : len(anwser)-1]
 }
@@ -173,7 +171,7 @@ func TestComplexCommandUsage(t *testing.T) {
 	if returnData != "STARTEND" {
 		t.Error("Output from full read does not match STARTEND. Actual:", returnData)
 	}
-	code, files := doReadDirCommand(t)
+	code, files := doReadDirCommand(t, "")
 	if code != returncodes.OK {
 		t.Error("Read did not return OK. Actual:", code)
 	}
@@ -270,7 +268,7 @@ func TestFilesystemCommands(t *testing.T) {
 	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "777"}
 	CreatCommand(args)
 
-	code, files := doReadDirCommand(t)
+	code, files := doReadDirCommand(t, "")
 	if code != returncodes.OK {
 		t.Error("Readdir did not return OK. Actual:", code)
 	}
@@ -281,7 +279,7 @@ func TestFilesystemCommands(t *testing.T) {
 	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "test2.txt"}
 	RenameCommand(args)
 
-	code, files = doReadDirCommand(t)
+	code, files = doReadDirCommand(t, "")
 	if code != returncodes.OK {
 		t.Error("Readdir did not return OK. Actual:", code)
 	}
@@ -292,7 +290,7 @@ func TestFilesystemCommands(t *testing.T) {
 	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test2.txt"}
 	UnlinkCommand(args)
 
-	code, files = doReadDirCommand(t)
+	code, files = doReadDirCommand(t, "")
 	if code != returncodes.OK {
 		t.Error("Readdir did not return OK. Actual:", code)
 	}
@@ -314,7 +312,7 @@ func TestLinkCommand(t *testing.T) {
 	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt", "test2.txt"}
 	LinkCommand(args)
 
-	code, files := doReadDirCommand(t)
+	code, files := doReadDirCommand(t, "")
 	if code != returncodes.OK {
 		t.Error("Readdir did not return OK. Actual:", code)
 	}
@@ -344,7 +342,7 @@ func TestLinkCommand(t *testing.T) {
 	args = []string{path.Join(os.TempDir(), "paranoidTest"), "test.txt"}
 	UnlinkCommand(args)
 
-	code, files = doReadDirCommand(t)
+	code, files = doReadDirCommand(t, "")
 	if code != returncodes.OK {
 		t.Error("Readdir did not return OK. Actual:", code)
 	}
