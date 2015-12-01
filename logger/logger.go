@@ -7,17 +7,27 @@ import (
 	"path"
 )
 
+// LogLevel is an abstraction over int that allows to better undestand the
+// input of SetLogLevel
 type LogLevel int
 
 const (
-	DEBUG   LogLevel = 1
-	VERBOSE LogLevel = 2
-	INFO    LogLevel = 3
-	WARNING LogLevel = 4
-	ERROR   LogLevel = 5
+	DEBUG   LogLevel = iota
+	VERBOSE LogLevel = iota
+	INFO    LogLevel = iota
+	WARNING LogLevel = iota
+	ERROR   LogLevel = iota
 )
 
-// Logger stuct containing the variables necessary for the logger
+// Output enums to set the outputs
+type LogOutput int
+
+const (
+	STDERR  LogOutput = 1 << (iota + 1)
+	LOGFILE LogOutput = 1 << (iota + 1)
+)
+
+// Logger struct containing the variables necessary for the logger
 type paranoidLogger struct {
 	component string
 	curPack   string
@@ -39,37 +49,28 @@ func New(currentPackage string, component string, logDirectory string) *paranoid
 	if _, err := os.Stat(logDirectory); err != nil {
 		l.Fatalf("Log directory %s not found\n", logDirectory)
 	}
-	l.SetOutput("stderr")
+	l.SetOutput(STDERR)
 	return &l
 }
 
-// SetLogLevel sets the logging level where the level is a constant
+// SetLogLevel sets the logging level for the logger
 func (l *paranoidLogger) SetLogLevel(level LogLevel) {
 	l.logLevel = level
 }
 
-// SetOutput sets the default output for the
-func (l *paranoidLogger) SetOutput(output string) {
+// SetOutput sets the default output for the logger
+func (l *paranoidLogger) SetOutput(output LogOutput) {
 	var writers []io.Writer
 
-	switch output {
-	case "both":
+	if STDERR&output == STDERR {
+		writers = append(writers, os.Stderr)
+	}
+	if LOGFILE&output == LOGFILE {
 		w, err := createFileWriter(l.logDir, l.component)
 		if err != nil {
 			l.Fatal("Cannot write to log file: ", err)
 		}
 		writers = append(writers, w)
-		writers = append(writers, os.Stderr)
-	case "stderr":
-		writers = append(writers, os.Stderr)
-	case "logfile":
-		w, err := createFileWriter(l.logDir, l.component)
-		if err != nil {
-			l.Fatal("Cannot write to log file: ", err)
-		}
-		writers = append(writers, w)
-	default:
-		writers = append(writers, os.Stderr)
 	}
 
 	l.writer = io.MultiWriter(writers...)
@@ -85,14 +86,14 @@ func (l *paranoidLogger) AddAdditionalWriter(writer io.Writer) {
 
 ///////////////////////////////// DEBUG /////////////////////////////////
 
-// Debug only prints if DEBUG env var is set
+// Debug only prints if LogLevel is set to DEBUG
 func (l *paranoidLogger) Debug(v ...interface{}) {
 	if l.logLevel <= DEBUG {
 		l.output("DEBUG", v...)
 	}
 }
 
-// Debug only prints if DEBUG env var is set
+// Debug only prints if LogLevel is set to DEBUG
 func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
 	if l.logLevel <= DEBUG {
 		l.outputf("DEBUG", format, v...)
@@ -101,12 +102,14 @@ func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
 
 ///////////////////////////////// VERBOSE /////////////////////////////////
 
+// Verbose only prints if LogLevel is set to VERBOSE or lower in importance
 func (l *paranoidLogger) Verbose(v ...interface{}) {
 	if l.logLevel <= VERBOSE {
 		l.Info(v...)
 	}
 }
 
+// Verbose only prints if LogLevel is set to VERBOSE or lower in importance
 func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
 	if l.logLevel <= VERBOSE {
 		l.Infof(format, v...)
@@ -115,13 +118,14 @@ func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
 
 ///////////////////////////////// INFO /////////////////////////////////
 
-// Info logs as type info
+// Info only prints if LogLevel is set to INFO or lower in importance
 func (l *paranoidLogger) Info(v ...interface{}) {
 	if l.logLevel <= INFO {
 		l.output("INFO", v...)
 	}
 }
 
+// Info only prints if LogLevel is set to INFO or lower in importance
 func (l *paranoidLogger) Infof(format string, v ...interface{}) {
 	if l.logLevel <= INFO {
 		l.outputf("INFO", format, v...)
@@ -130,12 +134,14 @@ func (l *paranoidLogger) Infof(format string, v ...interface{}) {
 
 ///////////////////////////////// WARN /////////////////////////////////
 
+// Warn only prints if LogLevel is set to WARNING or lower in importance
 func (l *paranoidLogger) Warn(v ...interface{}) {
 	if l.logLevel <= WARNING {
 		l.output("WARN", v...)
 	}
 }
 
+// Warn only prints if LogLevel is set to WARNING or lower in importance
 func (l *paranoidLogger) Warnf(format string, v ...interface{}) {
 	if l.logLevel <= WARNING {
 		l.outputf("WARN", format, v...)
@@ -144,12 +150,14 @@ func (l *paranoidLogger) Warnf(format string, v ...interface{}) {
 
 ///////////////////////////////// ERROR /////////////////////////////////
 
+// Error only prints if LogLevel is set to ERROR or lower in importance
 func (l *paranoidLogger) Error(v ...interface{}) {
 	if l.logLevel <= ERROR {
 		l.output("ERROR", v...)
 	}
 }
 
+// Error only prints if LogLevel is set to ERROR or lower in importance
 func (l *paranoidLogger) Errorf(format string, v ...interface{}) {
 	if l.logLevel <= ERROR {
 		l.outputf("ERROR", format, v...)
@@ -158,11 +166,13 @@ func (l *paranoidLogger) Errorf(format string, v ...interface{}) {
 
 ///////////////////////////////// FATAL /////////////////////////////////
 
+// Fatal always prints and exits the program with exit code 1
 func (l *paranoidLogger) Fatal(v ...interface{}) {
 	l.output("FATAL", v...)
 	os.Exit(1)
 }
 
+// Fatal always prints and exits the program with exit code 1
 func (l *paranoidLogger) Fatalf(format string, v ...interface{}) {
 	l.outputf("FATAL", format, v...)
 	os.Exit(1)

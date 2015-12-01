@@ -1,3 +1,5 @@
+// +build !integration
+
 package logger
 
 import (
@@ -9,7 +11,7 @@ import (
 
 func TestOutput(t *testing.T) {
 	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput("stderr")
+	log.SetOutput(STDERR)
 
 	const testString = "test"
 
@@ -28,7 +30,7 @@ func TestOutput(t *testing.T) {
 
 func TestOutputf(t *testing.T) {
 	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput("stderr")
+	log.SetOutput(STDERR)
 
 	testArgs := []string{"testy %s", "test"}
 
@@ -47,7 +49,7 @@ func TestOutputf(t *testing.T) {
 
 func TestLogLevel(t *testing.T) {
 	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput("stderr")
+	log.SetOutput(STDERR)
 	log.SetLogLevel(INFO)
 
 	var b bytes.Buffer
@@ -61,10 +63,10 @@ func TestLogLevel(t *testing.T) {
 
 func TestLogFile(t *testing.T) {
 	os.Mkdir("/tmp/pfsLogTest", 0777)
+	// Remove the file that the logger is saving to after testing
 	defer os.RemoveAll("/tmp/pfsLogTest")
 	log := New("testPackage", "testComponent", "/tmp/pfsLogTest")
-	log.SetOutput("both")
-	// Remove the file that the logger is saving to after testing
+	log.SetOutput(STDERR | LOGFILE)
 
 	const testString = "test"
 	expected := "[INFO]  testPackage: " + testString + "\n"
