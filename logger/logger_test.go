@@ -61,10 +61,10 @@ func TestLogLevel(t *testing.T) {
 
 func TestLogFile(t *testing.T) {
 	os.Mkdir("/tmp/pfsLogTest", 0777)
+	// Remove the file that the logger is saving to after testing
 	defer os.RemoveAll("/tmp/pfsLogTest")
 	log := New("testPackage", "testComponent", "/tmp/pfsLogTest")
 	log.SetOutput(STDERR | LOGFILE)
-	// Remove the file that the logger is saving to after testing
 
 	const testString = "test"
 	expected := "[INFO]  testPackage: " + testString + "\n"
