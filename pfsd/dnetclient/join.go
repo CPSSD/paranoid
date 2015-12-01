@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"log"
 	"strconv"
 	"time"
@@ -13,7 +12,7 @@ import (
 
 // Join function to call in order to join the server
 func Join(pool string) error {
-	conn, err := grpc.Dial(globals.DiscoveryAddr, grpc.WithInsecure())
+	conn, err := dialDiscovery()
 	if err != nil {
 		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
 		return errors.New("Failed to dial discovery server")
@@ -23,7 +22,14 @@ func Join(pool string) error {
 	dclient := pb.NewDiscoveryNetworkClient(conn)
 
 	response, err := dclient.Join(context.Background(),
-		&pb.JoinRequest{Pool: pool, Node: &pb.Node{Ip: ThisNode.IP, Port: ThisNode.Port}})
+		&pb.JoinRequest{
+			Pool: pool,
+			Node: &pb.Node{
+				Ip:         ThisNode.IP,
+				Port:       ThisNode.Port,
+				CommonName: ThisNode.CommonName,
+			},
+		})
 	if err != nil {
 		log.Println("ERROR: could not join discovery server")
 		return errors.New("Could not join the pool")
@@ -36,6 +42,6 @@ func Join(pool string) error {
 		globals.Nodes.Add(globals.Node{IP: node.Ip, Port: node.Port})
 	}
 
-	log.Println("INFO: Successfully joined")
+	log.Println("INFO: Successfully joined discovery network")
 	return nil
 }
