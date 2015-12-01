@@ -27,8 +27,8 @@ const (
 	LOGFILE LogOutput = 1 << (iota + 1)
 )
 
-// Logger struct containing the variables necessary for the logger
-type paranoidLogger struct {
+// ParanoidLogger struct containing the variables necessary for the logger
+type ParanoidLogger struct {
 	component string
 	curPack   string
 	logDir    string
@@ -38,8 +38,8 @@ type paranoidLogger struct {
 }
 
 // New creates a new logger and returns a new logger
-func New(currentPackage string, component string, logDirectory string) *paranoidLogger {
-	l := paranoidLogger{
+func New(currentPackage string, component string, logDirectory string) *ParanoidLogger {
+	l := ParanoidLogger{
 		component: component,
 		curPack:   currentPackage,
 		logDir:    logDirectory,
@@ -54,12 +54,12 @@ func New(currentPackage string, component string, logDirectory string) *paranoid
 }
 
 // SetLogLevel sets the logging level for the logger
-func (l *paranoidLogger) SetLogLevel(level LogLevel) {
+func (l *ParanoidLogger) SetLogLevel(level LogLevel) {
 	l.logLevel = level
 }
 
 // SetOutput sets the default output for the logger
-func (l *paranoidLogger) SetOutput(output LogOutput) {
+func (l *ParanoidLogger) SetOutput(output LogOutput) {
 	var writers []io.Writer
 
 	if STDERR&output == STDERR {
@@ -79,7 +79,7 @@ func (l *paranoidLogger) SetOutput(output LogOutput) {
 
 // AddAdditionalWriter allows to add a custom writer to the logger.
 // This can be cleared by calling logger.SetOutput() again
-func (l *paranoidLogger) AddAdditionalWriter(writer io.Writer) {
+func (l *ParanoidLogger) AddAdditionalWriter(writer io.Writer) {
 	l.writer = io.MultiWriter(l.writer, writer)
 	l.native.SetOutput(l.writer)
 }
@@ -87,14 +87,14 @@ func (l *paranoidLogger) AddAdditionalWriter(writer io.Writer) {
 ///////////////////////////////// DEBUG /////////////////////////////////
 
 // Debug only prints if LogLevel is set to DEBUG
-func (l *paranoidLogger) Debug(v ...interface{}) {
+func (l *ParanoidLogger) Debug(v ...interface{}) {
 	if l.logLevel <= DEBUG {
 		l.output("DEBUG", v...)
 	}
 }
 
 // Debug only prints if LogLevel is set to DEBUG
-func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
+func (l *ParanoidLogger) Debugf(format string, v ...interface{}) {
 	if l.logLevel <= DEBUG {
 		l.outputf("DEBUG", format, v...)
 	}
@@ -103,14 +103,14 @@ func (l *paranoidLogger) Debugf(format string, v ...interface{}) {
 ///////////////////////////////// VERBOSE /////////////////////////////////
 
 // Verbose only prints if LogLevel is set to VERBOSE or lower in importance
-func (l *paranoidLogger) Verbose(v ...interface{}) {
+func (l *ParanoidLogger) Verbose(v ...interface{}) {
 	if l.logLevel <= VERBOSE {
 		l.Info(v...)
 	}
 }
 
 // Verbose only prints if LogLevel is set to VERBOSE or lower in importance
-func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
+func (l *ParanoidLogger) Verbosef(format string, v ...interface{}) {
 	if l.logLevel <= VERBOSE {
 		l.Infof(format, v...)
 	}
@@ -119,14 +119,14 @@ func (l *paranoidLogger) Verbosef(format string, v ...interface{}) {
 ///////////////////////////////// INFO /////////////////////////////////
 
 // Info only prints if LogLevel is set to INFO or lower in importance
-func (l *paranoidLogger) Info(v ...interface{}) {
+func (l *ParanoidLogger) Info(v ...interface{}) {
 	if l.logLevel <= INFO {
 		l.output("INFO", v...)
 	}
 }
 
 // Info only prints if LogLevel is set to INFO or lower in importance
-func (l *paranoidLogger) Infof(format string, v ...interface{}) {
+func (l *ParanoidLogger) Infof(format string, v ...interface{}) {
 	if l.logLevel <= INFO {
 		l.outputf("INFO", format, v...)
 	}
@@ -135,14 +135,14 @@ func (l *paranoidLogger) Infof(format string, v ...interface{}) {
 ///////////////////////////////// WARN /////////////////////////////////
 
 // Warn only prints if LogLevel is set to WARNING or lower in importance
-func (l *paranoidLogger) Warn(v ...interface{}) {
+func (l *ParanoidLogger) Warn(v ...interface{}) {
 	if l.logLevel <= WARNING {
 		l.output("WARN", v...)
 	}
 }
 
 // Warn only prints if LogLevel is set to WARNING or lower in importance
-func (l *paranoidLogger) Warnf(format string, v ...interface{}) {
+func (l *ParanoidLogger) Warnf(format string, v ...interface{}) {
 	if l.logLevel <= WARNING {
 		l.outputf("WARN", format, v...)
 	}
@@ -151,14 +151,14 @@ func (l *paranoidLogger) Warnf(format string, v ...interface{}) {
 ///////////////////////////////// ERROR /////////////////////////////////
 
 // Error only prints if LogLevel is set to ERROR or lower in importance
-func (l *paranoidLogger) Error(v ...interface{}) {
+func (l *ParanoidLogger) Error(v ...interface{}) {
 	if l.logLevel <= ERROR {
 		l.output("ERROR", v...)
 	}
 }
 
 // Error only prints if LogLevel is set to ERROR or lower in importance
-func (l *paranoidLogger) Errorf(format string, v ...interface{}) {
+func (l *ParanoidLogger) Errorf(format string, v ...interface{}) {
 	if l.logLevel <= ERROR {
 		l.outputf("ERROR", format, v...)
 	}
@@ -167,20 +167,20 @@ func (l *paranoidLogger) Errorf(format string, v ...interface{}) {
 ///////////////////////////////// FATAL /////////////////////////////////
 
 // Fatal always prints and exits the program with exit code 1
-func (l *paranoidLogger) Fatal(v ...interface{}) {
+func (l *ParanoidLogger) Fatal(v ...interface{}) {
 	l.output("FATAL", v...)
 	os.Exit(1)
 }
 
 // Fatal always prints and exits the program with exit code 1
-func (l *paranoidLogger) Fatalf(format string, v ...interface{}) {
+func (l *ParanoidLogger) Fatalf(format string, v ...interface{}) {
 	l.outputf("FATAL", format, v...)
 	os.Exit(1)
 }
 
 ///////////////////////////////// GENERAL /////////////////////////////////
 
-func (l *paranoidLogger) output(mtype string, v ...interface{}) {
+func (l *ParanoidLogger) output(mtype string, v ...interface{}) {
 	fmt := "[" + mtype + "] "
 	// Add an extra space if the message type (mtype) is only 4 letters long
 	if len(mtype) == 4 {
@@ -196,7 +196,7 @@ func (l *paranoidLogger) output(mtype string, v ...interface{}) {
 	l.native.Println(args...)
 }
 
-func (l *paranoidLogger) outputf(mtype string, format string, v ...interface{}) {
+func (l *ParanoidLogger) outputf(mtype string, format string, v ...interface{}) {
 	fmt := "[" + mtype + "] "
 	// Add an extra space if the message type (mtype) is only 4 letters long
 	if len(mtype) == 4 {
