@@ -34,7 +34,8 @@ func Unmount(c *cli.Context) {
 	if err != nil {
 		log.Fatalln("FATAL : unmount failed ", err)
 	}
-	if dnetclient.Disconnect() != nil {
-		log.Fatalln("Can't Disconnect from Discovery Server")
+	err = dnetclient.Disconnect()
+	if err != nil {
+		log.Fatalln("FATAL : Can't disconnect from discovery ", err)
 	}
 }
