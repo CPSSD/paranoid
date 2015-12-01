@@ -141,6 +141,44 @@ func TestSimpleCommandUsage(t *testing.T) {
 	}
 }
 
+func TestSimpleDirectoryUsage(t *testing.T) {
+	Flags.Network = true
+	createTestDir(t)
+	defer removeTestDir()
+	paranoidDir := path.Join(os.TempDir(), "paranoidTest")
+	args := []string{paranoidDir}
+	InitCommand(args)
+
+	code, _ := runCommand(t, nil, "mkdir", paranoidDir, "documents", "0777")
+	if code != returncodes.OK {
+		t.Error("Mkdir did not return OK. Actual:", code)
+	}
+
+	code, files := doReadDirCommand(t, "")
+	if code != returncodes.OK {
+		t.Error("Mkdir did not return OK. Actual:", code)
+	}
+	if len(files) != 1 {
+		t.Error("Readdir returned something other than one file: ", files)
+	}
+	if files[0] != "documents" {
+		t.Error("File is not equal to 'documents':", files[0])
+	}
+
+	code, _ = runCommand(t, nil, "rmdir", paranoidDir, "documents")
+	if code != returncodes.OK {
+		t.Error("rmdir did not return OK. Actual:", code)
+	}
+
+	code, files = doReadDirCommand(t, "")
+	if code != returncodes.OK {
+		t.Error("Mkdir did not return OK. Actual:", code)
+	}
+	if len(files) != 0 {
+		t.Error("Readdir returned more than 0: ", files)
+	}
+}
+
 func TestComplexCommandUsage(t *testing.T) {
 	Flags.Network = true
 	createTestDir(t)
