@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -22,19 +21,29 @@ func ReadCommand(args []string) {
 	directory := args[0]
 	verboseLog("read : given directory = " + directory)
 
+	namepath := getParanoidPath(directory, args[1])
+
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	if !checkFileExists(path.Join(directory, "names", args[1])) {
+	fileType := getFileType(namepath)
+	if fileType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+	if fileType == typeDir {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
+		return
+	}
 
-	fileNameBytes, err := ioutil.ReadFile(path.Join(directory, "names", args[1]))
-	checkErr("read", err)
+	fileNameBytes, code := getFileInode(namepath)
+	if code != returncodes.OK {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
+		return
+	}
 	fileName := string(fileNameBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_RDONLY))
+	err := syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_RDONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return

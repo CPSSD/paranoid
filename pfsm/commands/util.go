@@ -2,19 +2,14 @@ package commands
 
 import (
 	"github.com/cpssd/paranoid/pfsm/icclient"
+	"github.com/cpssd/paranoid/pfsm/returncodes"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
+	"strings"
 	"syscall"
 )
-
-//Check if a given file exists
-func checkFileExists(filepath string) bool {
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
 
 func getAccessMode(flags uint32) uint32 {
 	switch flags {
@@ -104,4 +99,68 @@ func sendToServer(paranoidDir, command string, args []string, data []byte) {
 	} else {
 		icclient.SendMessageWithData(paranoidDir, command, args, data)
 	}
+}
+
+func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
+	split := strings.Split(realPath, "/")
+	paranoidPath = path.Join(paranoidDir, "names")
+	for i := range split {
+		paranoidPath = path.Join(paranoidPath, (split[i] + "-file"))
+	}
+	return paranoidPath
+}
+
+func generateNewInode() (inodeBytes []byte) {
+	inodeBytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
+	checkErr("util, generateNewInode", err)
+	return []byte(strings.TrimSpace(string(inodeBytes)))
+}
+
+func getFileInode(filePath string) (inodeBytes []byte, errorCode int) {
+	if getFileType(filePath) == typeDir {
+		filePath = path.Join(filePath, "info")
+	}
+	bytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, returncodes.ENOENT
+		} else if os.IsPermission(err) {
+			return nil, returncodes.EACCES
+		}
+		log.Fatalln("util, getFileInode", " error occured: ", err)
+	}
+	return bytes, returncodes.OK
+}
+
+func deleteFile(filePath string) (returncode int) {
+	err := os.Remove(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return returncodes.ENOENT
+		} else if os.IsPermission(err) {
+			return returncodes.EACCES
+		}
+		log.Fatalln("util, deleteFile", " error occured: ", err)
+	}
+	return returncodes.OK
+}
+
+const (
+	typeFile = iota
+	typeDir
+	typeENOENT
+)
+
+func getFileType(path string) int {
+	f, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return typeENOENT
+		}
+		log.Fatalln("util, getFileType", " error occured: ", err)
+	}
+	if f.Mode().IsDir() {
+		return typeDir
+	}
+	return typeFile
 }
