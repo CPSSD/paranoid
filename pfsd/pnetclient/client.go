@@ -1,8 +1,8 @@
 package pnetclient
 
 import (
-	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/icserver"
 )
 
 func SendRequest(socket icserver.FileSystemMessage) {
@@ -14,6 +14,8 @@ func SendRequest(socket icserver.FileSystemMessage) {
 		Creat(ips, socket.Args[0], socket.Args[1])
 	case "link":
 		Link(ips, socket.Args[0], socket.Args[1])
+	case "symlink":
+		Symlink(ips, socket.Args[0], socket.Args[1])
 	case "ping":
 		Ping(ips)
 	case "rename":
