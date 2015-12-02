@@ -21,7 +21,7 @@ func Truncate(ips []globals.Node, path string, length string) {
 
 		_, clientErr := client.Truncate(context.Background(), &pb.TruncateRequest{path, lengthInt})
 		if clientErr != nil {
-			log.Println("Truncate Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+			log.Println("Truncate Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

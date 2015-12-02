@@ -16,7 +16,7 @@ func Link(ips []globals.Node, oldPath, newPath string) {
 
 		_, err := client.Link(context.Background(), &pb.LinkRequest{oldPath, newPath})
 		if err != nil {
-			log.Println("Link Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+			log.Println("Link Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

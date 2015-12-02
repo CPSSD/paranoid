@@ -1,4 +1,4 @@
-// ParanoidNetwork API v0.1.1
+// ParanoidNetwork API v0.2.0
 
 syntax = "proto3";
 
@@ -20,6 +20,8 @@ service ParanoidNetwork {
     rpc Truncate (TruncateRequest) returns (EmptyMessage) {}
     rpc Utimes (UtimesRequest) returns (EmptyMessage) {}
     rpc Chmod (ChmodRequest) returns (EmptyMessage) {}
+    rpc Mkdir (MkdirRequest) returns (EmptyMessage) {}
+    rpc Rmdir (RmdirRequest) returns (EmptyMessage) {}
 }
 
 message EmptyMessage {}
@@ -81,4 +83,13 @@ message UtimesRequest {
 message ChmodRequest {
     string path = 1;  // required
     uint32 mode = 2;  // required
+}
+
+message MkdirRequest {
+    string directory = 1; // required
+    uint32 mode = 2; // required
+}
+
+message RmdirRequest {
+    string directory = 1; // required
 }
