@@ -6,7 +6,6 @@ import (
 	"github.com/cpssd/paranoid/pfi/filesystem"
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
-	"log"
 	"path/filepath"
 
 	"github.com/hanwen/go-fuse/fuse/nodefs"
@@ -33,17 +32,17 @@ func main() {
 	noFlagArgs := flag.Args()
 
 	if len(noFlagArgs) < 2 {
-		log.Fatalln("\nUsage:\npfi [flags] <PfsInitPoint> <MountPoint>")
+		util.Log.Fatal("\nUsage:\npfi [flags] <PfsInitPoint> <MountPoint>")
 	}
 
 	var err error
 	util.PfsDirectory, err = filepath.Abs(noFlagArgs[0])
 	if err != nil {
-		log.Fatalln(err)
+		util.Log.Fatal(err)
 	}
 	util.MountPoint, err = filepath.Abs(noFlagArgs[1])
 	if err != nil {
-		log.Fatalln(err)
+		util.Log.Fatal(err)
 	}
 
 	// setting up with fuse

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfi/filesystem"
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
@@ -26,6 +27,11 @@ func createTestDir(t *testing.T, name string) {
 
 func removeTestDir(name string) {
 	os.RemoveAll(path.Join(os.TempDir(), name))
+}
+
+func TestMain(m *testing.M) {
+	util.Log = logger.New("testPackage", "testComponent", "/dev/null")
+	os.Exit(m.Run())
 }
 
 func TestFuseExternalUsage(t *testing.T) {

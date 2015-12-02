@@ -141,7 +141,7 @@ func (fs *ParanoidFileSystem) Symlink(oldName string, newName string, context *f
 	return util.GetFuseReturnCode(retcode)
 }
 
-func (fs *ParanoidFileSystem) ReadLink(name string, context *fuse.Context) (string, fuse.Status) {
+func (fs *ParanoidFileSystem) Readlink(name string, context *fuse.Context) (string, fuse.Status) {
 	util.Log.Verbose("Readlink called on", name)
 	retcode, rawLink := pfsminterface.RunCommand(nil, "readlink", util.PfsDirectory, name)
 	return string(rawLink), util.GetFuseReturnCode(retcode)
