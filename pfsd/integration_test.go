@@ -225,8 +225,8 @@ func TestMkdir(t *testing.T) {
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
 	req := pb.MkdirRequest{
-		directory: "somedir",
-		mode:      0777,
+		Directory: "somedir",
+		Mode:      0777,
 	}
 	_, err = client.Mkdir(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
@@ -234,7 +234,7 @@ func TestMkdir(t *testing.T) {
 	}
 }
 
-func TestUnlink(t *testing.T) {
+func TestRmdir(t *testing.T) {
 	// Create file to run test on
 	creat := exec.Command("pfsm", "mkdir", tmpdir, "somedir", "0777")
 	creat.Run()

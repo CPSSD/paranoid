@@ -13,7 +13,7 @@ func Mkdir(ips []globals.Node, directory string, mode string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 
-		intMode, err := strconv.ParseUint(mode, 8, 32)
+		intMode, err := strconv.ParseUint(mode, 10, 64)
 		if err != nil {
 			log.Println("Error parsing mode in Mkdir.")
 		}
