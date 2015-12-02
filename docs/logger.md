@@ -5,7 +5,8 @@ logger(3) - paranoid standard logging
 logger (github.com/cpssd/paranoid/logger) allows to log messages in a standard format throughout the project.
 It supports writing to stderr, log file, or both. It also allows you to add in your own writers.
 
-To get the documentation for the logger run `go doc github.com/cpssd/paranoid/logger`
+To get the documentation for the logger run `godoc -http :6060` and visit  
+> http://localhost:6060/pkg/github.com/cpssd/paranoid/logger/
 
 ## USAGE ##
 ```go
@@ -18,7 +19,7 @@ import(
 log := logger.New("currentPackage", "component", "/home/.pfs/example-pfs/meta/log")
 
 // OPTIONAL: Set the output, default: stderr
-log.SetOutput(logger.O_BOTH) // Prints to both stderr and a log file located at {LOGPATH}/{COMPONENT}.log
+log.SetOutput(logger.STDERR | logger.LOGFILE) // Prints to both stderr and a log file located at {LOGPATH}/{COMPONENT}.log
 
 // OPTIONAL: Set Logging level, default: INFO
 log.SetLogLevel(logger.WARNING)
@@ -58,4 +59,4 @@ const (
 
 ### SetOutput ###
 Function SetOutput Accepts output codes OR'd together  
-Example: `log.SetOutput(FILE | STDERR)`
+Example: `log.SetOutput(logger.LOGFILE | logger.STDERR)`
