@@ -78,13 +78,13 @@ func convertCodeToError(code int, path string) error {
 		return returnError
 	case returncodes.EISDIR:
 		log.Printf("INFO: %s is a directory.\n", path)
-		returnError := grpc.Errorf(codes.InvalidArgument1,
+		returnError := grpc.Errorf(codes.InvalidArgument,
 			"%s is a directory",
 			path)
 		return returnError
 	case returncodes.ENOTDIR:
 		log.Printf("INFO: %s is not a directory.\n", path)
-		returnError := grpc.Errorf(codes.InvalidArgument1,
+		returnError := grpc.Errorf(codes.InvalidArgument,
 			"%s is not a directory",
 			path)
 		return returnError
