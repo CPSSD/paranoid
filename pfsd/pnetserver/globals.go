@@ -76,6 +76,24 @@ func convertCodeToError(code int, path string) error {
 			"file %s already exists",
 			path)
 		return returnError
+	case returncodes.EISDIR:
+		log.Printf("INFO: %s is a directory.\n", path)
+		returnError := grpc.Errorf(codes.InvalidArgument1,
+			"%s is a directory",
+			path)
+		return returnError
+	case returncodes.ENOTDIR:
+		log.Printf("INFO: %s is not a directory.\n", path)
+		returnError := grpc.Errorf(codes.InvalidArgument1,
+			"%s is not a directory",
+			path)
+		return returnError
+	case returncodes.ENOTEMPTY:
+		log.Printf("INFO: %s is not empty.\n", path)
+		returnError := grpc.Errorf(codes.FailedPrecondition,
+			"%s is not empty",
+			path)
+		return returnError
 	}
 	return nil
 }
