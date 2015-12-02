@@ -1,8 +1,8 @@
 package pnetclient
 
 import (
-	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/icserver"
 )
 
 func SendRequest(socket icserver.FileSystemMessage) {
@@ -31,5 +31,9 @@ func SendRequest(socket icserver.FileSystemMessage) {
 			socket.Args[4])
 	case "write":
 		Write(ips, socket.Args[0], socket.Data, socket.Args[1], socket.Args[2])
+	case "mkdir":
+		Mkdir(ips, socket.Args[0], socket.Args[1])
+	case "rmdir":
+		Rmdir(ips, socket.Args[0])
 	}
 }
