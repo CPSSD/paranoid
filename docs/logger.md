@@ -20,11 +20,7 @@ import(
 log := logger.New("currentPackage", "component", "/home/.pfs/example-pfs/meta/log")
 
 // OPTIONAL: Set the output, default: stderr
-<<<<<<< HEAD
 log.SetOutput(logger.STDERR | logger.LOGFILE) // Prints to both stderr and a log file located at {LOGPATH}/{COMPONENT}.log
-=======
-log.SetOutput(logger.O_BOTH) // Prints to both stderr and a log file located at {LOGPATH}/{COMPONENT}.log
->>>>>>> 9cb18095118b37bb5f8e9034590d5d90b19508d9
 
 // OPTIONAL: Set Logging level, default: INFO
 log.SetLogLevel(logger.WARNING)
@@ -63,9 +59,5 @@ const (
 ```
 
 ### SetOutput ###
-Function SetOutput Accepts output codes OR'd together  
-<<<<<<< HEAD
+Function SetOutput Accepts output codes OR'd together
 Example: `log.SetOutput(logger.LOGFILE | logger.STDERR)`
-=======
-Example: `log.SetOutput(FILE | STDERR)`
->>>>>>> 9cb18095118b37bb5f8e9034590d5d90b19508d9
