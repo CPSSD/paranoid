@@ -34,7 +34,6 @@ func GenCertificate(pfsDir string) error {
 		return fmt.Errorf("could not read user input: %v", err)
 	}
 	validForString := scanner.Text()
-	log.Println(validForString)
 	validFor, err := time.ParseDuration(validForString + "d")
 	endDate := startDate.Add(validFor)
 

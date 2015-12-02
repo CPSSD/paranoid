@@ -26,6 +26,20 @@ func main() {
 			ArgsUsage: "pfs-name",
 			Usage:     "init a new paranoid file system",
 			Action:    commands.Init,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "u, unsecure",
+					Usage: "disable TLS/SSL for this filesystem's network services",
+				},
+				cli.StringFlag{
+					Name:  "cert",
+					Usage: "path to existing certificate file",
+				},
+				cli.StringFlag{
+					Name:  "key",
+					Usage: "path to existing key file",
+				},
+			},
 		},
 		{
 			Name:      "mount",
