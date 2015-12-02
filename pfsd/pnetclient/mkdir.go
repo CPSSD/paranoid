@@ -13,7 +13,7 @@ func Mkdir(ips []globals.Node, directory string, mode string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 
-		intMode, err := strconv.ParseUint(mode, 10, 64)
+		intMode, err := strconv.ParseUint(mode, 8, 64)
 		if err != nil {
 			log.Println("Error parsing mode in Mkdir.")
 		}
@@ -23,7 +23,7 @@ func Mkdir(ips []globals.Node, directory string, mode string) {
 
 		_, err = client.Mkdir(context.Background(), &pb.MkdirRequest{directory, uint32(intMode)})
 		if err != nil {
-			log.Println("Mkdir Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+			log.Println("Mkdir Error on ", ipAddress.IP, ":", ipAddress.Port, "Error:", err)
 		}
 	}
 }

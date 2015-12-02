@@ -12,7 +12,7 @@ func (s *ParanoidServer) Rmdir(ctx context.Context, req *pb.RmdirRequest) (*pb.E
 	code, _, err := runCommand(nil, "rmdir", ParanoidDir, req.Directory)
 	if err != nil {
 		log.Printf("ERROR: Could not remove directory: %v \n", req.Directory, err)
-		returnError := grpc.Errorf(codes.Internal, "Could not remove directory: %v \n",
+		returnError := grpc.Errorf(codes.Internal, "could not remove directory: %v \n",
 			req.Directory, err)
 		return &pb.EmptyMessage{}, returnError
 	}
