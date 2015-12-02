@@ -23,7 +23,7 @@ func Mkdir(ips []globals.Node, directory string, mode string) {
 
 		_, err = client.Mkdir(context.Background(), &pb.MkdirRequest{directory, uint32(intMode)})
 		if err != nil {
-			log.Println("Mkdir Error on ", ipAddress.IP, ":", ipAddress.Port, "Error:", err)
+			log.Println("Mkdir Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

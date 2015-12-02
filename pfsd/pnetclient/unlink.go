@@ -16,7 +16,7 @@ func Unlink(ips []globals.Node, path string) {
 
 		_, err := client.Unlink(context.Background(), &pb.UnlinkRequest{path})
 		if err != nil {
-			log.Println("Unlink Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+			log.Println("Unlink Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

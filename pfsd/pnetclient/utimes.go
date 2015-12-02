@@ -28,7 +28,7 @@ func Utimes(ips []globals.Node, path,
 		_, clientErr := client.Utimes(context.Background(),
 			&pb.UtimesRequest{path, accessSecondsInt, accessMicrosecondsInt, modifySecondsInt, modifyMicrosecondsInt})
 		if clientErr != nil {
-			log.Println("Utimes Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+			log.Println("Utimes Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

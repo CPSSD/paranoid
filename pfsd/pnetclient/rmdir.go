@@ -17,7 +17,7 @@ func Rmdir(ips []globals.Node, directory string) {
 
 		_, err := client.Rmdir(context.Background(), &pb.RmdirRequest{directory})
 		if err != nil {
-			log.Println("Rmdir Error on ", ipAddress.IP, ":", ipAddress.Port, "Error:", err)
+			log.Println("Rmdir Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

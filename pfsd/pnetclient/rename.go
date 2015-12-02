@@ -16,7 +16,7 @@ func Rename(ips []globals.Node, oldPath, newPath string) {
 
 		_, err := client.Rename(context.Background(), &pb.RenameRequest{oldPath, newPath})
 		if err != nil {
-			log.Println("Rename Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+			log.Println("Rename Error on ", ipAddress, "Error:", err)
 		}
 	}
 }
