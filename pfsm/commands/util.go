@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsm/icclient"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io/ioutil"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"syscall"
 )
+
+var Log *logger.ParanoidLogger
 
 func getAccessMode(flags uint32) uint32 {
 	switch flags {

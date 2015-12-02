@@ -65,6 +65,10 @@ func main() {
 			commands.UnlinkCommand(onlyArgs[1:])
 		case "link":
 			commands.LinkCommand(onlyArgs[1:])
+		case "symlink":
+			commands.SymlinkCommand(onlyArgs[1:])
+		case "readlink":
+			commands.ReadlinkCommand(onlyArgs[1:])
 		case "mkdir":
 			commands.MkdirCommand(onlyArgs[1:])
 		case "rmdir":
