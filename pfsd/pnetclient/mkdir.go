@@ -21,7 +21,7 @@ func Mkdir(ips []globals.Node, directory string, mode string) {
 		defer conn.Close()
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err = client.Mkdir(context.Background(), &pb.MkdirRequest{directory, intMode})
+		_, err = client.Mkdir(context.Background(), &pb.MkdirRequest{directory, uint32(intMode)})
 		if err != nil {
 			log.Println("Mkdir Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
 		}
