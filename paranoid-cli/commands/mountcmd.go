@@ -55,7 +55,7 @@ func doMount(c *cli.Context, args []string) {
 	if _, err := os.Stat(path.Join(pfsDir, "inodes")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : PFS directory does not include inodes directory")
 	}
-	if _, err := os.Stat(path.Join(pfsDir, "meta/", "pfsd.pid")); err == nil {
+	if pathExists(path.Join(pfsDir, "meta/", "pfsd.pid")) {
 		os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
 	}
 

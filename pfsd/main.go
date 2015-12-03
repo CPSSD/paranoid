@@ -117,12 +117,16 @@ func main() {
 	dnetclient.SetDiscovery(flag.Arg(1), flag.Arg(2), strconv.Itoa(port))
 	globals.Port = port
 	dnetclient.JoinDiscovery("_")
+	createPid("pfsd")
+	startRPCServer(&lis)
+	HandleSignals()
+}
+
+func createPid(processName string) {
 	processID := os.Getpid()
 	pid := []byte(strconv.Itoa(processID))
-	err = ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"), pid, 0600)
+	err := ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", processName+".pid"), pid, 0600)
 	if err != nil {
 		log.Fatalln("FATAL: Failed to create PID file", err)
 	}
-	startRPCServer(&lis)
-	HandleSignals()
 }
