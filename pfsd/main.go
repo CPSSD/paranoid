@@ -11,6 +11,7 @@ import (
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -116,14 +117,14 @@ func main() {
 	dnetclient.SetDiscovery(flag.Arg(1), flag.Arg(2), strconv.Itoa(port))
 	globals.Port = port
 	dnetclient.JoinDiscovery("_")
-	srv = grpc.NewServer()
-	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
+	processID := os.Getpid()
+	pid := []byte(strconv.Itoa(processID))
+	ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"), pid, 0600)
 
 	processID := os.Getpid()
 	pid := []byte(strconv.Itoa(processID))
 	ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"), pid, 0600)
 	fmt.Println(processID)
-	globals.Wait.Add(1)
-	go srv.Serve(lis)
+	startRPCServer(&lis)
 	HandleSignals()
 }
