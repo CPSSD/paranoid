@@ -180,11 +180,8 @@ func TestUtimes(t *testing.T) {
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
 	req := pb.UtimesRequest{
-		Path:               "utimes.txt",
-		AccessSeconds:      1,
-		AccessMicroseconds: 1,
-		ModifySeconds:      1,
-		ModifyMicroseconds: 1,
+		Path: "utimes.txt",
+		Data: []byte("eyJhdGltZSI6IjE5NzAtMDEtMDFUMDA6MDA6MDEuMDAwMDAwMDAxWiIsIm10aW1lIjoiMTk3MC0wMS0wMVQwMDowMDowMS4wMDAwMDAwMDFaIn0NCg=="),
 	}
 	_, err = client.Utimes(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
@@ -214,5 +211,41 @@ func TestWrite(t *testing.T) {
 	}
 	if resp.BytesWritten != 4 {
 		t.Error("Incorrect bytes written. Expected: 4. Actual:", resp.BytesWritten)
+	}
+}
+
+func TestMkdir(t *testing.T) {
+	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	if err != nil {
+		t.Fatal("Could not connect to server:", err)
+	}
+	defer conn.Close()
+	client := pb.NewParanoidNetworkClient(conn)
+	req := pb.MkdirRequest{
+		Directory: "somedir",
+		Mode:      0777,
+	}
+	_, err = client.Mkdir(context.Background(), &req)
+	if grpc.Code(err) != codes.OK {
+		t.Error("Mkdir did not return OK. Actual:", err)
+	}
+}
+
+func TestRmdir(t *testing.T) {
+	// Create file to run test on
+	creat := exec.Command("pfsm", "mkdir", tmpdir, "somedir", "0777")
+	creat.Run()
+	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	if err != nil {
+		t.Fatal("Could not connect to server:", err)
+	}
+	defer conn.Close()
+	client := pb.NewParanoidNetworkClient(conn)
+	req := pb.RmdirRequest{
+		Directory: "somedir",
+	}
+	_, err = client.Rmdir(context.Background(), &req)
+	if grpc.Code(err) != codes.OK {
+		t.Error("Rmdir did not return OK. Actual:", err)
 	}
 }

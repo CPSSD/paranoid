@@ -20,6 +20,8 @@ It has these top-level messages:
 	TruncateRequest
 	UtimesRequest
 	ChmodRequest
+	MkdirRequest
+	RmdirRequest
 */
 package paranoid
 
@@ -117,14 +119,9 @@ func (m *TruncateRequest) Reset()         { *m = TruncateRequest{} }
 func (m *TruncateRequest) String() string { return proto.CompactTextString(m) }
 func (*TruncateRequest) ProtoMessage()    {}
 
-// TODO(terry): Update this message to use microseconds by the end of
-// sprint 2.
 type UtimesRequest struct {
-	Path               string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	AccessSeconds      uint64 `protobuf:"varint,2,opt,name=access_seconds" json:"access_seconds,omitempty"`
-	AccessMicroseconds uint64 `protobuf:"varint,3,opt,name=access_microseconds" json:"access_microseconds,omitempty"`
-	ModifySeconds      uint64 `protobuf:"varint,4,opt,name=modify_seconds" json:"modify_seconds,omitempty"`
-	ModifyMicroseconds uint64 `protobuf:"varint,5,opt,name=modify_microseconds" json:"modify_microseconds,omitempty"`
+	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	Data []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (m *UtimesRequest) Reset()         { *m = UtimesRequest{} }
@@ -139,6 +136,23 @@ type ChmodRequest struct {
 func (m *ChmodRequest) Reset()         { *m = ChmodRequest{} }
 func (m *ChmodRequest) String() string { return proto.CompactTextString(m) }
 func (*ChmodRequest) ProtoMessage()    {}
+
+type MkdirRequest struct {
+	Directory string `protobuf:"bytes,1,opt,name=directory" json:"directory,omitempty"`
+	Mode      uint32 `protobuf:"varint,2,opt,name=mode" json:"mode,omitempty"`
+}
+
+func (m *MkdirRequest) Reset()         { *m = MkdirRequest{} }
+func (m *MkdirRequest) String() string { return proto.CompactTextString(m) }
+func (*MkdirRequest) ProtoMessage()    {}
+
+type RmdirRequest struct {
+	Directory string `protobuf:"bytes,1,opt,name=directory" json:"directory,omitempty"`
+}
+
+func (m *RmdirRequest) Reset()         { *m = RmdirRequest{} }
+func (m *RmdirRequest) String() string { return proto.CompactTextString(m) }
+func (*RmdirRequest) ProtoMessage()    {}
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
@@ -160,6 +174,8 @@ type ParanoidNetworkClient interface {
 	Truncate(ctx context.Context, in *TruncateRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
 	Utimes(ctx context.Context, in *UtimesRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
 	Chmod(ctx context.Context, in *ChmodRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
+	Mkdir(ctx context.Context, in *MkdirRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
+	Rmdir(ctx context.Context, in *RmdirRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
 }
 
 type paranoidNetworkClient struct {
@@ -260,6 +276,24 @@ func (c *paranoidNetworkClient) Chmod(ctx context.Context, in *ChmodRequest, opt
 	return out, nil
 }
 
+func (c *paranoidNetworkClient) Mkdir(ctx context.Context, in *MkdirRequest, opts ...grpc.CallOption) (*EmptyMessage, error) {
+	out := new(EmptyMessage)
+	err := grpc.Invoke(ctx, "/paranoid.ParanoidNetwork/Mkdir", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paranoidNetworkClient) Rmdir(ctx context.Context, in *RmdirRequest, opts ...grpc.CallOption) (*EmptyMessage, error) {
+	out := new(EmptyMessage)
+	err := grpc.Invoke(ctx, "/paranoid.ParanoidNetwork/Rmdir", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for ParanoidNetwork service
 
 type ParanoidNetworkServer interface {
@@ -276,6 +310,8 @@ type ParanoidNetworkServer interface {
 	Truncate(context.Context, *TruncateRequest) (*EmptyMessage, error)
 	Utimes(context.Context, *UtimesRequest) (*EmptyMessage, error)
 	Chmod(context.Context, *ChmodRequest) (*EmptyMessage, error)
+	Mkdir(context.Context, *MkdirRequest) (*EmptyMessage, error)
+	Rmdir(context.Context, *RmdirRequest) (*EmptyMessage, error)
 }
 
 func RegisterParanoidNetworkServer(s *grpc.Server, srv ParanoidNetworkServer) {
@@ -402,6 +438,30 @@ func _ParanoidNetwork_Chmod_Handler(srv interface{}, ctx context.Context, dec fu
 	return out, nil
 }
 
+func _ParanoidNetwork_Mkdir_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(MkdirRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ParanoidNetworkServer).Mkdir(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ParanoidNetwork_Rmdir_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(RmdirRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ParanoidNetworkServer).Rmdir(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _ParanoidNetwork_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "paranoid.ParanoidNetwork",
 	HandlerType: (*ParanoidNetworkServer)(nil),
@@ -445,6 +505,14 @@ var _ParanoidNetwork_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Chmod",
 			Handler:    _ParanoidNetwork_Chmod_Handler,
+		},
+		{
+			MethodName: "Mkdir",
+			Handler:    _ParanoidNetwork_Mkdir_Handler,
+		},
+		{
+			MethodName: "Rmdir",
+			Handler:    _ParanoidNetwork_Rmdir_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

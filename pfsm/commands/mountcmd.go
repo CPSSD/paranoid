@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 //MountCommand is used to notify a pfs directory it has been mounted.
@@ -25,7 +26,10 @@ func MountCommand(args []string) {
 	err = ioutil.WriteFile(path.Join(directory, "meta", "port"), []byte(args[2]), 0600)
 	checkErr("mount", err)
 
-	err = ioutil.WriteFile(path.Join(directory, "meta", "mountpoint"), []byte(args[3]), 0600)
+	mountPoint, err := filepath.Abs(args[3])
+	checkErr("mount", err)
+
+	err = ioutil.WriteFile(path.Join(directory, "meta", "mountpoint"), []byte(mountPoint), 0600)
 	checkErr("mount", err)
 
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))

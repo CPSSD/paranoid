@@ -17,6 +17,9 @@ func (n Node) String() string {
 	return fmt.Sprintf("%s:%s", n.IP, n.Port)
 }
 
+// If UPnP is enabled and a port mapping has been establised.
+var UPnPEnabled bool
+
 // ResetInterval containing how often the Renew function has to be called
 var ResetInterval time.Duration
 

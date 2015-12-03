@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/cpssd/paranoid/paranoid-cli/tls"
 	"log"
 	"os"
 	"os/exec"
@@ -10,11 +12,18 @@ import (
 	"path/filepath"
 )
 
+func cleanupPFS(pfsDir string) {
+	err := os.RemoveAll(pfsDir)
+	if err != nil {
+		log.Println("WARNING: Could not successfully clean up PFS directory.")
+	}
+}
+
 //Init inits a new paranoid file system
 func Init(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 1 {
-		cli.ShowAppHelp(c)
+		cli.ShowCommandHelp(c, "init")
 		os.Exit(0)
 	}
 
@@ -52,6 +61,33 @@ func Init(c *cli.Context) {
 	cmd := exec.Command("pfsm", "init", directory)
 	err = cmd.Run()
 	if err != nil {
+		cleanupPFS(directory)
 		log.Fatalln("FATAL : ", err)
+	}
+
+	if c.Bool("unsecure") {
+		log.Println("--unsecure specified. PFSD will not use TLS for its communication.")
+		return
+	}
+	if (c.String("cert") != "") && (c.String("key") != "") {
+		log.Println("INFO: Using existing certificate.")
+		err = os.Link(c.String("cert"), path.Join(directory, "meta", "cert.pem"))
+		if err != nil {
+			cleanupPFS(directory)
+			log.Fatalln("FATAL: Failed to copy cert file:", err)
+		}
+		err = os.Link(c.String("key"), path.Join(directory, "meta", "key.pem"))
+		if err != nil {
+			cleanupPFS(directory)
+			log.Fatalln("FATAL: Failed to copy key file:", err)
+		}
+	} else {
+		log.Println("INFO: Generating certificate.")
+		fmt.Println("Generating TLS certificate. Please follow the given instructions.")
+		err = tls.GenCertificate(directory)
+		if err != nil {
+			cleanupPFS(directory)
+			log.Fatalln("FATAL: Failed to generate certificate:", err)
+		}
 	}
 }

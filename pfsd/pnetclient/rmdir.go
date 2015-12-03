@@ -7,17 +7,17 @@ import (
 	"log"
 )
 
-func Utimes(ips []globals.Node, path string, data []byte) {
+// Rmdir is used to delete directories
+func Rmdir(ips []globals.Node, directory string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 
 		defer conn.Close()
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, clientErr := client.Utimes(context.Background(),
-			&pb.UtimesRequest{path, data})
-		if clientErr != nil {
-			log.Println("Utimes Error on ", ipAddress, "Error:", clientErr)
+		_, err := client.Rmdir(context.Background(), &pb.RmdirRequest{directory})
+		if err != nil {
+			log.Println("Rmdir Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

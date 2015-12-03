@@ -19,7 +19,7 @@ func Write(ips []globals.Node, path string, data []byte, offset, length string) 
 		lengthInt, _ := strconv.ParseUint(length, 10, 64)
 		_, err := client.Write(context.Background(), &pb.WriteRequest{path, data, offsetInt, lengthInt})
 		if err != nil {
-			log.Println("Write Error on ", ipAddress.IP+":"+ipAddress.Port, "Error:", err)
+			log.Println("Write Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

@@ -4,14 +4,24 @@ import (
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/icserver"
+	"github.com/cpssd/paranoid/pfsd/pnetserver"
+	"github.com/cpssd/paranoid/pfsd/upnp"
+	"github.com/kardianos/osext"
 	"log"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 )
 
 func stopAllServices() {
+	if globals.UPnPEnabled {
+		err := upnp.ClearPortMapping(globals.Port)
+		if err != nil {
+			log.Println("Could not clear port mapping. Error : ", err)
+		}
+	}
 	close(globals.Quit)     // Sends stop signal to all goroutines
 	dnetclient.Disconnect() // Disconnect from the discovery server
 	icserver.StopAccept()
@@ -45,7 +55,12 @@ func handleSIGHUP() {
 	execSpec := &syscall.ProcAttr{
 		Env: os.Environ(),
 	}
-	fork, err := syscall.ForkExec(os.Args[0], os.Args, execSpec)
+	pathToSelf, err := osext.Executable()
+	if err != nil {
+		log.Println("WARNING: Could not get path to self:", err)
+		pathToSelf = os.Args[0]
+	}
+	fork, err := syscall.ForkExec(pathToSelf, os.Args, execSpec)
 	if err != nil {
 		log.Println("ERROR: Could not fork child PFSD instance:", err)
 	} else {
@@ -56,5 +71,9 @@ func handleSIGHUP() {
 func handleSIGTERM() {
 	log.Println("INFO: SIGTERM received. Exiting.")
 	stopAllServices()
+	err := os.Remove(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"))
+	if err != nil {
+		log.Println("INFO: Can't remove PID file ", err)
+	}
 	log.Println("INFO: All services stopped. Have a nice day.")
 }

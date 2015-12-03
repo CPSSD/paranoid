@@ -91,6 +91,7 @@ func ReadCommand(args []string) {
 				break
 			}
 
+			offset = offset + int64(n)
 			maxRead = maxRead - n
 			if err == io.EOF {
 				io.WriteString(os.Stdout, string(bytesRead[:n]))

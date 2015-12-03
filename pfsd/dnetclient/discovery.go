@@ -3,13 +3,14 @@ package dnetclient
 import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
+	"github.com/cpssd/paranoid/pfsd/upnp"
 	"log"
 	"net"
 	"time"
 )
 
 func SetDiscovery(host, port, serverPort string) {
-	ipClient, _ := pnetclient.GetIP()
+	ipClient, _ := upnp.GetIP()
 	ThisNode = globals.Node{
 		IP:         ipClient,
 		Port:       serverPort,
@@ -41,14 +42,9 @@ func SetDiscovery(host, port, serverPort string) {
 
 func JoinDiscovery(pool string) {
 	if err := Join(pool); err != nil {
-		connectionBuffer := 10
-		log.Println("Error Connecting to Server, Attempting to reconnect")
-		for connectionBuffer > 1 {
-			err = Join(pool)
-			connectionBuffer--
+		if err = retryJoin(pool); err != nil {
+			log.Fatalln("FATAL: Failure dialing discovery server after multiple attempts, Giving up", err)
 		}
-		log.Println("Failure to connect to Discovery Server, Giving Up")
-		return
 	}
 	globals.Wait.Add(2)
 	go pingPeers()
@@ -59,6 +55,8 @@ func JoinDiscovery(pool string) {
 // in pnetclient since pnetclient is stateless and this function is more
 // relevant to discovery.
 func pingPeers() {
+	// Ping as soon as this node joins
+	pnetclient.Ping(globals.Nodes.GetAll())
 	timer := time.NewTimer(peerPingInterval)
 	defer timer.Stop()
 	defer globals.Wait.Done()
@@ -75,9 +73,18 @@ func pingPeers() {
 	}
 }
 
+func retryJoin(pool string) error {
+	var err error
+	for i := 0; i < 10; i++ {
+		err = Join(pool)
+		if err == nil {
+			break
+		}
+	}
+	return err
+}
+
 func renew() {
-	// TODO(sean) Set this to the actual reset interval when implemented
-	globals.ResetInterval = 30000
 	timer := time.NewTimer(globals.ResetInterval * time.Millisecond)
 	defer timer.Stop()
 	defer globals.Wait.Done()

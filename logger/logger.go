@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -38,7 +39,7 @@ type ParanoidLogger struct {
 }
 
 // New creates a new logger and returns a new logger
-func New(currentPackage string, component string, logDirectory string) *ParanoidLogger {
+func New(currentPackage string, component string, logDirectory string) (*ParanoidLogger, error) {
 	l := ParanoidLogger{
 		component: component,
 		curPack:   currentPackage,
@@ -46,11 +47,10 @@ func New(currentPackage string, component string, logDirectory string) *Paranoid
 		logLevel:  INFO,
 		native:    log.New(nil, "", log.LstdFlags)}
 
-	if _, err := os.Stat(logDirectory); err != nil {
-		l.Fatalf("Log directory %s not found\n", logDirectory)
-	}
-	l.SetOutput(STDERR)
-	return &l
+	// Even though this can't throw an error as of 2015-5-12,
+	// we keep the error for extensibility.
+	err := l.SetOutput(STDERR)
+	return &l, err
 }
 
 // SetLogLevel sets the logging level for the logger
@@ -59,7 +59,7 @@ func (l *ParanoidLogger) SetLogLevel(level LogLevel) {
 }
 
 // SetOutput sets the default output for the logger
-func (l *ParanoidLogger) SetOutput(output LogOutput) {
+func (l *ParanoidLogger) SetOutput(output LogOutput) error {
 	var writers []io.Writer
 
 	if STDERR&output == STDERR {
@@ -68,13 +68,14 @@ func (l *ParanoidLogger) SetOutput(output LogOutput) {
 	if LOGFILE&output == LOGFILE {
 		w, err := createFileWriter(l.logDir, l.component)
 		if err != nil {
-			l.Fatal("Cannot write to log file: ", err)
+			return fmt.Errorf("failed accessing log file: %s", err)
 		}
 		writers = append(writers, w)
 	}
 
 	l.writer = io.MultiWriter(writers...)
 	l.native.SetOutput(l.writer)
+	return nil
 }
 
 // AddAdditionalWriter allows to add a custom writer to the logger.

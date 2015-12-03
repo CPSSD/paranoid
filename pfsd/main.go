@@ -8,9 +8,11 @@ import (
 	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
+	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -91,17 +93,6 @@ func main() {
 	pnetserver.ParanoidDir = flag.Arg(0)
 	globals.Wait.Add(1)
 	go startIcAndListen(pnetserver.ParanoidDir)
-	globals.Server, err = pnetclient.GetIP()
-	if err != nil {
-		log.Fatalln("FATAL: Cant get internal IP.")
-	}
-
-	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
-		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "does not exist.")
-	}
-	if _, err := os.Stat(path.Join(pnetserver.ParanoidDir, "meta")); os.IsNotExist(err) {
-		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
-	}
 
 	//Asking for port 0 requests a random free port from the OS.
 	lis, err := net.Listen("tcp", ":0")
@@ -113,9 +104,46 @@ func main() {
 	if err != nil {
 		log.Fatalln("Could not parse port", splits[len(splits)-1], " Error :", err)
 	}
-	dnetclient.SetDiscovery(flag.Arg(1), flag.Arg(2), strconv.Itoa(port))
 	globals.Port = port
+
+	//Try and set up uPnP. Otherwise use internal IP.
+	globals.UPnPEnabled = false
+	err = upnp.DiscoverDevices()
+	if err == nil {
+		log.Println("UPnP devices available")
+		externalPort, err := upnp.AddPortMapping(port)
+		if err == nil {
+			log.Println("UPnP port mapping enabled")
+			globals.Port = externalPort
+			globals.UPnPEnabled = true
+		}
+	}
+
+	globals.Server, err = upnp.GetIP()
+	if err != nil {
+		log.Fatalln("FATAL: Can't get IP. Error : ", err)
+	}
+	log.Println("INFO: Peer address:", globals.Server+":"+strconv.Itoa(globals.Port))
+
+	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
+		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "does not exist.")
+	}
+	if _, err := os.Stat(path.Join(pnetserver.ParanoidDir, "meta")); os.IsNotExist(err) {
+		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
+	}
+
+	dnetclient.SetDiscovery(flag.Arg(1), flag.Arg(2), strconv.Itoa(port))
 	dnetclient.JoinDiscovery("_")
+	createPid("pfsd")
 	startRPCServer(&lis)
 	HandleSignals()
+}
+
+func createPid(processName string) {
+	processID := os.Getpid()
+	pid := []byte(strconv.Itoa(processID))
+	err := ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", processName+".pid"), pid, 0600)
+	if err != nil {
+		log.Fatalln("FATAL: Failed to create PID file", err)
+	}
 }

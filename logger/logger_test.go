@@ -10,8 +10,14 @@ import (
 )
 
 func TestOutput(t *testing.T) {
-	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput(STDERR)
+	log, err := New("testPackage", "testComponent", "/dev/null")
+	if err != nil {
+		t.Fatal("Failed to create new logger:", err)
+	}
+	err = log.SetOutput(STDERR)
+	if err != nil {
+		t.Fatal("Failed to set logger output:", err)
+	}
 
 	const testString = "test"
 
@@ -29,8 +35,14 @@ func TestOutput(t *testing.T) {
 }
 
 func TestOutputf(t *testing.T) {
-	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput(STDERR)
+	log, err := New("testPackage", "testComponent", "/dev/null")
+	if err != nil {
+		t.Fatal("Failed to create new logger:", err)
+	}
+	err = log.SetOutput(STDERR)
+	if err != nil {
+		t.Fatal("Failed to set logger output:", err)
+	}
 
 	testArgs := []string{"testy %s", "test"}
 
@@ -48,8 +60,14 @@ func TestOutputf(t *testing.T) {
 }
 
 func TestLogLevel(t *testing.T) {
-	log := New("testPackage", "testComponent", "/dev/null")
-	log.SetOutput(STDERR)
+	log, err := New("testPackage", "testComponent", "/dev/null")
+	if err != nil {
+		t.Fatal("Failed to create new logger:", err)
+	}
+	err = log.SetOutput(STDERR)
+	if err != nil {
+		t.Fatal("Failed to set logger output:", err)
+	}
 	log.SetLogLevel(INFO)
 
 	var b bytes.Buffer
@@ -65,8 +83,14 @@ func TestLogFile(t *testing.T) {
 	os.Mkdir("/tmp/pfsLogTest", 0777)
 	// Remove the file that the logger is saving to after testing
 	defer os.RemoveAll("/tmp/pfsLogTest")
-	log := New("testPackage", "testComponent", "/tmp/pfsLogTest")
-	log.SetOutput(STDERR | LOGFILE)
+	log, err := New("testPackage", "testComponent", "/tmp/pfsLogTest")
+	if err != nil {
+		t.Fatal("Failed to create new logger:", err)
+	}
+	err = log.SetOutput(STDERR | LOGFILE)
+	if err != nil {
+		t.Fatal("Failed to set logger output:", err)
+	}
 
 	const testString = "test"
 	expected := "[INFO]  testPackage: " + testString + "\n"

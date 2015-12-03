@@ -78,7 +78,7 @@ func UtimesCommand(args []string) {
 	}
 
 	if !Flags.Network {
-		sendToServer(directory, "utimes", args[1:], nil)
+		sendToServer(directory, "utimes", args[1:], input)
 	}
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 }

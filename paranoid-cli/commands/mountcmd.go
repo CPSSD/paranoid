@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"bufio"
+	"fmt"
 	"github.com/codegangsta/cli"
 	"log"
 	"net"
@@ -17,7 +19,7 @@ import (
 func Mount(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 3 {
-		cli.ShowAppHelp(c)
+		cli.ShowCommandHelp(c, "mount")
 		os.Exit(1)
 	}
 	doMount(c, args)
@@ -36,45 +38,79 @@ func doMount(c *cli.Context, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	directory := path.Join(usr.HomeDir, ".pfs", args[1])
+	pfsDir := path.Join(usr.HomeDir, ".pfs", args[1])
 
-	if _, err := os.Stat(path.Join(directory, "contents")); os.IsNotExist(err) {
-		log.Fatalln("FATAL : directory does not include contents directory")
+	if _, err := os.Stat(pfsDir); os.IsNotExist(err) {
+		log.Fatalln("FATAL : PFS directory does not exist")
 	}
-	if _, err := os.Stat(path.Join(directory, "meta")); os.IsNotExist(err) {
-		log.Fatalln("FATAL : directory does not include meta directory")
+	if _, err := os.Stat(path.Join(pfsDir, "contents")); os.IsNotExist(err) {
+		log.Fatalln("FATAL : PFS directory does not include contents directory")
 	}
-	if _, err := os.Stat(path.Join(directory, "names")); os.IsNotExist(err) {
-		log.Fatalln("FATAL : directory does not include names directory")
+	if _, err := os.Stat(path.Join(pfsDir, "meta")); os.IsNotExist(err) {
+		log.Fatalln("FATAL : PFS directory does not include meta directory")
 	}
-	if _, err := os.Stat(path.Join(directory, "inodes")); os.IsNotExist(err) {
-		log.Fatalln("FATAL : directory does not include inodes directory")
+	if _, err := os.Stat(path.Join(pfsDir, "names")); os.IsNotExist(err) {
+		log.Fatalln("FATAL : PFS directory does not include names directory")
+	}
+	if _, err := os.Stat(path.Join(pfsDir, "inodes")); os.IsNotExist(err) {
+		log.Fatalln("FATAL : PFS directory does not include inodes directory")
+	}
+	if pathExists(path.Join(pfsDir, "meta/", "pfsd.pid")) {
+		err = os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
+		if err != nil {
+			log.Fatalln("FATAL : Could not remove old pfsd.pid")
+		}
 	}
 
-	splits := strings.Split(serverAddress, ":")
-	if len(splits) != 2 {
+	splitAddress := strings.Split(serverAddress, ":")
+	if len(splitAddress) != 2 {
 		log.Fatalln("FATAL : server-address in wrong format")
 	}
 
-	cmd := exec.Command("pfsm", "mount", directory, splits[0], splits[1], args[2])
+	cmd := exec.Command("pfsm", "mount", pfsDir, splitAddress[0], splitAddress[1], args[2])
 	err = cmd.Run()
 	if err != nil {
 		log.Fatalln("FATAL error running pfsm mount command : ", err)
 	}
 
-	outfile, err := os.Create(path.Join(directory, "meta", "logs", "pfsdLog.txt"))
+	outfile, err := os.Create(path.Join(pfsDir, "meta", "logs", "pfsdLog.txt"))
 
 	if err != nil {
 		log.Fatalln("FATAL error creating output file")
 	}
 
-	if c.GlobalBool("networkoff") == false {
-		cmd = exec.Command("pfsd", directory, splits[0], splits[1])
-		cmd.Stderr = outfile
-		err = cmd.Start()
+	if !c.GlobalBool("networkoff") {
+		// Check if the cert and key files are present.
+		certPath := path.Join(pfsDir, "meta", "cert.pem")
+		keyPath := path.Join(pfsDir, "meta", "key.pem")
+		if pathExists(certPath) && pathExists(keyPath) {
+			log.Println("INFO: Starting PFSD in secure mode.")
+			//TODO(terry): Add a way to check if the given cert is its own CA,
+			// and skip validation based on that.
+			cmd = exec.Command("pfsd", "-cert="+certPath, "-key="+keyPath,
+				"-skip_verification", pfsDir, splitAddress[0], splitAddress[1])
+			cmd.Stderr = outfile
+			err = cmd.Start()
+		} else {
+			// Start in unsecure mode
+			if !c.Bool("noprompt") {
+				scanner := bufio.NewScanner(os.Stdin)
+				fmt.Print("Starting networking in unsecure mode. Are you sure? [y/N] ")
+				scanner.Scan()
+				answer := strings.ToLower(scanner.Text())
+				if !strings.HasPrefix(answer, "y") {
+					fmt.Println("Okay. Exiting ...")
+					os.Exit(1)
+				}
+			}
+			log.Println("INFO: Starting PFSD in unsecure mode.")
+			cmd = exec.Command("pfsd", pfsDir, splitAddress[0], splitAddress[1])
+			cmd.Stderr = outfile
+			err = cmd.Start()
+		}
 	}
 
-	pfiArgs := []string{directory, args[2]}
+	pfiArgs := []string{pfsDir, args[2]}
 	var pfiFlags []string
 	if c.GlobalBool("verbose") {
 		pfiFlags = append(pfiFlags, "-v")
@@ -84,7 +120,7 @@ func doMount(c *cli.Context, args []string) {
 	}
 
 	cmd = exec.Command("pfi", append(pfiFlags, pfiArgs...)...)
-	outfile, err = os.Create(path.Join(directory, "meta", "logs", "pfiLog.txt"))
+	outfile, err = os.Create(path.Join(pfsDir, "meta", "logs", "pfiLog.txt"))
 
 	if err != nil {
 		log.Fatalln("FATAL error creating output file")

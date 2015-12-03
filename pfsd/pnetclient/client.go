@@ -25,13 +25,12 @@ func SendRequest(socket icserver.FileSystemMessage) {
 	case "unlink":
 		Unlink(ips, socket.Args[0])
 	case "utimes":
-		Utimes(ips,
-			socket.Args[0],
-			socket.Args[1],
-			socket.Args[2],
-			socket.Args[3],
-			socket.Args[4])
+		Utimes(ips, socket.Args[0], socket.Data)
 	case "write":
 		Write(ips, socket.Args[0], socket.Data, socket.Args[1], socket.Args[2])
+	case "mkdir":
+		Mkdir(ips, socket.Args[0], socket.Args[1])
+	case "rmdir":
+		Rmdir(ips, socket.Args[0])
 	}
 }
