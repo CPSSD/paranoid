@@ -16,7 +16,6 @@ func SymlinkCommand(args []string) {
 	}
 
 	directory := args[0]
-	existingFilePath := getParanoidPath(directory, args[1])
 	targetFilePath := getParanoidPath(directory, args[2])
 
 	Log.Verbose("symlink: given directory ", directory)
@@ -24,14 +23,7 @@ func SymlinkCommand(args []string) {
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	// Check does the "existing" file actually exist
-	existingFileType := getFileType(existingFilePath)
-	if existingFileType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
-	}
-
-	// Check is the target file not existing, if it is, quit
+	// Make sure the target file not existing, if it is, quit
 	if getFileType(targetFilePath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
