@@ -13,6 +13,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -34,7 +35,15 @@ func GenCertificate(pfsDir string) error {
 		return fmt.Errorf("could not read user input: %v", err)
 	}
 	validForString := scanner.Text()
-	validFor, err := time.ParseDuration(validForString + "d")
+	validForDays, err := strconv.Atoi(validForString)
+	if err != nil {
+		return fmt.Errorf("could not parse user input as integer: %v", err)
+	}
+	validForString = strconv.Itoa(validForDays*24) + "h"
+	validFor, err := time.ParseDuration(validForString)
+	if err != nil {
+		return fmt.Errorf("could not parse user input as duration: %v", err)
+	}
 	endDate := startDate.Add(validFor)
 
 	// Sets max to 1 << 128

@@ -25,7 +25,7 @@ func TestGenerateCert(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to create fake stdin file:", err)
 	}
-	_, err = fakeStdin.WriteString("1\nParanoid Inc.\ntest.paranoid.com\n")
+	_, err = fakeStdin.WriteString("365\nParanoid Inc.\ntest.paranoid.com\n")
 	if err != nil {
 		t.Fatal("Failed to write to fake stdin file:", err)
 	}
@@ -64,10 +64,10 @@ func TestGenerateCert(t *testing.T) {
 			cert.Subject.Organization[0])
 	}
 	certDuration := cert.NotAfter.Sub(cert.NotBefore)
-	expectedDuration, _ := time.ParseDuration("365d")
-	if certDuration.Hours() != expectedDuration.Hours() {
-		t.Errorf("Certificate duration incorrect. Expected: 365 days. Actual: %.0f\n",
-			certDuration.Hours()/24)
+	expectedDuration, _ := time.ParseDuration("8760h")
+	if certDuration != expectedDuration {
+		t.Errorf("Certificate duration incorrect. Expected: %s. Actual: %s\n",
+			expectedDuration, certDuration)
 	}
 	if cert.DNSNames[0] != "test.paranoid.com" {
 		t.Error("DNS name incorrect. Expected: \"test.paranoid.com\". Actual:",
