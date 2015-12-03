@@ -17,7 +17,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 	for _, node := range Nodes {
 		if node.Data == *req.Node {
 			if node.Active {
-				Log.Errorf("Join: node %s:%s is already part of the cluster", req.Node.Ip, req.Node.Port)
+				Log.Errorf("Join: node %s is already part of the cluster", req.Node)
 				returnError := grpc.Errorf(codes.AlreadyExists,
 					"node is already part of the cluster")
 				return &pb.JoinResponse{}, returnError
@@ -38,7 +38,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 
 	newNode := Node{true, req.Pool, time.Now().Add(RenewInterval), *req.Node}
 	Nodes = append(Nodes, newNode)
-	Log.Infof("Join: Node %s:%s joined \n", req.Node.Ip, req.Node.Port)
+	Log.Infof("Join: Node %s joined \n", req.Node)
 
 	return &response, nil
 }
