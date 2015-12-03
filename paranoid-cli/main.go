@@ -79,6 +79,12 @@ func main() {
 			Usage:     "automount a paranoid file system with previous settings",
 			ArgsUsage: "pfs-name",
 			Action:    commands.AutoMount,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "n, noprompt",
+					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
+				},
+			},
 		},
 		{
 			Name:      "unmount",

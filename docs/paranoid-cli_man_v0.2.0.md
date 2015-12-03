@@ -9,6 +9,7 @@ paranoid-cli(1) -- interact with a paranoid filesystem
 `paranoid-cli` `unmount` `<pfs-name>`<br>
 `paranoid-cli` `list`<br>
 `paranoid-cli` `secure` `<pfs-name>`<br>
+`paranoid-cli` `delete` `<pfs-name>`<br>
 
 ## DESCRIPTION
 
@@ -33,7 +34,10 @@ mount or unmount a paranoid file system.
     This lists all of the currently-existing paranoid filesystems available to mount.
 
 * `secure`:
-    Generate TLS/SSL certificate files for a previously-unsecured paranoid filesystem."
+    Generate TLS/SSL certificate files for a previously-unsecured paranoid filesystem.
+
+* `delete`:
+    Permanently delete a paranoid filesystem.
 
 ## OPTIONS
 
