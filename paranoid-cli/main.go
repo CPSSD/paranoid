@@ -10,6 +10,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
 	app.HelpName = "paranoid-cli"
+	app.Version = "0.2.0"
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:  "verbose",
@@ -26,18 +27,64 @@ func main() {
 			ArgsUsage: "pfs-name",
 			Usage:     "init a new paranoid file system",
 			Action:    commands.Init,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "u, unsecure",
+					Usage: "disable TLS/SSL for this filesystem's network services",
+				},
+				cli.StringFlag{
+					Name:  "cert",
+					Usage: "path to existing certificate file",
+				},
+				cli.StringFlag{
+					Name:  "key",
+					Usage: "path to existing key file",
+				},
+			},
 		},
 		{
 			Name:      "mount",
 			Usage:     "mount a paranoid file system",
 			ArgsUsage: "discovery-server-address pfs-name mountpoint",
 			Action:    commands.Mount,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "n, noprompt",
+					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
+				},
+			},
+		},
+		{
+			Name:      "secure",
+			Usage:     "secure an unsecured paranoid file system",
+			ArgsUsage: "pfs-name",
+			Action:    commands.Secure,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "f, force",
+					Usage: "overwrite any existing cert or key files",
+				},
+				cli.StringFlag{
+					Name:  "cert",
+					Usage: "path to existing certificate file",
+				},
+				cli.StringFlag{
+					Name:  "key",
+					Usage: "path to existing key file",
+				},
+			},
 		},
 		{
 			Name:      "automount",
 			Usage:     "automount a paranoid file system with previous settings",
 			ArgsUsage: "pfs-name",
 			Action:    commands.AutoMount,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "n, noprompt",
+					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
+				},
+			},
 		},
 		{
 			Name:      "unmount",

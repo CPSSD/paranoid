@@ -116,6 +116,14 @@ func main() {
 	dnetclient.SetDiscovery(flag.Arg(1), flag.Arg(2), strconv.Itoa(port))
 	globals.Port = port
 	dnetclient.JoinDiscovery("_")
-	startRPCServer(&lis)
+	srv = grpc.NewServer()
+	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
+
+	processID := os.Getpid()
+	pid := []byte(strconv.Itoa(processID))
+	ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"), pid, 0600)
+	fmt.Println(processID)
+	globals.Wait.Add(1)
+	go srv.Serve(lis)
 	HandleSignals()
 }

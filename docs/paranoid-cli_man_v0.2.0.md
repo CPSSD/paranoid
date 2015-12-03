@@ -1,5 +1,5 @@
-paranoid-cli(8) -- interact with a paranoid filesystem
-=================================================
+paranoid-cli(1) -- interact with a paranoid filesystem
+======================================================
 
 ## SYNOPSIS
 
@@ -7,6 +7,9 @@ paranoid-cli(8) -- interact with a paranoid filesystem
 `paranoid-cli` `mount` `<port>` `<discovery-server-address>` `<pfs-name>` `<mountpoint>`<br>
 `paranoid-cli` `automount` `<pfs-name>`<br>
 `paranoid-cli` `unmount` `<pfs-name>`<br>
+`paranoid-cli` `list`<br>
+`paranoid-cli` `secure` `<pfs-name>`<br>
+`paranoid-cli` `delete` `<pfs-name>`<br>
 
 ## DESCRIPTION
 
@@ -26,6 +29,15 @@ mount or unmount a paranoid file system.
 
 * `unmount`:
 	This is used to unmount the paranoid filesystem mounted at the given mountpoint.
+
+* `list`:
+    This lists all of the currently-existing paranoid filesystems available to mount.
+
+* `secure`:
+    Generate TLS/SSL certificate files for a previously-unsecured paranoid filesystem.
+
+* `delete`:
+    Permanently delete a paranoid filesystem.
 
 ## OPTIONS
 
