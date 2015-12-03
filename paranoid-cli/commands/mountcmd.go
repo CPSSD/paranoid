@@ -33,14 +33,6 @@ func doMount(c *cli.Context, args []string) {
 			log.Fatalln("FATAL : unable to reach server", err)
 		}
 	}
-	pidPath := path.Join(usr.HomeDir, ".pfs", args[0], "meta", "pfsd.pid")
-	if _, err := os.Stat(pidPath); err != nil { // if PFSD is killed -9 then the pid file will still exist.
-		log.Println("INFO: outdated PID file exists, Removing")
-		err = os.Remove(pidPath)
-		if err != nil {
-			log.Println("INFO: PID file cannot be removed")
-		}
-	}
 
 	usr, err := user.Current()
 	if err != nil {
@@ -48,6 +40,9 @@ func doMount(c *cli.Context, args []string) {
 	}
 	pfsDir := path.Join(usr.HomeDir, ".pfs", args[1])
 
+	if _, err := os.Stat(pfsDir); os.IsNotExist(err) {
+		log.Fatalln("FATAL : PFS directory does not exist")
+	}
 	if _, err := os.Stat(path.Join(pfsDir, "contents")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : PFS directory does not include contents directory")
 	}
@@ -59,6 +54,9 @@ func doMount(c *cli.Context, args []string) {
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "inodes")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : PFS directory does not include inodes directory")
+	}
+	if _, err := os.Stat(path.Join(pfsDir, "meta/", "pfsd.pid")); err == nil {
+		os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
 	}
 
 	splitAddress := strings.Split(serverAddress, ":")
