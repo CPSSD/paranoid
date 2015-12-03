@@ -54,6 +54,26 @@ func main() {
 			},
 		},
 		{
+			Name:      "secure",
+			Usage:     "secure an unsecured paranoid file system",
+			ArgsUsage: "pfs-name",
+			Action:    commands.Secure,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "f, force",
+					Usage: "overwrite any existing cert or key files",
+				},
+				cli.StringFlag{
+					Name:  "cert",
+					Usage: "path to existing certificate file",
+				},
+				cli.StringFlag{
+					Name:  "key",
+					Usage: "path to existing key file",
+				},
+			},
+		},
+		{
 			Name:      "automount",
 			Usage:     "automount a paranoid file system with previous settings",
 			ArgsUsage: "pfs-name",

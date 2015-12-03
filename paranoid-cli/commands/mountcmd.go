@@ -122,10 +122,3 @@ func doMount(c *cli.Context, args []string) {
 		log.Fatalln("FATAL error running pfi command : ", err)
 	}
 }
-
-func pathExists(path string) bool {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
