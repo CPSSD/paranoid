@@ -106,15 +106,15 @@ func main() {
 	globals.Port = port
 
 	//Try and set up uPnP. Otherwise use internal IP.
-	globals.UpnpEnabled = false
+	globals.UPnPEnabled = false
 	err = upnp.DiscoverDevices()
 	if err == nil {
-		log.Println("uPnP devices available")
+		log.Println("UPnP devices available")
 		externalPort, err := upnp.AddPortMapping(port)
 		if err == nil {
-			log.Println("uPnP port mapping enabled")
+			log.Println("UPnP port mapping enabled")
 			globals.Port = externalPort
-			globals.UpnpEnabled = false
+			globals.UPnPEnabled = false
 		}
 	}
 

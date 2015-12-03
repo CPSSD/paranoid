@@ -17,7 +17,7 @@ var (
 
 const attemptedPortAssignments = 10
 
-//Discovers uPnP devices on the network.
+//Discovers UPnP devices on the network.
 func DiscoverDevices() error {
 	ipclients, _, err := internetgateway1.NewWANIPConnection1Clients()
 	if err == nil {
@@ -114,7 +114,7 @@ func ClearPortMapping(externalPort int) error {
 	if pppPortMappedClient == nil {
 		return pppPortMappedClient.DeletePortMapping("", uint16(externalPort), "TCP")
 	}
-	return errors.New("No uPnP device available")
+	return errors.New("No UPnP device available")
 }
 
 //Gets the internal Ip address
@@ -154,7 +154,7 @@ func GetExternalIp() (string, error) {
 }
 
 func GetIP() (string, error) {
-	if globals.UpnpEnabled {
+	if globals.UPnPEnabled {
 		return GetExternalIp()
 	} else {
 		return GetInternalIp()
