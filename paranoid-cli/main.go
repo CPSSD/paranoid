@@ -46,6 +46,12 @@ func main() {
 			Usage:     "mount a paranoid file system",
 			ArgsUsage: "discovery-server-address pfs-name mountpoint",
 			Action:    commands.Mount,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "n, noprompt",
+					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
+				},
+			},
 		},
 		{
 			Name:      "automount",
