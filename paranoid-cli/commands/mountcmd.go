@@ -40,6 +40,9 @@ func doMount(c *cli.Context, args []string) {
 	}
 	pfsDir := path.Join(usr.HomeDir, ".pfs", args[1])
 
+	if _, err := os.Stat(pfsDir); os.IsNotExist(err) {
+		log.Fatalln("FATAL : PFS directory does not exist")
+	}
 	if _, err := os.Stat(path.Join(pfsDir, "contents")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : PFS directory does not include contents directory")
 	}
