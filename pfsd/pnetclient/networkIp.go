@@ -3,7 +3,6 @@ package pnetclient
 import (
 	"errors"
 	"net"
-	"strings"
 )
 
 func GetIP() (string, error) {
@@ -18,15 +17,7 @@ func GetIP() (string, error) {
 			case *net.IPAddr:
 				ip = v.IP
 			}
-			if strings.Contains(ip.String(), "192.168.") {
-				return ip.String(), nil
-			}
-			if strings.Contains(ip.String(), "10.") {
-				return ip.String(), nil
-			}
-			if strings.Contains(ip.String(), "17.16.") {
-				return ip.String(), nil
-			}
+			return ip.String(), nil
 		}
 	}
 	return "", errors.New("No IP found")
