@@ -119,12 +119,10 @@ func main() {
 	dnetclient.JoinDiscovery("_")
 	processID := os.Getpid()
 	pid := []byte(strconv.Itoa(processID))
-	ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"), pid, 0600)
-
-	processID := os.Getpid()
-	pid := []byte(strconv.Itoa(processID))
-	ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"), pid, 0600)
-	fmt.Println(processID)
+	err = ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"), pid, 0600)
+	if err != nil {
+		log.Fatalln("FATAL: Failed to create PID file", err)
+	}
 	startRPCServer(&lis)
 	HandleSignals()
 }
