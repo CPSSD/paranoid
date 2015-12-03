@@ -20,7 +20,7 @@ func Ping(ips []globals.Node) {
 
 		_, err := client.Ping(context.Background(), &pb.PingRequest{ip, port, globals.CommonName})
 		if err != nil {
-			log.Println("Can't Ping ", ipAddress.IP+":"+ipAddress.Port)
+			log.Println("Can't Ping ", ipAddress)
 		}
 	}
 }

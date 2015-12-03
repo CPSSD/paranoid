@@ -7,16 +7,17 @@ import (
 	"log"
 )
 
-func Unlink(ips []globals.Node, path string) {
+// Rmdir is used to delete directories
+func Rmdir(ips []globals.Node, directory string) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 
 		defer conn.Close()
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err := client.Unlink(context.Background(), &pb.UnlinkRequest{path})
+		_, err := client.Rmdir(context.Background(), &pb.RmdirRequest{directory})
 		if err != nil {
-			log.Println("Unlink Error on ", ipAddress, "Error:", err)
+			log.Println("Rmdir Error on ", ipAddress, "Error:", err)
 		}
 	}
 }

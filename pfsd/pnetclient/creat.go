@@ -20,7 +20,7 @@ func Creat(ips []globals.Node, filename, permissions string) {
 
 		_, err := client.Creat(context.Background(), &pb.CreatRequest{filename, permissionsInt})
 		if err != nil {
-			log.Println("Failure Sending Message to", ipAddress.IP, ":", ipAddress.Port, " Error:", err)
+			log.Println("Failure Sending Message to", ipAddress, " Error:", err)
 		}
 	}
 }
