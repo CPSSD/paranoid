@@ -6,7 +6,6 @@ import (
 	"github.com/huin/goupnp/dcps/internetgateway1"
 	"math/rand"
 	"net"
-	"strings"
 )
 
 var (
