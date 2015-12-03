@@ -3,9 +3,12 @@
 package dnetserver
 
 import (
+	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"time"
 )
+
+var Log *logger.ParanoidLogger
 
 // DiscoveryServer struct
 type DiscoveryServer struct{}
