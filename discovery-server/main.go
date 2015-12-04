@@ -42,18 +42,18 @@ func main() {
 
 	renewDuration, err := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
 	if err != nil {
-		log.Println("ERROR: parsing renew interval")
+		log.Println("ERROR: parsing renew interval", err)
 	}
 
 	dnetserver.RenewInterval = renewDuration
 
 	if *port < 1 || *port > 65535 {
-		log.Fatalln("FATAL: port must be a number between 1 and 65535, inclusive.")
+		log.Println("FATAL: port must be a number between 1 and 65535, inclusive.")
 		os.Exit(1)
 	}
 
 	if _, err := os.Stat(*logDir); os.IsNotExist(err) {
-		log.Fatalln("FATAL: Log path", *logDir, "does not exist.")
+		log.Println("FATAL: Log path", *logDir, "does not exist.")
 		os.Exit(1)
 	}
 
