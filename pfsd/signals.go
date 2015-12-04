@@ -58,6 +58,9 @@ func handleSIGHUP() {
 func handleSIGTERM() {
 	log.Println("INFO: SIGTERM received. Exiting.")
 	stopAllServices()
-	os.Remove(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"))
+	err := os.Remove(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"))
+	if err != nil {
+		log.Println("INFO: Can't remove PID file ", err)
+	}
 	log.Println("INFO: All services stopped. Have a nice day.")
 }
