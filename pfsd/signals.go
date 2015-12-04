@@ -5,6 +5,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/icserver"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
+	"github.com/kardianos/osext"
 	"log"
 	"os"
 	"os/signal"
@@ -47,7 +48,12 @@ func handleSIGHUP() {
 	execSpec := &syscall.ProcAttr{
 		Env: os.Environ(),
 	}
-	fork, err := syscall.ForkExec(os.Args[0], os.Args, execSpec)
+	pathToSelf, err := osext.Executable()
+	if err != nil {
+		log.Println("WARNING: Could not get path to self:", err)
+		pathToSelf = os.Args[0]
+	}
+	fork, err := syscall.ForkExec(pathToSelf, os.Args, execSpec)
 	if err != nil {
 		log.Println("ERROR: Could not fork child PFSD instance:", err)
 	} else {
