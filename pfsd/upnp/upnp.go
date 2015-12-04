@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	uPnPipClients       []*internetgateway1.WANIPConnection1
-	uPnPpppClients      []*internetgateway1.WANPPPConnection1
+	uPnPClientsIP       []*internetgateway1.WANIPConnection1
+	uPnPClientsPPP      []*internetgateway1.WANPPPConnection1
 	ipPortMappedClient  *internetgateway1.WANIPConnection1
 	pppPortMappedClient *internetgateway1.WANPPPConnection1
 )
@@ -21,11 +21,11 @@ const attemptedPortAssignments = 10
 func DiscoverDevices() error {
 	ipclients, _, err := internetgateway1.NewWANIPConnection1Clients()
 	if err == nil {
-		uPnPipClients = ipclients
+		uPnPClientsIP = ipclients
 	}
 	pppclients, _, err := internetgateway1.NewWANPPPConnection1Clients()
 	if err == nil {
-		uPnPpppClients = pppclients
+		uPnPClientsPPP = pppclients
 	}
 	if len(ipclients) > 0 || len(pppclients) > 0 {
 		return nil
@@ -33,7 +33,7 @@ func DiscoverDevices() error {
 	return errors.New("No devices found")
 }
 
-func getUnOccupiedPortsIp(client *internetgateway1.WANIPConnection1) []int {
+func getUnoccupiedPortsIp(client *internetgateway1.WANIPConnection1) []int {
 	m := make(map[int]bool)
 	i := 0
 	for {
@@ -53,7 +53,7 @@ func getUnOccupiedPortsIp(client *internetgateway1.WANIPConnection1) []int {
 	return openPorts
 }
 
-func getUnOccupiedPortsppp(client *internetgateway1.WANPPPConnection1) []int {
+func getUnoccupiedPortsppp(client *internetgateway1.WANPPPConnection1) []int {
 	m := make(map[int]bool)
 	i := 0
 	for {
@@ -78,8 +78,8 @@ func AddPortMapping(internalPort int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	for _, client := range uPnPipClients {
-		openPorts := getUnOccupiedPortsIp(client)
+	for _, client := range uPnPClientsIP {
+		openPorts := getUnoccupiedPortsIp(client)
 		if len(openPorts) > 0 {
 			for i := 0; i < attemptedPortAssignments; i++ {
 				port := openPorts[rand.Intn(len(openPorts)-1)]
@@ -91,8 +91,8 @@ func AddPortMapping(internalPort int) (int, error) {
 			}
 		}
 	}
-	for _, client := range uPnPpppClients {
-		openPorts := getUnOccupiedPortsppp(client)
+	for _, client := range uPnPClientsPPP {
+		openPorts := getUnoccupiedPortsppp(client)
 		if len(openPorts) > 0 {
 			for i := 0; i < attemptedPortAssignments; i++ {
 				port := openPorts[rand.Intn(len(openPorts)-1)]
@@ -150,7 +150,7 @@ func GetExternalIp() (string, error) {
 			return externalIp, nil
 		}
 	}
-	return "", errors.New("Unabled to get get external IP address")
+	return "", errors.New("Unable to get get external IP address")
 }
 
 func GetIP() (string, error) {

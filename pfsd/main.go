@@ -120,7 +120,7 @@ func main() {
 
 	globals.Server, err = upnp.GetIP()
 	if err != nil {
-		log.Fatalln("FATAL: Cant get IP. Error : ", err)
+		log.Fatalln("FATAL: Can't get IP. Error : ", err)
 	}
 
 	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
