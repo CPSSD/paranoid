@@ -3,7 +3,9 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
+	"io/ioutil"
 	"os"
+	"path"
 )
 
 // ReadlinkCommand reads the value of the symbolic link
@@ -22,17 +24,15 @@ func ReadlinkCommand(args []string) {
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
 
-	linkType := getFileType(link)
-	if linkType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-	}
-
-	// Not actually reading the inode, just getting
-	linkOriginBytes, code := getFileInode(link)
+	linkInode, code := getFileInode(link)
 	if code != returncodes.OK {
-		io.WriteString(os.Stderr, returncodes.GetReturnCode(code))
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
 		return
 	}
 
-	io.WriteString(os.Stderr, string(linkOriginBytes))
+	inodePath := path.Join(directory, "inodes", string(linkInode))
+
+	linkOriginBytes, err := ioutil.ReadFile(inodePath)
+	checkErr("readlink", err)
+	io.WriteString(os.Stdout, string(linkOriginBytes))
 }

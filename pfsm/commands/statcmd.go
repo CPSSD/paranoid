@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"log"
 	"os"
 	"path"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -22,12 +22,12 @@ type statInfo struct {
 //StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
 //Includes the length of the file, ctime, mtime and atime
 func StatCommand(args []string) {
-	verboseLog("stat command called")
+	Log.Verbose("Stat command called")
 	if len(args) < 2 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments")
 	}
 	directory := args[0]
-	verboseLog("stat : given directory = " + directory)
+	Log.Verbose("stat : given directory", directory)
 
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
@@ -59,6 +59,10 @@ func StatCommand(args []string) {
 	} else {
 		mode = os.FileMode(syscall.S_IFDIR | fi.Mode().Perm())
 	}
+	if strings.HasPrefix(args[1], "link") {
+		mode = os.FileMode(syscall.S_IFLNK | fi.Mode().Perm())
+	}
+
 	statData := &statInfo{
 		Length: fi.Size(),
 		Mtime:  fi.ModTime(),

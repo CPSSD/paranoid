@@ -11,7 +11,7 @@ import (
 
 // RenameCommand is called when renaming a file
 func RenameCommand(args []string) {
-	verboseLog("rename command called")
+	Log.Verbose("rename command called")
 	if len(args) < 3 {
 		log.Fatalln("Not enough arguments!")
 	}

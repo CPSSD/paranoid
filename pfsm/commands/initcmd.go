@@ -30,13 +30,13 @@ func checkEmpty(directory string) {
 //InitCommand creates the pvd directory sturucture in args[0]
 //It also gets a UUID and stores it in the meta directory.
 func InitCommand(args []string) {
-	verboseLog("init command called")
+	Log.Verbose("init command called")
 	if len(args) < 1 {
 		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
 	checkEmpty(directory)
-	verboseLog("init : creating new paranoid file system in " + directory)
+	Log.Verbose("init : creating new paranoid file system in " + directory)
 	makeDir(directory, "names")
 	makeDir(directory, "inodes")
 	metaDir := makeDir(directory, "meta")
@@ -44,7 +44,7 @@ func InitCommand(args []string) {
 	makeDir(directory, "contents")
 	uuid, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	uuidString := strings.TrimSpace(string(uuid))
-	verboseLog("init uuid : " + uuidString)
+	Log.Verbose("init uuid : " + uuidString)
 	checkErr("init", err)
 	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), []byte(uuidString), 0600)
 	checkErr("init", err)

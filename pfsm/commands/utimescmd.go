@@ -19,12 +19,12 @@ type timeInfo struct {
 
 //UtimesCommand updates the acess time and modified time of a file
 func UtimesCommand(args []string) {
-	verboseLog("utimes command called")
+	Log.Verbose("utimes command called")
 	if len(args) < 2 {
 		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
-	verboseLog("utimes : given directory = " + directory)
+	Log.Verbose("utimes : given directory = " + directory)
 
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)

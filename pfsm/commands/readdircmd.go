@@ -13,7 +13,7 @@ import (
 
 //ReadDirCommand takes a pfs directory as args[0] and prints a list of the names of the files in that directory 1 per line.
 func ReadDirCommand(args []string) {
-	verboseLog("readdir command called")
+	Log.Verbose("readdir command called")
 	if len(args) < 2 {
 		log.Fatalln("Not enough arguments!")
 	}
@@ -21,7 +21,7 @@ func ReadDirCommand(args []string) {
 	directory := args[0]
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
-	verboseLog("readdir : given directory = " + directory)
+	Log.Verbose("readdir : given directory = " + directory)
 
 	dirpath := ""
 

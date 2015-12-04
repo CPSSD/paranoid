@@ -14,12 +14,12 @@ import (
 //WriteCommand writes data from Stdin to the file given in args[1] in the pfs directory args[0]
 //Can also be given an offset and length as args[2] and args[3] otherwise it writes from the start of the file
 func WriteCommand(args []string) {
-	verboseLog("write command given")
+	Log.Verbose("write command given")
 	if len(args) < 2 {
 		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
-	verboseLog("write : given directory = " + directory)
+	Log.Verbose("write : given directory = " + directory)
 
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
@@ -52,7 +52,7 @@ func WriteCommand(args []string) {
 	getFileLock(directory, fileName, exclusiveLock)
 	defer unLockFile(directory, fileName)
 
-	verboseLog("write : wrting to " + fileName)
+	Log.Verbose("write : wrting to " + fileName)
 	fileData, err := ioutil.ReadAll(os.Stdin)
 	checkErr("write", err)
 

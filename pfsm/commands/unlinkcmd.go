@@ -14,7 +14,7 @@ import (
 // UnlinkCommand removes a filename link from an inode.
 // if that is the only remaining link to the inode it removes the inode and its contents
 func UnlinkCommand(args []string) {
-	verboseLog("unlink command called")
+	Log.Verbose("unlink command called")
 	if len(args) < 2 {
 		log.Fatalln("Not enough arguments!")
 	}
@@ -23,7 +23,7 @@ func UnlinkCommand(args []string) {
 	fileNamePath := getParanoidPath(directory, args[1])
 	fileNamePathType := getFileType(fileNamePath)
 
-	verboseLog("unlink : directory given = " + directory)
+	Log.Verbose("unlink : directory given = " + directory)
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
@@ -53,13 +53,13 @@ func UnlinkCommand(args []string) {
 	}
 
 	// removing filename
-	verboseLog("unlink : deleting file " + fileNamePath)
+	Log.Verbose("unlink : deleting file " + fileNamePath)
 	err = os.Remove(fileNamePath)
 	checkErr("unlink", err)
 
 	// getting inode contents
 	inodePath := path.Join(directory, "inodes", string(inodeBytes))
-	verboseLog("unlink : reading file " + inodePath)
+	Log.Verbose("unlink : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	checkErr("unlink", err)
 	inodeData := &inode{}
@@ -69,21 +69,21 @@ func UnlinkCommand(args []string) {
 	if inodeData.Count == 1 {
 		// remove inode and contents
 		contentsPath := path.Join(directory, "contents", string(inodeBytes))
-		verboseLog("unlink : removing file " + contentsPath)
+		Log.Verbose("unlink : removing file " + contentsPath)
 		err = os.Remove(contentsPath)
 		checkErr("unlink", err)
-		verboseLog("unlink : removing file " + inodePath)
+		Log.Verbose("unlink : removing file " + inodePath)
 		err = os.Remove(inodePath)
 		checkErr("unlink", err)
 	} else {
 		// subtracting one from inode count and saving
 		inodeData.Count--
-		verboseLog("unlink : truncating file " + inodePath)
+		Log.Verbose("unlink : truncating file " + inodePath)
 		err = os.Truncate(inodePath, 0)
 		checkErr("unlink", err)
 		dataToWrite, err := json.Marshal(inodeData)
 		checkErr("unlink", err)
-		verboseLog("unlink : writing to file " + inodePath)
+		Log.Verbose("unlink : writing to file " + inodePath)
 		err = ioutil.WriteFile(inodePath, dataToWrite, 0777)
 		checkErr("unlink", err)
 	}

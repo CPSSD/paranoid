@@ -11,7 +11,7 @@ import (
 
 // RmdirCommand removes a directory
 func RmdirCommand(args []string) {
-	verboseLog("rmdir command called")
+	Log.Verbose("rmdir command called")
 	if len(args) < 2 {
 		log.Fatalln("Not enough arguments!")
 	}

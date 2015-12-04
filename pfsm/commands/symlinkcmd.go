@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 )
 
 // SymlinkCommand creates a symbolic link
@@ -18,8 +19,6 @@ func SymlinkCommand(args []string) {
 	directory := args[0]
 	targetFilePath := getParanoidPath(directory, args[2])
 
-	Log.Verbose("symlink: given directory ", directory)
-
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
@@ -29,10 +28,19 @@ func SymlinkCommand(args []string) {
 		return
 	}
 
+	uuidBytes := generateNewInode()
+	uuidString := string(uuidBytes)
+	Log.Verbose("symlink: uuid", uuidString)
+
 	// Create a new file with content which is the
 	// relative location of the existing file
-	err := ioutil.WriteFile(targetFilePath, []byte(args[1]), 0777)
+	err := ioutil.WriteFile(targetFilePath, uuidBytes, 0600)
 	checkErr("symlink", err)
+
+	err = os.Symlink(os.DevNull, path.Join(directory, "contents", uuidString))
+	checkErr("symlink", err)
+
+	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidString), []byte(args[1]), 0600)
 
 	// Send to the server if not coming from the network
 	if !Flags.Network {
