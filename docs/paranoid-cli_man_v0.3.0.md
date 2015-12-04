@@ -10,6 +10,7 @@ paranoid-cli(1) -- interact with a paranoid filesystem
 `paranoid-cli` `list`<br>
 `paranoid-cli` `secure` `<pfs-name>`<br>
 `paranoid-cli` `delete` `<pfs-name>`<br>
+`paranoid-cli` `restart` `<pfs-name>`<br>
 
 ## DESCRIPTION
 
@@ -38,6 +39,9 @@ mount or unmount a paranoid file system.
 
 * `delete`:
     Permanently delete a paranoid filesystem.
+
+* `restart`:
+    Restart the network services of the named paranoid filesystem.
 
 ## OPTIONS
 

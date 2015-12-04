@@ -16,7 +16,7 @@ import (
 func Unmount(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 1 {
-		cli.ShowAppHelp(c)
+		cli.ShowCommandHelp(c, "unmount")
 		os.Exit(1)
 	}
 
@@ -47,5 +47,4 @@ func Unmount(c *cli.Context) {
 			log.Fatalln("FATAL : Can not kill PFSD,", err)
 		}
 	}
-
 }
