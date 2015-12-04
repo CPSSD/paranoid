@@ -14,7 +14,6 @@ import (
 func Join(pool string) error {
 	conn, err := dialDiscovery()
 	if err != nil {
-		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
 		return errors.New("Failed to dial discovery server")
 	}
 	defer conn.Close()
@@ -31,7 +30,6 @@ func Join(pool string) error {
 			},
 		})
 	if err != nil {
-		log.Println("ERROR: could not join discovery server")
 		return errors.New("Could not join the pool")
 	}
 
