@@ -42,7 +42,7 @@ func main() {
 
 	renewDuration, err := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
 	if err != nil {
-		fmt.Println("ERROR: parsing renew interval")
+		fmt.Println("ERROR: parsing renew interval", err)
 	}
 
 	dnetserver.RenewInterval = renewDuration
