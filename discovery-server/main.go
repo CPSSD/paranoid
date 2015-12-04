@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/cpssd/paranoid/discovery-server/dnetserver"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"log"
 	"net"
 	"os"
 	"strconv"
@@ -42,18 +42,18 @@ func main() {
 
 	renewDuration, err := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
 	if err != nil {
-		log.Println("ERROR: parsing renew interval", err)
+		fmt.Println("ERROR: parsing renew interval", err)
 	}
 
 	dnetserver.RenewInterval = renewDuration
 
 	if *port < 1 || *port > 65535 {
-		log.Println("FATAL: port must be a number between 1 and 65535, inclusive.")
+		fmt.Println("FATAL: port must be a number between 1 and 65535, inclusive.")
 		os.Exit(1)
 	}
 
 	if _, err := os.Stat(*logDir); os.IsNotExist(err) {
-		log.Println("FATAL: Log path", *logDir, "does not exist.")
+		fmt.Println("FATAL: Log path", *logDir, "does not exist.")
 		os.Exit(1)
 	}
 
