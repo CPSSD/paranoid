@@ -56,6 +56,9 @@ func Secure(c *cli.Context) {
 	} else {
 		log.Println("INFO: Generating certificate.")
 		fmt.Println("Generating TLS certificate. Please follow the given instructions.")
-		tls.GenCertificate(pfsDir)
+		err = tls.GenCertificate(pfsDir)
+		if err != nil {
+			log.Fatalln("FATAL: Failed to generate certificate:", err)
+		}
 	}
 }

@@ -12,6 +12,13 @@ import (
 	"path/filepath"
 )
 
+func cleanupPFS(pfsDir string) {
+	err := os.RemoveAll(pfsDir)
+	if err != nil {
+		log.Println("WARNING: Could not successfully clean up PFS directory.")
+	}
+}
+
 //Init inits a new paranoid file system
 func Init(c *cli.Context) {
 	args := c.Args()
@@ -54,6 +61,7 @@ func Init(c *cli.Context) {
 	cmd := exec.Command("pfsm", "init", directory)
 	err = cmd.Run()
 	if err != nil {
+		cleanupPFS(directory)
 		log.Fatalln("FATAL : ", err)
 	}
 
@@ -65,15 +73,21 @@ func Init(c *cli.Context) {
 		log.Println("INFO: Using existing certificate.")
 		err = os.Link(c.String("cert"), path.Join(directory, "meta", "cert.pem"))
 		if err != nil {
+			cleanupPFS(directory)
 			log.Fatalln("FATAL: Failed to copy cert file:", err)
 		}
 		err = os.Link(c.String("key"), path.Join(directory, "meta", "key.pem"))
 		if err != nil {
+			cleanupPFS(directory)
 			log.Fatalln("FATAL: Failed to copy key file:", err)
 		}
 	} else {
 		log.Println("INFO: Generating certificate.")
 		fmt.Println("Generating TLS certificate. Please follow the given instructions.")
-		tls.GenCertificate(directory)
+		err = tls.GenCertificate(directory)
+		if err != nil {
+			cleanupPFS(directory)
+			log.Fatalln("FATAL: Failed to generate certificate:", err)
+		}
 	}
 }
