@@ -117,10 +117,13 @@ func ClearPortMapping(externalPort int) error {
 	return errors.New("No UPnP device available")
 }
 
-//Gets the internal Ip address
+//GetInternalIp gets the internal Ip address
 func GetInternalIp() (string, error) {
 	ifaces, _ := net.Interfaces()
 	for _, i := range ifaces {
+		if (i.Flags & net.FlagLoopback) != 0 {
+			continue
+		}
 		addrs, _ := i.Addrs()
 		for _, addr := range addrs {
 			var ip net.IP
@@ -136,7 +139,7 @@ func GetInternalIp() (string, error) {
 	return "", errors.New("No interfaces found")
 }
 
-//Gets the external IP of the port mapped device.
+//GetExternalIp gets the external IP of the port mapped device.
 func GetExternalIp() (string, error) {
 	if ipPortMappedClient != nil {
 		externalIp, err := ipPortMappedClient.GetExternalIPAddress()
