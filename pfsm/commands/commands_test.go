@@ -4,6 +4,7 @@ package commands
 
 import (
 	"encoding/json"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"os"
 	"os/exec"
@@ -13,6 +14,11 @@ import (
 	"testing"
 	"time"
 )
+
+func TestMain(m *testing.M) {
+	Log = logger.New("commandsTest", "pfsmTest", "/dev/null")
+	os.Exit(m.Run())
+}
 
 func createTestDir(t *testing.T) {
 	err := os.RemoveAll(path.Join(os.TempDir(), "paranoidTest"))
