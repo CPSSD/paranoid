@@ -76,8 +76,6 @@ func pingPeers() {
 }
 
 func renew() {
-	// TODO(sean) Set this to the actual reset interval when implemented
-	globals.ResetInterval = 30000
 	timer := time.NewTimer(globals.ResetInterval * time.Millisecond)
 	defer timer.Stop()
 	defer globals.Wait.Done()

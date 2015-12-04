@@ -23,7 +23,7 @@ func Renew() error {
 
 	_, err = dclient.Renew(context.Background(), &pb.JoinRequest{Node: &pbNode})
 	if err != nil {
-		log.Println("ERROR: could not renew discovery membership")
+		log.Println("ERROR: could not renew discovery membership", err)
 		return errors.New("could not renew discovery membership")
 	}
 

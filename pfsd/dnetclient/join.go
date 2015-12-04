@@ -36,7 +36,10 @@ func Join(pool string) error {
 	}
 
 	interval := response.ResetInterval / 10 * 9
-	globals.ResetInterval, _ = time.ParseDuration(strconv.FormatInt(interval, 10) + "ms")
+	globals.ResetInterval, err = time.ParseDuration(strconv.FormatInt(interval, 10) + "ms")
+	if err != nil {
+		log.Println("ERROR: Invalid Renew Interval", err)
+	}
 
 	for _, node := range response.Nodes {
 		globals.Nodes.Add(globals.Node{IP: node.Ip, Port: node.Port})

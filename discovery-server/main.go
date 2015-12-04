@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/cpssd/paranoid/discovery-server/dnetserver"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"log"
 	"net"
 	"os"
 	"strconv"
@@ -40,17 +40,20 @@ func createRPCServer() *grpc.Server {
 func main() {
 	flag.Parse()
 
-	renewDuration, _ := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
+	renewDuration, err := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
+	if err != nil {
+		log.Println("ERROR: parsing renew interval")
+	}
 
 	dnetserver.RenewInterval = renewDuration
 
 	if *port < 1 || *port > 65535 {
-		fmt.Println("FATAL: port must be a number between 1 and 65535, inclusive.")
+		log.Fatalln("FATAL: port must be a number between 1 and 65535, inclusive.")
 		os.Exit(1)
 	}
 
 	if _, err := os.Stat(*logDir); os.IsNotExist(err) {
-		fmt.Println("FATAL: Log path", *logDir, "does not exist.")
+		log.Fatalln("FATAL: Log path", *logDir, "does not exist.")
 		os.Exit(1)
 	}
 
@@ -80,7 +83,7 @@ func markInactiveNodes() {
 	for {
 		now := time.Now()
 		for i, node := range dnetserver.Nodes {
-			dnetserver.Nodes[i].Active = node.ExpiryTime.Sub(now) < 0
+			dnetserver.Nodes[i].Active = node.ExpiryTime.Sub(now) > 0
 		}
 		time.Sleep(time.Second * 10)
 	}
