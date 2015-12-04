@@ -16,7 +16,7 @@ import (
 func Init(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 1 {
-		cli.ShowAppHelp(c)
+		cli.ShowCommandHelp(c, "init")
 		os.Exit(0)
 	}
 

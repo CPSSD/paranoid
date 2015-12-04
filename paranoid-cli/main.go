@@ -75,6 +75,12 @@ func main() {
 			},
 		},
 		{
+			Name:      "restart",
+			Usage:     "restarts the networking services",
+			ArgsUsage: "pfs-name",
+			Action:    commands.Restart,
+		},
+		{
 			Name:      "automount",
 			Usage:     "automount a paranoid file system with previous settings",
 			ArgsUsage: "pfs-name",
