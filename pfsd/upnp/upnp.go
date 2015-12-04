@@ -133,7 +133,7 @@ func GetInternalIp() (string, error) {
 			return ip.String(), nil
 		}
 	}
-	return "", errors.New("No IP found")
+	return "", errors.New("No interfaces found")
 }
 
 //Gets the external IP of the port mapped device.
