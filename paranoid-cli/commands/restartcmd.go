@@ -20,18 +20,20 @@ func Restart(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("FATAL: Could not get current user:", err)
 	}
 	pidPath := path.Join(usr.HomeDir, ".pfs", args[0], "meta", "pfsd.pid")
-	if _, err := os.Stat(pidPath); err == nil {
-		pidByte, err := ioutil.ReadFile(pidPath)
-		if err != nil {
-			log.Fatalln("FATAL: Can't read pid file", err)
-		}
-		pid, err := strconv.Atoi(string(pidByte))
-		err = syscall.Kill(pid, syscall.SIGHUP)
-		if err != nil {
-			log.Fatalln("FATAL: Can not restart PFSD,", err)
-		}
+	_, err = os.Stat(pidPath)
+	if err != nil {
+		log.Fatalln("FATAL: Could not access PID file:", err)
+	}
+	pidByte, err := ioutil.ReadFile(pidPath)
+	if err != nil {
+		log.Fatalln("FATAL: Can't read PID file:", err)
+	}
+	pid, err := strconv.Atoi(string(pidByte))
+	err = syscall.Kill(pid, syscall.SIGHUP)
+	if err != nil {
+		log.Fatalln("FATAL: Can not restart PFSD:", err)
 	}
 }
