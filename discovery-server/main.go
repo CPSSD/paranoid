@@ -40,7 +40,10 @@ func createRPCServer() *grpc.Server {
 func main() {
 	flag.Parse()
 
-	renewDuration, _ := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
+	renewDuration, err := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
+	if err != nil {
+		fmt.Println("ERROR: parsing renew interval", err)
+	}
 
 	dnetserver.RenewInterval = renewDuration
 
@@ -80,7 +83,7 @@ func markInactiveNodes() {
 	for {
 		now := time.Now()
 		for i, node := range dnetserver.Nodes {
-			dnetserver.Nodes[i].Active = node.ExpiryTime.Sub(now) < 0
+			dnetserver.Nodes[i].Active = node.ExpiryTime.Sub(now) > 0
 		}
 		time.Sleep(time.Second * 10)
 	}
