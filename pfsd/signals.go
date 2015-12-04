@@ -4,10 +4,12 @@ import (
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/icserver"
+	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	"log"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 )
@@ -58,5 +60,9 @@ func handleSIGHUP() {
 func handleSIGTERM() {
 	log.Println("INFO: SIGTERM received. Exiting.")
 	stopAllServices()
+	err := os.Remove(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"))
+	if err != nil {
+		log.Println("INFO: Can't remove PID file ", err)
+	}
 	log.Println("INFO: All services stopped. Have a nice day.")
 }

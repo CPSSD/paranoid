@@ -4,13 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/cpssd/paranoid/discovery-server/dnetserver"
+	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"log"
 	"net"
 	"os"
-	"path"
 	"strconv"
 	"time"
 )
@@ -26,14 +25,14 @@ var (
 func createRPCServer() *grpc.Server {
 	var opts []grpc.ServerOption
 	if *certFile != "" && *keyFile != "" {
-		log.Println("INFO: Starting discovery server with TLS.")
+		dnetserver.Log.Info("Starting discovery server with TLS.")
 		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
 		if err != nil {
-			log.Fatalln("FATAL: Failed to generate TLS credentials:", err)
+			dnetserver.Log.Fatal("Failed to generate TLS credentials:", err)
 		}
 		opts = []grpc.ServerOption{grpc.Creds(creds)}
 	} else {
-		log.Println("INFO: Starting discovery server without TLS.")
+		dnetserver.Log.Info("Starting discovery server without TLS.")
 	}
 	return grpc.NewServer(opts...)
 }
@@ -55,29 +54,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	logFilePath := path.Join(*logDir, "ParanoidDiscovery.log")
-	logFile, err := os.OpenFile(logFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		fmt.Println("FATAL: Cannot write to file", logFilePath)
-		os.Exit(1)
-	}
-	defer logFile.Close()
+	dnetserver.Log = logger.New("main", "discovery-server", *logDir)
 
-	log.SetOutput(logFile)
+	dnetserver.Log.SetOutput(logger.LOGFILE | logger.STDERR)
 
-	log.Println("[I] Starting Paranoid Discovery Server...")
+	dnetserver.Log.Info("Starting Paranoid Discovery Server")
 
 	lis, err := net.Listen("tcp", ":"+strconv.Itoa(*port))
 	if err != nil {
-		log.Fatalf("[F] Failed to listen on port %d: %v.\n", *port, err)
+		dnetserver.Log.Fatalf("Failed to listen on port %d: %v.", *port, err)
 	}
-	log.Println("[I] Listening on port", *port)
+	dnetserver.Log.Info("Listening on port", *port)
 
 	srv := createRPCServer()
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})
 	go srv.Serve(lis)
 	defer srv.Stop()
-	log.Println("[I] gRPC server created")
+	dnetserver.Log.Info("gRPC server created")
 
 	markInactiveNodes()
 }

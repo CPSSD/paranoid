@@ -5,7 +5,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 	"time"
 )
 
@@ -19,7 +18,7 @@ func (s *DiscoveryServer) Renew(ctx context.Context, req *pb.JoinRequest) (*pb.E
 			if node.Active {
 				Nodes[i].ExpiryTime = time.Now().Add(RenewInterval)
 				isActiveNode = true
-				log.Printf("[I] Renew: Node %s:%s renewed \n", req.Node.Ip, req.Node.Port)
+				Log.Infof("Renew: Node %s renewed", req.Node)
 			}
 			isInNodes = true
 			break
@@ -28,10 +27,11 @@ func (s *DiscoveryServer) Renew(ctx context.Context, req *pb.JoinRequest) (*pb.E
 
 	var returnError error
 	if !isInNodes {
-		log.Printf("[E] Renew: node %s:%s not found\n", req.Node.Ip, req.Node.Port)
+		Log.Errorf("Renew: node %s not found\n", req.Node)
 		returnError = grpc.Errorf(codes.NotFound, "node was not found")
 	}
 	if !isActiveNode {
+		Log.Error("Renew: Renewal time is past deadline for node", req.Node.Ip)
 		returnError = grpc.Errorf(codes.DeadlineExceeded, "renewal time is past deadline")
 	}
 	return &pb.EmptyMessage{}, returnError // returns nil if no error
