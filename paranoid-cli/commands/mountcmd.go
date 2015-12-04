@@ -56,7 +56,10 @@ func doMount(c *cli.Context, args []string) {
 		log.Fatalln("FATAL : PFS directory does not include inodes directory")
 	}
 	if pathExists(path.Join(pfsDir, "meta/", "pfsd.pid")) {
-		os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
+		err = os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
+		if err != nil {
+			log.Fatalln("FATAL : Could not remove old pfsd.pid")
+		}
 	}
 
 	splitAddress := strings.Split(serverAddress, ":")
