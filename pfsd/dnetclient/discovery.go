@@ -3,13 +3,14 @@ package dnetclient
 import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
+	"github.com/cpssd/paranoid/pfsd/upnp"
 	"log"
 	"net"
 	"time"
 )
 
 func SetDiscovery(host, port, serverPort string) {
-	ipClient, _ := pnetclient.GetIP()
+	ipClient, _ := upnp.GetIP()
 	ThisNode = globals.Node{
 		IP:         ipClient,
 		Port:       serverPort,
