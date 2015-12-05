@@ -30,6 +30,7 @@ type FileSystemMessage struct {
 
 // handleConnection accepts a connection and handles messages received through the connection
 func handleConnection(conn net.Conn) {
+	defer conn.Close()
 	verboseLog("icserver new connection")
 	defer verboseLog("icserver connection lost")
 

@@ -29,6 +29,7 @@ func removeTestDir(name string) {
 }
 
 func TestFuseExternalUsage(t *testing.T) {
+	t.Skip()
 	createTestDir(t, "pfiTestPfsDir")
 	defer removeTestDir("pfiTestPfsDir")
 	createTestDir(t, "pfiTestMountPoint")
