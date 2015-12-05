@@ -11,7 +11,7 @@ import (
 // Join method for Discovery Server
 func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
 	nodes := getNodes(req.Pool)
-	response := pb.JoinResponse{RenewInterval.Nanoseconds() * 1000 * 1000, nodes}
+	response := pb.JoinResponse{RenewInterval.Nanoseconds() / 1000 / 1000, nodes}
 
 	// Go through each node and check was the node there
 	for _, node := range Nodes {
