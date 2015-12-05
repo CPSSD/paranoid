@@ -45,9 +45,9 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 
 func getNodes(pool string) []*pb.Node {
 	var nodes []*pb.Node
-	for _, node := range Nodes {
-		if node.Pool == pool {
-			nodes = append(nodes, &node.Data)
+	for i := 0; i < len(Nodes); i++ {
+		if Nodes[i].Active && Nodes[i].Pool == pool {
+			nodes = append(nodes, &(Nodes[i].Data))
 		}
 	}
 	return nodes
