@@ -60,6 +60,8 @@ func JoinDiscovery(pool string) {
 // in pnetclient since pnetclient is stateless and this function is more
 // relevant to discovery.
 func pingPeers() {
+	// Ping as soon as this node joins
+	pnetclient.Ping(globals.Nodes.GetAll())
 	timer := time.NewTimer(peerPingInterval)
 	defer timer.Stop()
 	defer globals.Wait.Done()
