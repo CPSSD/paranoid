@@ -39,7 +39,7 @@ type ParanoidLogger struct {
 }
 
 // New creates a new logger and returns a new logger
-func New(currentPackage string, component string, logDirectory string) *ParanoidLogger {
+func New(currentPackage string, component string, logDirectory string) (*ParanoidLogger, error) {
 	l := ParanoidLogger{
 		component: component,
 		curPack:   currentPackage,
@@ -47,8 +47,10 @@ func New(currentPackage string, component string, logDirectory string) *Paranoid
 		logLevel:  INFO,
 		native:    log.New(nil, "", log.LstdFlags)}
 
-	l.SetOutput(STDERR)
-	return &l
+	// Even though this can't throw an error as of 2015-5-12,
+	// we keep the error for extensibility.
+	err := l.SetOutput(STDERR)
+	return &l, err
 }
 
 // SetLogLevel sets the logging level for the logger
