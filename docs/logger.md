@@ -17,10 +17,10 @@ import(
 )
 
 // Initialize an instance of logger
-log := logger.New("currentPackage", "component", "/home/.pfs/example-pfs/meta/log")
+log, err := logger.New("currentPackage", "component", "/home/.pfs/example-pfs/meta/log")
 
 // OPTIONAL: Set the output, default: stderr
-log.SetOutput(logger.STDERR | logger.LOGFILE) // Prints to both stderr and a log file located at {LOGPATH}/{COMPONENT}.log
+err := log.SetOutput(logger.STDERR | logger.LOGFILE) // Prints to both stderr and a log file located at {LOGPATH}/{COMPONENT}.log
 
 // OPTIONAL: Set Logging level, default: INFO
 log.SetLogLevel(logger.WARNING)
