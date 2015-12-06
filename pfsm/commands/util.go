@@ -151,6 +151,7 @@ func deleteFile(filePath string) (returncode int) {
 const (
 	typeFile = iota
 	typeDir
+	typeSymlink
 	typeENOENT
 )
 
@@ -165,5 +166,9 @@ func getFileType(path string) int {
 	if f.Mode().IsDir() {
 		return typeDir
 	}
+	if f.Mode()&os.ModeSymlink == os.ModeSymlink {
+		return typeSymlink
+	}
+
 	return typeFile
 }

@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -54,13 +53,13 @@ func StatCommand(args []string) {
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
 	var mode os.FileMode
-	if namePathType == typeFile {
+	switch namePathType {
+	case typeFile:
 		mode = os.FileMode(stat.Mode)
-	} else {
+	case typeSymlink:
+		mode = os.FileMode(syscall.S_IFLNK | 0777)
+	default:
 		mode = os.FileMode(syscall.S_IFDIR | fi.Mode().Perm())
-	}
-	if strings.HasPrefix(args[1], "link") {
-		mode = os.FileMode(syscall.S_IFLNK | fi.Mode().Perm())
 	}
 
 	statData := &statInfo{
