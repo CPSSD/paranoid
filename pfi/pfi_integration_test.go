@@ -30,7 +30,7 @@ func removeTestDir(name string) {
 }
 
 func TestMain(m *testing.M) {
-	util.Log = logger.New("testPackage", "testComponent", "/dev/null")
+	util.Log, _ = logger.New("testPackage", "testComponent", "/dev/null")
 	os.Exit(m.Run())
 }
 

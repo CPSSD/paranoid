@@ -16,7 +16,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	Log = logger.New("commandsTest", "pfsmTest", "/dev/null")
+	Log, _ = logger.New("commandsTest", "pfsmTest", "/dev/null")
 	os.Exit(m.Run())
 }
 
