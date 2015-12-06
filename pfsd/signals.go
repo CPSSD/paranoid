@@ -16,7 +16,12 @@ import (
 )
 
 func stopAllServices() {
-	upnp.ClearPortMapping(globals.Port)
+	if globals.UPnPEnabled {
+		err := upnp.ClearPortMapping(globals.Port)
+		if err != nil {
+			log.Println("Could not clear port mapping. Error : ", err)
+		}
+	}
 	close(globals.Quit)     // Sends stop signal to all goroutines
 	dnetclient.Disconnect() // Disconnect from the discovery server
 	icserver.StopAccept()

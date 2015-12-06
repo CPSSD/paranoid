@@ -111,7 +111,7 @@ func ClearPortMapping(externalPort int) error {
 	if ipPortMappedClient != nil {
 		return ipPortMappedClient.DeletePortMapping("", uint16(externalPort), "TCP")
 	}
-	if pppPortMappedClient == nil {
+	if pppPortMappedClient != nil {
 		return pppPortMappedClient.DeletePortMapping("", uint16(externalPort), "TCP")
 	}
 	return errors.New("No UPnP device available")
