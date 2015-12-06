@@ -180,11 +180,8 @@ func TestUtimes(t *testing.T) {
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
 	req := pb.UtimesRequest{
-		Path:               "utimes.txt",
-		AccessSeconds:      1,
-		AccessMicroseconds: 1,
-		ModifySeconds:      1,
-		ModifyMicroseconds: 1,
+		Path: "utimes.txt",
+		Data: []byte("{\"atime\":\"1970-01-01T00:00:01.000000001Z\",\"mtime\":\"1970-01-01T00:00:01.000000001Z\"}"),
 	}
 	_, err = client.Utimes(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
