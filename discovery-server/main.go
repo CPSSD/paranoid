@@ -15,7 +15,7 @@ import (
 
 var (
 	port          = flag.Int("port", 10101, "port to listen on")
-	logDir        = flag.String("log_directory", "/var/log", "directory in which to create ParanoidDiscovery.log")
+	logDir        = flag.String("log-directory", "/var/log", "directory in which to create ParanoidDiscovery.log")
 	renewInterval = flag.Int("renew-interval", 5*60*1000, "time after which membership expires, in ms")
 	certFile      = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile       = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
