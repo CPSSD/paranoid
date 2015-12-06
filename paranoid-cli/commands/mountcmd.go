@@ -87,7 +87,7 @@ func doMount(c *cli.Context, args []string) {
 			log.Println("INFO: Starting PFSD in secure mode.")
 			//TODO(terry): Add a way to check if the given cert is its own CA,
 			// and skip validation based on that.
-			cmd = exec.Command("pfsd", "-cert", certPath, "-key", keyPath,
+			cmd = exec.Command("pfsd", "-cert="+certPath, "-key="+keyPath,
 				"-skip_verification", pfsDir, splitAddress[0], splitAddress[1])
 			cmd.Stderr = outfile
 			err = cmd.Start()

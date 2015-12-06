@@ -131,7 +131,7 @@ func main() {
 		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
 	}
 
-	dnetclient.SetDiscovery(os.Args[2], os.Args[3], strconv.Itoa(port))
+	dnetclient.SetDiscovery(flag.Arg(1), flag.Arg(2), strconv.Itoa(port))
 	dnetclient.JoinDiscovery("_")
 	createPid("pfsd")
 	startRPCServer(&lis)
