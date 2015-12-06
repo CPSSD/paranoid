@@ -104,9 +104,10 @@ func RunServer(pfsDirectory string, verboseLogging bool) {
 				return
 			}
 			log.Println("ERROR: IC accept:", err)
+		} else {
+			defer conn.Close()
+			handleConnection(conn)
 		}
-		defer conn.Close()
-		handleConnection(conn)
 	}
 }
 
