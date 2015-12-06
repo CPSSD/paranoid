@@ -80,6 +80,7 @@ func StopAccept() {
 // RunServer runs the server
 // give a true parameter for verbose logging
 func RunServer(pfsDirectory string, verboseLogging bool) {
+	log.Println("Running IC server")
 	defer globals.Wait.Done()
 	sockFilePath := path.Join(pfsDirectory, "meta", "pfic.sock")
 	deleteSockFile(sockFilePath)
@@ -105,8 +106,8 @@ func RunServer(pfsDirectory string, verboseLogging bool) {
 			}
 			log.Println("ERROR: IC accept:", err)
 		} else {
-			defer conn.Close()
 			handleConnection(conn)
+			conn.Close()
 		}
 	}
 }
