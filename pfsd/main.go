@@ -115,7 +115,7 @@ func main() {
 		if err == nil {
 			log.Println("UPnP port mapping enabled")
 			globals.Port = externalPort
-			globals.UPnPEnabled = false
+			globals.UPnPEnabled = true
 		}
 	}
 
