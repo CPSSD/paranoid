@@ -19,7 +19,7 @@ func main() {
 	flag.Parse()
 
 	// Create a logger
-	util.Log = logger.New("main", "pfi", "/dev/null")
+	util.Log, _ = logger.New("pfi", "pfi", "/dev/null")
 	if *logOutput {
 		util.Log.SetLogLevel(logger.VERBOSE)
 	}

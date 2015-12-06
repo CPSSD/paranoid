@@ -10,7 +10,12 @@ import (
 
 func main() {
 	// Create the logger
-	commands.Log = logger.New("pfsm", "pfsm", "/dev/null")
+	var err error
+	commands.Log, err = logger.New("pfsm", "pfsm", "/dev/null")
+	if err != nil {
+		fmt.Println("[ERROR] Can't create logger")
+		os.Exit(1)
+	}
 
 	args := os.Args[1:]
 	var onlyArgs []string
