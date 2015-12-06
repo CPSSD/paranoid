@@ -30,7 +30,6 @@ type FileSystemMessage struct {
 
 // handleConnection accepts a connection and handles messages received through the connection
 func handleConnection(conn net.Conn) {
-	defer conn.Close()
 	verboseLog("icserver new connection")
 	defer verboseLog("icserver connection lost")
 
@@ -106,7 +105,8 @@ func RunServer(pfsDirectory string, verboseLogging bool) {
 			}
 			log.Println("ERROR: IC accept:", err)
 		}
-		go handleConnection(conn)
+		defer conn.Close()
+		handleConnection(conn)
 	}
 }
 
