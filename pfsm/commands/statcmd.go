@@ -46,7 +46,7 @@ func StatCommand(args []string) {
 	fileName := string(fileNameBytes)
 	contentsFile := path.Join(directory, "contents", fileName)
 
-	fi, err := os.Stat(contentsFile)
+	fi, err := os.Lstat(contentsFile)
 	checkErr("stat", err)
 
 	stat := fi.Sys().(*syscall.Stat_t)
@@ -57,7 +57,7 @@ func StatCommand(args []string) {
 	case typeFile:
 		mode = os.FileMode(stat.Mode)
 	case typeSymlink:
-		mode = os.FileMode(syscall.S_IFLNK | 0777)
+		mode = os.FileMode(fi.Mode())
 	default:
 		mode = os.FileMode(syscall.S_IFDIR | fi.Mode().Perm())
 	}

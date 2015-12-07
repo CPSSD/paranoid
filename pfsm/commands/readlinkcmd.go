@@ -34,5 +34,7 @@ func ReadlinkCommand(args []string) {
 
 	linkOriginBytes, err := ioutil.ReadFile(inodePath)
 	checkErr("readlink", err)
+
+	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	io.WriteString(os.Stdout, string(linkOriginBytes))
 }
