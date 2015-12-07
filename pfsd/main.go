@@ -114,6 +114,7 @@ func main() {
 		externalPort, err := upnp.AddPortMapping(port)
 		if err == nil {
 			log.Println("UPnP port mapping enabled")
+			port = externalPort
 			globals.Port = externalPort
 			globals.UPnPEnabled = true
 		}
