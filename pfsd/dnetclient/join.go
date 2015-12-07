@@ -39,10 +39,14 @@ func Join(pool string) error {
 		log.Println("ERROR: Invalid Renew Interval", err)
 	}
 
+	peerList := "Currently Connected: "
 	for _, node := range response.Nodes {
+		peerList += node.Ip + ":" + node.Port + ", "
 		globals.Nodes.Add(globals.Node{IP: node.Ip, Port: node.Port})
 	}
+	log.Println(peerList)
 
 	log.Println("INFO: Successfully joined discovery network")
+
 	return nil
 }
