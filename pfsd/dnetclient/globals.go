@@ -18,6 +18,7 @@ var (
 
 func dialDiscovery() (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithTimeout(2*time.Second))
 	if globals.TLSEnabled {
 		creds := credentials.NewTLS(&tls.Config{
 			ServerName:         discoveryCommonName,
