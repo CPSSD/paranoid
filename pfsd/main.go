@@ -123,6 +123,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("FATAL: Can't get IP. Error : ", err)
 	}
+	log.Println("INFO: Peer address:", globals.Server+":"+string(globals.Port))
 
 	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
 		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "does not exist.")
