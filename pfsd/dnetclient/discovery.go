@@ -42,14 +42,9 @@ func SetDiscovery(host, port, serverPort string) {
 
 func JoinDiscovery(pool string) {
 	if err := Join(pool); err != nil {
-		connectionBuffer := 10
-		log.Println("Error Connecting to Server, Attempting to reconnect")
-		for connectionBuffer > 1 {
-			err = Join(pool)
-			connectionBuffer--
+		if err = reconnect(pool); err != nil {
+			log.Fatalln("Failure dialing discovery server after multiple attempts, Giving up")
 		}
-		log.Println("Failure to connect to Discovery Server, Giving Up")
-		return
 	}
 	globals.Wait.Add(2)
 	go pingPeers()
@@ -76,6 +71,17 @@ func pingPeers() {
 			timer.Reset(peerPingInterval)
 		}
 	}
+}
+
+func reconnect(pool string) error {
+	var err error
+	for i := 0; i < 10; i++ {
+		err = Join(pool)
+		if err == nil {
+			break
+		}
+	}
+	return err
 }
 
 func renew() {
