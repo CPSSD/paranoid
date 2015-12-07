@@ -43,7 +43,7 @@ func SetDiscovery(host, port, serverPort string) {
 func JoinDiscovery(pool string) {
 	if err := Join(pool); err != nil {
 		if err = retryJoin(pool); err != nil {
-			log.Fatalln("Failure dialing discovery server after multiple attempts, Giving up")
+			log.Fatalln("FATAL: Failure dialing discovery server after multiple attempts, Giving up", err)
 		}
 	}
 	globals.Wait.Add(2)
