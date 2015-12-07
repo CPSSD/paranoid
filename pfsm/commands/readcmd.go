@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"log"
 	"os"
 	"path"
 	"strconv"
@@ -13,13 +12,13 @@ import (
 //ReadCommand reads data from a file given as args[1] in pfs directory args[0] and prints it to Stdout
 //Can also be given an offset and length as args[2] and args[3] otherwise it reads the whole file
 func ReadCommand(args []string) {
-	verboseLog("read command called")
+	Log.Verbose("read command called")
 	if len(args) < 2 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]
-	verboseLog("read : given directory = " + directory)
+	Log.Verbose("read : given directory = " + directory)
 
 	namepath := getParanoidPath(directory, args[1])
 
@@ -57,7 +56,7 @@ func ReadCommand(args []string) {
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 
 	if len(args) == 2 {
-		verboseLog("read : reading whole file")
+		Log.Verbose("read : reading whole file")
 		bytesRead := make([]byte, 1024)
 		for {
 			n, err := file.Read(bytesRead)
@@ -73,11 +72,11 @@ func ReadCommand(args []string) {
 		bytesRead := make([]byte, 1024)
 		maxRead := 100000000
 		if len(args) > 3 {
-			verboseLog("read : " + args[3] + " bytes starting at " + args[2])
+			Log.Verbose("read : " + args[3] + " bytes starting at " + args[2])
 			maxRead, err = strconv.Atoi(args[3])
 			checkErr("read", err)
 		} else {
-			verboseLog("read : from " + args[2] + " to end of file")
+			Log.Verbose("read : from " + args[2] + " to end of file")
 		}
 
 		off, err := strconv.Atoi(args[2])

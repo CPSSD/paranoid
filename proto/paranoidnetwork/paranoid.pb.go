@@ -42,10 +42,9 @@ var _ = math.Inf
 type EmptyMessage struct {
 }
 
-func (m *EmptyMessage) Reset()                    { *m = EmptyMessage{} }
-func (m *EmptyMessage) String() string            { return proto.CompactTextString(m) }
-func (*EmptyMessage) ProtoMessage()               {}
-func (*EmptyMessage) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (m *EmptyMessage) Reset()         { *m = EmptyMessage{} }
+func (m *EmptyMessage) String() string { return proto.CompactTextString(m) }
+func (*EmptyMessage) ProtoMessage()    {}
 
 type PingRequest struct {
 	Ip         string `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
@@ -53,20 +52,18 @@ type PingRequest struct {
 	CommonName string `protobuf:"bytes,3,opt,name=common_name" json:"common_name,omitempty"`
 }
 
-func (m *PingRequest) Reset()                    { *m = PingRequest{} }
-func (m *PingRequest) String() string            { return proto.CompactTextString(m) }
-func (*PingRequest) ProtoMessage()               {}
-func (*PingRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (m *PingRequest) Reset()         { *m = PingRequest{} }
+func (m *PingRequest) String() string { return proto.CompactTextString(m) }
+func (*PingRequest) ProtoMessage()    {}
 
 type CreatRequest struct {
 	Path        string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
 	Permissions uint32 `protobuf:"varint,2,opt,name=permissions" json:"permissions,omitempty"`
 }
 
-func (m *CreatRequest) Reset()                    { *m = CreatRequest{} }
-func (m *CreatRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreatRequest) ProtoMessage()               {}
-func (*CreatRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (m *CreatRequest) Reset()         { *m = CreatRequest{} }
+func (m *CreatRequest) String() string { return proto.CompactTextString(m) }
+func (*CreatRequest) ProtoMessage()    {}
 
 type WriteRequest struct {
 	Path   string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
@@ -75,113 +72,87 @@ type WriteRequest struct {
 	Length uint64 `protobuf:"varint,4,opt,name=length" json:"length,omitempty"`
 }
 
-func (m *WriteRequest) Reset()                    { *m = WriteRequest{} }
-func (m *WriteRequest) String() string            { return proto.CompactTextString(m) }
-func (*WriteRequest) ProtoMessage()               {}
-func (*WriteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (m *WriteRequest) Reset()         { *m = WriteRequest{} }
+func (m *WriteRequest) String() string { return proto.CompactTextString(m) }
+func (*WriteRequest) ProtoMessage()    {}
 
 type WriteResponse struct {
 	BytesWritten uint64 `protobuf:"varint,1,opt,name=bytes_written" json:"bytes_written,omitempty"`
 }
 
-func (m *WriteResponse) Reset()                    { *m = WriteResponse{} }
-func (m *WriteResponse) String() string            { return proto.CompactTextString(m) }
-func (*WriteResponse) ProtoMessage()               {}
-func (*WriteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (m *WriteResponse) Reset()         { *m = WriteResponse{} }
+func (m *WriteResponse) String() string { return proto.CompactTextString(m) }
+func (*WriteResponse) ProtoMessage()    {}
 
 type LinkRequest struct {
 	OldPath string `protobuf:"bytes,1,opt,name=old_path" json:"old_path,omitempty"`
 	NewPath string `protobuf:"bytes,2,opt,name=new_path" json:"new_path,omitempty"`
 }
 
-func (m *LinkRequest) Reset()                    { *m = LinkRequest{} }
-func (m *LinkRequest) String() string            { return proto.CompactTextString(m) }
-func (*LinkRequest) ProtoMessage()               {}
-func (*LinkRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (m *LinkRequest) Reset()         { *m = LinkRequest{} }
+func (m *LinkRequest) String() string { return proto.CompactTextString(m) }
+func (*LinkRequest) ProtoMessage()    {}
 
 type UnlinkRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
 }
 
-func (m *UnlinkRequest) Reset()                    { *m = UnlinkRequest{} }
-func (m *UnlinkRequest) String() string            { return proto.CompactTextString(m) }
-func (*UnlinkRequest) ProtoMessage()               {}
-func (*UnlinkRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+func (m *UnlinkRequest) Reset()         { *m = UnlinkRequest{} }
+func (m *UnlinkRequest) String() string { return proto.CompactTextString(m) }
+func (*UnlinkRequest) ProtoMessage()    {}
 
 type RenameRequest struct {
 	OldPath string `protobuf:"bytes,1,opt,name=old_path" json:"old_path,omitempty"`
 	NewPath string `protobuf:"bytes,2,opt,name=new_path" json:"new_path,omitempty"`
 }
 
-func (m *RenameRequest) Reset()                    { *m = RenameRequest{} }
-func (m *RenameRequest) String() string            { return proto.CompactTextString(m) }
-func (*RenameRequest) ProtoMessage()               {}
-func (*RenameRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+func (m *RenameRequest) Reset()         { *m = RenameRequest{} }
+func (m *RenameRequest) String() string { return proto.CompactTextString(m) }
+func (*RenameRequest) ProtoMessage()    {}
 
 type TruncateRequest struct {
 	Path   string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
 	Length uint64 `protobuf:"varint,2,opt,name=length" json:"length,omitempty"`
 }
 
-func (m *TruncateRequest) Reset()                    { *m = TruncateRequest{} }
-func (m *TruncateRequest) String() string            { return proto.CompactTextString(m) }
-func (*TruncateRequest) ProtoMessage()               {}
-func (*TruncateRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+func (m *TruncateRequest) Reset()         { *m = TruncateRequest{} }
+func (m *TruncateRequest) String() string { return proto.CompactTextString(m) }
+func (*TruncateRequest) ProtoMessage()    {}
 
 type UtimesRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
 	Data []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
-func (m *UtimesRequest) Reset()                    { *m = UtimesRequest{} }
-func (m *UtimesRequest) String() string            { return proto.CompactTextString(m) }
-func (*UtimesRequest) ProtoMessage()               {}
-func (*UtimesRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
+func (m *UtimesRequest) Reset()         { *m = UtimesRequest{} }
+func (m *UtimesRequest) String() string { return proto.CompactTextString(m) }
+func (*UtimesRequest) ProtoMessage()    {}
 
 type ChmodRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
 	Mode uint32 `protobuf:"varint,2,opt,name=mode" json:"mode,omitempty"`
 }
 
-func (m *ChmodRequest) Reset()                    { *m = ChmodRequest{} }
-func (m *ChmodRequest) String() string            { return proto.CompactTextString(m) }
-func (*ChmodRequest) ProtoMessage()               {}
-func (*ChmodRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+func (m *ChmodRequest) Reset()         { *m = ChmodRequest{} }
+func (m *ChmodRequest) String() string { return proto.CompactTextString(m) }
+func (*ChmodRequest) ProtoMessage()    {}
 
 type MkdirRequest struct {
 	Directory string `protobuf:"bytes,1,opt,name=directory" json:"directory,omitempty"`
 	Mode      uint32 `protobuf:"varint,2,opt,name=mode" json:"mode,omitempty"`
 }
 
-func (m *MkdirRequest) Reset()                    { *m = MkdirRequest{} }
-func (m *MkdirRequest) String() string            { return proto.CompactTextString(m) }
-func (*MkdirRequest) ProtoMessage()               {}
-func (*MkdirRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
+func (m *MkdirRequest) Reset()         { *m = MkdirRequest{} }
+func (m *MkdirRequest) String() string { return proto.CompactTextString(m) }
+func (*MkdirRequest) ProtoMessage()    {}
 
 type RmdirRequest struct {
 	Directory string `protobuf:"bytes,1,opt,name=directory" json:"directory,omitempty"`
 }
 
-func (m *RmdirRequest) Reset()                    { *m = RmdirRequest{} }
-func (m *RmdirRequest) String() string            { return proto.CompactTextString(m) }
-func (*RmdirRequest) ProtoMessage()               {}
-func (*RmdirRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{12} }
-
-func init() {
-	proto.RegisterType((*EmptyMessage)(nil), "paranoid.EmptyMessage")
-	proto.RegisterType((*PingRequest)(nil), "paranoid.PingRequest")
-	proto.RegisterType((*CreatRequest)(nil), "paranoid.CreatRequest")
-	proto.RegisterType((*WriteRequest)(nil), "paranoid.WriteRequest")
-	proto.RegisterType((*WriteResponse)(nil), "paranoid.WriteResponse")
-	proto.RegisterType((*LinkRequest)(nil), "paranoid.LinkRequest")
-	proto.RegisterType((*UnlinkRequest)(nil), "paranoid.UnlinkRequest")
-	proto.RegisterType((*RenameRequest)(nil), "paranoid.RenameRequest")
-	proto.RegisterType((*TruncateRequest)(nil), "paranoid.TruncateRequest")
-	proto.RegisterType((*UtimesRequest)(nil), "paranoid.UtimesRequest")
-	proto.RegisterType((*ChmodRequest)(nil), "paranoid.ChmodRequest")
-	proto.RegisterType((*MkdirRequest)(nil), "paranoid.MkdirRequest")
-	proto.RegisterType((*RmdirRequest)(nil), "paranoid.RmdirRequest")
-}
+func (m *RmdirRequest) Reset()         { *m = RmdirRequest{} }
+func (m *RmdirRequest) String() string { return proto.CompactTextString(m) }
+func (*RmdirRequest) ProtoMessage()    {}
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
@@ -197,6 +168,7 @@ type ParanoidNetworkClient interface {
 	Creat(ctx context.Context, in *CreatRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
 	Write(ctx context.Context, in *WriteRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	Link(ctx context.Context, in *LinkRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
+	Symlink(ctx context.Context, in *LinkRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
 	Unlink(ctx context.Context, in *UnlinkRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
 	Rename(ctx context.Context, in *RenameRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
 	Truncate(ctx context.Context, in *TruncateRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
@@ -244,6 +216,15 @@ func (c *paranoidNetworkClient) Write(ctx context.Context, in *WriteRequest, opt
 func (c *paranoidNetworkClient) Link(ctx context.Context, in *LinkRequest, opts ...grpc.CallOption) (*EmptyMessage, error) {
 	out := new(EmptyMessage)
 	err := grpc.Invoke(ctx, "/paranoid.ParanoidNetwork/Link", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paranoidNetworkClient) Symlink(ctx context.Context, in *LinkRequest, opts ...grpc.CallOption) (*EmptyMessage, error) {
+	out := new(EmptyMessage)
+	err := grpc.Invoke(ctx, "/paranoid.ParanoidNetwork/Symlink", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -323,6 +304,7 @@ type ParanoidNetworkServer interface {
 	Creat(context.Context, *CreatRequest) (*EmptyMessage, error)
 	Write(context.Context, *WriteRequest) (*WriteResponse, error)
 	Link(context.Context, *LinkRequest) (*EmptyMessage, error)
+	Symlink(context.Context, *LinkRequest) (*EmptyMessage, error)
 	Unlink(context.Context, *UnlinkRequest) (*EmptyMessage, error)
 	Rename(context.Context, *RenameRequest) (*EmptyMessage, error)
 	Truncate(context.Context, *TruncateRequest) (*EmptyMessage, error)
@@ -378,6 +360,18 @@ func _ParanoidNetwork_Link_Handler(srv interface{}, ctx context.Context, dec fun
 		return nil, err
 	}
 	out, err := srv.(ParanoidNetworkServer).Link(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _ParanoidNetwork_Symlink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(LinkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(ParanoidNetworkServer).Symlink(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -489,6 +483,10 @@ var _ParanoidNetwork_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ParanoidNetwork_Link_Handler,
 		},
 		{
+			MethodName: "Symlink",
+			Handler:    _ParanoidNetwork_Symlink_Handler,
+		},
+		{
 			MethodName: "Unlink",
 			Handler:    _ParanoidNetwork_Unlink_Handler,
 		},
@@ -518,38 +516,4 @@ var _ParanoidNetwork_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{},
-}
-
-var fileDescriptor0 = []byte{
-	// 480 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x94, 0x5f, 0x6b, 0x13, 0x41,
-	0x10, 0xc0, 0x6d, 0xbc, 0x84, 0x74, 0x72, 0xd7, 0xea, 0x4a, 0x35, 0x16, 0x14, 0xbd, 0x07, 0x11,
-	0x85, 0x06, 0xed, 0x83, 0xf8, 0x07, 0x7c, 0x10, 0x5f, 0xc4, 0x4a, 0x09, 0x8a, 0x8f, 0x61, 0x9b,
-	0x9b, 0xa6, 0x4b, 0xb2, 0xbb, 0xe7, 0xee, 0x96, 0x90, 0xcf, 0xe3, 0x17, 0x75, 0x77, 0x2f, 0x67,
-	0xe6, 0xb4, 0xb9, 0xea, 0xe3, 0x4c, 0xe6, 0x37, 0x33, 0x7b, 0xf3, 0x23, 0xf0, 0xb0, 0xe4, 0x86,
-	0x2b, 0x2d, 0x0a, 0x85, 0x6e, 0xa9, 0xcd, 0x7c, 0x54, 0xc7, 0x47, 0xa5, 0xd1, 0x4e, 0xb3, 0x7e,
-	0x1d, 0xe7, 0x7b, 0x90, 0x7e, 0x94, 0xa5, 0x5b, 0x9d, 0xa0, 0xb5, 0x7c, 0x86, 0xf9, 0x3b, 0x18,
-	0x9c, 0x0a, 0x35, 0x1b, 0xe3, 0x8f, 0x4b, 0xb4, 0x8e, 0x01, 0x74, 0x44, 0x39, 0xdc, 0x79, 0xb4,
-	0xf3, 0x74, 0x97, 0xa5, 0x90, 0x94, 0xda, 0xb8, 0x61, 0x27, 0x46, 0x77, 0x60, 0x30, 0xd5, 0x52,
-	0x6a, 0x35, 0x51, 0x5c, 0xe2, 0xf0, 0x66, 0x48, 0xe6, 0x2f, 0x20, 0xfd, 0x60, 0x90, 0xbb, 0x1a,
-	0x0f, 0x08, 0x77, 0x17, 0xeb, 0x06, 0x1e, 0x29, 0xd1, 0x48, 0x61, 0xad, 0xd0, 0xca, 0xc6, 0x3e,
-	0x59, 0xfe, 0x09, 0xd2, 0xef, 0x46, 0x38, 0xbc, 0x1a, 0xf1, 0x51, 0xc1, 0x1d, 0x8f, 0xb5, 0x29,
-	0xdb, 0x83, 0x9e, 0x3e, 0x3f, 0xb7, 0xe8, 0xe2, 0xb8, 0x24, 0xc4, 0x0b, 0x54, 0x33, 0x5f, 0x9d,
-	0x84, 0x38, 0x7f, 0x02, 0xd9, 0xba, 0x97, 0x2d, 0xfd, 0x04, 0x64, 0x07, 0x90, 0x9d, 0xad, 0x1c,
-	0xda, 0xc9, 0xd2, 0xa7, 0x1d, 0xaa, 0xd8, 0x35, 0xf1, 0x6b, 0x0e, 0x3e, 0x0b, 0x35, 0xaf, 0x47,
-	0xde, 0x82, 0xbe, 0x5e, 0x14, 0x13, 0x32, 0xd6, 0x67, 0x14, 0x2e, 0xab, 0x4c, 0x7c, 0x6e, 0xfe,
-	0x00, 0xb2, 0x6f, 0x6a, 0x41, 0xa0, 0xc6, 0x9e, 0xf9, 0x31, 0x64, 0x63, 0x0c, 0x1f, 0xe2, 0x7f,
-	0x7a, 0x8e, 0x60, 0xff, 0xab, 0xb9, 0x54, 0x53, 0xbe, 0xed, 0xf5, 0x9b, 0xf7, 0x75, 0xe2, 0xde,
-	0xcf, 0xfd, 0x12, 0x4e, 0x48, 0xb4, 0xff, 0xf0, 0xb1, 0xf2, 0x67, 0xfe, 0x16, 0x17, 0x52, 0x17,
-	0x5b, 0x6b, 0xfd, 0x6f, 0xb8, 0x3e, 0xc2, 0x08, 0xd2, 0x93, 0x79, 0x21, 0x4c, 0x5d, 0x7b, 0x1b,
-	0x76, 0x7d, 0x84, 0x53, 0xa7, 0xcd, 0xea, 0x4a, 0xe0, 0x31, 0xa4, 0x63, 0xd9, 0x0a, 0xbc, 0xfc,
-	0xd9, 0x85, 0xfd, 0xd3, 0xb5, 0x66, 0x5f, 0x2a, 0x0d, 0xd9, 0x2b, 0x48, 0x82, 0x5d, 0xec, 0xe0,
-	0xe8, 0xb7, 0x90, 0xc4, 0xb6, 0xc3, 0xbb, 0x9b, 0x74, 0x43, 0xca, 0x1b, 0xec, 0x35, 0x74, 0xa3,
-	0x58, 0x8c, 0x94, 0x50, 0xd3, 0x5a, 0xd0, 0x37, 0xd0, 0x8d, 0x52, 0x50, 0x94, 0x1a, 0x77, 0x78,
-	0xef, 0xaf, 0x7c, 0x65, 0x8f, 0x67, 0xfd, 0xbe, 0x41, 0x14, 0xba, 0x2f, 0x11, 0xa7, 0x65, 0xe8,
-	0x5b, 0xe8, 0x55, 0xba, 0x30, 0xd2, 0xbd, 0x21, 0x50, 0x3b, 0x5c, 0xc9, 0x44, 0xe1, 0x86, 0x5e,
-	0x2d, 0xf0, 0x7b, 0xe8, 0xd7, 0x52, 0xb1, 0xfb, 0x9b, 0xaa, 0x3f, 0x44, 0xbb, 0x66, 0xf5, 0x28,
-	0x59, 0x63, 0x75, 0xaa, 0xdd, 0x35, 0x77, 0x0a, 0xd2, 0x35, 0xee, 0x44, 0x2c, 0x6c, 0x47, 0xa3,
-	0x83, 0x14, 0xa5, 0x52, 0xb6, 0xa3, 0xd1, 0x46, 0x8a, 0x52, 0x3d, 0xb7, 0xa3, 0x67, 0xbd, 0xf8,
-	0x87, 0x78, 0xfc, 0x2b, 0x00, 0x00, 0xff, 0xff, 0xc2, 0x02, 0x48, 0x6c, 0x32, 0x05, 0x00, 0x00,
 }

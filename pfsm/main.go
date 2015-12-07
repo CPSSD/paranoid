@@ -2,12 +2,21 @@ package main
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsm/commands"
 	"log"
 	"os"
 )
 
 func main() {
+	// Create the logger
+	var err error
+	commands.Log, err = logger.New("pfsm", "pfsm", "/dev/null")
+	if err != nil {
+		fmt.Println("[ERROR] Can't create logger")
+		os.Exit(1)
+	}
+
 	args := os.Args[1:]
 	var onlyArgs []string
 	var onlyFlags []string
@@ -27,6 +36,7 @@ func main() {
 		log.Fatalln("Error, both network and fuse flags are set")
 	}
 	if commands.Flags.Verbose {
+		commands.Log.SetLogLevel(logger.VERBOSE)
 		if len(args) > 0 {
 			givenCmd := args[0]
 			for i := 1; i < len(args); i++ {
@@ -65,6 +75,10 @@ func main() {
 			commands.UnlinkCommand(onlyArgs[1:])
 		case "link":
 			commands.LinkCommand(onlyArgs[1:])
+		case "symlink":
+			commands.SymlinkCommand(onlyArgs[1:])
+		case "readlink":
+			commands.ReadlinkCommand(onlyArgs[1:])
 		case "mkdir":
 			commands.MkdirCommand(onlyArgs[1:])
 		case "rmdir":

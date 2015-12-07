@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfi/filesystem"
 	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
-	"log"
 	"path/filepath"
 
 	"github.com/hanwen/go-fuse/fuse/nodefs"
@@ -17,7 +17,13 @@ func main() {
 	logOutput := flag.Bool("v", false, "Log operations in standard output")
 	markNetwork := flag.Bool("n", false, "Mark file system operations as coming from the network")
 	flag.Parse()
-	util.LogOutput = *logOutput
+
+	// Create a logger
+	util.Log, _ = logger.New("pfi", "pfi", "/dev/null")
+	if *logOutput {
+		util.Log.SetLogLevel(logger.VERBOSE)
+	}
+
 	if *markNetwork {
 		pfsminterface.OriginFlag = "-n"
 	} else {
@@ -26,21 +32,18 @@ func main() {
 	noFlagArgs := flag.Args()
 
 	if len(noFlagArgs) < 2 {
-		log.Fatalln("\nUsage:\npfi [flags] <PfsInitPoint> <MountPoint>")
+		util.Log.Fatal("\nUsage:\npfi [flags] <PfsInitPoint> <MountPoint>")
 	}
 
 	var err error
 	util.PfsDirectory, err = filepath.Abs(noFlagArgs[0])
 	if err != nil {
-		log.Fatalln(err)
+		util.Log.Fatal(err)
 	}
 	util.MountPoint, err = filepath.Abs(noFlagArgs[1])
 	if err != nil {
-		log.Fatalln(err)
+		util.Log.Fatal(err)
 	}
-
-	// configuring log
-	log.SetFlags(log.Ldate | log.Ltime)
 
 	// setting up with fuse
 	opts := pathfs.PathNodeFsOptions{}
@@ -50,7 +53,7 @@ func main() {
 	}, &opts)
 	server, _, err := nodefs.MountRoot(util.MountPoint, nfs.Root(), nil)
 	if err != nil {
-		log.Fatalf("Mount fail: %v\n", err)
+		util.Log.Fatalf("Mount fail: %v\n", err)
 	}
 	server.Serve()
 }

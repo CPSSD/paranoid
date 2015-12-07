@@ -12,12 +12,12 @@ import (
 
 //AccessCommand is used by fuse to check if it has access to a given file.
 func AccessCommand(args []string) {
-	verboseLog("access command given")
+	Log.Verbose("access command given")
 	if len(args) < 3 {
 		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
-	verboseLog("access : given directory = " + directory)
+	Log.Verbose("access : given directory = " + directory)
 
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)

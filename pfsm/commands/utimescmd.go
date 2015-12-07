@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"syscall"
@@ -19,12 +18,12 @@ type timeInfo struct {
 
 //UtimesCommand updates the acess time and modified time of a file
 func UtimesCommand(args []string) {
-	verboseLog("utimes command called")
+	Log.Verbose("utimes command called")
 	if len(args) < 2 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
-	verboseLog("utimes : given directory = " + directory)
+	Log.Verbose("utimes : given directory = " + directory)
 
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
@@ -66,7 +65,7 @@ func UtimesCommand(args []string) {
 	oldatime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	oldmtime := fi.ModTime()
 	if times.Atime == nil && times.Mtime == nil {
-		log.Fatalln("utimes : no times to update!")
+		Log.Fatal("utimes : no times to update!")
 	}
 
 	if times.Atime == nil {

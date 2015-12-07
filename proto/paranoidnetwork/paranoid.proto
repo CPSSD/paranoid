@@ -15,6 +15,7 @@ service ParanoidNetwork {
     rpc Creat (CreatRequest) returns (EmptyMessage) {}
     rpc Write (WriteRequest) returns (WriteResponse) {}
     rpc Link (LinkRequest) returns (EmptyMessage) {}
+    rpc Symlink (LinkRequest) returns (EmptyMessage) {}
     rpc Unlink (UnlinkRequest) returns (EmptyMessage) {}
     rpc Rename (RenameRequest) returns (EmptyMessage) {}
     rpc Truncate (TruncateRequest) returns (EmptyMessage) {}

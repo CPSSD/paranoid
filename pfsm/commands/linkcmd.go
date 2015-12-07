@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 )
@@ -13,16 +12,16 @@ import (
 // LinkCommand creates a link of a file.
 // args[0] is the init point, args[1] is the existing file name, args[2] is the target file name
 func LinkCommand(args []string) {
-	verboseLog("link command called")
+	Log.Verbose("link command called")
 	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]
 	existingFilePath := getParanoidPath(directory, args[1])
 	targetFilePath := getParanoidPath(directory, args[2])
 
-	verboseLog("link : given directory = " + directory)
+	Log.Verbose("link : given directory = " + directory)
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
@@ -57,7 +56,7 @@ func LinkCommand(args []string) {
 
 	// getting contents of inode
 	inodePath := path.Join(directory, "inodes", string(inodeBytes))
-	verboseLog("link : reading file " + inodePath)
+	Log.Verbose("link : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	checkErr("link", err)
 	nodeData := &inode{}
@@ -66,20 +65,20 @@ func LinkCommand(args []string) {
 
 	// itterating count and saving
 	nodeData.Count++
-	verboseLog("link : opening file " + inodePath)
+	Log.Verbose("link : opening file " + inodePath)
 	openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0600)
 	checkErr("link", err)
-	verboseLog("link : truncating file " + inodePath)
+	Log.Verbose("link : truncating file " + inodePath)
 	err = openedFile.Truncate(0)
 	checkErr("link", err)
 	newJSONData, err := json.Marshal(&nodeData)
 	checkErr("link", err)
-	verboseLog("link : writing to file " + inodePath)
+	Log.Verbose("link : writing to file " + inodePath)
 	_, err = openedFile.Write(newJSONData)
 	checkErr("link", err)
 
 	// closing file
-	verboseLog("link : closing file " + inodePath)
+	Log.Verbose("link : closing file " + inodePath)
 	err = openedFile.Close()
 	checkErr("link", err)
 

@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"log"
 	"os"
 	"path"
 	"syscall"
@@ -11,9 +10,9 @@ import (
 
 // RenameCommand is called when renaming a file
 func RenameCommand(args []string) {
-	verboseLog("rename command called")
+	Log.Verbose("rename command called")
 	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsm/icclient"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io/ioutil"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"syscall"
 )
+
+var Log *logger.ParanoidLogger
 
 func getAccessMode(flags uint32) uint32 {
 	switch flags {
@@ -148,6 +151,7 @@ func deleteFile(filePath string) (returncode int) {
 const (
 	typeFile = iota
 	typeDir
+	typeSymlink
 	typeENOENT
 )
 
@@ -157,10 +161,14 @@ func getFileType(path string) int {
 		if os.IsNotExist(err) {
 			return typeENOENT
 		}
-		log.Fatalln("util, getFileType", " error occured: ", err)
+		Log.Fatal("util, getFileType", " error occured: ", err)
 	}
 	if f.Mode().IsDir() {
 		return typeDir
 	}
+	if f.Mode()&os.ModeSymlink == os.ModeSymlink {
+		return typeSymlink
+	}
+
 	return typeFile
 }

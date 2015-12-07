@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strconv"
@@ -18,12 +17,12 @@ type inode struct {
 
 //CreatCommand creates a new file with the name args[1] in the pfs directory args[0]
 func CreatCommand(args []string) {
-	verboseLog("creat command called")
+	Log.Verbose("creat command called")
 	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
-	verboseLog("creat : directory = " + directory)
+	Log.Verbose("creat : directory = " + directory)
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
@@ -34,11 +33,11 @@ func CreatCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}
-	verboseLog("creat : creating file " + args[1])
+	Log.Verbose("creat : creating file " + args[1])
 
 	uuidbytes := generateNewInode()
 	uuidstring := string(uuidbytes)
-	verboseLog("creat : uuid = " + uuidstring)
+	Log.Verbose("creat : uuid = " + uuidstring)
 
 	perms, err := strconv.ParseInt(args[2], 8, 32)
 	checkErr("creat", err)

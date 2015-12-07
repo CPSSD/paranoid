@@ -12,12 +12,12 @@ import (
 
 //ChmodCommand is used to change the permissions of a file.
 func ChmodCommand(args []string) {
-	verboseLog("chmod command given")
+	Log.Verbose("chmod command given")
 	if len(args) < 3 {
 		log.Fatalln("Not enough arguments!")
 	}
 	directory := args[0]
-	verboseLog("chmod : given directory = " + directory)
+	Log.Verbose("chmod : given directory = " + directory)
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
@@ -42,7 +42,7 @@ func ChmodCommand(args []string) {
 		return
 	}
 
-	verboseLog("chmod : changing permissions of " + fileName + " to " + args[2])
+	Log.Verbose("chmod : changing permissions of " + fileName + " to " + args[2])
 	perms, err := strconv.ParseInt(args[2], 8, 32)
 	checkErr("chmod", err)
 

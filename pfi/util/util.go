@@ -1,22 +1,16 @@
 package util
 
 import (
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"github.com/hanwen/go-fuse/fuse"
-	"log"
 	"syscall"
 )
 
-var LogOutput bool
 var MountPoint string
 var PfsDirectory string
-
-//LogMessage checks if the -v flag was specified and either logs or doesnt log the message
-func LogMessage(message string) {
-	if LogOutput {
-		log.Println(message)
-	}
-}
+var LogOutput bool
+var Log *logger.ParanoidLogger
 
 func GetFuseReturnCode(retcode int) fuse.Status {
 	switch retcode {

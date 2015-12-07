@@ -14,6 +14,8 @@ func SendRequest(socket icserver.FileSystemMessage) {
 		Creat(ips, socket.Args[0], socket.Args[1])
 	case "link":
 		Link(ips, socket.Args[0], socket.Args[1])
+	case "symlink":
+		Symlink(ips, socket.Args[0], socket.Args[1])
 	case "ping":
 		Ping(ips)
 	case "rename":

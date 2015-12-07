@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -13,15 +12,15 @@ import (
 
 //ReadDirCommand takes a pfs directory as args[0] and prints a list of the names of the files in that directory 1 per line.
 func ReadDirCommand(args []string) {
-	verboseLog("readdir command called")
+	Log.Verbose("readdir command called")
 	if len(args) < 2 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]
 	getFileSystemLock(directory, sharedLock)
 	defer unLockFileSystem(directory)
-	verboseLog("readdir : given directory = " + directory)
+	Log.Verbose("readdir : given directory = " + directory)
 
 	dirpath := ""
 

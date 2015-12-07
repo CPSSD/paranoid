@@ -2,7 +2,6 @@ package pfsminterface
 
 import (
 	"github.com/cpssd/paranoid/pfi/util"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -22,25 +21,25 @@ func RunCommand(stdinData []byte, cmdArgs ...string) (int, []byte) {
 	if stdinData != nil {
 		stdinPipe, err := command.StdinPipe()
 		if err != nil {
-			log.Fatalln("Error running pfsm command :", err)
+			util.Log.Fatal("Error running pfsm command :", err)
 		}
 		_, err = stdinPipe.Write(stdinData)
 		if err != nil {
-			log.Fatalln("Error running pfsm command :", err)
+			util.Log.Fatal("Error running pfsm command :", err)
 		}
 		err = stdinPipe.Close()
 		if err != nil {
-			log.Fatalln("Error running pfsm command :", err)
+			util.Log.Fatal("Error running pfsm command :", err)
 		}
 	}
 
 	output, err := command.Output()
 	if err != nil {
-		log.Fatalln("Error running pfsm command :", err)
+		util.Log.Fatal("Error running pfsm command :", err)
 	}
 	code, err := strconv.Atoi(string(output[0:2]))
 	if err != nil {
-		log.Fatalln("Invalid pfsm return code :", err)
+		util.Log.Fatal("Invalid pfsm return code :", err)
 	}
 	return code, output[2:]
 }

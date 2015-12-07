@@ -4,16 +4,15 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 )
 
 // RmdirCommand removes a directory
 func RmdirCommand(args []string) {
-	verboseLog("rmdir command called")
+	Log.Verbose("rmdir command called")
 	if len(args) < 2 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]
