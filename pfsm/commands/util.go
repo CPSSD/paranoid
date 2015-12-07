@@ -161,7 +161,7 @@ func getFileType(path string) int {
 		if os.IsNotExist(err) {
 			return typeENOENT
 		}
-		log.Fatalln("util, getFileType", " error occured: ", err)
+		Log.Fatal("util, getFileType", " error occured: ", err)
 	}
 	if f.Mode().IsDir() {
 		return typeDir

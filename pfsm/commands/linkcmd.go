@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 )
@@ -15,7 +14,7 @@ import (
 func LinkCommand(args []string) {
 	Log.Verbose("link command called")
 	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]

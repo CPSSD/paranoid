@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strconv"
@@ -16,7 +15,7 @@ import (
 func WriteCommand(args []string) {
 	Log.Verbose("write command given")
 	if len(args) < 2 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
 	Log.Verbose("write : given directory = " + directory)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"log"
 	"os"
 	"path"
 	"strconv"
@@ -14,7 +13,7 @@ import (
 func MkdirCommand(args []string) {
 	Log.Verbose("mkdir command called")
 	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]

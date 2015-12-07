@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"log"
 	"os"
 	"path"
 	"strconv"
@@ -15,7 +14,7 @@ import (
 func ReadCommand(args []string) {
 	Log.Verbose("read command called")
 	if len(args) < 2 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]

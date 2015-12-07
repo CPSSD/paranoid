@@ -23,7 +23,7 @@ func checkEmpty(directory string) {
 	files, err := ioutil.ReadDir(directory)
 	checkErr("init", err)
 	if len(files) > 0 {
-		log.Fatalln("init : directory must be empty")
+		Log.Fatal("init: directory must be empty")
 	}
 }
 

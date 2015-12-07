@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"log"
 	"os"
 	"path"
 	"syscall"
@@ -13,7 +12,7 @@ import (
 func RenameCommand(args []string) {
 	Log.Verbose("rename command called")
 	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 
 	directory := args[0]

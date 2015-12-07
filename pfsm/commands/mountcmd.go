@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -15,7 +14,7 @@ import (
 func MountCommand(args []string) {
 	Log.Verbose("mount command called")
 	if len(args) < 4 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
 	Log.Verbose("mount : given directory = " + directory)

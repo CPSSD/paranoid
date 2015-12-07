@@ -30,7 +30,7 @@ func NewParanoidFile(name string) nodefs.File {
 
 //Read reads a file and returns an array of bytes
 func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
-	util.Log.Verbose("Read called on file : " + f.Name)
+	util.Log.Info("Read called on file:", f.Name)
 	code, data := pfsminterface.RunCommand(nil, "read", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(buf)), 10))
 	copy(buf, data)
 	if code != returncodes.OK {
@@ -41,7 +41,7 @@ func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status
 
 //Write writes to a file
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
-	util.Log.Verbose("Write called on file : " + f.Name)
+	util.Log.Info("Write called on file : " + f.Name)
 	code, output := pfsminterface.RunCommand(content, "write", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(content)), 10))
 	if code != returncodes.OK {
 		return 0, util.GetFuseReturnCode(code)
@@ -56,7 +56,7 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 
 //Truncate is called when a file is to be reduced in length to size.
 func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
-	util.Log.Verbose("Truncate called on file : " + f.Name)
+	util.Log.Info("Truncate called on file : " + f.Name)
 	code, _ := pfsminterface.RunCommand(nil, "truncate", util.PfsDirectory, f.Name, strconv.FormatInt(int64(size), 10))
 	return util.GetFuseReturnCode(code)
 }
@@ -69,7 +69,7 @@ type timeInfo struct {
 
 //Utimens updates the access and mofication time of the file.
 func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
-	util.Log.Verbose("Utimens called on file : " + f.Name)
+	util.Log.Info("Utimens called on file : " + f.Name)
 	newTimes := &timeInfo{
 		Atime: atime,
 		Mtime: mtime}
@@ -83,7 +83,7 @@ func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 
 //Chmod changes the permission flags of the file
 func (f *ParanoidFile) Chmod(perms uint32) fuse.Status {
-	util.Log.Verbose("Chmod called on file : " + f.Name)
+	util.Log.Info("Chmod called on file : " + f.Name)
 	code, _ := pfsminterface.RunCommand(nil, "chmod", util.PfsDirectory, f.Name, strconv.FormatInt(int64(perms), 8))
 	return util.GetFuseReturnCode(code)
 }

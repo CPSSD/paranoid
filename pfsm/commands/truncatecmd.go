@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
-	"log"
 	"os"
 	"path"
 	"strconv"
@@ -14,7 +13,7 @@ import (
 func TruncateCommand(args []string) {
 	Log.Verbose("truncate command given")
 	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
 	Log.Verbose("truncate : given directory = " + directory)

@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strconv"
@@ -20,7 +19,7 @@ type inode struct {
 func CreatCommand(args []string) {
 	Log.Verbose("creat command called")
 	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
+		Log.Fatal("Not enough arguments!")
 	}
 	directory := args[0]
 	Log.Verbose("creat : directory = " + directory)
