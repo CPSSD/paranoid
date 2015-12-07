@@ -42,7 +42,7 @@ func SetDiscovery(host, port, serverPort string) {
 
 func JoinDiscovery(pool string) {
 	if err := Join(pool); err != nil {
-		if err = reconnect(pool); err != nil {
+		if err = retryJoin(pool); err != nil {
 			log.Fatalln("Failure dialing discovery server after multiple attempts, Giving up")
 		}
 	}
@@ -73,7 +73,7 @@ func pingPeers() {
 	}
 }
 
-func reconnect(pool string) error {
+func retryJoin(pool string) error {
 	var err error
 	for i := 0; i < 10; i++ {
 		err = Join(pool)
