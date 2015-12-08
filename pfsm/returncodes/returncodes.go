@@ -12,6 +12,7 @@ const (
 	EEXIST    //File already exists
 	ENOTEMPTY //Directory not empty
 	EISDIR    //Is Directory
+	EIO       //Input/Output error
 	ENOTDIR   //Isn't Directory
 )
 

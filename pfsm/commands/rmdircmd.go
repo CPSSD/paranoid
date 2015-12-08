@@ -24,7 +24,7 @@ func RmdirCommand(args []string) {
 	if dirType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
-	} else if dirType == typeFile {
+	} else if dirType != typeDir {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTDIR))
 		return
 	} else {

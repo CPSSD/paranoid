@@ -36,6 +36,11 @@ func ReadCommand(args []string) {
 		return
 	}
 
+	if fileType == typeSymlink {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
+		return
+	}
+
 	fileNameBytes, code := getFileInode(namepath)
 	if code != returncodes.OK {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))

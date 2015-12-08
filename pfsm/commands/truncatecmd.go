@@ -28,8 +28,14 @@ func TruncateCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+
 	if namepathType == typeDir {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
+		return
+	}
+
+	if namepathType == typeSymlink {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
 		return
 	}
 

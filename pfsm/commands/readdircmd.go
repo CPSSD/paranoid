@@ -37,6 +37,10 @@ func ReadDirCommand(args []string) {
 			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTDIR))
 			return
 		}
+		if pathFileType == typeSymlink {
+			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
+			return
+		}
 	}
 
 	files, err := ioutil.ReadDir(dirpath)

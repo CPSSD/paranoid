@@ -82,6 +82,10 @@ func convertCodeToError(code int, path string) error {
 			"%s is a directory",
 			path)
 		return returnError
+	case returncodes.EIO:
+		log.Println("INFO: Unexpected input or output from command.")
+		returnError := grpc.Errorf(codes.Unknown, "Unexpected input or output")
+		return returnError
 	case returncodes.ENOTDIR:
 		log.Printf("INFO: %s is not a directory.\n", path)
 		returnError := grpc.Errorf(codes.InvalidArgument,
