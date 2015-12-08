@@ -75,7 +75,7 @@ func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 		Mtime: mtime}
 	jsonTimes, err := json.Marshal(newTimes)
 	if err != nil {
-		util.Log.Fatal("Could not marshal time info")
+		util.Log.Fatal("Could not marshal time info:", err)
 	}
 	code, _ := pfsminterface.RunCommand(jsonTimes, "utimes", util.PfsDirectory, f.Name)
 	return util.GetFuseReturnCode(code)
