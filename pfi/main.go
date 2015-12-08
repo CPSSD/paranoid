@@ -20,6 +20,7 @@ func main() {
 
 	// Create a logger
 	util.Log, _ = logger.New("pfi", "pfi", "/dev/null")
+	util.LogOutput = *logOutput
 	if *logOutput {
 		util.Log.SetLogLevel(logger.VERBOSE)
 	}

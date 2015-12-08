@@ -42,7 +42,7 @@ func main() {
 			for i := 1; i < len(args); i++ {
 				givenCmd = givenCmd + " " + args[i]
 			}
-			log.Println("Given command : ", givenCmd)
+			commands.Log.Verbose("Given command :", givenCmd)
 		}
 	}
 	if len(onlyArgs) > 0 {
