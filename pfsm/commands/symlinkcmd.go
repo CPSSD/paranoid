@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
@@ -44,7 +45,17 @@ func SymlinkCommand(args []string) {
 		Log.Fatal("error creating symlink:", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidString), []byte(args[1]), 0600)
+	nodeData := &inode{
+		Inode: uuidString,
+		Count: 1,
+		Link:  args[1],
+	}
+	jsonData, err := json.Marshal(nodeData)
+	if err != nil {
+		Log.Fatal("error marshalling json:", err)
+	}
+
+	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidString), jsonData, 0600)
 
 	// Send to the server if not coming from the network
 	if !Flags.Network {

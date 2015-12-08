@@ -10,11 +10,6 @@ import (
 	"strconv"
 )
 
-type inode struct {
-	Count int    `json:"count"`
-	Inode string `json:"inode"`
-}
-
 //CreatCommand creates a new file with the name args[1] in the pfs directory args[0]
 func CreatCommand(args []string) {
 	Log.Info("creat command called")

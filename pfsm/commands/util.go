@@ -14,6 +14,12 @@ import (
 
 var Log *logger.ParanoidLogger
 
+type inode struct {
+	Count int    `json:"count"`
+	Inode string `json:"inode"`
+	Link  string `json:"link,omitempty"`
+}
+
 func getAccessMode(flags uint32) uint32 {
 	switch flags {
 	case syscall.O_RDONLY:

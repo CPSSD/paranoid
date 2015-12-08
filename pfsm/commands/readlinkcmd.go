@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
@@ -32,11 +33,18 @@ func ReadlinkCommand(args []string) {
 
 	inodePath := path.Join(directory, "inodes", string(linkInode))
 
-	linkOriginBytes, err := ioutil.ReadFile(inodePath)
+	inodeContents, err := ioutil.ReadFile(inodePath)
 	if err != nil {
 		Log.Fatal("error reading link:", err)
 	}
 
+	inodeData := &inode{}
+	Log.Verbose("unlink unmarshaling ", string(inodeContents))
+	err = json.Unmarshal(inodeContents, &inodeData)
+	if err != nil {
+		Log.Fatal("error unmarshaling json ", err)
+	}
+
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
-	io.WriteString(os.Stdout, string(linkOriginBytes))
+	io.WriteString(os.Stdout, string(inodeData.Link))
 }
