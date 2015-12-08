@@ -35,6 +35,11 @@ func LinkCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
 		return
 	}
+	if existingFileType == typeSymlink {
+		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
+		return
+	}
+
 	if getFileType(targetFilePath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return

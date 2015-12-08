@@ -28,6 +28,7 @@ func RenameCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+
 	if newFileType != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
@@ -38,6 +39,7 @@ func RenameCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
 		return
 	}
+
 	err := syscall.Access(path.Join(directory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))

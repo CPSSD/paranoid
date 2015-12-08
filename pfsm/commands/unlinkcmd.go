@@ -32,6 +32,7 @@ func UnlinkCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+
 	if fileNamePathType == typeDir {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
 		return

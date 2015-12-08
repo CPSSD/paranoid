@@ -26,6 +26,8 @@ func GetFuseReturnCode(retcode int) fuse.Status {
 		return fuse.ENOTDIR
 	case returncodes.EISDIR:
 		return fuse.Status(syscall.EISDIR)
+	case returncodes.EIO:
+		return fuse.EIO
 	default:
 		return fuse.OK
 	}
