@@ -12,7 +12,7 @@ import (
 
 //ReadDirCommand takes a pfs directory as args[0] and prints a list of the names of the files in that directory 1 per line.
 func ReadDirCommand(args []string) {
-	Log.Verbose("readdir command called")
+	Log.Info("readdir command called")
 	if len(args) < 2 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -40,7 +40,10 @@ func ReadDirCommand(args []string) {
 	}
 
 	files, err := ioutil.ReadDir(dirpath)
-	checkErr("readdir", err)
+	if err != nil {
+		Log.Fatal("error reading directory:", err)
+	}
+
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	for i := 0; i < len(files); i++ {
 		file := files[i].Name()

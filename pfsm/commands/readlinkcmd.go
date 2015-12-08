@@ -11,7 +11,7 @@ import (
 // ReadlinkCommand reads the value of the symbolic link
 // args[0] is the init point and args[1] is the link
 func ReadlinkCommand(args []string) {
-	Log.Verbose("readlink called")
+	Log.Info("readlink called")
 	if len(args) < 2 {
 		Log.Fatal("not enough arguments")
 	}
@@ -33,7 +33,9 @@ func ReadlinkCommand(args []string) {
 	inodePath := path.Join(directory, "inodes", string(linkInode))
 
 	linkOriginBytes, err := ioutil.ReadFile(inodePath)
-	checkErr("readlink", err)
+	if err != nil {
+		Log.Fatal("error reading link:", err)
+	}
 
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	io.WriteString(os.Stdout, string(linkOriginBytes))

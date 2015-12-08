@@ -12,7 +12,7 @@ import (
 //ReadCommand reads data from a file given as args[1] in pfs directory args[0] and prints it to Stdout
 //Can also be given an offset and length as args[2] and args[3] otherwise it reads the whole file
 func ReadCommand(args []string) {
-	Log.Verbose("read command called")
+	Log.Info("read command called")
 	if len(args) < 2 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -30,6 +30,7 @@ func ReadCommand(args []string) {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}
+
 	if fileType == typeDir {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
 		return
@@ -52,7 +53,9 @@ func ReadCommand(args []string) {
 	defer unLockFile(directory, fileName)
 
 	file, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_RDONLY, 0777)
-	checkErr("read", err)
+	if err != nil {
+		Log.Fatal("error opening contents file", err)
+	}
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 
 	if len(args) == 2 {
@@ -61,7 +64,9 @@ func ReadCommand(args []string) {
 		for {
 			n, err := file.Read(bytesRead)
 			if err != io.EOF {
-				checkErr("read", err)
+				if err != nil {
+					Log.Fatal("error reading file:", err)
+				}
 			}
 			io.WriteString(os.Stdout, string(bytesRead[:n]))
 			if n < 1024 {
@@ -74,13 +79,17 @@ func ReadCommand(args []string) {
 		if len(args) > 3 {
 			Log.Verbose("read : " + args[3] + " bytes starting at " + args[2])
 			maxRead, err = strconv.Atoi(args[3])
-			checkErr("read", err)
+			if err != nil {
+				Log.Fatal("error converting length from string to int:", err)
+			}
 		} else {
 			Log.Verbose("read : from " + args[2] + " to end of file")
 		}
 
 		off, err := strconv.Atoi(args[2])
-		checkErr("read", err)
+		if err != nil {
+			Log.Fatal("error converting offset from string to int:", err)
+		}
 		offset := int64(off)
 		for {
 			n, err := file.ReadAt(bytesRead, offset)
@@ -96,7 +105,9 @@ func ReadCommand(args []string) {
 				io.WriteString(os.Stdout, string(bytesRead[:n]))
 				break
 			}
-			checkErr("read", err)
+			if err != nil {
+				Log.Fatal("error reading file:", err)
+			}
 			io.WriteString(os.Stdout, string(bytesRead[:n]))
 		}
 	}

@@ -18,7 +18,7 @@ type timeInfo struct {
 
 //UtimesCommand updates the acess time and modified time of a file
 func UtimesCommand(args []string) {
-	Log.Verbose("utimes command called")
+	Log.Info("utimes command called")
 	if len(args) < 2 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -36,10 +36,14 @@ func UtimesCommand(args []string) {
 	}
 
 	input, err := ioutil.ReadAll(os.Stdin)
-	checkErr("utimes", err)
+	if err != nil {
+		Log.Fatal("error reading input:", err)
+	}
 	times := timeInfo{}
 	err = json.Unmarshal(input, &times)
-	checkErr("utimes", err)
+	if err != nil {
+		Log.Fatal("error unmarshalling times:", err)
+	}
 
 	fileNameBytes, code := getFileInode(namepath)
 	if code != returncodes.OK {
@@ -58,9 +62,14 @@ func UtimesCommand(args []string) {
 	defer unLockFile(directory, fileName)
 
 	file, err := os.Open(path.Join(directory, "contents", fileName))
-	checkErr("utimes", err)
+	if err != nil {
+		Log.Fatal("error opening contents file:", err)
+	}
 
 	fi, err := file.Stat()
+	if err != nil {
+		Log.Fatal("error stating file:", err)
+	}
 	stat := fi.Sys().(*syscall.Stat_t)
 	oldatime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	oldmtime := fi.ModTime()
