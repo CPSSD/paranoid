@@ -11,7 +11,7 @@ import (
 
 //TruncateCommand reduces the file given as args[1] in the paranoid-direcory args[0] to the size given in args[2]
 func TruncateCommand(args []string) {
-	Log.Verbose("truncate command given")
+	Log.Info("truncate command given")
 	if len(args) < 3 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -51,11 +51,19 @@ func TruncateCommand(args []string) {
 
 	Log.Verbose("truncate : truncating " + fileName)
 	newsize, err := strconv.Atoi(args[2])
-	checkErr("truncate", err)
+	if err != nil {
+		Log.Fatal("error converting newsize from string to int:", err)
+	}
+
 	contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
-	checkErr("truncate", err)
+	if err != nil {
+		Log.Fatal("error opening contents file:", err)
+	}
+
 	err = contentsFile.Truncate(int64(newsize))
-	checkErr("truncate", err)
+	if err != nil {
+		Log.Fatal("error truncating file:", err)
+	}
 
 	if !Flags.Network {
 		sendToServer(directory, "truncate", args[1:], nil)

@@ -27,21 +27,6 @@ func getAccessMode(flags uint32) uint32 {
 	}
 }
 
-//verboseLog logs a message if the verbose command line flag was set.
-func verboseLog(message string) {
-	if Flags.Verbose {
-		log.Println(message)
-	}
-}
-
-//checkErr stops the execution of the program if the given error is not nil.
-//Specifies the command where the error occured as cmd
-func checkErr(cmd string, err error) {
-	if err != nil {
-		log.Fatalln(cmd, " error occured: ", err)
-	}
-}
-
 //Types of locks
 const (
 	sharedLock = iota
@@ -115,7 +100,9 @@ func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
 
 func generateNewInode() (inodeBytes []byte) {
 	inodeBytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
-	checkErr("util, generateNewInode", err)
+	if err != nil {
+		Log.Fatal("error generating new Inode:", err)
+	}
 	return []byte(strings.TrimSpace(string(inodeBytes)))
 }
 

@@ -21,7 +21,7 @@ type statInfo struct {
 //StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
 //Includes the length of the file, ctime, mtime and atime
 func StatCommand(args []string) {
-	Log.Verbose("Stat command called")
+	Log.Info("Stat command called")
 	if len(args) < 2 {
 		Log.Fatal("Not enough arguments")
 	}
@@ -47,7 +47,9 @@ func StatCommand(args []string) {
 	contentsFile := path.Join(directory, "contents", fileName)
 
 	fi, err := os.Lstat(contentsFile)
-	checkErr("stat", err)
+	if err != nil {
+		Log.Fatal("error Lstating file:", err)
+	}
 
 	stat := fi.Sys().(*syscall.Stat_t)
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
@@ -70,8 +72,10 @@ func StatCommand(args []string) {
 		Mode:   mode}
 
 	jsonData, err := json.Marshal(statData)
-	checkErr("stat", err)
-	verboseLog("stat : returning " + string(jsonData))
+	if err != nil {
+		Log.Fatal("error marshalling statData:", err)
+	}
+	Log.Verbose("stat : returning", string(jsonData))
 	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	io.WriteString(os.Stdout, string(jsonData))
 }

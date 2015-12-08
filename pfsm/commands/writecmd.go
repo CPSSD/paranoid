@@ -13,7 +13,7 @@ import (
 //WriteCommand writes data from Stdin to the file given in args[1] in the pfs directory args[0]
 //Can also be given an offset and length as args[2] and args[3] otherwise it writes from the start of the file
 func WriteCommand(args []string) {
-	Log.Verbose("write command given")
+	Log.Info("write command given")
 	if len(args) < 2 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -53,25 +53,38 @@ func WriteCommand(args []string) {
 
 	Log.Verbose("write : wrting to " + fileName)
 	fileData, err := ioutil.ReadAll(os.Stdin)
-	checkErr("write", err)
+	if err != nil {
+		Log.Fatal("error reading input:", err)
+	}
 
 	if len(args) == 2 {
 		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
-		checkErr("write", err)
+		if err != nil {
+			Log.Fatal("error writing to contents file:", err)
+		}
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 		io.WriteString(os.Stdout, strconv.Itoa(len(fileData)))
 	} else {
 		contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
-		checkErr("write", err)
+		if err != nil {
+			Log.Fatal("error opening contents file:", err)
+		}
 		offset, err := strconv.Atoi(args[2])
-		checkErr("write", err)
+		if err != nil {
+			Log.Fatal("error converting offset from string to int:", err)
+		}
 
 		if len(args) == 3 {
 			err = contentsFile.Truncate(int64(offset))
-			checkErr("write", err)
+			if err != nil {
+				Log.Fatal("error truncating file:", err)
+			}
 		} else {
 			length, err := strconv.Atoi(args[3])
-			checkErr("write", err)
+			if err != nil {
+				Log.Fatal("error converting length from string to int:", err)
+			}
+
 			if len(fileData) > length {
 				fileData = fileData[:length]
 			} else if len(fileData) < length {
@@ -81,7 +94,9 @@ func WriteCommand(args []string) {
 		}
 
 		wroteLen, err := contentsFile.WriteAt(fileData, int64(offset))
-		checkErr("write", err)
+		if err != nil {
+			Log.Fatal("error writing to file:", err)
+		}
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 		io.WriteString(os.Stdout, strconv.Itoa(wroteLen))
 	}

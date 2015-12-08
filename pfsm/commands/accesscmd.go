@@ -12,7 +12,7 @@ import (
 
 //AccessCommand is used by fuse to check if it has access to a given file.
 func AccessCommand(args []string) {
-	Log.Verbose("access command given")
+	Log.Info("access command given")
 	if len(args) < 3 {
 		log.Fatalln("Not enough arguments!")
 	}
@@ -37,9 +37,11 @@ func AccessCommand(args []string) {
 	fileName := string(fileNameBytes)
 
 	mode, err := strconv.Atoi(args[2])
-	checkErr("access", err)
-	err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))
+	if err != nil {
+		Log.Fatal("error converting mode from string to int:", err)
+	}
 
+	err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))
 	if err != nil {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 		return

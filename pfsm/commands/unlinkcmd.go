@@ -13,7 +13,7 @@ import (
 // UnlinkCommand removes a filename link from an inode.
 // if that is the only remaining link to the inode it removes the inode and its contents
 func UnlinkCommand(args []string) {
-	Log.Verbose("unlink command called")
+	Log.Info("unlink command called")
 	if len(args) < 2 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -54,37 +54,57 @@ func UnlinkCommand(args []string) {
 	// removing filename
 	Log.Verbose("unlink : deleting file " + fileNamePath)
 	err = os.Remove(fileNamePath)
-	checkErr("unlink", err)
+	if err != nil {
+		Log.Fatal("error removing file in names:", err)
+	}
 
 	// getting inode contents
 	inodePath := path.Join(directory, "inodes", string(inodeBytes))
 	Log.Verbose("unlink : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
-	checkErr("unlink", err)
+	if err != nil {
+		Log.Fatal("error reading inodes contents ", inodeContents)
+	}
+
 	inodeData := &inode{}
+	Log.Verbose("unlink unmarshaling ", string(inodeContents))
 	err = json.Unmarshal(inodeContents, &inodeData)
-	checkErr("unlink", err)
+	if err != nil {
+		Log.Fatal("error unmarshaling json ", err)
+	}
 
 	if inodeData.Count == 1 {
 		// remove inode and contents
 		contentsPath := path.Join(directory, "contents", string(inodeBytes))
 		Log.Verbose("unlink : removing file " + contentsPath)
 		err = os.Remove(contentsPath)
-		checkErr("unlink", err)
+		if err != nil {
+			Log.Fatal("error removing contents:", err)
+		}
+
 		Log.Verbose("unlink : removing file " + inodePath)
 		err = os.Remove(inodePath)
-		checkErr("unlink", err)
+		if err != nil {
+			Log.Fatal("error removing inode:", err)
+		}
 	} else {
 		// subtracting one from inode count and saving
 		inodeData.Count--
 		Log.Verbose("unlink : truncating file " + inodePath)
 		err = os.Truncate(inodePath, 0)
-		checkErr("unlink", err)
+		if err != nil {
+			Log.Fatal("error truncating inode path:", err)
+		}
+
 		dataToWrite, err := json.Marshal(inodeData)
-		checkErr("unlink", err)
+		if err != nil {
+			Log.Fatal("error marshalling json:", err)
+		}
 		Log.Verbose("unlink : writing to file " + inodePath)
 		err = ioutil.WriteFile(inodePath, dataToWrite, 0777)
-		checkErr("unlink", err)
+		if err != nil {
+			Log.Fatal("error writing to inode file:", err)
+		}
 	}
 
 	if !Flags.Network {

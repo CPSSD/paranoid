@@ -17,7 +17,7 @@ type inode struct {
 
 //CreatCommand creates a new file with the name args[1] in the pfs directory args[0]
 func CreatCommand(args []string) {
-	Log.Verbose("creat command called")
+	Log.Info("creat command called")
 	if len(args) < 3 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -40,21 +40,37 @@ func CreatCommand(args []string) {
 	Log.Verbose("creat : uuid = " + uuidstring)
 
 	perms, err := strconv.ParseInt(args[2], 8, 32)
-	checkErr("creat", err)
+	if err != nil {
+		Log.Fatal("error converting mode from string to int:", err)
+	}
+
 	err = ioutil.WriteFile(namepath, uuidbytes, 0600)
-	checkErr("creat", err)
+	if err != nil {
+		Log.Fatal("error writing name file", err)
+	}
 
 	nodeData := &inode{
 		Inode: uuidstring,
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
-	checkErr("creat", err)
+	if err != nil {
+		Log.Fatal("error marshalling json:", err)
+	}
+
 	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidstring), jsonData, 0600)
-	checkErr("creat", err)
+	if err != nil {
+		Log.Fatal("error writing inodes file:", err)
+	}
 
 	contentsFile, err := os.Create(path.Join(directory, "contents", uuidstring))
-	contentsFile.Chmod(os.FileMode(perms))
-	checkErr("creat", err)
+	if err != nil {
+		Log.Fatal("error creating contents file:", err)
+	}
+
+	err = contentsFile.Chmod(os.FileMode(perms))
+	if err != nil {
+		Log.Fatal("error changing file permissions:", err)
+	}
 
 	if !Flags.Network {
 		sendToServer(directory, "creat", args[1:], nil)

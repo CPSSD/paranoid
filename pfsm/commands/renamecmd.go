@@ -10,7 +10,7 @@ import (
 
 // RenameCommand is called when renaming a file
 func RenameCommand(args []string) {
-	Log.Verbose("rename command called")
+	Log.Info("rename command called")
 	if len(args) < 3 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -45,7 +45,9 @@ func RenameCommand(args []string) {
 	}
 
 	err = os.Rename(oldFilePath, newFilePath)
-	checkErr("rename", err)
+	if err != nil {
+		Log.Fatal("error renaming file:", err)
+	}
 
 	if !Flags.Network {
 		sendToServer(directory, "rename", args[1:], nil)

@@ -10,7 +10,7 @@ import (
 
 // RmdirCommand removes a directory
 func RmdirCommand(args []string) {
-	Log.Verbose("rmdir command called")
+	Log.Info("rmdir command called")
 	if len(args) < 2 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -34,13 +34,14 @@ func RmdirCommand(args []string) {
 				io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
 				return
 			}
-			checkErr("rmdir", err)
+			Log.Fatal("error reading directory:", err)
 		}
 		if len(files) > 1 {
 			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTEMPTY))
 			return
 		}
 	}
+
 	infoFileToDelete := path.Join(dirToDelete, "info")
 	inodeBytes, err := getFileInode(dirToDelete)
 	inodeString := string(inodeBytes)

@@ -12,7 +12,7 @@ import (
 // LinkCommand creates a link of a file.
 // args[0] is the init point, args[1] is the existing file name, args[2] is the target file name
 func LinkCommand(args []string) {
-	Log.Verbose("link command called")
+	Log.Info("link command called")
 	if len(args) < 3 {
 		Log.Fatal("Not enough arguments!")
 	}
@@ -47,40 +47,62 @@ func LinkCommand(args []string) {
 		return
 	}
 	fileInfo, err := os.Stat(existingFilePath)
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error stating existing file:", err)
+	}
 	fileMode := fileInfo.Mode()
 
 	// creating target file pointing to same inode
 	err = ioutil.WriteFile(targetFilePath, inodeBytes, fileMode)
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error writing to names file:", err)
+	}
 
 	// getting contents of inode
 	inodePath := path.Join(directory, "inodes", string(inodeBytes))
 	Log.Verbose("link : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error reading inode:", err)
+	}
+
 	nodeData := &inode{}
 	err = json.Unmarshal(inodeContents, &nodeData)
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error unmarshalling inode data:", err)
+	}
 
 	// itterating count and saving
 	nodeData.Count++
 	Log.Verbose("link : opening file " + inodePath)
 	openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0600)
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error opening file:", err)
+	}
+
 	Log.Verbose("link : truncating file " + inodePath)
 	err = openedFile.Truncate(0)
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error truncating file:", err)
+	}
+
 	newJSONData, err := json.Marshal(&nodeData)
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error marshalling json:", err)
+	}
+
 	Log.Verbose("link : writing to file " + inodePath)
 	_, err = openedFile.Write(newJSONData)
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error writing to inode file:", err)
+	}
 
 	// closing file
 	Log.Verbose("link : closing file " + inodePath)
 	err = openedFile.Close()
-	checkErr("link", err)
+	if err != nil {
+		Log.Fatal("error closing file:", err)
+	}
 
 	if !Flags.Network {
 		sendToServer(directory, "link", args[1:], nil)

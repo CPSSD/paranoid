@@ -35,10 +35,14 @@ func SymlinkCommand(args []string) {
 	// Create a new file with content which is the
 	// relative location of the existing file
 	err := ioutil.WriteFile(targetFilePath, uuidBytes, 0600)
-	checkErr("symlink", err)
+	if err != nil {
+		Log.Fatal("error writing file:", err)
+	}
 
 	err = os.Symlink(os.DevNull, path.Join(directory, "contents", uuidString))
-	checkErr("symlink", err)
+	if err != nil {
+		Log.Fatal("error creating symlink:", err)
+	}
 
 	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidString), []byte(args[1]), 0600)
 
