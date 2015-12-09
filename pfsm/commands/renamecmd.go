@@ -18,8 +18,8 @@ func RenameCommand(args []string) {
 	directory := args[0]
 	oldFilePath := getParanoidPath(directory, args[1])
 	newFilePath := getParanoidPath(directory, args[2])
-	oldFileType := getFileType(oldFilePath)
-	newFileType := getFileType(newFilePath)
+	oldFileType := getFileType(directory, oldFilePath)
+	newFileType := getFileType(directory, newFilePath)
 
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)

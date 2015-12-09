@@ -32,7 +32,7 @@ func StatCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	namepath := getParanoidPath(directory, args[1])
-	namePathType := getFileType(namepath)
+	namePathType := getFileType(directory, namepath)
 	if namePathType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
@@ -56,12 +56,10 @@ func StatCommand(args []string) {
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
 	var mode os.FileMode
 	switch namePathType {
-	case typeFile:
-		mode = os.FileMode(stat.Mode)
-	case typeSymlink:
-		mode = os.FileMode(fi.Mode())
-	default:
+	case typeDir:
 		mode = os.FileMode(syscall.S_IFDIR | fi.Mode().Perm())
+	default:
+		mode = os.FileMode(stat.Mode)
 	}
 
 	statData := &statInfo{

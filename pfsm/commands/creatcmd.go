@@ -24,7 +24,7 @@ func CreatCommand(args []string) {
 
 	namepath := getParanoidPath(directory, args[1])
 
-	if getFileType(namepath) != typeENOENT {
+	if getFileType(directory, namepath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}

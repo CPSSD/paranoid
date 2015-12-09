@@ -24,7 +24,7 @@ func ChmodCommand(args []string) {
 
 	namepath := getParanoidPath(directory, args[1])
 
-	fileType := getFileType(namepath)
+	fileType := getFileType(directory, namepath)
 	if fileType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return

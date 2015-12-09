@@ -19,7 +19,7 @@ func ReadlinkCommand(args []string) {
 
 	directory := args[0]
 	link := getParanoidPath(directory, args[1])
-	fileType := getFileType(link)
+	fileType := getFileType(directory, link)
 
 	if fileType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))

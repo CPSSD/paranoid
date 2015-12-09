@@ -28,7 +28,7 @@ func ReadDirCommand(args []string) {
 		dirpath = path.Join(directory, "names")
 	} else {
 		dirpath = getParanoidPath(directory, args[1])
-		pathFileType := getFileType(dirpath)
+		pathFileType := getFileType(directory, dirpath)
 		if pathFileType == typeENOENT {
 			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 			return

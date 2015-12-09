@@ -26,7 +26,7 @@ func LinkCommand(args []string) {
 	getFileSystemLock(directory, exclusiveLock)
 	defer unLockFileSystem(directory)
 
-	existingFileType := getFileType(existingFilePath)
+	existingFileType := getFileType(directory, existingFilePath)
 	if existingFileType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
@@ -40,7 +40,7 @@ func LinkCommand(args []string) {
 		return
 	}
 
-	if getFileType(targetFilePath) != typeENOENT {
+	if getFileType(directory, targetFilePath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}
