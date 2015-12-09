@@ -113,7 +113,14 @@ func generateNewInode() (inodeBytes []byte) {
 }
 
 func getFileInode(filePath string) (inodeBytes []byte, errorCode int) {
-	if getFileType(filePath) == typeDir {
+	f, err := os.Lstat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, returncodes.ENOENT
+		}
+		Log.Fatal("util, getFileInode", " error occured: ", err)
+	}
+	if f.Mode().IsDir() {
 		filePath = path.Join(filePath, "info")
 	}
 	bytes, err := ioutil.ReadFile(filePath)
@@ -148,8 +155,8 @@ const (
 	typeENOENT
 )
 
-func getFileType(path string) int {
-	f, err := os.Lstat(path)
+func getFileType(directory, filePath string) int {
+	f, err := os.Lstat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return typeENOENT
@@ -159,7 +166,21 @@ func getFileType(path string) int {
 	if f.Mode().IsDir() {
 		return typeDir
 	}
-	if f.Mode()&os.ModeSymlink == os.ModeSymlink {
+
+	inode, errorcode := getFileInode(filePath)
+	if errorcode != returncodes.OK {
+		if errorcode == returncodes.ENOENT {
+			return typeENOENT
+		}
+		Log.Fatal("util, getFileType symlink check error occured code: ", errorcode)
+	}
+	f, err = os.Lstat(path.Join(directory, "contents", string(inode)))
+	if err != nil {
+		Log.Fatal("util, getFileType symlink check error occured: ", err)
+	}
+
+	if f.Mode()&os.ModeSymlink > 0 {
+		log.Println("Is symlink")
 		return typeSymlink
 	}
 

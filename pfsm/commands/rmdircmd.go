@@ -20,7 +20,7 @@ func RmdirCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	dirToDelete := getParanoidPath(directory, args[1])
-	dirType := getFileType(dirToDelete)
+	dirType := getFileType(directory, dirToDelete)
 	if dirType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return

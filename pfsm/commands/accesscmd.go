@@ -24,7 +24,7 @@ func AccessCommand(args []string) {
 
 	namePath := getParanoidPath(directory, args[1])
 
-	if getFileType(namePath) == typeENOENT {
+	if getFileType(directory, namePath) == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
 	}

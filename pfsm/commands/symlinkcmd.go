@@ -24,7 +24,7 @@ func SymlinkCommand(args []string) {
 	defer unLockFileSystem(directory)
 
 	// Make sure the target file not existing, if it is, quit
-	if getFileType(targetFilePath) != typeENOENT {
+	if getFileType(directory, targetFilePath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}

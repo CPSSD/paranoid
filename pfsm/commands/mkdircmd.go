@@ -31,7 +31,7 @@ func MkdirCommand(args []string) {
 		Log.Fatal("error converting mode from string to int:", err)
 	}
 
-	if getFileType(dirPath) != typeENOENT {
+	if getFileType(directory, dirPath) != typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
 		return
 	}

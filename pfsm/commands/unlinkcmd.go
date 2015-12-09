@@ -20,7 +20,7 @@ func UnlinkCommand(args []string) {
 
 	directory := args[0]
 	fileNamePath := getParanoidPath(directory, args[1])
-	fileNamePathType := getFileType(fileNamePath)
+	fileNamePathType := getFileType(directory, fileNamePath)
 
 	Log.Verbose("unlink : directory given = " + directory)
 

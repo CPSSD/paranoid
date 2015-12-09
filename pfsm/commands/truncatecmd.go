@@ -23,7 +23,7 @@ func TruncateCommand(args []string) {
 
 	namepath := getParanoidPath(directory, args[1])
 
-	namepathType := getFileType(namepath)
+	namepathType := getFileType(directory, namepath)
 	if namepathType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return
