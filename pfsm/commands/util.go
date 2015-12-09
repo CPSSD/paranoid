@@ -149,7 +149,7 @@ const (
 )
 
 func getFileType(path string) int {
-	f, err := os.Stat(path)
+	f, err := os.Lstat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return typeENOENT
