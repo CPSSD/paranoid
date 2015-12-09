@@ -18,6 +18,10 @@ func ReadlinkCommand(args []string) {
 	}
 
 	directory := args[0]
+
+	getFileSystemLock(directory, sharedLock)
+	defer unLockFileSystem(directory)
+
 	link := getParanoidPath(directory, args[1])
 	fileType := getFileType(link)
 
@@ -38,14 +42,14 @@ func ReadlinkCommand(args []string) {
 
 	Log.Verbose("readlink: given directory", directory)
 
-	getFileSystemLock(directory, sharedLock)
-	defer unLockFileSystem(directory)
-
 	linkInode, code := getFileInode(link)
 	if code != returncodes.OK {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
 		return
 	}
+
+	getFileLock(directory, string(linkInode), sharedLock)
+	defer unLockFile(directory, string(linkInode))
 
 	inodePath := path.Join(directory, "inodes", string(linkInode))
 
