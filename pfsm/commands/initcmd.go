@@ -1,56 +1,75 @@
 package commands
 
 import (
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strings"
 )
 
 //makeDir creates a new directory with permissions 0777 with the name newDir in parentDir.
-func makeDir(parentDir, newDir string) string {
+func makeDir(parentDir, newDir string) (string, error) {
 	newDirPath := path.Join(parentDir, newDir)
 	err := os.Mkdir(newDirPath, 0700)
 	if err != nil {
-		log.Fatal("error making directory:", err)
+		return "", err
 	}
-	return newDirPath
+	return newDirPath, nil
 }
 
 //checkEmpty checks if a given directory has any children.
-func checkEmpty(directory string) {
+func checkEmpty(directory string) error {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
-		Log.Fatal("error reading directory:", err)
+		return fmt.Errorf("error reading directory", err)
 	}
 	if len(files) > 0 {
-		Log.Fatal("init: directory must be empty")
+		return errors.New("init : directory must be empty")
 	}
+	return nil
 }
 
-//InitCommand creates the pvd directory sturucture in args[0]
+//InitCommand creates the pvd directory sturucture
 //It also gets a UUID and stores it in the meta directory.
-func InitCommand(args []string) {
+func InitCommand(directory string) (returnCode int, returnError error) {
 	Log.Info("init command called")
-	if len(args) < 1 {
-		log.Fatalln("Not enough arguments!")
+	err := checkEmpty(directory)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
 	}
-	directory := args[0]
-	checkEmpty(directory)
 	Log.Verbose("init : creating new paranoid file system in " + directory)
 
-	makeDir(directory, "names")
-	makeDir(directory, "inodes")
-	metaDir := makeDir(directory, "meta")
-	makeDir(metaDir, "logs")
-	makeDir(directory, "contents")
+	_, err = makeDir(directory, "names")
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	_, err = makeDir(directory, "inodes")
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	metaDir, err := makeDir(directory, "meta")
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	_, err = makeDir(metaDir, "logs")
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	_, err = makeDir(directory, "contents")
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
 
 	uuid, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	if err != nil {
-		Log.Fatal("error reading uuid:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading uuid:", err)
 	}
 
 	uuidString := strings.TrimSpace(string(uuid))
@@ -58,12 +77,12 @@ func InitCommand(args []string) {
 
 	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), []byte(uuidString), 0600)
 	if err != nil {
-		Log.Fatal("error writing uuid file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing uuid file:", err)
 	}
 
 	_, err = os.Create(path.Join(metaDir, "lock"))
 	if err != nil {
-		Log.Fatal("error creating lock file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating lock file:", err)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }

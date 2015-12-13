@@ -1,50 +1,46 @@
 package commands
 
 import (
+	"errors"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
-	"log"
-	"os"
 	"path"
-	"strconv"
 	"syscall"
 )
 
 //AccessCommand is used by fuse to check if it has access to a given file.
-func AccessCommand(args []string) {
+func AccessCommand(directory, fileName string, mode uint32) (returnCode int, returnError error) {
 	Log.Info("access command given")
-	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
-	}
-	directory := args[0]
 	Log.Verbose("access : given directory = " + directory)
 
-	getFileSystemLock(directory, sharedLock)
-	defer unLockFileSystem(directory)
+	err := getFileSystemLock(directory, sharedLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
 
-	namePath := getParanoidPath(directory, args[1])
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
+
+	namePath := getParanoidPath(directory, fileName)
 
 	if getFileType(directory, namePath) == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New("given file does not exist")
 	}
 
-	fileNameBytes, code := getFileInode(namePath)
-	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+	inodeNameBytes, code, err := getFileInode(namePath)
+	if code != returncodes.OK || err != nil {
+		return code, err
 	}
-	fileName := string(fileNameBytes)
 
-	mode, err := strconv.Atoi(args[2])
+	inodeName := string(inodeNameBytes)
+
+	err = syscall.Access(path.Join(directory, "contents", inodeName), mode)
 	if err != nil {
-		Log.Fatal("error converting mode from string to int:", err)
+		return returncodes.EACCES, errors.New("could not access file")
 	}
-
-	err = syscall.Access(path.Join(directory, "contents", fileName), uint32(mode))
-	if err != nil {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-		return
-	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }

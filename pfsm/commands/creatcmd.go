@@ -2,46 +2,49 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 )
 
-//CreatCommand creates a new file with the name args[1] in the pfs directory args[0]
-func CreatCommand(args []string) {
+//CreatCommand creates a new file with the name fileName in the pfs directory
+func CreatCommand(directory, fileName string, perms os.FileMode) (returnCode int, returnError error) {
 	Log.Info("creat command called")
-	if len(args) < 3 {
-		Log.Fatal("Not enough arguments!")
-	}
-	directory := args[0]
 	Log.Verbose("creat : directory = " + directory)
 
-	getFileSystemLock(directory, exclusiveLock)
-	defer unLockFileSystem(directory)
+	err := getFileSystemLock(directory, exclusiveLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
 
-	namepath := getParanoidPath(directory, args[1])
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
+
+	namepath := getParanoidPath(directory, fileName)
 
 	if getFileType(directory, namepath) != typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
-		return
+		return returncodes.EEXIST, errors.New("file already exists")
 	}
-	Log.Verbose("creat : creating file " + args[1])
+	Log.Verbose("creat : creating file " + fileName)
 
-	uuidbytes := generateNewInode()
+	uuidbytes, err := generateNewInode()
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
 	uuidstring := string(uuidbytes)
 	Log.Verbose("creat : uuid = " + uuidstring)
 
-	perms, err := strconv.ParseInt(args[2], 8, 32)
-	if err != nil {
-		Log.Fatal("error converting mode from string to int:", err)
-	}
-
 	err = ioutil.WriteFile(namepath, uuidbytes, 0600)
 	if err != nil {
-		Log.Fatal("error writing name file", err)
+		return returncodes.EUNEXPECTED, errors.New("error writing name file")
 	}
 
 	nodeData := &inode{
@@ -49,26 +52,26 @@ func CreatCommand(args []string) {
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
-		Log.Fatal("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, errors.New("error marshalling json:", err)
 	}
 
 	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidstring), jsonData, 0600)
 	if err != nil {
-		Log.Fatal("error writing inodes file:", err)
+		return returncodes.EUNEXPECTED, errors.New("error writing inodes file:", err)
 	}
 
 	contentsFile, err := os.Create(path.Join(directory, "contents", uuidstring))
 	if err != nil {
-		Log.Fatal("error creating contents file:", err)
+		return returncodes.EUNEXPECTED, errors.New("error creating contents file:", err)
 	}
 
 	err = contentsFile.Chmod(os.FileMode(perms))
 	if err != nil {
-		Log.Fatal("error changing file permissions:", err)
+		return returncodes.EUNEXPECTED, errors.New("error changing file permissions:", err)
 	}
 
 	if !Flags.Network {
 		sendToServer(directory, "creat", args[1:], nil)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }

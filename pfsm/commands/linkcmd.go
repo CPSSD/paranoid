@@ -2,8 +2,8 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,56 +11,60 @@ import (
 
 // LinkCommand creates a link of a file.
 // args[0] is the init point, args[1] is the existing file name, args[2] is the target file name
-func LinkCommand(args []string) {
+func LinkCommand(directory, existingFileName, targetFileName string) (returnCode int, returnError error) {
 	Log.Info("link command called")
-	if len(args) < 3 {
-		Log.Fatal("Not enough arguments!")
-	}
 
-	directory := args[0]
-	existingFilePath := getParanoidPath(directory, args[1])
-	targetFilePath := getParanoidPath(directory, args[2])
+	existingFilePath := getParanoidPath(directory, existingFileName)
+	targetFilePath := getParanoidPath(directory, targetFileName)
 
 	Log.Verbose("link : given directory = " + directory)
 
-	getFileSystemLock(directory, exclusiveLock)
-	defer unLockFileSystem(directory)
+	err := getFileSystemLock(directory, exclusiveLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
 
 	existingFileType := getFileType(directory, existingFilePath)
 	if existingFileType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New("existing file does not exist")
 	}
+
 	if existingFileType == typeDir {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
-		return
+		return returncodes.EISDIR, errors.New("existing file is a directory")
 	}
+
 	if existingFileType == typeSymlink {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
-		return
+		return returncodes.EIO, errors.New("existing file is a symlink")
 	}
 
 	if getFileType(directory, targetFilePath) != typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
-		return
+		return returncodes.EEXIST, errors.New("target file already exists")
 	}
 
 	// getting inode and fileMode of existing file
-	inodeBytes, code := getFileInode(existingFilePath)
+	inodeBytes, code, err := getFileInode(existingFilePath)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err
 	}
+
 	fileInfo, err := os.Stat(existingFilePath)
 	if err != nil {
-		Log.Fatal("error stating existing file:", err)
+		return returncodes.EUNEXPECTED, errors.New("error stating existing file:", err)
 	}
 	fileMode := fileInfo.Mode()
 
 	// creating target file pointing to same inode
 	err = ioutil.WriteFile(targetFilePath, inodeBytes, fileMode)
 	if err != nil {
-		Log.Fatal("error writing to names file:", err)
+		return returncodes.EUNEXPECTED, errors.New("error writing to names file:", err)
 	}
 
 	// getting contents of inode
@@ -68,13 +72,13 @@ func LinkCommand(args []string) {
 	Log.Verbose("link : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	if err != nil {
-		Log.Fatal("error reading inode:", err)
+		return returncodes.EUNEXPECTED, errors.New("error reading inode:", err)
 	}
 
 	nodeData := &inode{}
 	err = json.Unmarshal(inodeContents, &nodeData)
 	if err != nil {
-		Log.Fatal("error unmarshalling inode data:", err)
+		return returncodes.EUNEXPECTED, errors.New("error unmarshalling inode data:", err)
 	}
 
 	// itterating count and saving
@@ -82,35 +86,35 @@ func LinkCommand(args []string) {
 	Log.Verbose("link : opening file " + inodePath)
 	openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0600)
 	if err != nil {
-		Log.Fatal("error opening file:", err)
+		return returncodes.EUNEXPECTED, errors.New("error opening file:", err)
 	}
 
 	Log.Verbose("link : truncating file " + inodePath)
 	err = openedFile.Truncate(0)
 	if err != nil {
-		Log.Fatal("error truncating file:", err)
+		return returncodes.EUNEXPECTED, errors.New("error truncating file:", err)
 	}
 
 	newJSONData, err := json.Marshal(&nodeData)
 	if err != nil {
-		Log.Fatal("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, errors.New("error marshalling json:", err)
 	}
 
 	Log.Verbose("link : writing to file " + inodePath)
 	_, err = openedFile.Write(newJSONData)
 	if err != nil {
-		Log.Fatal("error writing to inode file:", err)
+		return returncodes.EUNEXPECTED, errors.New("error writing to inode file:", err)
 	}
 
 	// closing file
 	Log.Verbose("link : closing file " + inodePath)
 	err = openedFile.Close()
 	if err != nil {
-		Log.Fatal("error closing file:", err)
+		return returncodes.EUNEXPECTED, errors.New("error closing file:", err)
 	}
 
 	if !Flags.Network {
 		sendToServer(directory, "link", args[1:], nil)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }

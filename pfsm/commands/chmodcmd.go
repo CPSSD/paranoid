@@ -1,71 +1,67 @@
 package commands
 
 import (
+	"errors"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
-	"log"
 	"os"
 	"path"
-	"strconv"
 	"syscall"
 )
 
 //ChmodCommand is used to change the permissions of a file.
-func ChmodCommand(args []string) {
+func ChmodCommand(directory, fileName string, perms os.FileMode) (returnCode int, returnError error) {
 	Log.Info("chmod command given")
-	if len(args) < 3 {
-		log.Fatalln("Not enough arguments!")
-	}
-	directory := args[0]
 	Log.Verbose("chmod : given directory = " + directory)
 
-	getFileSystemLock(directory, exclusiveLock)
-	defer unLockFileSystem(directory)
+	err := getFileSystemLock(directory, exclusiveLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
 
-	namepath := getParanoidPath(directory, args[1])
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
+
+	namepath := getParanoidPath(directory, fileName)
 
 	fileType := getFileType(directory, namepath)
 	if fileType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New("given file does not exist")
 	}
 
 	if fileType == typeSymlink {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
-		return
+		return returncodes.EIO, errors.New("given file is of type symlink")
 	}
 
-	fileNameBytes, code := getFileInode(namepath)
+	inodeNameBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err
 	}
-	fileName := string(fileNameBytes)
+	inodeName := string(inodeNameBytes)
 
-	err := syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(directory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-		return
+		return returncodes.EACCES, errors.New("unable to access file")
 	}
 
-	Log.Verbose("chmod : changing permissions of " + fileName + " to " + args[2])
-	perms, err := strconv.ParseInt(args[2], 8, 32)
+	Log.Verbose("chmod : changing permissions of " + inodeName + " to " + perms)
+
+	contentsFile, err := os.OpenFile(path.Join(directory, "contents", inodeName), os.O_WRONLY, 0777)
 	if err != nil {
-		Log.Fatal("error converting permissions from string to int:", err)
+		return returncodes.EUNEXPECTED, errors.New("unexpected error attempting to open file, " + err)
 	}
 
-	contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
+	err = contentsFile.Chmod(perms)
 	if err != nil {
-		Log.Fatal("error opening contents file:", err)
-	}
-
-	err = contentsFile.Chmod(os.FileMode(perms))
-	if err != nil {
-		Log.Fatal("error changing permissions:", err)
+		return returncodes.EUNEXPECTED, errors.New("unexpected error attempting to change file permissions, " + err)
 	}
 
 	if !Flags.Network {
 		sendToServer(directory, "chmod", args[1:], nil)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }
