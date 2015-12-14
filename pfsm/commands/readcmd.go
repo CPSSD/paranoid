@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"os"
@@ -9,111 +12,121 @@ import (
 	"syscall"
 )
 
-//ReadCommand reads data from a file given as args[1] in pfs directory args[0] and prints it to Stdout
-//Can also be given an offset and length as args[2] and args[3] otherwise it reads the whole file
-func ReadCommand(args []string) {
+//ReadCommand reads data from a file
+//Offset and length can be given as -1 to note that the defaults should be used.
+func ReadCommand(directory, fileName string, offset, length int64) (returnCode int, returnError error, fileContents []byte) {
 	Log.Info("read command called")
-	if len(args) < 2 {
-		Log.Fatal("Not enough arguments!")
-	}
-
-	directory := args[0]
 	Log.Verbose("read : given directory = " + directory)
 
-	namepath := getParanoidPath(directory, args[1])
+	namepath := getParanoidPath(directory, fileName)
 
-	getFileSystemLock(directory, sharedLock)
-	defer unLockFileSystem(directory)
+	err := getFileSystemLock(directory, sharedLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err, nil
+	}
 
-	fileType := getFileType(directory, namepath)
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+			fileContents = nil
+		}
+	}()
+
+	fileType, err := getFileType(directory, namepath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+fileName+" fileType", err), nil
+	}
+
 	if fileType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New(fileName + " does not exist"), nil
 	}
 
 	if fileType == typeDir {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
-		return
+		return returncodes.EISDIR, errors.New(fileName + " is a directory"), nil
 	}
 
 	if fileType == typeSymlink {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
-		return
+		return returncodes.EIO, errors.New(fileName + " is a symlink"), nil
 	}
 
-	fileNameBytes, code := getFileInode(namepath)
-	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+	inodeBytes, code, err := getFileInode(namepath)
+	if code != returncodes.OK || err != nil {
+		return code, err, nil
 	}
-	fileName := string(fileNameBytes)
+	inodeFileName := string(inodeBytes)
 
-	err := syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_RDONLY))
+	err = syscall.Access(path.Join(directory, "contents", inodeFileName), getAccessMode(syscall.O_RDONLY))
 	if err != nil {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-		return
+		return returncodes.EACCES, errors.New("could not access file " + fileName), nil
 	}
 
-	getFileLock(directory, fileName, sharedLock)
-	defer unLockFile(directory, fileName)
-
-	file, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_RDONLY, 0777)
+	err = getFileLock(directory, inodeFileName, sharedLock)
 	if err != nil {
-		Log.Fatal("error opening contents file", err)
+		return returncodes.EUNEXPECTED, err, nil
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 
-	if len(args) == 2 {
-		Log.Verbose("read : reading whole file")
-		bytesRead := make([]byte, 1024)
-		for {
-			n, err := file.Read(bytesRead)
-			if err != io.EOF {
-				if err != nil {
-					Log.Fatal("error reading file:", err)
-				}
-			}
-			io.WriteString(os.Stdout, string(bytesRead[:n]))
-			if n < 1024 {
-				break
-			}
-		}
-	} else if len(args) > 2 {
-		bytesRead := make([]byte, 1024)
-		maxRead := 100000000
-		if len(args) > 3 {
-			Log.Verbose("read : " + args[3] + " bytes starting at " + args[2])
-			maxRead, err = strconv.Atoi(args[3])
-			if err != nil {
-				Log.Fatal("error converting length from string to int:", err)
-			}
-		} else {
-			Log.Verbose("read : from " + args[2] + " to end of file")
-		}
-
-		off, err := strconv.Atoi(args[2])
+	defer func() {
+		err := unLockFile(directory, inodeFileName)
 		if err != nil {
-			Log.Fatal("error converting offset from string to int:", err)
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+			fileContents = nil
 		}
-		offset := int64(off)
-		for {
-			n, err := file.ReadAt(bytesRead, offset)
-			if n > maxRead {
-				bytesRead = bytesRead[0:maxRead]
-				io.WriteString(os.Stdout, string(bytesRead))
-				break
-			}
+	}()
 
-			offset = offset + int64(n)
-			maxRead = maxRead - n
-			if err == io.EOF {
-				io.WriteString(os.Stdout, string(bytesRead[:n]))
-				break
-			}
+	file, err := os.OpenFile(path.Join(directory, "contents", inodeFileName), os.O_RDONLY, 0777)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file", err), nil
+	}
+
+	var fileBuffer bytes.Buffer
+	bytesRead := make([]byte, 1024)
+	maxRead := 100000000
+
+	if offset == -1 {
+		offset = 0
+	}
+
+	if length != -1 {
+		Log.Verbose("read : " + strconv.FormatInt(length, 10) + " bytes starting at " + strconv.FormatInt(offset, 10))
+		maxRead = int(length)
+	} else {
+		Log.Verbose("read : from " + strconv.FormatInt(offset, 10) + " to end of file")
+	}
+
+	for {
+		n, err := file.ReadAt(bytesRead, offset)
+		if n > maxRead {
+			bytesRead = bytesRead[0:maxRead]
+			_, err := fileBuffer.Write(bytesRead)
 			if err != nil {
-				Log.Fatal("error reading file:", err)
+				return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer:", err), nil
 			}
-			io.WriteString(os.Stdout, string(bytesRead[:n]))
+			break
+		}
+
+		offset = offset + int64(n)
+		maxRead = maxRead - n
+		if err == io.EOF {
+			bytesRead = bytesRead[:n]
+			_, err := fileBuffer.Write(bytesRead)
+			if err != nil {
+				return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer:", err), nil
+			}
+			break
+		}
+
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error reading from "+fileName+":", err), nil
+		}
+
+		bytesRead = bytesRead[:n]
+		_, err = fileBuffer.Write(bytesRead)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer:", err), nil
 		}
 	}
+	return returncodes.OK, nil, fileBuffer.Bytes()
 }
