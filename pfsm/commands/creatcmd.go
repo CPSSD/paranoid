@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io/ioutil"
 	"os"
@@ -10,7 +11,7 @@ import (
 )
 
 //CreatCommand creates a new file with the name fileName in the pfs directory
-func CreatCommand(directory, fileName string, perms os.FileMode) (returnCode int, returnError error) {
+func CreatCommand(directory, fileName string, perms os.FileMode, sendOverNetwork bool) (returnCode int, returnError error) {
 	Log.Info("creat command called")
 	Log.Verbose("creat : directory = " + directory)
 
@@ -29,8 +30,13 @@ func CreatCommand(directory, fileName string, perms os.FileMode) (returnCode int
 
 	namepath := getParanoidPath(directory, fileName)
 
-	if getFileType(directory, namepath) != typeENOENT {
-		return returncodes.EEXIST, errors.New("file already exists")
+	fileType, err := getFileType(directory, namepath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+fileName+" file type:", err)
+	}
+
+	if fileType != typeENOENT {
+		return returncodes.EEXIST, errors.New(fileName + " already exists")
 	}
 	Log.Verbose("creat : creating file " + fileName)
 
@@ -52,26 +58,27 @@ func CreatCommand(directory, fileName string, perms os.FileMode) (returnCode int
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
-		return returncodes.EUNEXPECTED, errors.New("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
 	}
 
 	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidstring), jsonData, 0600)
 	if err != nil {
-		return returncodes.EUNEXPECTED, errors.New("error writing inodes file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file:", err)
 	}
 
 	contentsFile, err := os.Create(path.Join(directory, "contents", uuidstring))
 	if err != nil {
-		return returncodes.EUNEXPECTED, errors.New("error creating contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
 	}
 
 	err = contentsFile.Chmod(os.FileMode(perms))
 	if err != nil {
-		return returncodes.EUNEXPECTED, errors.New("error changing file permissions:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error changing file permissions:", err)
 	}
 
-	if !Flags.Network {
-		sendToServer(directory, "creat", args[1:], nil)
+	if sendOverNetwork {
+		//This will be sorted later when we get rid of IC
+		//sendToServer(directory, "creat", args[1:], nil)
 	}
 	return returncodes.OK, nil
 }

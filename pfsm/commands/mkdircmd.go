@@ -2,67 +2,79 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"os"
 	"path"
-	"strconv"
 )
 
 // MkdirCommand is called when making a directory
-func MkdirCommand(args []string) {
+func MkdirCommand(directory, dirName string, mode os.FileMode, sendOverNetwork bool) (returnCode int, returnError error) {
 	Log.Info("mkdir command called")
-	if len(args) < 3 {
-		Log.Fatal("Not enough arguments!")
+
+	err := getFileSystemLock(directory, exclusiveLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
 	}
 
-	directory := args[0]
-	getFileSystemLock(directory, exclusiveLock)
-	defer unLockFileSystem(directory)
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
 
-	dirPath := getParanoidPath(directory, args[1])
+	dirPath := getParanoidPath(directory, dirName)
 	dirInfoPath := path.Join(dirPath, "info")
-	inodeBytes := generateNewInode()
+
+	inodeBytes, err := generateNewInode()
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
 	inodeString := string(inodeBytes)
 	inodePath := path.Join(directory, "inodes", inodeString)
 	contentsPath := path.Join(directory, "contents", inodeString)
-	mode, err := strconv.ParseInt(args[2], 8, 32)
+
+	fileType, err := getFileType(directory, dirPath)
 	if err != nil {
-		Log.Fatal("error converting mode from string to int:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+dirName+" file type:", err)
 	}
 
-	if getFileType(directory, dirPath) != typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
-		return
+	if fileType != typeENOENT {
+		return returncodes.EEXIST, errors.New(dirName + " already exists")
 	}
-	err = os.Mkdir(dirPath, os.FileMode(mode))
+
+	err = os.Mkdir(dirPath, mode)
 	if err != nil {
-		Log.Fatal("error making directory:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error making directory "+dirPath+" :", err)
 	}
 
 	contentsFile, err := os.Create(contentsPath)
 	if err != nil {
-		Log.Fatal("error creating contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
 	}
 
 	err = contentsFile.Chmod(os.FileMode(mode))
 	if err != nil {
-		Log.Fatal("error changing file permissions:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error changing file permissions:", err)
 	}
 
 	dirInfoFile, err := os.Create(dirInfoPath)
 	if err != nil {
-		Log.Fatal("error creating info file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating info file:", err)
 	}
 
 	_, err = dirInfoFile.Write(inodeBytes)
 	if err != nil {
-		Log.Fatal("error writing to info file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to info file:", err)
 	}
 
 	inodeFile, err := os.Create(inodePath)
 	if err != nil {
-		Log.Fatal("error creating inode file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating inode file:", err)
 	}
 
 	nodeData := &inode{
@@ -70,16 +82,17 @@ func MkdirCommand(args []string) {
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
-		Log.Fatal("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
 	}
 
 	_, err = inodeFile.Write(jsonData)
 	if err != nil {
-		Log.Fatal("error writing to inode file", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file:", err)
 	}
 
-	if !Flags.Network {
-		sendToServer(directory, "mkdir", args[1:], nil)
+	if sendOverNetwork {
+		//This will be sorted later when we get rid of IC
+		//sendToServer(directory, "mkdir", args[1:], nil)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }

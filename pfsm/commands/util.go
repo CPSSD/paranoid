@@ -178,34 +178,39 @@ const (
 	typeENOENT
 )
 
-func getFileType(directory, filePath string) int {
+func getFileType(directory, filePath string) (int, error) {
 	f, err := os.Lstat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return typeENOENT
+			return typeENOENT, nil
 		}
-		Log.Fatal("util, getFileType", " error occured: ", err)
-	}
-	if f.Mode().IsDir() {
-		return typeDir
+		return 0, fmt.Errorf("error stating file:", err)
 	}
 
-	inode, errorcode := getFileInode(filePath)
-	if errorcode != returncodes.OK {
-		if errorcode == returncodes.ENOENT {
-			return typeENOENT
-		}
-		Log.Fatal("util, getFileType symlink check error occured code: ", errorcode)
+	if f.Mode().IsDir() {
+		return typeDir, nil
 	}
+
+	inode, code, err := getFileInode(filePath)
+	if err != nil {
+		return 0, fmt.Errorf("error getting inode:", err)
+	}
+
+	if code != returncodes.OK {
+		if code == returncodes.ENOENT {
+			return typeENOENT, nil
+		}
+		return 0, errors.New("unexpected result from getFileInode:", code)
+	}
+
 	f, err = os.Lstat(path.Join(directory, "contents", string(inode)))
 	if err != nil {
-		Log.Fatal("util, getFileType symlink check error occured: ", err)
+		return 0, fmt.Errorf("symlink check error occured:", err)
 	}
 
 	if f.Mode()&os.ModeSymlink > 0 {
-		log.Println("Is symlink")
-		return typeSymlink
+		return typeSymlink, nil
 	}
 
-	return typeFile
+	return typeFile, nil
 }
