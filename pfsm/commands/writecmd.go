@@ -1,113 +1,109 @@
 package commands
 
 import (
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
-	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"syscall"
 )
 
-//WriteCommand writes data from Stdin to the file given in args[1] in the pfs directory args[0]
-//Can also be given an offset and length as args[2] and args[3] otherwise it writes from the start of the file
-func WriteCommand(args []string) {
+//WriteCommand writes data to the given file
+//offset and length can be given as -1 if the defaults are to be used
+func WriteCommand(directory, fileName string, offset, length int64, data []byte, sendOverNetwork bool) (returnCode int, returnError error, bytesWrote int) {
 	Log.Info("write command given")
-	if len(args) < 2 {
-		Log.Fatal("Not enough arguments!")
-	}
-	directory := args[0]
 	Log.Verbose("write : given directory = " + directory)
 
-	getFileSystemLock(directory, sharedLock)
-	defer unLockFileSystem(directory)
+	err := getFileSystemLock(directory, sharedLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err, 0
+	}
 
-	namepath := getParanoidPath(directory, args[1])
-	namepathType := getFileType(directory, namepath)
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+			bytesWrote = 0
+		}
+	}()
+
+	namepath := getParanoidPath(directory, fileName)
+	namepathType, err := getFileType(directory, namepath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err, 0
+	}
 
 	if namepathType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New(fileName + " does not exist"), 0
 	}
 
 	if namepathType == typeDir {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
-		return
+		return returncodes.EISDIR, errors.New(fileName + " is a directory"), 0
 	}
 
 	if namepathType == typeSymlink {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
-		return
+		return returncodes.EIO, errors.New(fileName + " is a symlink"), 0
 	}
 
-	fileNameBytes, code := getFileInode(namepath)
+	fileInodeBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err, 0
 	}
-	fileName := string(fileNameBytes)
+	inodeName := string(fileInodeBytes)
 
-	err := syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(directory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-		return
+		return returncodes.EACCES, errors.New("could not access " + fileName), 0
 	}
 
-	getFileLock(directory, fileName, exclusiveLock)
-	defer unLockFile(directory, fileName)
-
-	Log.Verbose("write : wrting to " + fileName)
-	fileData, err := ioutil.ReadAll(os.Stdin)
+	err = getFileLock(directory, inodeName, exclusiveLock)
 	if err != nil {
-		Log.Fatal("error reading input:", err)
+		return returncodes.EUNEXPECTED, err, 0
 	}
 
-	if len(args) == 2 {
-		err = ioutil.WriteFile(path.Join(directory, "contents", fileName), fileData, 0777)
+	defer func() {
+		err := unLockFile(directory, inodeName)
 		if err != nil {
-			Log.Fatal("error writing to contents file:", err)
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+			bytesWrote = 0
 		}
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
-		io.WriteString(os.Stdout, strconv.Itoa(len(fileData)))
+	}()
+
+	Log.Verbose("write : wrting to " + inodeName)
+	contentsFile, err := os.OpenFile(path.Join(directory, "contents", inodeName), os.O_WRONLY, 0777)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err), 0
+	}
+
+	if offset == -1 {
+		offset = 0
+	}
+
+	if length == -1 {
+		err = contentsFile.Truncate(offset)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file:", err), 0
+		}
 	} else {
-		contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
-		if err != nil {
-			Log.Fatal("error opening contents file:", err)
+		if len(data) > int(length) {
+			data = data[:length]
+		} else if len(data) < int(length) {
+			emptyBytes := make([]byte, int(length)-len(data))
+			data = append(data, emptyBytes...)
 		}
-		offset, err := strconv.Atoi(args[2])
-		if err != nil {
-			Log.Fatal("error converting offset from string to int:", err)
-		}
-
-		if len(args) == 3 {
-			err = contentsFile.Truncate(int64(offset))
-			if err != nil {
-				Log.Fatal("error truncating file:", err)
-			}
-		} else {
-			length, err := strconv.Atoi(args[3])
-			if err != nil {
-				Log.Fatal("error converting length from string to int:", err)
-			}
-
-			if len(fileData) > length {
-				fileData = fileData[:length]
-			} else if len(fileData) < length {
-				emptyBytes := make([]byte, length-len(fileData))
-				fileData = append(fileData, emptyBytes...)
-			}
-		}
-
-		wroteLen, err := contentsFile.WriteAt(fileData, int64(offset))
-		if err != nil {
-			Log.Fatal("error writing to file:", err)
-		}
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
-		io.WriteString(os.Stdout, strconv.Itoa(wroteLen))
 	}
 
-	if !Flags.Network {
-		sendToServer(directory, "write", args[1:], fileData)
+	wroteLen, err := contentsFile.WriteAt(data, offset)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file:", err), wroteLen
 	}
+
+	if sendOverNetwork {
+		//do this when mega binary
+		//sendToServer(directory, "write", args[1:], fileData)
+	}
+	return returncodes.OK, nil, wroteLen
 }
