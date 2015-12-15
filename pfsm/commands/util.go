@@ -158,17 +158,17 @@ func getFileInode(filePath string) (inodeBytes []byte, errorCode int, err error)
 	return bytes, returncodes.OK, nil
 }
 
-func deleteFile(filePath string) (returncode int) {
+func deleteFile(filePath string) (returncode int, returnerror error) {
 	err := os.Remove(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return returncodes.ENOENT
+			return returncodes.ENOENT, errors.New("error deleting file: " + filePath + " does not exist")
 		} else if os.IsPermission(err) {
-			return returncodes.EACCES
+			return returncodes.EACCES, errors.New("error deleting file: could not access " + filePath)
 		}
-		log.Fatalln("util, deleteFile", " error occured: ", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("unexpected error deleting file: ", err)
 	}
-	return returncodes.OK
+	return returncodes.OK, nil
 }
 
 const (

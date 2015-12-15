@@ -1,83 +1,98 @@
 package commands
 
 import (
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
+	"syscall"
 )
 
 // RmdirCommand removes a directory
-func RmdirCommand(args []string) {
+func RmdirCommand(directory, dirName string, sendOverNetwork bool) (returnCode int, returnError error) {
 	Log.Info("rmdir command called")
-	if len(args) < 2 {
-		Log.Fatal("Not enough arguments!")
+
+	err := getFileSystemLock(directory, exclusiveLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
 	}
 
-	directory := args[0]
-	getFileSystemLock(directory, exclusiveLock)
-	defer unLockFileSystem(directory)
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
 
-	dirToDelete := getParanoidPath(directory, args[1])
-	dirType := getFileType(directory, dirToDelete)
+	dirToDelete := getParanoidPath(directory, dirName)
+	dirType, err := getFileType(directory, dirToDelete)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+dirName+" file type:", err)
+	}
+
 	if dirType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New(dirName + " does not exist")
 	} else if dirType != typeDir {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTDIR))
-		return
-	} else {
-		files, err := ioutil.ReadDir(dirToDelete)
-		if err != nil {
-			if os.IsPermission(err) {
-				io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-				return
-			}
-			Log.Fatal("error reading directory:", err)
+		return returncodes.ENOTDIR, errors.New(dirName + " is not a directory")
+	}
+
+	files, err := ioutil.ReadDir(dirToDelete)
+	if err != nil {
+		if os.IsPermission(err) {
+			return returncodes.EACCES, errors.New("could not access " + dirName)
 		}
-		if len(files) > 1 {
-			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTEMPTY))
-			return
-		}
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading directory:", err)
+	}
+
+	if len(files) > 1 {
+		return returncodes.ENOTEMPTY, errors.New(dirName + " is not empty")
 	}
 
 	infoFileToDelete := path.Join(dirToDelete, "info")
-	inodeBytes, err := getFileInode(dirToDelete)
-	inodeString := string(inodeBytes)
-	if err != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(err))
-		return
+	inodeBytes, code, err := getFileInode(dirToDelete)
+	if code != returncodes.OK {
+		return code, err
 	}
+
+	inodeString := string(inodeBytes)
+
+	err = syscall.Access(path.Join(directory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
+	if err != nil {
+		return returncodes.EACCES, errors.New("could not access " + dirName)
+	}
+
 	inodeFileToDelete := path.Join(directory, "inodes", inodeString)
 	contentsFileToDelete := path.Join(directory, "contents", inodeString)
 
-	code := deleteFile(contentsFileToDelete)
+	code, err = deleteFile(contentsFileToDelete)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err
 	}
 
-	code = deleteFile(inodeFileToDelete)
+	code, err = deleteFile(inodeFileToDelete)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err
 	}
 
-	code = deleteFile(infoFileToDelete)
+	code, err = deleteFile(infoFileToDelete)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err
 	}
 
-	code = deleteFile(dirToDelete)
+	code, err = deleteFile(dirToDelete)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err
 	}
 
-	if !Flags.Network {
-		sendToServer(directory, "rmdir", args[1:], nil)
+	if sendOverNetwork {
+		//will be sorted later at mega binary
+		//sendToServer(directory, "rmdir", args[1:], nil)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }
