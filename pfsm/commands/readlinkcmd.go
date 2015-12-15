@@ -30,7 +30,7 @@ func ReadlinkCommand(directory, fileName string) (returnCode int, returnError er
 	link := getParanoidPath(directory, fileName)
 	fileType, err := getFileType(directory, link)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+fileName+" file type:", err), ""
+		return returncodes.EUNEXPECTED, err, ""
 	}
 
 	if fileType == typeENOENT {

@@ -184,7 +184,7 @@ func getFileType(directory, filePath string) (int, error) {
 		if os.IsNotExist(err) {
 			return typeENOENT, nil
 		}
-		return 0, fmt.Errorf("error stating file:", err)
+		return 0, fmt.Errorf("error getting file type of "+filePath+", error stating file:", err)
 	}
 
 	if f.Mode().IsDir() {
@@ -193,19 +193,19 @@ func getFileType(directory, filePath string) (int, error) {
 
 	inode, code, err := getFileInode(filePath)
 	if err != nil {
-		return 0, fmt.Errorf("error getting inode:", err)
+		return 0, fmt.Errorf("error getting file type of "+filePath+", error getting inode:", err)
 	}
 
 	if code != returncodes.OK {
 		if code == returncodes.ENOENT {
 			return typeENOENT, nil
 		}
-		return 0, errors.New("unexpected result from getFileInode:", code)
+		return 0, fmt.Errof("error getting file type of "+filePath+", unexpected result from getFileInode:", code)
 	}
 
 	f, err = os.Lstat(path.Join(directory, "contents", string(inode)))
 	if err != nil {
-		return 0, fmt.Errorf("symlink check error occured:", err)
+		return 0, fmt.Errorf("error getting file type of "+filePath+", symlink check error occured:", err)
 	}
 
 	if f.Mode()&os.ModeSymlink > 0 {

@@ -36,7 +36,7 @@ func ReadDirCommand(directory, dirName string) (returnCode int, returnError erro
 		dirpath = getParanoidPath(directory, dirName)
 		pathFileType, err := getFileType(directory, dirpath)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+dirName+" file type:", err), nil
+			return returncodes.EUNEXPECTED, err, nil
 		}
 
 		if pathFileType == typeENOENT {

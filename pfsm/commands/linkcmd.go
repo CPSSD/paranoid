@@ -34,7 +34,7 @@ func LinkCommand(directory, existingFileName, targetFileName string, sendOverNet
 
 	existingFileType, err := getFileType(directory, existingFilePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting existing file "+existingFileName+" file type:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
 	if existingFileType == typeENOENT {

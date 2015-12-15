@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"path"
 	"syscall"
@@ -30,7 +29,7 @@ func AccessCommand(directory, fileName string, mode uint32) (returnCode int, ret
 
 	fileType, err := getFileType(directory, namePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+fileName+" file type:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
 	if fileType == typeENOENT {

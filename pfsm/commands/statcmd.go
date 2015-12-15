@@ -40,7 +40,7 @@ func StatCommand(directory, fileName string) (returnCode int, returnError error,
 	namepath := getParanoidPath(directory, fileName)
 	namePathType, err := getFileType(directory, namepath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+fileName+" file type:", err), statInfo{}
+		return returncodes.EUNEXPECTED, err, statInfo{}
 	}
 
 	if namePathType == typeENOENT {

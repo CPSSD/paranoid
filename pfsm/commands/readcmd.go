@@ -36,7 +36,7 @@ func ReadCommand(directory, fileName string, offset, length int64) (returnCode i
 
 	fileType, err := getFileType(directory, namepath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+fileName+" fileType", err), nil
+		return returncodes.EUNEXPECTED, err, nil
 	}
 
 	if fileType == typeENOENT {

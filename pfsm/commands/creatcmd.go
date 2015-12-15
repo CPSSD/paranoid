@@ -32,7 +32,7 @@ func CreatCommand(directory, fileName string, perms os.FileMode, sendOverNetwork
 
 	fileType, err := getFileType(directory, namepath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+fileName+" file type:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
 	if fileType != typeENOENT {

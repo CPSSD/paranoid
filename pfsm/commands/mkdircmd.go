@@ -40,7 +40,7 @@ func MkdirCommand(directory, dirName string, mode os.FileMode, sendOverNetwork b
 
 	fileType, err := getFileType(directory, dirPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+dirName+" file type:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
 	if fileType != typeENOENT {

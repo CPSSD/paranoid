@@ -31,7 +31,7 @@ func SymlinkCommand(directory, existingFile, targetFile string, sendOverNetwork 
 
 	targetFileType, err := getFileType(directory, targetFilePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+targetFile+" file type:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
 	if targetFileType != typeENOENT {

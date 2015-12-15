@@ -18,12 +18,12 @@ func RenameCommand(directory, oldFileName, newFileName string, sendOverNetwork b
 
 	oldFileType, err := getFileType(directory, oldFilePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+oldFileName+" type:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
 	newFileType, err := getFileType(directory, newFilePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+newFileName+" type:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
 	err = getFileSystemLock(directory, exclusiveLock)

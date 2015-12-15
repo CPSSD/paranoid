@@ -31,7 +31,7 @@ func RmdirCommand(directory, dirName string, sendOverNetwork bool) (returnCode i
 	dirToDelete := getParanoidPath(directory, dirName)
 	dirType, err := getFileType(directory, dirToDelete)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+dirName+" file type:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
 	if dirType == typeENOENT {

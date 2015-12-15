@@ -1,78 +1,91 @@
 package commands
 
 import (
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io"
 	"os"
 	"path"
-	"strconv"
 	"syscall"
 )
 
-//TruncateCommand reduces the file given as args[1] in the paranoid-direcory args[0] to the size given in args[2]
-func TruncateCommand(args []string) {
+//TruncateCommand reduces the file given to the new length
+func TruncateCommand(directory, fileName string, length int64, sendOverNetwork bool) (returnCode int, returnError error) {
 	Log.Info("truncate command given")
-	if len(args) < 3 {
-		Log.Fatal("Not enough arguments!")
-	}
-	directory := args[0]
 	Log.Verbose("truncate : given directory = " + directory)
 
-	getFileSystemLock(directory, sharedLock)
-	defer unLockFileSystem(directory)
+	err := getFileSystemLock(directory, sharedLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
 
-	namepath := getParanoidPath(directory, args[1])
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
 
-	namepathType := getFileType(directory, namepath)
+	namepath := getParanoidPath(directory, fileName)
+	namepathType, err := getFileType(directory, namepath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
 	if namepathType == typeENOENT {
 		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New(fileName + " does not exist")
 	}
 
 	if namepathType == typeDir {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
-		return
+		return returncodes.EISDIR, errors.New(fileName + " is a directory")
 	}
 
 	if namepathType == typeSymlink {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
-		return
+		return returncodes.EIO, errors.New(fileName + " is a symlink")
 	}
 
-	fileNameBytes, code := getFileInode(namepath)
+	fileInodeBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err
 	}
-	fileName := string(fileNameBytes)
+	inodeName := string(fileInodeBytes)
 
-	err := syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(directory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-		return
+		return returncodes.EACCES, errors.New("could not access " + fileName)
 	}
 
-	getFileLock(directory, fileName, exclusiveLock)
-	defer unLockFile(directory, fileName)
+	err = getFileLock(directory, inodeName, exclusiveLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	defer func() {
+		err := unLockFile(directory, inodeName)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
 
 	Log.Verbose("truncate : truncating " + fileName)
-	newsize, err := strconv.Atoi(args[2])
-	if err != nil {
-		Log.Fatal("error converting newsize from string to int:", err)
-	}
 
 	contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
 	if err != nil {
-		Log.Fatal("error opening contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
 	}
 
-	err = contentsFile.Truncate(int64(newsize))
+	err = contentsFile.Truncate(length)
 	if err != nil {
-		Log.Fatal("error truncating file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file:", err)
 	}
 
-	if !Flags.Network {
-		sendToServer(directory, "truncate", args[1:], nil)
+	if sendOverNetwork {
+		//will be fixed later
+		//sendToServer(directory, "truncate", args[1:], nil)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }
