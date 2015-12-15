@@ -2,64 +2,79 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
 )
 
 // SymlinkCommand creates a symbolic link
-// args[0] is the init point, args[1] is the existing file, args[2] is the target file
-func SymlinkCommand(args []string) {
+func SymlinkCommand(directory, existingFile, targetFile string, sendOverNetwork bool) (returnCode int, returnError error) {
 	Log.Info("symlink command called")
-	if len(args) < 3 {
-		Log.Fatal("not enough arguments")
+
+	targetFilePath := getParanoidPath(directory, targetFile)
+
+	err := getFileSystemLock(directory, exclusiveLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
 	}
 
-	directory := args[0]
-	targetFilePath := getParanoidPath(directory, args[2])
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
 
-	getFileSystemLock(directory, exclusiveLock)
-	defer unLockFileSystem(directory)
-
-	// Make sure the target file not existing, if it is, quit
-	if getFileType(directory, targetFilePath) != typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
-		return
+	targetFileType, err := getFileType(directory, targetFilePath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+targetFile+" file type:", err)
 	}
 
-	uuidBytes := generateNewInode()
+	if targetFileType != typeENOENT {
+		return returncodes.EEXIST, errors.New(targetFile + " already exists")
+	}
+
+	uuidBytes, err := generateNewInode()
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
 	uuidString := string(uuidBytes)
 	Log.Verbose("symlink: uuid", uuidString)
 
-	// Create a new file with content which is the
-	// relative location of the existing file
-	err := ioutil.WriteFile(targetFilePath, uuidBytes, 0600)
+	err = ioutil.WriteFile(targetFilePath, uuidBytes, 0600)
 	if err != nil {
-		Log.Fatal("error writing file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing file:", err)
 	}
 
 	err = os.Symlink(os.DevNull, path.Join(directory, "contents", uuidString))
 	if err != nil {
-		Log.Fatal("error creating symlink:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating symlinks:", err)
 	}
 
 	nodeData := &inode{
 		Inode: uuidString,
 		Count: 1,
-		Link:  args[1],
+		Link:  existingFile,
 	}
+
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
-		Log.Fatal("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
 	}
 
 	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidString), jsonData, 0600)
-
-	// Send to the server if not coming from the network
-	if !Flags.Network {
-		sendToServer(directory, "symlink", args[1:], nil)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file:", err)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+
+	if sendOverNetwork {
+		//Handle this later at mega binary refactor stage
+		//sendToServer(directory, "symlink", args[1:], nil)
+	}
+	return returncodes.OK, nil
 }

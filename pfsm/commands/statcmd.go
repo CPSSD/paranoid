@@ -18,8 +18,7 @@ type statInfo struct {
 	Mode   os.FileMode
 }
 
-//StatCommand prints a json object containing information on the file given as args[1] in pfs directory args[0] to Stdout
-//Includes the length of the file, ctime, mtime and atime
+//StatCommand returns information about a file
 func StatCommand(directory, fileName string) (returnCode int, returnError error, info statInfo) {
 	Log.Info("Stat command called")
 	Log.Verbose("stat : given directory", directory)
