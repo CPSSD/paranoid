@@ -1,92 +1,105 @@
 package commands
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"syscall"
 	"time"
 )
 
-type timeInfo struct {
-	Atime *time.Time `json:"atime",omitempty`
-	Mtime *time.Time `json:"mtime",omitempty`
-}
-
 //UtimesCommand updates the acess time and modified time of a file
-func UtimesCommand(args []string) {
+func UtimesCommand(directory, fileName string, atime, mtime *time.Time, sendOverNetwork bool) (returnCode int, returnError error) {
 	Log.Info("utimes command called")
-	if len(args) < 2 {
-		Log.Fatal("Not enough arguments!")
-	}
-	directory := args[0]
 	Log.Verbose("utimes : given directory = " + directory)
 
-	getFileSystemLock(directory, sharedLock)
-	defer unLockFileSystem(directory)
-
-	namepath := getParanoidPath(directory, args[1])
-
-	if getFileType(directory, namepath) == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
-	}
-
-	input, err := ioutil.ReadAll(os.Stdin)
+	err := getFileSystemLock(directory, sharedLock)
 	if err != nil {
-		Log.Fatal("error reading input:", err)
-	}
-	times := timeInfo{}
-	err = json.Unmarshal(input, &times)
-	if err != nil {
-		Log.Fatal("error unmarshalling times:", err)
+		return returncodes.EUNEXPECTED, err
 	}
 
-	fileNameBytes, code := getFileInode(namepath)
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
+
+	namepath := getParanoidPath(directory, fileName)
+
+	fileType, err := getFileType(directory, namepath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	if fileType == typeENOENT {
+		return returncodes.ENOENT, errors.New(fileName + " does not exist")
+	}
+
+	fileInodeBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+		return code, err
 	}
-	fileName := string(fileNameBytes)
+	inodeName := string(fileInodeBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", fileName), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(directory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-		return
+		return returncodes.EACCES, errors.New("could not access " + fileName)
 	}
 
-	getFileLock(directory, fileName, exclusiveLock)
-	defer unLockFile(directory, fileName)
-
-	file, err := os.Open(path.Join(directory, "contents", fileName))
+	err = getFileLock(directory, inodeName, exclusiveLock)
 	if err != nil {
-		Log.Fatal("error opening contents file:", err)
+		return returncodes.EUNEXPECTED, err
+	}
+
+	defer func() {
+		err := unLockFile(directory, inodeName)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
+
+	file, err := os.Open(path.Join(directory, "contents", inodeName))
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
 	}
 
 	fi, err := file.Stat()
 	if err != nil {
-		Log.Fatal("error stating file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error stating file:", err)
 	}
+
 	stat := fi.Sys().(*syscall.Stat_t)
 	oldatime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	oldmtime := fi.ModTime()
-	if times.Atime == nil && times.Mtime == nil {
-		Log.Fatal("utimes : no times to update!")
+	if atime == nil && mtime == nil {
+		return returncodes.EUNEXPECTED, errors.New("no times to update!")
 	}
 
-	if times.Atime == nil {
-		os.Chtimes(path.Join(directory, "contents", fileName), oldatime, *times.Mtime)
-	} else if times.Mtime == nil {
-		os.Chtimes(path.Join(directory, "contents", fileName), *times.Atime, oldmtime)
+	if atime == nil {
+		err = os.Chtimes(path.Join(directory, "contents", inodeName), oldatime, *mtime)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
+		}
+	} else if mtime == nil {
+		err = os.Chtimes(path.Join(directory, "contents", inodeName), *atime, oldmtime)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
+		}
 	} else {
-		os.Chtimes(path.Join(directory, "contents", fileName), *times.Atime, *times.Mtime)
+		err = os.Chtimes(path.Join(directory, "contents", inodeName), *atime, *mtime)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
+		}
 	}
 
-	if !Flags.Network {
-		sendToServer(directory, "utimes", args[1:], input)
+	if sendOverNetwork {
+		//fix this when mega binary
+		//sendToServer(directory, "utimes", args[1:], input)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }
