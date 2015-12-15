@@ -2,11 +2,11 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsm/icclient"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -128,11 +128,11 @@ func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
 }
 
 func generateNewInode() (inodeBytes []byte, err error) {
-	inodeBytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
+	inodeBytes, err = ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	if err != nil {
 		return nil, fmt.Errorf("error generating new inode:", err)
 	}
-	return []byte(strings.TrimSpace(string(inodeBytes)))
+	return []byte(strings.TrimSpace(string(inodeBytes))), nil
 }
 
 func getFileInode(filePath string) (inodeBytes []byte, errorCode int, err error) {
@@ -200,7 +200,7 @@ func getFileType(directory, filePath string) (int, error) {
 		if code == returncodes.ENOENT {
 			return typeENOENT, nil
 		}
-		return 0, fmt.Errof("error getting file type of "+filePath+", unexpected result from getFileInode:", code)
+		return 0, fmt.Errorf("error getting file type of "+filePath+", unexpected result from getFileInode:", code)
 	}
 
 	f, err = os.Lstat(path.Join(directory, "contents", string(inode)))
