@@ -2,69 +2,83 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"io/ioutil"
-	"os"
 	"path"
 )
 
 // ReadlinkCommand reads the value of the symbolic link
-// args[0] is the init point and args[1] is the link
-func ReadlinkCommand(args []string) {
+func ReadlinkCommand(directory, fileName string) (returnCode int, returnError error, linkContents string) {
 	Log.Info("readlink called")
-	if len(args) < 2 {
-		Log.Fatal("not enough arguments")
+
+	err := getFileSystemLock(directory, sharedLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err, ""
 	}
 
-	directory := args[0]
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+			linkContents = ""
+		}
+	}()
 
-	getFileSystemLock(directory, sharedLock)
-	defer unLockFileSystem(directory)
-
-	link := getParanoidPath(directory, args[1])
-	fileType := getFileType(directory, link)
+	link := getParanoidPath(directory, fileName)
+	fileType, err := getFileType(directory, link)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+fileName+" file type:", err), ""
+	}
 
 	if fileType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New(fileName + " does not exist"), ""
 	}
 
 	if fileType == typeDir {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EISDIR))
-		return
+		return returncodes.EISDIR, errors.New(fileName + " is a directory"), ""
 	}
 
 	if fileType == typeFile {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
-		return
+		return returncodes.EIO, errors.New(fileName + " is a file"), ""
 	}
 
 	Log.Verbose("readlink: given directory", directory)
 
-	linkInode, code := getFileInode(link)
-	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+	linkInode, code, err := getFileInode(link)
+	if code != returncodes.OK || err != nil {
+		return code, err, ""
 	}
 
-	getFileLock(directory, string(linkInode), sharedLock)
-	defer unLockFile(directory, string(linkInode))
+	err = getFileLock(directory, string(linkInode), sharedLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err, ""
+	}
+
+	defer func() {
+		err := unLockFile(directory, string(linkInode))
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+			linkContents = ""
+		}
+	}()
 
 	inodePath := path.Join(directory, "inodes", string(linkInode))
 
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	if err != nil {
-		Log.Fatal("error reading link:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading link:", err), ""
 	}
 
 	inodeData := &inode{}
-	Log.Verbose("unlink unmarshaling ", string(inodeContents))
+	Log.Verbose("readlink unmarshaling ", string(inodeContents))
 	err = json.Unmarshal(inodeContents, &inodeData)
 	if err != nil {
-		Log.Fatal("error unmarshaling json ", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshalling json:", err), ""
 	}
 
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
-	io.WriteString(os.Stdout, string(inodeData.Link))
+	return returncodes.OK, nil, inodeData.Link
 }
