@@ -1,58 +1,68 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"io/ioutil"
-	"os"
 	"path"
 	"strings"
 )
 
-//ReadDirCommand takes a pfs directory as args[0] and prints a list of the names of the files in that directory 1 per line.
-func ReadDirCommand(args []string) {
+//ReadDirCommand returns a list of all the files in the given directory
+func ReadDirCommand(directory, dirName string) (returnCode int, returnError error, fileNames []string) {
 	Log.Info("readdir command called")
-	if len(args) < 2 {
-		Log.Fatal("Not enough arguments!")
+	Log.Verbose("readdir : given directory = " + directory)
+
+	err := getFileSystemLock(directory, sharedLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err, nil
 	}
 
-	directory := args[0]
-	getFileSystemLock(directory, sharedLock)
-	defer unLockFileSystem(directory)
-	Log.Verbose("readdir : given directory = " + directory)
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+			fileNames = nil
+		}
+	}()
 
 	dirpath := ""
 
-	if args[1] == "" {
+	if dirName == "" {
 		dirpath = path.Join(directory, "names")
 	} else {
-		dirpath = getParanoidPath(directory, args[1])
-		pathFileType := getFileType(directory, dirpath)
+		dirpath = getParanoidPath(directory, dirName)
+		pathFileType, err := getFileType(directory, dirpath)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+dirName+" file type:", err), nil
+		}
+
 		if pathFileType == typeENOENT {
-			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-			return
+			return returncodes.ENOENT, errors.New(dirName + " does not exist"), nil
 		}
+
 		if pathFileType == typeFile {
-			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTDIR))
-			return
+			return returncodes.ENOTDIR, errors.New(dirName + " is of type file"), nil
 		}
+
 		if pathFileType == typeSymlink {
-			io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EIO))
-			return
+			return returncodes.ENOTDIR, errors.New(dirName + " is of type symlink"), nil
 		}
 	}
 
 	files, err := ioutil.ReadDir(dirpath)
 	if err != nil {
-		Log.Fatal("error reading directory:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading directory "+dirName+":", err), nil
 	}
 
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	var names []string
 	for i := 0; i < len(files); i++ {
 		file := files[i].Name()
 		if file != "info" {
-			fmt.Println(file[:strings.LastIndex(file, "-")])
+			names = append(names, file[:strings.LastIndex(file, "-")])
 		}
 	}
+	return returncodes.OK, nil, fileNames
 }
