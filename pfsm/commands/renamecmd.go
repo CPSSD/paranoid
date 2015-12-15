@@ -1,58 +1,70 @@
 package commands
 
 import (
+	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"os"
 	"path"
 	"syscall"
 )
 
 // RenameCommand is called when renaming a file
-func RenameCommand(args []string) {
+func RenameCommand(directory, oldFileName, newFileName string, sendOverNetwork bool) (returnCode int, returnError error) {
 	Log.Info("rename command called")
-	if len(args) < 3 {
-		Log.Fatal("Not enough arguments!")
+
+	oldFilePath := getParanoidPath(directory, oldFileName)
+	newFilePath := getParanoidPath(directory, newFileName)
+
+	oldFileType, err := getFileType(directory, oldFilePath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+oldFileName+" type:", err)
 	}
 
-	directory := args[0]
-	oldFilePath := getParanoidPath(directory, args[1])
-	newFilePath := getParanoidPath(directory, args[2])
-	oldFileType := getFileType(directory, oldFilePath)
-	newFileType := getFileType(directory, newFilePath)
+	newFileType, err := getFileType(directory, newFilePath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting "+newFileName+" type:", err)
+	}
 
-	getFileSystemLock(directory, exclusiveLock)
-	defer unLockFileSystem(directory)
+	err = getFileSystemLock(directory, exclusiveLock)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	defer func() {
+		err := unLockFileSystem(directory)
+		if err != nil {
+			returnCode = returncodes.EUNEXPECTED
+			returnError = err
+		}
+	}()
 
 	if oldFileType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
-		return
+		return returncodes.ENOENT, errors.New(oldFileName + " does not exist")
 	}
 
 	if newFileType != typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EEXIST))
-		return
+		return returncodes.EEXIST, errors.New(newFileName + " already exists")
 	}
 
-	inodeBytes, code := getFileInode(oldFilePath)
-	if code != returncodes.OK {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(code))
-		return
+	inodeBytes, code, err := getFileInode(oldFilePath)
+	if code != returncodes.OK || err != nil {
+		return code, err
 	}
 
-	err := syscall.Access(path.Join(directory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(directory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.EACCES))
-		return
+		return returncodes.EACCES, errors.New("can not access " + oldFileName)
 	}
 
 	err = os.Rename(oldFilePath, newFilePath)
 	if err != nil {
-		Log.Fatal("error renaming file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error renaming file:", err)
 	}
 
-	if !Flags.Network {
-		sendToServer(directory, "rename", args[1:], nil)
+	if sendOverNetwork {
+		//This will be sorted later when we get rid of IC
+		//sendToServer(directory, "rename", args[1:], nil)
 	}
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
+	return returncodes.OK, nil
 }
