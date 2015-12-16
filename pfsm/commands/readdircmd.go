@@ -64,5 +64,5 @@ func ReadDirCommand(directory, dirName string) (returnCode int, returnError erro
 			names = append(names, file[:strings.LastIndex(file, "-")])
 		}
 	}
-	return returncodes.OK, nil, fileNames
+	return returncodes.OK, nil, names
 }

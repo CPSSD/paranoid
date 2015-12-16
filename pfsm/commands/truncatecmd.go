@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
 	"os"
 	"path"
 	"syscall"
@@ -35,7 +34,6 @@ func TruncateCommand(directory, fileName string, length int64, sendOverNetwork b
 	}
 
 	if namepathType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return returncodes.ENOENT, errors.New(fileName + " does not exist")
 	}
 
@@ -73,7 +71,7 @@ func TruncateCommand(directory, fileName string, length int64, sendOverNetwork b
 
 	Log.Verbose("truncate : truncating " + fileName)
 
-	contentsFile, err := os.OpenFile(path.Join(directory, "contents", fileName), os.O_WRONLY, 0777)
+	contentsFile, err := os.OpenFile(path.Join(directory, "contents", inodeName), os.O_WRONLY, 0777)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
 	}
