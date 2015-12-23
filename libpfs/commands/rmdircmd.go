@@ -3,8 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"io/ioutil"
 	"os"
 	"path"
@@ -35,10 +34,8 @@ func RmdirCommand(directory, dirName string, sendOverNetwork bool) (returnCode i
 	}
 
 	if dirType == typeENOENT {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOENT))
 		return returncodes.ENOENT, errors.New(dirName + " does not exist")
 	} else if dirType != typeDir {
-		io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.ENOTDIR))
 		return returncodes.ENOTDIR, errors.New(dirName + " is not a directory")
 	}
 

@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"log"
 	"net"
 	"os"
@@ -67,14 +69,12 @@ func doMount(c *cli.Context, args []string) {
 		log.Fatalln("FATAL : server-address in wrong format")
 	}
 
-	cmd := exec.Command("pfsm", "mount", pfsDir, splitAddress[0], splitAddress[1], args[2])
-	err = cmd.Run()
-	if err != nil {
-		log.Fatalln("FATAL error running pfsm mount command : ", err)
+	returncode, err := commands.MountCommand(pfsDir, splitAddress[0], splitAddress[1], args[2])
+	if returncode != returncodes.OK {
+		log.Fatalln("FATAL error running pfs mount command : ", err)
 	}
 
 	outfile, err := os.Create(path.Join(pfsDir, "meta", "logs", "pfsdLog.txt"))
-
 	if err != nil {
 		log.Fatalln("FATAL error creating output file")
 	}
@@ -87,7 +87,7 @@ func doMount(c *cli.Context, args []string) {
 			log.Println("INFO: Starting PFSD in secure mode.")
 			//TODO(terry): Add a way to check if the given cert is its own CA,
 			// and skip validation based on that.
-			cmd = exec.Command("pfsd", "-cert="+certPath, "-key="+keyPath,
+			cmd := exec.Command("pfsd", "-cert="+certPath, "-key="+keyPath,
 				"-skip_verification", pfsDir, splitAddress[0], splitAddress[1])
 			cmd.Stderr = outfile
 			err = cmd.Start()
@@ -104,7 +104,7 @@ func doMount(c *cli.Context, args []string) {
 				}
 			}
 			log.Println("INFO: Starting PFSD in unsecure mode.")
-			cmd = exec.Command("pfsd", pfsDir, splitAddress[0], splitAddress[1])
+			cmd := exec.Command("pfsd", pfsDir, splitAddress[0], splitAddress[1])
 			cmd.Stderr = outfile
 			err = cmd.Start()
 		}
@@ -119,7 +119,7 @@ func doMount(c *cli.Context, args []string) {
 		pfiFlags = append(pfiFlags, "-n")
 	}
 
-	cmd = exec.Command("pfi", append(pfiFlags, pfiArgs...)...)
+	cmd := exec.Command("pfi", append(pfiFlags, pfiArgs...)...)
 	outfile, err = os.Create(path.Join(pfsDir, "meta", "logs", "pfiLog.txt"))
 
 	if err != nil {

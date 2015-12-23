@@ -3,10 +3,11 @@ package commands
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/paranoid-cli/tls"
 	"log"
 	"os"
-	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
@@ -58,11 +59,10 @@ func Init(c *cli.Context) {
 		log.Fatalln("FATAL : Error making pfs directory, error : ", err)
 	}
 
-	cmd := exec.Command("pfsm", "init", directory)
-	err = cmd.Run()
-	if err != nil {
+	returncode, err := commands.InitCommand(directory)
+	if returncode != returncodes.OK {
 		cleanupPFS(directory)
-		log.Fatalln("FATAL : ", err)
+		log.Fatalln("FATAL : error running pfs init : ", err)
 	}
 
 	if c.Bool("unsecure") {

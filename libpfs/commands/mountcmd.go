@@ -2,10 +2,8 @@ package commands
 
 import (
 	"fmt"
-	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"io"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"io/ioutil"
-	"os"
 	"path"
 	"path/filepath"
 )
@@ -36,6 +34,5 @@ func MountCommand(directory, ip, port, mountPoint string) (returnCode int, retur
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing mountpoint:", err)
 	}
 
-	io.WriteString(os.Stdout, returncodes.GetReturnCode(returncodes.OK))
 	return returncodes.OK, nil
 }

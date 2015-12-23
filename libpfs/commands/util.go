@@ -3,9 +3,8 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/pfsm/icclient"
-	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"io/ioutil"
 	"os"
 	"path"
@@ -108,14 +107,6 @@ func unLockFile(paranoidDir, fileName string) error {
 		return errors.New("could not unlock " + fileName)
 	}
 	return nil
-}
-
-func sendToServer(paranoidDir, command string, args []string, data []byte) {
-	if data == nil {
-		icclient.SendMessage(paranoidDir, command, args)
-	} else {
-		icclient.SendMessageWithData(paranoidDir, command, args, data)
-	}
 }
 
 func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {

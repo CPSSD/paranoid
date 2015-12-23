@@ -3,7 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/cpssd/paranoid/pfsm/returncodes"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"io/ioutil"
 	"os"
 	"path"

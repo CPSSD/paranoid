@@ -2,7 +2,7 @@ package commands
 
 import (
 	"errors"
-	"github.com/cpssd/paranoid/pfsm/returncodes"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"path"
 	"syscall"
 )
