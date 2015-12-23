@@ -1,18 +1,17 @@
 // +build integration
 
-package main
+package pfi
 
 import (
+	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfi/filesystem"
-	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
+	"log"
 	"os"
-	"os/exec"
 	"path"
-	"strings"
 	"testing"
 	"time"
 )
@@ -30,109 +29,30 @@ func removeTestDir(name string) {
 }
 
 func TestMain(m *testing.M) {
-	util.Log, _ = logger.New("testPackage", "testComponent", "/dev/null")
+	var err error
+	util.Log, err = logger.New("testPackage", "testComponent", os.DevNull)
+	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	if err != nil {
+		log.Fatalln("Error setting up logger :", err)
+	}
+	commands.Log, err = logger.New("testPackage", "testComponent", os.DevNull)
 	os.Exit(m.Run())
 }
 
-func TestFuseExternalUsage(t *testing.T) {
-	t.Skip()
+func setuptesting(t *testing.T) {
+	removeTestDir("pfiTestPfsDir")
 	createTestDir(t, "pfiTestPfsDir")
-	defer removeTestDir("pfiTestPfsDir")
-	createTestDir(t, "pfiTestMountPoint")
-	defer removeTestDir("pfiTestMountPoint")
-	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
-	err := cmd.Run()
+	_, err := commands.InitCommand(path.Join(os.TempDir(), "pfiTestPfsDir"))
 	if err != nil {
-		t.Error("pfsm setup failed :", err)
-	}
-	cmd = exec.Command("go", "run", "main.go", "-n", path.Join(os.TempDir(), "pfiTestPfsDir"), path.Join(os.TempDir(), "pfiTestMountPoint"))
-	cmd.Stderr = os.Stderr
-	time.Sleep(time.Second * 1) //Wait 1 second before trying to start pfi. (this may help with mount not empty issues)
-	err = cmd.Start()
-	if err != nil {
-		t.Error("Unable to start pfi :", err)
-	}
-	time.Sleep(time.Second * 2) //Wait 2 seconds so that file system is mounted before we start testing it.
-
-	cmd = exec.Command("touch", path.Join(os.TempDir(), "pfiTestMountPoint", "helloworld.txt"))
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	if err != nil {
-		t.Error("Error running touch :", err)
-	}
-
-	cmd = exec.Command("ls", path.Join(os.TempDir(), "pfiTestMountPoint"))
-	cmd.Stderr = os.Stderr
-	output, err := cmd.Output()
-	if err != nil {
-		t.Error("Error running ls : ", err)
-	}
-	fileName := strings.TrimSpace(string(output))
-	if fileName != "helloworld.txt" {
-		t.Error("ls returned incorrect result")
-	}
-
-	cmd = exec.Command("pfsm", "-n", "write", path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt")
-	cmd.Stderr = os.Stderr
-	pipe, err := cmd.StdinPipe()
-	if err != nil {
-		t.Error("Error creating pipe :", err)
-	}
-	_, err = pipe.Write([]byte("CPSSD 4 Lyfe"))
-	if err != nil {
-		t.Error("Error writing to pipe :", err)
-	}
-	err = pipe.Close()
-	if err != nil {
-		t.Error("Error closing pipe :", err)
-	}
-	err = cmd.Run()
-	if err != nil {
-		t.Error("Error writing to pfsm :", err)
-	}
-
-	time.Sleep(time.Second * 1) //Wait before cating or old data may be recieved
-	cmd = exec.Command("cat", path.Join(os.TempDir(), "pfiTestMountPoint", "helloworld.txt"))
-	cmd.Stderr = os.Stderr
-	output, err = cmd.Output()
-	if err != nil {
-		t.Error("Error running cat command :", err)
-	}
-	if string(output) != "CPSSD 4 Lyfe" {
-		t.Error("Unexpected output from cat command")
-	}
-
-	cmd = exec.Command("stat", path.Join(os.TempDir(), "pfiTestMountPoint", "helloworld.txt"))
-	cmd.Stderr = os.Stderr
-	output, err = cmd.Output()
-	if err != nil || len(output) == 0 {
-		t.Error("Error running stat command :", err)
-	}
-
-	cmd = exec.Command("fusermount", "-u", "-z", path.Join(os.TempDir(), "pfiTestMountPoint"))
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	if err != nil {
-		t.Error("could not dismount filesystem", err)
+		util.Log.Fatal("Error initing paranoid file system:", err)
 	}
 }
 
 func TestFuseFilePerms(t *testing.T) {
-	createTestDir(t, "pfiTestPfsDir")
+	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
-	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
-	pfsminterface.OriginFlag = "-n"
 
-	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		t.Error("pfsm setup failed :", err)
-	}
-
-	cmd = exec.Command("pfsm", "-n", "creat", path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", "0777")
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777), false)
 	if err != nil {
 		t.Error("pfsm setup failed :", err)
 	}
@@ -166,17 +86,8 @@ func TestFuseFilePerms(t *testing.T) {
 }
 
 func TestFuseFileOperations(t *testing.T) {
-	createTestDir(t, "pfiTestPfsDir")
+	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
-	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
-	pfsminterface.OriginFlag = "-n"
-
-	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		t.Error("pfsm setup failed :", err)
-	}
 
 	pfs := &filesystem.ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
@@ -227,17 +138,8 @@ func TestFuseFileOperations(t *testing.T) {
 }
 
 func TestFuseFileSystemOperations(t *testing.T) {
-	createTestDir(t, "pfiTestPfsDir")
+	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
-	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
-	pfsminterface.OriginFlag = "-n"
-
-	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		t.Error("pfsm setup failed :", err)
-	}
 
 	pfs := &filesystem.ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
@@ -290,14 +192,10 @@ func TestFuseFileSystemOperations(t *testing.T) {
 }
 
 func TestFuseLink(t *testing.T) {
-	createTestDir(t, "pfiTestPfsDir")
+	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
-	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
-	pfsminterface.OriginFlag = "-n"
 
-	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777), false)
 	if err != nil {
 		t.Error("pfsm setup failed :", err)
 	}
@@ -338,17 +236,8 @@ func TestFuseLink(t *testing.T) {
 }
 
 func TestFuseUtimes(t *testing.T) {
-	createTestDir(t, "pfiTestPfsDir")
+	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
-	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
-	pfsminterface.OriginFlag = "-n"
-
-	cmd := exec.Command("pfsm", "init", path.Join(os.TempDir(), "pfiTestPfsDir"))
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		t.Error("pfsm setup failed :", err)
-	}
 
 	pfs := &filesystem.ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
