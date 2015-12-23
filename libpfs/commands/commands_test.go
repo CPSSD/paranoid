@@ -3,8 +3,8 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"os"
 	"path"
 	"testing"
