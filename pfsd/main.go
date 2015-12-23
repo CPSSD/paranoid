@@ -77,7 +77,7 @@ func main() {
 		}
 	}
 
-	go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
+	pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
 
 	if !*noNetwork {
 		pnetserver.ParanoidDir = flag.Arg(0)
