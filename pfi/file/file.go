@@ -1,11 +1,10 @@
 package file
 
 import (
-	"encoding/json"
-	"github.com/cpssd/paranoid/pfi/pfsminterface"
+	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/pfi/util"
-	"github.com/cpssd/paranoid/pfsm/returncodes"
-	"strconv"
+	"os"
 	"time"
 
 	"github.com/hanwen/go-fuse/fuse"
@@ -31,7 +30,15 @@ func NewParanoidFile(name string) nodefs.File {
 //Read reads a file and returns an array of bytes
 func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
 	util.Log.Info("Read called on file:", f.Name)
-	code, data := pfsminterface.RunCommand(nil, "read", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(buf)), 10))
+	code, err, data := commands.ReadCommand(util.PfsDirectory, f.Name, off, int64(len(buf)))
+	if code == returncodes.EUNEXPECTED {
+		util.Log.Fatal("Error running read command :", err)
+	}
+
+	if err != nil {
+		util.Log.Error("Error running read command :", err)
+	}
+
 	copy(buf, data)
 	if code != returncodes.OK {
 		return nil, util.GetFuseReturnCode(code)
@@ -42,48 +49,61 @@ func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status
 //Write writes to a file
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	util.Log.Info("Write called on file : " + f.Name)
-	code, output := pfsminterface.RunCommand(content, "write", util.PfsDirectory, f.Name, strconv.FormatInt(off, 10), strconv.FormatInt(int64(len(content)), 10))
+	code, err, bytesWritten := commands.WriteCommand(util.PfsDirectory, f.Name, off, int64(len(content)), content, util.SendOverNetwork)
+	if code == returncodes.EUNEXPECTED {
+		util.Log.Fatal("Error running write command :", err)
+	}
+
+	if err != nil {
+		util.Log.Error("Error running write command :", err)
+	}
+
 	if code != returncodes.OK {
 		return 0, util.GetFuseReturnCode(code)
 	}
 
-	lenReturn, err := strconv.ParseInt(string(output), 10, 64)
-	if err != nil {
-		return 0, fuse.EIO
-	}
-	return uint32(lenReturn), fuse.OK
+	return uint32(bytesWritten), fuse.OK
 }
 
 //Truncate is called when a file is to be reduced in length to size.
 func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	util.Log.Info("Truncate called on file : " + f.Name)
-	code, _ := pfsminterface.RunCommand(nil, "truncate", util.PfsDirectory, f.Name, strconv.FormatInt(int64(size), 10))
-	return util.GetFuseReturnCode(code)
-}
+	code, err := commands.TruncateCommand(util.PfsDirectory, f.Name, int64(size), util.SendOverNetwork)
+	if code == returncodes.EUNEXPECTED {
+		util.Log.Fatal("Error running truncate command :", err)
+	}
 
-//The structure for sending new atimes and mtimes to pfsm
-type timeInfo struct {
-	Atime *time.Time `json:"atime",omitempty`
-	Mtime *time.Time `json:"mtime",omitempty`
+	if err != nil {
+		util.Log.Error("Error running truncate command :", err)
+	}
+
+	return util.GetFuseReturnCode(code)
 }
 
 //Utimens updates the access and mofication time of the file.
 func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 	util.Log.Info("Utimens called on file : " + f.Name)
-	newTimes := &timeInfo{
-		Atime: atime,
-		Mtime: mtime}
-	jsonTimes, err := json.Marshal(newTimes)
-	if err != nil {
-		util.Log.Fatal("Could not marshal time info:", err)
+	code, err := commands.UtimesCommand(util.PfsDirectory, f.Name, atime, mtime, util.SendOverNetwork)
+	if code == returncodes.EUNEXPECTED {
+		util.Log.Fatal("Error running utimes command :", err)
 	}
-	code, _ := pfsminterface.RunCommand(jsonTimes, "utimes", util.PfsDirectory, f.Name)
+
+	if err != nil {
+		util.Log.Error("Error running utimes command :", err)
+	}
 	return util.GetFuseReturnCode(code)
 }
 
 //Chmod changes the permission flags of the file
 func (f *ParanoidFile) Chmod(perms uint32) fuse.Status {
 	util.Log.Info("Chmod called on file : " + f.Name)
-	code, _ := pfsminterface.RunCommand(nil, "chmod", util.PfsDirectory, f.Name, strconv.FormatInt(int64(perms), 8))
+	code, err := commands.ChmodCommand(util.PfsDirectory, f.Name, os.FileMode(perms), util.SendOverNetwork)
+	if code == returncodes.EUNEXPECTED {
+		util.Log.Fatal("Error running chmod command :", err)
+	}
+
+	if err != nil {
+		util.Log.Error("Error running chmod command :", err)
+	}
 	return util.GetFuseReturnCode(code)
 }

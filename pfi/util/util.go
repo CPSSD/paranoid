@@ -1,8 +1,8 @@
 package util
 
 import (
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/pfsm/returncodes"
 	"github.com/hanwen/go-fuse/fuse"
 	"syscall"
 )
@@ -10,6 +10,7 @@ import (
 var MountPoint string
 var PfsDirectory string
 var LogOutput bool
+var SendOverNetwork bool
 var Log *logger.ParanoidLogger
 
 func GetFuseReturnCode(retcode int) fuse.Status {

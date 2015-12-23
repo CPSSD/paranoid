@@ -3,10 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/cpssd/paranoid/pfi"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
-	"github.com/cpssd/paranoid/pfsd/icserver"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
@@ -28,25 +27,9 @@ var (
 	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
 	skipVerify = flag.Bool("skip_verification", false,
 		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
+	noNetwork = flag.Bool("n", false, "Do not perform any networking")
+	verbose   = flag.Bool("v", false, "Use verbose logging")
 )
-
-func startIcAndListen(pfsDir string) {
-	defer globals.Wait.Done()
-
-	globals.Wait.Add(1)
-	go icserver.RunServer(pfsDir, true)
-
-	for {
-		select {
-		case message := <-icserver.MessageChan:
-			pnetclient.SendRequest(message)
-		case _, ok := <-globals.Quit:
-			if !ok {
-				return
-			}
-		}
-	}
-}
 
 func startRPCServer(lis *net.Listener) {
 	var opts []grpc.ServerOption
@@ -82,62 +65,68 @@ func main() {
 		globals.TLSEnabled = false
 	}
 
-	if len(flag.Args()) < 3 {
-		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <Discovery Server> <Discovery Port>\n")
+	if len(flag.Args()) < 4 {
+		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <mount_point> <Discovery Server> <Discovery Port>\n")
 		os.Exit(1)
 	}
-	discoveryPort, err := strconv.Atoi(flag.Arg(2))
-	if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
-		log.Fatalln("FATAL: Discovery port must be a number between 1 and 65535, inclusive.")
-	}
-	pnetserver.ParanoidDir = flag.Arg(0)
-	globals.Wait.Add(1)
-	go startIcAndListen(pnetserver.ParanoidDir)
 
-	//Asking for port 0 requests a random free port from the OS.
-	lis, err := net.Listen("tcp", ":0")
-	if err != nil {
-		log.Fatalf("FATAL: Failed to start listening : %v.\n", err)
-	}
-	splits := strings.Split(lis.Addr().String(), ":")
-	port, err := strconv.Atoi(splits[len(splits)-1])
-	if err != nil {
-		log.Fatalln("Could not parse port", splits[len(splits)-1], " Error :", err)
-	}
-	globals.Port = port
-
-	//Try and set up uPnP. Otherwise use internal IP.
-	globals.UPnPEnabled = false
-	err = upnp.DiscoverDevices()
-	if err == nil {
-		log.Println("UPnP devices available")
-		externalPort, err := upnp.AddPortMapping(port)
-		if err == nil {
-			log.Println("UPnP port mapping enabled")
-			port = externalPort
-			globals.Port = externalPort
-			globals.UPnPEnabled = true
+	if !*noNetwork {
+		discoveryPort, err := strconv.Atoi(flag.Arg(3))
+		if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
+			log.Fatalln("FATAL: Discovery port must be a number between 1 and 65535, inclusive.")
 		}
 	}
 
-	globals.Server, err = upnp.GetIP()
-	if err != nil {
-		log.Fatalln("FATAL: Can't get IP. Error : ", err)
-	}
-	log.Println("INFO: Peer address:", globals.Server+":"+strconv.Itoa(globals.Port))
+	go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
 
-	if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
-		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "does not exist.")
-	}
-	if _, err := os.Stat(path.Join(pnetserver.ParanoidDir, "meta")); os.IsNotExist(err) {
-		log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
-	}
+	if !*noNetwork {
+		pnetserver.ParanoidDir = flag.Arg(0)
 
-	dnetclient.SetDiscovery(flag.Arg(1), flag.Arg(2), strconv.Itoa(port))
-	dnetclient.JoinDiscovery("_")
-	createPid("pfsd")
-	startRPCServer(&lis)
-	HandleSignals()
+		//Asking for port 0 requests a random free port from the OS.
+		lis, err := net.Listen("tcp", ":0")
+		if err != nil {
+			log.Fatalf("FATAL: Failed to start listening : %v.\n", err)
+		}
+		splits := strings.Split(lis.Addr().String(), ":")
+		port, err := strconv.Atoi(splits[len(splits)-1])
+		if err != nil {
+			log.Fatalln("Could not parse port", splits[len(splits)-1], " Error :", err)
+		}
+		globals.Port = port
+
+		//Try and set up uPnP. Otherwise use internal IP.
+		globals.UPnPEnabled = false
+		err = upnp.DiscoverDevices()
+		if err == nil {
+			log.Println("UPnP devices available")
+			externalPort, err := upnp.AddPortMapping(port)
+			if err == nil {
+				log.Println("UPnP port mapping enabled")
+				port = externalPort
+				globals.Port = externalPort
+				globals.UPnPEnabled = true
+			}
+		}
+
+		globals.Server, err = upnp.GetIP()
+		if err != nil {
+			log.Fatalln("FATAL: Can't get IP. Error : ", err)
+		}
+		log.Println("INFO: Peer address:", globals.Server+":"+strconv.Itoa(globals.Port))
+
+		if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
+			log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "does not exist.")
+		}
+		if _, err := os.Stat(path.Join(pnetserver.ParanoidDir, "meta")); os.IsNotExist(err) {
+			log.Fatalln("FATAL: path", pnetserver.ParanoidDir, "is not valid PFS root.")
+		}
+
+		dnetclient.SetDiscovery(flag.Arg(2), flag.Arg(3), strconv.Itoa(port))
+		dnetclient.JoinDiscovery("_")
+		createPid("pfsd")
+		startRPCServer(&lis)
+		HandleSignals()
+	}
 }
 
 func createPid(processName string) {

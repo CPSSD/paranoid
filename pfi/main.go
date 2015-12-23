@@ -1,10 +1,8 @@
-package main
+package pfi
 
 import (
-	"flag"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfi/filesystem"
-	"github.com/cpssd/paranoid/pfi/pfsminterface"
 	"github.com/cpssd/paranoid/pfi/util"
 	"path/filepath"
 
@@ -12,38 +10,23 @@ import (
 	"github.com/hanwen/go-fuse/fuse/pathfs"
 )
 
-func main() {
-	// parsing flags and args
-	logOutput := flag.Bool("v", false, "Log operations in standard output")
-	markNetwork := flag.Bool("n", false, "Mark file system operations as coming from the network")
-	flag.Parse()
-
+func StartPfi(pfsDir, mountPoint string, logOutput, sendOverNetwork bool) {
 	// Create a logger
 	util.Log, _ = logger.New("pfi", "pfi", "/dev/null")
-	util.LogOutput = *logOutput
-	if *logOutput {
+	util.LogOutput = logOutput
+	util.SendOverNetwork = sendOverNetwork
+	if logOutput {
 		util.Log.SetLogLevel(logger.VERBOSE)
 	}
 
-	if *markNetwork {
-		pfsminterface.OriginFlag = "-n"
-	} else {
-		pfsminterface.OriginFlag = "-f"
-	}
-	noFlagArgs := flag.Args()
-
-	if len(noFlagArgs) < 2 {
-		util.Log.Fatal("\nUsage:\npfi [flags] <PfsInitPoint> <MountPoint>")
-	}
-
 	var err error
-	util.PfsDirectory, err = filepath.Abs(noFlagArgs[0])
+	util.PfsDirectory, err = filepath.Abs(pfsDir)
 	if err != nil {
-		util.Log.Fatal(err)
+		util.Log.Fatal("Error getting pfsdirectory absoulte path :", err)
 	}
-	util.MountPoint, err = filepath.Abs(noFlagArgs[1])
+	util.MountPoint, err = filepath.Abs(mountPoint)
 	if err != nil {
-		util.Log.Fatal(err)
+		util.Log.Fatal("Error getting mountpoint absoulte path :", err)
 	}
 
 	// setting up with fuse

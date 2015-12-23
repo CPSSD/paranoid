@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func Utimes(ips []globals.Node, path string, data []byte) {
+func Utimes(ips []globals.Node, path string, accessSeconds, accessNanoSeconds, modifySeconds, modifyNanoSeconds int64) {
 	for _, ipAddress := range ips {
 		conn := Dial(ipAddress)
 
@@ -15,7 +15,7 @@ func Utimes(ips []globals.Node, path string, data []byte) {
 		client := pb.NewParanoidNetworkClient(conn)
 
 		_, clientErr := client.Utimes(context.Background(),
-			&pb.UtimesRequest{path, data})
+			&pb.UtimesRequest{path, accessSeconds, accessNanoSeconds, modifySeconds, modifyNanoSeconds})
 		if clientErr != nil {
 			log.Println("Utimes Error on ", ipAddress, "Error:", clientErr)
 		}
