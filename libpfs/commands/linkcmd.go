@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
@@ -123,8 +124,7 @@ func LinkCommand(directory, existingFileName, targetFileName string, sendOverNet
 	}
 
 	if sendOverNetwork {
-		//This will be sorted later when we get rid of IC
-		//sendToServer(directory, "link", args[1:], nil)
+		pnetclient.Link(existingFilePath, targetFilePath)
 	}
 	return returncodes.OK, nil
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 	"syscall"
@@ -63,8 +64,7 @@ func RenameCommand(directory, oldFileName, newFileName string, sendOverNetwork b
 	}
 
 	if sendOverNetwork {
-		//This will be sorted later when we get rid of IC
-		//sendToServer(directory, "rename", args[1:], nil)
+		pnetclient.Rename(oldFileName, newFileName)
 	}
 	return returncodes.OK, nil
 }

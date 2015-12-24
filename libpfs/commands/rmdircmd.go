@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
@@ -88,8 +89,7 @@ func RmdirCommand(directory, dirName string, sendOverNetwork bool) (returnCode i
 	}
 
 	if sendOverNetwork {
-		//will be sorted later at mega binary
-		//sendToServer(directory, "rmdir", args[1:], nil)
+		pnetclient.Rmdir(dirName)
 	}
 	return returncodes.OK, nil
 }

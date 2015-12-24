@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
@@ -115,8 +116,7 @@ func UnlinkCommand(directory, fileName string, sendOverNetwork bool) (returnCode
 	}
 
 	if sendOverNetwork {
-		//do later after mega binary refactor
-		//sendToServer(directory, "unlink", args[1:], nil)
+		pnetclient.Unlink(fileName)
 	}
 	return returncodes.OK, nil
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 	"syscall"
@@ -66,8 +67,7 @@ func ChmodCommand(directory, fileName string, perms os.FileMode, sendOverNetwork
 	}
 
 	if sendOverNetwork {
-		//This will be sorted later when we get rid of IC
-		//sendToServer(directory, "chmod", args[1:], nil)
+		pnetclient.Chmod(fileName, uint32(perms))
 	}
 	return returncodes.OK, nil
 }

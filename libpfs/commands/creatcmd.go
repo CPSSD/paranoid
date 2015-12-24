@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
@@ -77,8 +78,7 @@ func CreatCommand(directory, fileName string, perms os.FileMode, sendOverNetwork
 	}
 
 	if sendOverNetwork {
-		//This will be sorted later when we get rid of IC
-		//sendToServer(directory, "creat", args[1:], nil)
+		pnetclient.Creat(fileName, uint32(perms))
 	}
 	return returncodes.OK, nil
 }

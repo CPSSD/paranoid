@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 	"syscall"
@@ -82,8 +83,7 @@ func TruncateCommand(directory, fileName string, length int64, sendOverNetwork b
 	}
 
 	if sendOverNetwork {
-		//will be fixed later
-		//sendToServer(directory, "truncate", args[1:], nil)
+		pnetclient.Truncate(fileName, uint64(length))
 	}
 	return returncodes.OK, nil
 }

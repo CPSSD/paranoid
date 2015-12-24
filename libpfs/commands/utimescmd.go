@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 	"syscall"
@@ -85,21 +86,26 @@ func UtimesCommand(directory, fileName string, atime, mtime *time.Time, sendOver
 		if err != nil {
 			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
 		}
+		if sendOverNetwork {
+			pnetclient.Utimes(fileName, 0, 0, int64(mtime.Second()), int64(mtime.Nanosecond()))
+		}
 	} else if mtime == nil {
 		err = os.Chtimes(path.Join(directory, "contents", inodeName), *atime, oldmtime)
 		if err != nil {
 			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
+		}
+		if sendOverNetwork {
+			pnetclient.Utimes(fileName, int64(atime.Second()), int64(atime.Nanosecond()), 0, 0)
 		}
 	} else {
 		err = os.Chtimes(path.Join(directory, "contents", inodeName), *atime, *mtime)
 		if err != nil {
 			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
 		}
+		if sendOverNetwork {
+			pnetclient.Utimes(fileName, int64(atime.Second()), int64(atime.Nanosecond()), int64(mtime.Second()), int64(mtime.Nanosecond()))
+		}
 	}
 
-	if sendOverNetwork {
-		//fix this when mega binary
-		//sendToServer(directory, "utimes", args[1:], input)
-	}
 	return returncodes.OK, nil
 }

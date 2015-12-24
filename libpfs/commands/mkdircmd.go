@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 )
@@ -91,8 +92,7 @@ func MkdirCommand(directory, dirName string, mode os.FileMode, sendOverNetwork b
 	}
 
 	if sendOverNetwork {
-		//This will be sorted later when we get rid of IC
-		//sendToServer(directory, "mkdir", args[1:], nil)
+		pnetclient.Mkdir(dirName, uint32(mode))
 	}
 	return returncodes.OK, nil
 }

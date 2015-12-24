@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
@@ -73,8 +74,7 @@ func SymlinkCommand(directory, existingFile, targetFile string, sendOverNetwork 
 	}
 
 	if sendOverNetwork {
-		//Handle this later at mega binary refactor stage
-		//sendToServer(directory, "symlink", args[1:], nil)
+		pnetclient.Symlink(existingFile, targetFile)
 	}
 	return returncodes.OK, nil
 }
