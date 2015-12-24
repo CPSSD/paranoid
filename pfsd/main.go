@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/cpssd/paranoid/pfi"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/pfi"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"

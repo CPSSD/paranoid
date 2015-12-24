@@ -5,8 +5,8 @@ package pfi
 import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/pfi/filesystem"
-	"github.com/cpssd/paranoid/pfi/util"
+	"github.com/cpssd/paranoid/pfsd/pfi/filesystem"
+	"github.com/cpssd/paranoid/pfsd/pfi/util"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
 	"log"

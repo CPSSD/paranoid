@@ -3,8 +3,8 @@ package filesystem
 import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfi/file"
-	"github.com/cpssd/paranoid/pfi/util"
+	"github.com/cpssd/paranoid/pfsd/pfi/file"
+	"github.com/cpssd/paranoid/pfsd/pfi/util"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 	"github.com/hanwen/go-fuse/fuse/pathfs"

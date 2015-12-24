@@ -3,7 +3,7 @@ package file
 import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfi/util"
+	"github.com/cpssd/paranoid/pfsd/pfi/util"
 	"os"
 	"time"
 
