@@ -9,6 +9,7 @@ import (
 
 func Creat(filename string, permissions uint32) {
 	nodes := globals.Nodes.GetAll()
+	log.Println("Creating nodes:", nodes)
 	for _, node := range nodes {
 		conn, err := Dial(node)
 		if err != nil {
