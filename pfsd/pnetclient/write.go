@@ -5,21 +5,23 @@ import (
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"log"
-	"strconv"
 )
 
-func Write(ips []globals.Node, path string, data []byte, offset, length string) {
-	for _, ipAddress := range ips {
-		conn := Dial(ipAddress)
+func Write(path string, data []byte, offset, length uint64) {
+	nodes := globals.Nodes.GetAll()
+	for _, node := range nodes {
+		conn, err := Dial(node)
+		if err != nil {
+			log.Println("Write error failed to dial ", node)
+			continue
+		}
 
 		defer conn.Close()
 		client := pb.NewParanoidNetworkClient(conn)
 
-		offsetInt, _ := strconv.ParseUint(offset, 10, 64)
-		lengthInt, _ := strconv.ParseUint(length, 10, 64)
-		_, err := client.Write(context.Background(), &pb.WriteRequest{path, data, offsetInt, lengthInt})
+		_, err = client.Write(context.Background(), &pb.WriteRequest{path, data, offset, length})
 		if err != nil {
-			log.Println("Write Error on ", ipAddress, "Error:", err)
+			log.Println("Write Error on ", node, "Error:", err)
 		}
 	}
 }

@@ -5,22 +5,23 @@ import (
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"log"
-	"strconv"
 )
 
-func Creat(ips []globals.Node, filename, permissions string) {
-	for _, ipAddress := range ips {
-		permissions64, _ := strconv.ParseUint(permissions, 8, 32)
-		permissionsInt := uint32(permissions64)
-
-		conn := Dial(ipAddress)
-
+func Creat(filename string, permissions uint32) {
+	nodes := globals.Nodes.GetAll()
+	for _, node := range nodes {
+		conn, err := Dial(node)
+		if err != nil {
+			log.Println("Creat error failed to dial ", node)
+			continue
+		}
 		defer conn.Close()
+
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err := client.Creat(context.Background(), &pb.CreatRequest{filename, permissionsInt})
+		_, err = client.Creat(context.Background(), &pb.CreatRequest{filename, permissions})
 		if err != nil {
-			log.Println("Failure Sending Message to", ipAddress, " Error:", err)
+			log.Println("Failure Sending Message to", node, " Error:", err)
 		}
 	}
 }

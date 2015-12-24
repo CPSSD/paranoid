@@ -7,17 +7,21 @@ import (
 	"log"
 )
 
-// Rmdir is used to delete directories
-func Rmdir(ips []globals.Node, directory string) {
-	for _, ipAddress := range ips {
-		conn := Dial(ipAddress)
-
+func Rmdir(directory string) {
+	nodes := globals.Nodes.GetAll()
+	for _, node := range nodes {
+		conn, err := Dial(node)
+		if err != nil {
+			log.Println("Rmdir error failed to dial ", node)
+			continue
+		}
 		defer conn.Close()
+
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err := client.Rmdir(context.Background(), &pb.RmdirRequest{directory})
+		_, err = client.Rmdir(context.Background(), &pb.RmdirRequest{directory})
 		if err != nil {
-			log.Println("Rmdir Error on ", ipAddress, "Error:", err)
+			log.Println("Rmdir Error on ", node, "Error:", err)
 		}
 	}
 }

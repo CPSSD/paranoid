@@ -9,18 +9,27 @@ import (
 	"strconv"
 )
 
-func Ping(ips []globals.Node) {
-	ip, _ := upnp.GetIP()
-	for _, ipAddress := range ips {
+func Ping() {
+	ip, err := upnp.GetIP()
+	if err != nil {
+		log.Fatalln("Can not ping peers, unabled to get ip. Error:", err)
+	}
+
+	nodes := globals.Nodes.GetAll()
+	for _, node := range nodes {
 		port := strconv.Itoa(globals.Port)
 
-		conn := Dial(ipAddress)
+		conn, err := Dial(node)
+		if err != nil {
+			log.Println("Ping error failed to dial ", node)
+		}
 		defer conn.Close()
+
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err := client.Ping(context.Background(), &pb.PingRequest{ip, port, globals.CommonName})
+		_, err = client.Ping(context.Background(), &pb.PingRequest{ip, port, globals.CommonName})
 		if err != nil {
-			log.Println("Can't Ping ", ipAddress)
+			log.Println("Can't Ping ", node)
 		}
 	}
 }

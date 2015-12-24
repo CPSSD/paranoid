@@ -56,7 +56,7 @@ func JoinDiscovery(pool string) {
 // relevant to discovery.
 func pingPeers() {
 	// Ping as soon as this node joins
-	pnetclient.Ping(globals.Nodes.GetAll())
+	pnetclient.Ping()
 	timer := time.NewTimer(peerPingInterval)
 	defer timer.Stop()
 	defer globals.Wait.Done()
@@ -67,7 +67,7 @@ func pingPeers() {
 				return
 			}
 		case <-timer.C:
-			pnetclient.Ping(globals.Nodes.GetAll())
+			pnetclient.Ping()
 			timer.Reset(peerPingInterval)
 		}
 	}
