@@ -39,7 +39,6 @@ func getUnoccupiedPortsIp(client *internetgateway1.WANIPConnection1) []int {
 	for i := 1; i < 65536; i++ {
 		_, port, _, _, _, _, _, _, err := client.GetGenericPortMappingEntry(uint16(i))
 		if err != nil {
-			log.Println(i, "Error:", err)
 			break
 		}
 		m[int(port)] = true
@@ -58,7 +57,6 @@ func getUnoccupiedPortsppp(client *internetgateway1.WANPPPConnection1) []int {
 	for i := 1; i < 65536; i++ {
 		_, port, _, _, _, _, _, _, err := client.GetGenericPortMappingEntry(uint16(i))
 		if err != nil {
-			log.Println(i, "Error:", err)
 			break
 		}
 		m[int(port)] = true
