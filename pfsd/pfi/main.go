@@ -3,6 +3,7 @@ package pfi
 import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pfi/filesystem"
 	"github.com/cpssd/paranoid/pfsd/pfi/util"
 	"log"
@@ -14,6 +15,7 @@ import (
 )
 
 func StartPfi(pfsDir, mountPoint string, logOutput, sendOverNetwork bool) {
+	defer globals.Wait.Done()
 	// Create a logger
 	var err error
 	util.Log, err = logger.New("pfi", "pfi", os.DevNull)
@@ -55,5 +57,15 @@ func StartPfi(pfsDir, mountPoint string, logOutput, sendOverNetwork bool) {
 	if err != nil {
 		util.Log.Fatalf("Mount fail: %v\n", err)
 	}
-	server.Serve()
+	go server.Serve()
+
+	select {
+	case _, ok := <-globals.Quit:
+		if !ok {
+			err = server.Unmount()
+			if err != nil {
+				util.Log.Fatal("Error unmounting : ", err)
+			}
+		}
+	}
 }

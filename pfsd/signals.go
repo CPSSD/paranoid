@@ -21,9 +21,11 @@ func stopAllServices() {
 			log.Println("Could not clear port mapping. Error : ", err)
 		}
 	}
-	close(globals.Quit)     // Sends stop signal to all goroutines
-	dnetclient.Disconnect() // Disconnect from the discovery server
-	srv.Stop()
+	close(globals.Quit) // Sends stop signal to all goroutines
+	if !*noNetwork {
+		dnetclient.Disconnect() // Disconnect from the discovery server
+		srv.Stop()
+	}
 	// Since srv can't talk to the waitgroup itself, we do on its behalf
 	// We also wait to give it some time to stop itself.
 	time.Sleep(time.Millisecond * 10)

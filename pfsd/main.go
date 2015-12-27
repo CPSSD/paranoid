@@ -121,13 +121,12 @@ func main() {
 
 		dnetclient.SetDiscovery(flag.Arg(2), flag.Arg(3), strconv.Itoa(port))
 		dnetclient.JoinDiscovery("_")
-		createPid("pfsd")
 		startRPCServer(&lis)
-		go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
-		HandleSignals()
-	} else {
-		pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
 	}
+	createPid("pfsd")
+	globals.Wait.Add(1)
+	go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
+	HandleSignals()
 }
 
 func createPid(processName string) {
