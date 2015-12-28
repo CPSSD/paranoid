@@ -2,7 +2,7 @@ Glossary
 =====================
 
 - `pfs` : Paranoid File System. This is how the data is stored by paranoid.
-- `libpfs` : Paranoid File System Manager. This is the liabary that manages operations on pfs.
+- `libpfs` : Paranoid File System Manager. This is the library that manages operations on pfs.
 - `FUSE` : File System in User Space. This is a kernel module for Unix operating systems
 that allows users create their own file systems without editing kernel code.
 - `pfi` : Paranoid Fuse Interface. This is the package that handles communication with FUSE.
