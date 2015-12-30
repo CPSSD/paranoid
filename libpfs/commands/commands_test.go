@@ -7,6 +7,7 @@ import (
 	"github.com/cpssd/paranoid/logger"
 	"os"
 	"path"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -310,6 +311,35 @@ func TestLinkCommand(t *testing.T) {
 
 	if string(data) != "hellotest" {
 		t.Error("Read did not return correct result. Actual : ", string(data))
+	}
+}
+
+func TestSymlinkcommand(t *testing.T) {
+	setupTestDirectory()
+	code, err := SymlinkCommand(testDirectory, "testfolder/testlink", "testsymlink", false)
+	if code != returncodes.OK {
+		t.Error("Symlink did not return OK. Actual:", code, " Error:", err)
+	}
+
+	code, err, linkConents := ReadlinkCommand(testDirectory, "testsymlink")
+	if code != returncodes.OK {
+		t.Error("Readlink did not return OK. Actual:", code, " Error:", err)
+	}
+	if linkConents != "testfolder/testlink" {
+		t.Error("Unexpected link contents : ", linkConents)
+	}
+
+	code, err, stats := StatCommand(testDirectory, "testsymlink")
+	if code != returncodes.OK {
+		t.Error("Statcommand did not return OK. Actual:", code, " Error:", err)
+	}
+	if int(stats.Mode)&int(syscall.S_IFLNK) == 0 {
+		t.Error("Does not appear as a symlink from stat:", stats.Mode)
+	}
+
+	code, err, _ = ReadCommand(testDirectory, "testsymlink", -1, -1)
+	if code != returncodes.EIO {
+		t.Error("Should return EIO when attempting to read a symlink. Actual :", code, " Error:", err)
 	}
 }
 
