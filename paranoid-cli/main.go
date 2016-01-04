@@ -2,11 +2,20 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
+	pfscommands "github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/paranoid-cli/commands"
+	"log"
 	"os"
 )
 
 func main() {
+	var err error
+	pfscommands.Log, err = logger.New("libpfs", "libpfs", os.DevNull)
+	if err != nil {
+		log.Fatalln("FATAL : Could not create logger")
+	}
+
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
 	app.HelpName = "paranoid-cli"

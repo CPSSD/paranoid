@@ -5,11 +5,12 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"log"
+	"time"
 )
 
-func Dial(node globals.Node) *grpc.ClientConn {
+func Dial(node globals.Node) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithTimeout(5*time.Second))
 	if globals.TLSEnabled {
 		creds := credentials.NewTLS(&tls.Config{
 			ServerName:         node.CommonName,
@@ -21,8 +22,5 @@ func Dial(node globals.Node) *grpc.ClientConn {
 	}
 
 	conn, err := grpc.Dial(node.String(), opts...)
-	if err != nil {
-		log.Println("fail to dial: ", err)
-	}
-	return conn
+	return conn, err
 }

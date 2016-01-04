@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"os/user"
 	"path"
 	"strconv"
@@ -25,16 +24,6 @@ func Unmount(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	mountpoint, err := ioutil.ReadFile(path.Join(usr.HomeDir, ".pfs", args[0], "meta", "mountpoint"))
-	if err != nil {
-		log.Fatalln("FATAL : Could not get mountpoint ", err)
-	}
-	cmd := exec.Command("fusermount", "-u", "-z", string(mountpoint))
-	err = cmd.Run()
-	if err != nil {
-		log.Fatalln("FATAL : unmount failed ", err)
-	}
-
 	pidPath := path.Join(usr.HomeDir, ".pfs", args[0], "meta", "pfsd.pid")
 	if _, err := os.Stat(pidPath); err == nil {
 		pidByte, err := ioutil.ReadFile(pidPath)
@@ -46,5 +35,7 @@ func Unmount(c *cli.Context) {
 		if err != nil {
 			log.Fatalln("FATAL : Can not kill PFSD,", err)
 		}
+	} else {
+		log.Fatalln("FATAL : Could not read pid file:", err)
 	}
 }

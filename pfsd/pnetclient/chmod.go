@@ -5,22 +5,22 @@ import (
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"log"
-	"strconv"
 )
 
-func Chmod(ips []globals.Node, path string, mode string) {
-	for _, ipAddress := range ips {
-		mode64, _ := strconv.ParseUint(mode, 8, 32)
-		modeInt := uint32(mode64)
-
-		conn := Dial(ipAddress)
-
-		defer conn.Close()
-		client := pb.NewParanoidNetworkClient(conn)
-
-		_, err := client.Chmod(context.Background(), &pb.ChmodRequest{path, modeInt})
+func Chmod(path string, mode uint32) {
+	nodes := globals.Nodes.GetAll()
+	for _, node := range nodes {
+		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Chmod Error on ", ipAddress, "Error:", err)
+			log.Println("Chmod error failed to dial ", node)
+			continue
+		}
+		defer conn.Close()
+
+		client := pb.NewParanoidNetworkClient(conn)
+		_, err = client.Chmod(context.Background(), &pb.ChmodRequest{path, mode})
+		if err != nil {
+			log.Println("Chmod Error on ", node, "Error:", err)
 		}
 	}
 }

@@ -5,23 +5,23 @@ import (
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"log"
-	"strconv"
 )
 
-func Truncate(ips []globals.Node, path string, length string) {
-	for _, ipAddress := range ips {
-		conn := Dial(ipAddress)
-
-		defer conn.Close()
-		client := pb.NewParanoidNetworkClient(conn)
-		lengthInt, err := strconv.ParseUint(length, 10, 64)
+func Truncate(path string, length uint64) {
+	nodes := globals.Nodes.GetAll()
+	for _, node := range nodes {
+		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Error parsing intergers.")
+			log.Println("Truncate error failed to dial ", node)
+			continue
 		}
+		defer conn.Close()
 
-		_, clientErr := client.Truncate(context.Background(), &pb.TruncateRequest{path, lengthInt})
+		client := pb.NewParanoidNetworkClient(conn)
+
+		_, clientErr := client.Truncate(context.Background(), &pb.TruncateRequest{path, length})
 		if clientErr != nil {
-			log.Println("Truncate Error on ", ipAddress, "Error:", err)
+			log.Println("Truncate Error on ", node, "Error:", err)
 		}
 	}
 }

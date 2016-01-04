@@ -4,15 +4,17 @@ package main
 
 import (
 	"flag"
+	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"log"
 	"net"
 	"os"
-	"os/exec"
 	"path"
 	"testing"
 )
@@ -23,8 +25,12 @@ func TestMain(m *testing.M) {
 	// Make sure we start with an empty directory
 	os.RemoveAll(tmpdir)
 	os.Mkdir(tmpdir, 0777)
-	init := exec.Command("pfsm", "init", tmpdir)
-	init.Run()
+	var err error
+	commands.Log, err = logger.New("pfsdintegaration", "pfsdintegaration", os.DevNull)
+	if err != nil {
+		log.Fatalln("Error creating logger : ", err)
+	}
+	commands.InitCommand(tmpdir)
 	pnetserver.ParanoidDir = tmpdir
 	globals.Port = 10101
 	lis, _ := net.Listen("tcp", ":10101")
@@ -55,8 +61,10 @@ func TestCreat(t *testing.T) {
 
 func TestChmod(t *testing.T) {
 	// Create file to run test on
-	creat := exec.Command("pfsm", "creat", tmpdir, "chmod.txt", "0777")
-	creat.Run()
+	_, err := commands.CreatCommand(tmpdir, "chmod.txt", os.FileMode(0777), false)
+	if err != nil {
+		t.Fatalf("Could not creat test file")
+	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("Could not connect to server:", err)
@@ -75,8 +83,10 @@ func TestChmod(t *testing.T) {
 
 func TestLink(t *testing.T) {
 	// Create file to run test on
-	creat := exec.Command("pfsm", "creat", tmpdir, "link.txt", "0777")
-	creat.Run()
+	_, err := commands.CreatCommand(tmpdir, "link.txt", os.FileMode(0777), false)
+	if err != nil {
+		t.Fatalf("Could not creat test file")
+	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("Could not connect to server:", err)
@@ -112,8 +122,10 @@ func TestPing(t *testing.T) {
 
 func TestRename(t *testing.T) {
 	// Create file to run test on
-	creat := exec.Command("pfsm", "creat", tmpdir, "rename.txt", "0777")
-	creat.Run()
+	_, err := commands.CreatCommand(tmpdir, "rename.txt", os.FileMode(0777), false)
+	if err != nil {
+		t.Fatalf("Could not creat test file")
+	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("Could not connect to server:", err)
@@ -132,8 +144,10 @@ func TestRename(t *testing.T) {
 
 func TestTruncate(t *testing.T) {
 	// Create file to run test on
-	creat := exec.Command("pfsm", "creat", tmpdir, "truncate.txt", "0777")
-	creat.Run()
+	_, err := commands.CreatCommand(tmpdir, "truncate.txt", os.FileMode(0777), false)
+	if err != nil {
+		t.Fatalf("Could not creat test file")
+	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("Could not connect to server:", err)
@@ -152,8 +166,10 @@ func TestTruncate(t *testing.T) {
 
 func TestUnlink(t *testing.T) {
 	// Create file to run test on
-	creat := exec.Command("pfsm", "creat", tmpdir, "unlink.txt", "0777")
-	creat.Run()
+	_, err := commands.CreatCommand(tmpdir, "unlink.txt", os.FileMode(0777), false)
+	if err != nil {
+		t.Fatalf("Could not creat test file")
+	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
 		t.Fatal("Could not connect to server:", err)
@@ -171,8 +187,10 @@ func TestUnlink(t *testing.T) {
 
 func TestUtimes(t *testing.T) {
 	// Create file to run test on
-	creat := exec.Command("pfsm", "creat", tmpdir, "utimes.txt", "0777")
-	creat.Run()
+	_, err := commands.CreatCommand(tmpdir, "utimes.txt", os.FileMode(0777), false)
+	if err != nil {
+		t.Fatalf("Could not creat test file")
+	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
 		t.Fatal("Could not connect to server:", err)
@@ -180,8 +198,11 @@ func TestUtimes(t *testing.T) {
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
 	req := pb.UtimesRequest{
-		Path: "utimes.txt",
-		Data: []byte("eyJhdGltZSI6IjE5NzAtMDEtMDFUMDA6MDA6MDEuMDAwMDAwMDAxWiIsIm10aW1lIjoiMTk3MC0wMS0wMVQwMDowMDowMS4wMDAwMDAwMDFaIn0NCg=="),
+		Path:              "utimes.txt",
+		AccessSeconds:     1,
+		AccessNanoseconds: 1,
+		ModifySeconds:     1,
+		ModifyNanoseconds: 1,
 	}
 	_, err = client.Utimes(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
@@ -191,8 +212,10 @@ func TestUtimes(t *testing.T) {
 
 func TestWrite(t *testing.T) {
 	// Create file to run test on
-	creat := exec.Command("pfsm", "creat", tmpdir, "write.txt", "0777")
-	creat.Run()
+	_, err := commands.CreatCommand(tmpdir, "write.txt", os.FileMode(0777), false)
+	if err != nil {
+		t.Fatalf("Could not creat test file")
+	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
 		t.Fatal("Could not connect to server:", err)
@@ -233,8 +256,10 @@ func TestMkdir(t *testing.T) {
 
 func TestRmdir(t *testing.T) {
 	// Create file to run test on
-	creat := exec.Command("pfsm", "mkdir", tmpdir, "somedir", "0777")
-	creat.Run()
+	_, err := commands.CreatCommand(tmpdir, "somedir.txt", os.FileMode(0777), false)
+	if err != nil {
+		t.Fatalf("Could not creat test file")
+	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
 		t.Fatal("Could not connect to server:", err)

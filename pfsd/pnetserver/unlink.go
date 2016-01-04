@@ -1,6 +1,8 @@
 package pnetserver
 
 import (
+	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -9,14 +11,12 @@ import (
 )
 
 func (s *ParanoidServer) Unlink(ctx context.Context, req *pb.UnlinkRequest) (*pb.EmptyMessage, error) {
-	code, _, err := runCommand(nil, "unlink", ParanoidDir, req.Path)
-	if err != nil {
+	code, err := commands.UnlinkCommand(ParanoidDir, req.Path, false)
+	if code != returncodes.OK {
 		log.Printf("ERROR: Could not unlink file %s: %v.\n", req.Path, err)
 		returnError := grpc.Errorf(codes.Internal, "could not unlink file %s: %v", req.Path, err)
 		return &pb.EmptyMessage{}, returnError
 	}
 
-	returnError := convertCodeToError(code, req.Path)
-	// If returnError is nil here, it's equivalent to returning OK
-	return &pb.EmptyMessage{}, returnError
+	return &pb.EmptyMessage{}, nil
 }
