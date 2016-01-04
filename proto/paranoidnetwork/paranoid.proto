@@ -72,7 +72,7 @@ message TruncateRequest {
 message UtimesRequest {
     string path = 1; //required
 
-	int64 access_seconds = 2;  // required
+    int64 access_seconds = 2;  // required
     int64 access_nanoseconds = 3;  // required
  
     int64 modify_seconds = 4;  // required

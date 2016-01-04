@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 	"syscall"
@@ -102,8 +103,7 @@ func WriteCommand(directory, fileName string, offset, length int64, data []byte,
 	}
 
 	if sendOverNetwork {
-		//do this when mega binary
-		//sendToServer(directory, "write", args[1:], fileData)
+		pnetclient.Write(fileName, data, uint64(offset), uint64(length))
 	}
 	return returncodes.OK, nil, wroteLen
 }

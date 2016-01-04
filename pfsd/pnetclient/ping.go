@@ -12,7 +12,7 @@ import (
 func Ping() {
 	ip, err := upnp.GetIP()
 	if err != nil {
-		log.Fatalln("Can not ping peers, unabled to get ip. Error:", err)
+		log.Fatalln("Can not ping peers: unabled to get IP. Error:", err)
 	}
 
 	nodes := globals.Nodes.GetAll()
@@ -21,7 +21,7 @@ func Ping() {
 
 		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Ping error failed to dial ", node)
+			log.Println("Ping error: failed to dial ", node)
 		}
 		defer conn.Close()
 

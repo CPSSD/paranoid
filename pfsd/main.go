@@ -27,7 +27,7 @@ var (
 	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
 	skipVerify = flag.Bool("skip_verification", false,
 		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
-	noNetwork = flag.Bool("n", false, "Do not perform any networking")
+	noNetwork = flag.Bool("no_networking", false, "Do not perform any networking")
 	verbose   = flag.Bool("v", false, "Use verbose logging")
 )
 

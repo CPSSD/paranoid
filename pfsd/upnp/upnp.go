@@ -81,7 +81,7 @@ func AddPortMapping(internalPort int) (int, error) {
 			for i := 0; i < attemptedPortAssignments; i++ {
 				port := openPorts[rand.Intn(len(openPorts))]
 				log.Println("Picked port:", port)
-				err := client.AddPortMapping("", uint16(port), "TCP", uint16(internalPort), ip, true, "", 0)
+				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), ip, true, "", 0)
 				if err == nil {
 					ipPortMappedClient = client
 					return port, nil
@@ -95,7 +95,7 @@ func AddPortMapping(internalPort int) (int, error) {
 			for i := 0; i < attemptedPortAssignments; i++ {
 				port := openPorts[rand.Intn(len(openPorts))]
 				log.Println("Picked port:", port)
-				err := client.AddPortMapping("", uint16(port), "TCP", uint16(internalPort), ip, true, "", 0)
+				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), ip, true, "", 0)
 				if err == nil {
 					pppPortMappedClient = client
 					return port, nil

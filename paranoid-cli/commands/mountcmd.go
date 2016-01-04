@@ -57,6 +57,7 @@ func doMount(c *cli.Context, args []string) {
 	if _, err := os.Stat(path.Join(pfsDir, "inodes")); os.IsNotExist(err) {
 		log.Fatalln("FATAL : PFS directory does not include inodes directory")
 	}
+
 	if pathExists(path.Join(pfsDir, "meta/", "pfsd.pid")) {
 		err = os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
 		if err != nil {
@@ -132,7 +133,7 @@ func doMount(c *cli.Context, args []string) {
 		if c.GlobalBool("verbose") {
 			pfsdFlags = append(pfsdFlags, "-v")
 		}
-		pfsdFlags = append(pfsdFlags, "-n")
+		pfsdFlags = append(pfsdFlags, "--no_networking")
 		cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 		cmd.Stderr = outfile
 		err = cmd.Start()
