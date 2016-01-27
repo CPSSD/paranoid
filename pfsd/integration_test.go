@@ -312,7 +312,7 @@ func TestKillSignal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pfsd := exec.Command("pfsd", path.Join(os.TempDir(), "testksDirectory"), path.Join(os.TempDir(), "testksMountpoint"), "localhost", "10102")
+	pfsd := exec.Command("pfsd", path.Join(os.TempDir(), "testksDirectory"), path.Join(os.TempDir(), "testksMountpoint"), "localhost", "10102", "testPool")
 	err = pfsd.Start()
 	if err != nil {
 		t.Fatal(err)

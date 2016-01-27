@@ -54,7 +54,7 @@ func startRPCServer(lis *net.Listener) {
 func main() {
 	flag.Parse()
 
-	if len(flag.Args()) < 4 {
+	if len(flag.Args()) < 5 {
 		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <mount_point> <Discovery Server> <Discovery Port>\n")
 		os.Exit(1)
 	}
@@ -144,7 +144,7 @@ func main() {
 		}
 
 		dnetclient.SetDiscovery(flag.Arg(2), flag.Arg(3), strconv.Itoa(port))
-		dnetclient.JoinDiscovery("_")
+		dnetclient.JoinDiscovery(flag.Arg(4))
 		startRPCServer(&lis)
 	}
 	createPid("pfsd")
