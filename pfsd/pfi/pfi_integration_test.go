@@ -9,7 +9,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/pfi/util"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
-	"log"
 	"os"
 	"path"
 	"testing"
