@@ -28,7 +28,6 @@ func removeTestDir(name string) {
 }
 
 func TestMain(m *testing.M) {
-	var err error
 	util.Log = logger.New("testPackage", "testComponent", os.DevNull)
 	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
 	commands.Log = logger.New("testPackage", "testComponent", os.DevNull)
