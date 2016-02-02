@@ -15,7 +15,7 @@ import (
 var testDirectory string
 
 func TestMain(m *testing.M) {
-	Log, _ = logger.New("commandsTest", "pfsmTest", os.DevNull)
+	Log = logger.New("commandsTest", "pfsmTest", os.DevNull)
 	testDirectory = path.Join(os.TempDir(), "paranoidTest")
 	defer removeTestDir()
 

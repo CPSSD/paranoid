@@ -5,17 +5,12 @@ package dnetserver
 import (
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
-	"log"
 	"os"
 	"testing"
 )
 
 func TestMain(m *testing.M) {
-	var err error
-	Log, err = logger.New("discoveryTest", "discoveryTest", "/dev/null")
-	if err != nil {
-		log.Fatalln("Error setting up logger")
-	}
+	Log = logger.New("discoveryTest", "discoveryTest", "/dev/null")
 
 	os.Exit(m.Run())
 }
