@@ -13,7 +13,12 @@ func main() {
 	var err error
 	pfscommands.Log, err = logger.New("libpfs", "libpfs", os.DevNull)
 	if err != nil {
-		log.Fatalln("FATAL : Could not create logger")
+		log.Fatalln("FATAL : Could not create libpfs logger")
+	}
+
+	commands.Log, err = logger.New("paranoidcli", "paranoidcli", os.DevNull)
+	if err != nil {
+		log.Fatalln("FATAL : Could not create paranoidcli logger")
 	}
 
 	app := cli.NewApp()
