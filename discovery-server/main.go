@@ -7,7 +7,6 @@ import (
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"log"
 	"net"
 	"strconv"
 	"time"
@@ -38,12 +37,10 @@ func createRPCServer() *grpc.Server {
 
 func main() {
 	flag.Parse()
-	var err error
-	dnetserver.Log, err = logger.New("main", "discovery-server", *logDir)
+	dnetserver.Log = logger.New("main", "discovery-server", *logDir)
+	err := dnetserver.Log.SetOutput(logger.LOGFILE | logger.STDERR)
 	if err != nil {
-		// TODO: Replace this with a call to a static logger in voy's package,
-		// once it is implemented.
-		log.Fatalln("Failed to create new logger:", err)
+		dnetserver.Log.Error("Failed to set logger output:", err)
 	}
 
 	renewDuration, err := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
@@ -55,11 +52,6 @@ func main() {
 
 	if *port < 1 || *port > 65535 {
 		dnetserver.Log.Fatal("Port must be a number between 1 and 65535, inclusive.")
-	}
-
-	dnetserver.Log.SetOutput(logger.LOGFILE | logger.STDERR)
-	if err != nil {
-		dnetserver.Log.Fatal("Failed to set logger output:", err)
 	}
 
 	dnetserver.Log.Info("Starting Paranoid Discovery Server")

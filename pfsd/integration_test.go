@@ -12,7 +12,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 	"net"
 	"os"
 	"path"
@@ -25,11 +24,7 @@ func TestMain(m *testing.M) {
 	// Make sure we start with an empty directory
 	os.RemoveAll(tmpdir)
 	os.Mkdir(tmpdir, 0777)
-	var err error
-	commands.Log, err = logger.New("pfsdintegaration", "pfsdintegaration", os.DevNull)
-	if err != nil {
-		log.Fatalln("Error creating logger : ", err)
-	}
+	commands.Log = logger.New("pfsdintegaration", "pfsdintegaration", os.DevNull)
 	commands.InitCommand(tmpdir)
 	pnetserver.ParanoidDir = tmpdir
 	globals.Port = 10101
@@ -45,7 +40,7 @@ func TestMain(m *testing.M) {
 func TestCreat(t *testing.T) {
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("Could not connect to server:", err)
+		t.Fatalf("Could not connect to server: %s", err)
 	}
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
@@ -55,7 +50,7 @@ func TestCreat(t *testing.T) {
 	}
 	_, err = client.Creat(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
-		t.Errorf("Creat did not return OK. Actual:", err)
+		t.Errorf("Creat did not return OK. Actual: %s", err)
 	}
 }
 
@@ -67,7 +62,7 @@ func TestChmod(t *testing.T) {
 	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("Could not connect to server:", err)
+		t.Fatalf("Could not connect to server: %s", err)
 	}
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
@@ -77,7 +72,7 @@ func TestChmod(t *testing.T) {
 	}
 	_, err = client.Chmod(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
-		t.Errorf("Chmod did not return OK. Actual:", err)
+		t.Errorf("Chmod did not return OK. Actual: %s", err)
 	}
 }
 
@@ -89,7 +84,7 @@ func TestLink(t *testing.T) {
 	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("Could not connect to server:", err)
+		t.Fatalf("Could not connect to server: %s", err)
 	}
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
@@ -99,14 +94,14 @@ func TestLink(t *testing.T) {
 	}
 	_, err = client.Link(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
-		t.Errorf("Link did not return OK. Actual:", err)
+		t.Errorf("Link did not return OK. Actual: %s", err)
 	}
 }
 
 func TestPing(t *testing.T) {
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("Could not connect to server:", err)
+		t.Fatalf("Could not connect to server: %s", err)
 	}
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
@@ -116,7 +111,7 @@ func TestPing(t *testing.T) {
 	}
 	_, err = client.Ping(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
-		t.Errorf("Ping did not return OK. Actual:", err)
+		t.Errorf("Ping did not return OK. Actual: %s", err)
 	}
 }
 
@@ -128,7 +123,7 @@ func TestRename(t *testing.T) {
 	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("Could not connect to server:", err)
+		t.Fatalf("Could not connect to server: %s", err)
 	}
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)
@@ -138,7 +133,7 @@ func TestRename(t *testing.T) {
 	}
 	_, err = client.Rename(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
-		t.Errorf("Rename did not return OK. Actual:", err)
+		t.Errorf("Rename did not return OK. Actual: %s", err)
 	}
 }
 
@@ -150,7 +145,7 @@ func TestTruncate(t *testing.T) {
 	}
 	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	if err != nil {
-		t.Fatalf("Could not connect to server:", err)
+		t.Fatalf("Could not connect to server: %s", err)
 	}
 	defer conn.Close()
 	client := pb.NewParanoidNetworkClient(conn)

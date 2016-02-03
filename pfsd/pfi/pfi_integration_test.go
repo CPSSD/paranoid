@@ -9,7 +9,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/pfi/util"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
-	"log"
 	"os"
 	"path"
 	"testing"
@@ -29,13 +28,9 @@ func removeTestDir(name string) {
 }
 
 func TestMain(m *testing.M) {
-	var err error
-	util.Log, err = logger.New("testPackage", "testComponent", os.DevNull)
+	util.Log = logger.New("testPackage", "testComponent", os.DevNull)
 	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
-	if err != nil {
-		log.Fatalln("Error setting up logger :", err)
-	}
-	commands.Log, err = logger.New("testPackage", "testComponent", os.DevNull)
+	commands.Log = logger.New("testPackage", "testComponent", os.DevNull)
 	os.Exit(m.Run())
 }
 

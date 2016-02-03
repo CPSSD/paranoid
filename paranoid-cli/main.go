@@ -5,21 +5,12 @@ import (
 	pfscommands "github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/paranoid-cli/commands"
-	"log"
 	"os"
 )
 
 func main() {
-	var err error
-	pfscommands.Log, err = logger.New("libpfs", "libpfs", os.DevNull)
-	if err != nil {
-		log.Fatalln("FATAL : Could not create libpfs logger")
-	}
-
-	commands.Log, err = logger.New("paranoidcli", "paranoidcli", os.DevNull)
-	if err != nil {
-		log.Fatalln("FATAL : Could not create paranoidcli logger")
-	}
+	pfscommands.Log = logger.New("libpfs", "libpfs", os.DevNull)
+	commands.Log = logger.New("paranoidcli", "paranoidcli", os.DevNull)
 
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
