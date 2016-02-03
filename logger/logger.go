@@ -46,7 +46,7 @@ func New(currentPackage string, component string, logDirectory string) *Paranoid
 		logDir:    logDirectory,
 		writer:    os.Stderr,
 		logLevel:  INFO,
-		native:    log.New(nil, "", log.LstdFlags),
+		native:    log.New(os.Stderr, "", log.LstdFlags),
 	}
 	return &l
 }
