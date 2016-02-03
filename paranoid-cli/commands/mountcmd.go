@@ -93,6 +93,10 @@ func doMount(c *cli.Context, args []string) {
 			if c.GlobalBool("verbose") {
 				pfsdFlags = append(pfsdFlags, "-v")
 			}
+			iface := c.String("interface")
+			if iface != "" {
+				pfsdFlags = append(pfsdFlags, "-interface="+iface)
+			}
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 			cmd.Stderr = outfile
 			err = cmd.Start()
@@ -117,6 +121,10 @@ func doMount(c *cli.Context, args []string) {
 			var pfsdFlags []string
 			if c.GlobalBool("verbose") {
 				pfsdFlags = append(pfsdFlags, "-v")
+			}
+			iface := c.String("interface")
+			if iface != "" {
+				pfsdFlags = append(pfsdFlags, "-interface="+iface)
 			}
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 			cmd.Stderr = outfile

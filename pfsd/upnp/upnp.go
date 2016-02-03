@@ -2,6 +2,7 @@ package upnp
 
 import (
 	"errors"
+	"flag"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/huin/goupnp/dcps/internetgateway1"
 	"log"
@@ -14,6 +15,9 @@ var (
 	uPnPClientsPPP      []*internetgateway1.WANPPPConnection1
 	ipPortMappedClient  *internetgateway1.WANIPConnection1
 	pppPortMappedClient *internetgateway1.WANPPPConnection1
+
+	iface = flag.String("interface", "default",
+		"network interface on which to perform connections. If not set, will use default interface.")
 )
 
 const attemptedPortAssignments = 10
@@ -123,6 +127,9 @@ func GetInternalIp() (string, error) {
 		if (i.Flags & net.FlagLoopback) != 0 {
 			continue
 		}
+		if *iface != "default" && i.Name != *iface {
+			continue
+		}
 		addrs, _ := i.Addrs()
 		for _, addr := range addrs {
 			var ip net.IP
@@ -135,7 +142,7 @@ func GetInternalIp() (string, error) {
 			return ip.String(), nil
 		}
 	}
-	return "", errors.New("No interfaces found")
+	return "", errors.New("No matching interfaces found")
 }
 
 //GetExternalIp gets the external IP of the port mapped device.

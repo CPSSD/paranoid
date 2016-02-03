@@ -25,10 +25,10 @@ var (
 
 	certFile   = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+	noNetwork  = flag.Bool("no_networking", false, "Do not perform any networking")
 	skipVerify = flag.Bool("skip_verification", false,
 		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
-	noNetwork = flag.Bool("no_networking", false, "Do not perform any networking")
-	verbose   = flag.Bool("v", false, "Use verbose logging")
+	verbose = flag.Bool("v", false, "Use verbose logging")
 )
 
 func startRPCServer(lis *net.Listener) {
@@ -80,8 +80,12 @@ func main() {
 	if !*noNetwork {
 		pnetserver.ParanoidDir = flag.Arg(0)
 
+		ip, err := upnp.GetIP()
+		if err != nil {
+			log.Fatalln("FATAL: Could not get IP:", err)
+		}
 		//Asking for port 0 requests a random free port from the OS.
-		lis, err := net.Listen("tcp", ":0")
+		lis, err := net.Listen("tcp", ip+":0")
 		if err != nil {
 			log.Fatalf("FATAL: Failed to start listening : %v.\n", err)
 		}

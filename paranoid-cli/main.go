@@ -66,6 +66,10 @@ func main() {
 					Name:  "n, noprompt",
 					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
 				},
+				cli.StringFlag{
+					Name:  "i, interface",
+					Usage: "name a network interface over which to make connections. Defaults to default interface",
+				},
 			},
 		},
 		{
@@ -103,6 +107,10 @@ func main() {
 				cli.BoolFlag{
 					Name:  "n, noprompt",
 					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
+				},
+				cli.StringFlag{
+					Name:  "i, interface",
+					Usage: "name a network interface over which to make connections. Defaults to default interface",
 				},
 			},
 		},
