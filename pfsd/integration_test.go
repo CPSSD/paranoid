@@ -12,7 +12,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 	"net"
 	"os"
 	"path"
@@ -25,7 +24,6 @@ func TestMain(m *testing.M) {
 	// Make sure we start with an empty directory
 	os.RemoveAll(tmpdir)
 	os.Mkdir(tmpdir, 0777)
-	var err error
 	commands.Log = logger.New("pfsdintegaration", "pfsdintegaration", os.DevNull)
 	commands.InitCommand(tmpdir)
 	pnetserver.ParanoidDir = tmpdir
