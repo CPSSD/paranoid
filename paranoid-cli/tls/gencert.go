@@ -8,7 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"log"
+	"github.com/cpssd/paranoid/logger"
 	"math/big"
 	"net"
 	"os"
@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 )
+
+var Log *logger.ParanoidLogger
 
 // GenCertificate will generate a TLS cert and key, prompting the user
 // to enter relevant information. The resulting data will be saved to PEM
@@ -105,7 +107,7 @@ func GenCertificate(pfsDir string) error {
 		Type:  "CERTIFICATE",
 		Bytes: certBytes,
 	})
-	log.Println("INFO: Wrote certificate to", certPath)
+	Log.Info("Wrote certificate to", certPath)
 
 	keyPath := path.Join(pfsDir, "meta", "key.pem")
 	keyFile, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
@@ -117,7 +119,7 @@ func GenCertificate(pfsDir string) error {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
-	log.Println("INFO: Wrote key to", keyPath)
+	Log.Info("INFO: Wrote key to", keyPath)
 
 	return nil
 }

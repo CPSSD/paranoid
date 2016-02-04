@@ -5,12 +5,14 @@ import (
 	pfscommands "github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/paranoid-cli/commands"
+	"github.com/cpssd/paranoid/paranoid-cli/tls"
 	"os"
 )
 
 func main() {
 	pfscommands.Log = logger.New("libpfs", "libpfs", os.DevNull)
-	commands.Log = logger.New("paranoidcli", "paranoidcli", os.DevNull)
+	commands.Log = logger.New("commands", "paranoidcli", os.DevNull)
+	tls.Log = logger.New("tls", "paranoidcli", os.DevNull)
 
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
