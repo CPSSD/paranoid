@@ -13,11 +13,11 @@ import (
 type LogLevel int
 
 const (
-	DEBUG   LogLevel = iota
-	VERBOSE LogLevel = iota
-	INFO    LogLevel = iota
-	WARNING LogLevel = iota
-	ERROR   LogLevel = iota
+	DEBUG LogLevel = iota
+	VERBOSE
+	INFO
+	WARNING
+	ERROR
 )
 
 // Output enums to set the outputs
@@ -39,18 +39,16 @@ type ParanoidLogger struct {
 }
 
 // New creates a new logger and returns a new logger
-func New(currentPackage string, component string, logDirectory string) (*ParanoidLogger, error) {
+func New(currentPackage string, component string, logDirectory string) *ParanoidLogger {
 	l := ParanoidLogger{
 		component: component,
 		curPack:   currentPackage,
 		logDir:    logDirectory,
+		writer:    os.Stderr,
 		logLevel:  INFO,
-		native:    log.New(nil, "", log.LstdFlags)}
-
-	// Even though this can't throw an error as of 2015-5-12,
-	// we keep the error for extensibility.
-	err := l.SetOutput(STDERR)
-	return &l, err
+		native:    log.New(os.Stderr, "", log.LstdFlags),
+	}
+	return &l
 }
 
 // SetLogLevel sets the logging level for the logger

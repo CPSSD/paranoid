@@ -12,12 +12,12 @@ func (s *DiscoveryServer) Disconnect(ctx context.Context, req *pb.DisconnectRequ
 	for i, node := range Nodes {
 		if node.Data == *req.Node {
 			Nodes[i].Active = false
-			Log.Info("Disconnect: Node %s disconnected", req.Node)
+			Log.Info("Disconnect: Node %s:%s disconnected", req.Node.Ip, req.Node.Port)
 			return &pb.EmptyMessage{}, nil
 		}
 	}
 
-	Log.Errorf("Disconnect: Node %s was not found", req.Node)
+	Log.Errorf("Disconnect: Node %s:%s was not found", req.Node.Ip, req.Node.Port)
 	returnError := grpc.Errorf(codes.NotFound, "node was not found")
 	return &pb.EmptyMessage{}, returnError
 }

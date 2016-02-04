@@ -5,22 +5,30 @@ import (
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"log"
 	"strconv"
 )
 
-func Ping(ips []globals.Node) {
-	ip, _ := upnp.GetIP()
-	for _, ipAddress := range ips {
+func Ping() {
+	ip, err := upnp.GetIP()
+	if err != nil {
+		Log.Fatal("Can not ping peers: unable to get IP. Error:", err)
+	}
+
+	nodes := globals.Nodes.GetAll()
+	for _, node := range nodes {
 		port := strconv.Itoa(globals.Port)
 
-		conn := Dial(ipAddress)
+		conn, err := Dial(node)
+		if err != nil {
+			Log.Error("Ping: failed to dial ", node)
+		}
 		defer conn.Close()
+
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err := client.Ping(context.Background(), &pb.PingRequest{ip, port, globals.CommonName})
+		_, err = client.Ping(context.Background(), &pb.PingRequest{ip, port, globals.CommonName})
 		if err != nil {
-			log.Println("Can't Ping ", ipAddress)
+			Log.Error("Can't ping ", node)
 		}
 	}
 }

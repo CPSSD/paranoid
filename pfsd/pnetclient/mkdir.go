@@ -4,26 +4,23 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"log"
-	"strconv"
 )
 
-// Mkdir is used to create directories
-func Mkdir(ips []globals.Node, directory string, mode string) {
-	for _, ipAddress := range ips {
-		conn := Dial(ipAddress)
-
-		intMode, err := strconv.ParseUint(mode, 8, 64)
+func Mkdir(directory string, mode uint32) {
+	nodes := globals.Nodes.GetAll()
+	for _, node := range nodes {
+		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Error parsing mode in Mkdir.")
+			Log.Error("Mkdir: failed to dial ", node)
+			continue
 		}
-
 		defer conn.Close()
+
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err = client.Mkdir(context.Background(), &pb.MkdirRequest{directory, uint32(intMode)})
+		_, err = client.Mkdir(context.Background(), &pb.MkdirRequest{directory, mode})
 		if err != nil {
-			log.Println("Mkdir Error on ", ipAddress, "Error:", err)
+			Log.Error("Failure sending mkdir to", node, "Error:", err)
 		}
 	}
 }

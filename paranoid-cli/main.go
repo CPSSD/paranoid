@@ -2,11 +2,18 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
+	pfscommands "github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/paranoid-cli/commands"
+	"github.com/cpssd/paranoid/paranoid-cli/tls"
 	"os"
 )
 
 func main() {
+	pfscommands.Log = logger.New("libpfs", "libpfs", os.DevNull)
+	commands.Log = logger.New("commands", "paranoidcli", os.DevNull)
+	tls.Log = logger.New("tls", "paranoidcli", os.DevNull)
+
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
 	app.HelpName = "paranoid-cli"
@@ -52,6 +59,10 @@ func main() {
 					Name:  "n, noprompt",
 					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
 				},
+				cli.StringFlag{
+					Name:  "i, interface",
+					Usage: "name a network interface over which to make connections. Defaults to default interface",
+				},
 			},
 		},
 		{
@@ -89,6 +100,10 @@ func main() {
 				cli.BoolFlag{
 					Name:  "n, noprompt",
 					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
+				},
+				cli.StringFlag{
+					Name:  "i, interface",
+					Usage: "name a network interface over which to make connections. Defaults to default interface",
 				},
 			},
 		},

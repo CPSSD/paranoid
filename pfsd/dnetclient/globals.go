@@ -2,6 +2,7 @@ package dnetclient
 
 import (
 	"crypto/tls"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -14,6 +15,8 @@ var (
 	// ThisNode has to be set before calling Join
 	ThisNode            globals.Node
 	discoveryCommonName string
+
+	Log *logger.ParanoidLogger
 )
 
 func dialDiscovery() (*grpc.ClientConn, error) {

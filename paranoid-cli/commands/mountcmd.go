@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/codegangsta/cli"
-	"log"
+	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"net"
 	"os"
 	"os/exec"
@@ -30,53 +31,47 @@ func doMount(c *cli.Context, args []string) {
 	if c.GlobalBool("networkoff") == false {
 		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
 		if err != nil {
-			log.Fatalln("FATAL : unable to reach server", err)
+			Log.Fatal("Unable to reach server", err)
 		}
 	}
 
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 	pfsDir := path.Join(usr.HomeDir, ".pfs", args[1])
 
 	if _, err := os.Stat(pfsDir); os.IsNotExist(err) {
-		log.Fatalln("FATAL : PFS directory does not exist")
+		Log.Fatal("PFS directory does not exist")
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "contents")); os.IsNotExist(err) {
-		log.Fatalln("FATAL : PFS directory does not include contents directory")
+		Log.Fatal("PFS directory does not include contents directory")
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "meta")); os.IsNotExist(err) {
-		log.Fatalln("FATAL : PFS directory does not include meta directory")
+		Log.Fatal("PFS directory does not include meta directory")
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "names")); os.IsNotExist(err) {
-		log.Fatalln("FATAL : PFS directory does not include names directory")
+		Log.Fatal("PFS directory does not include names directory")
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "inodes")); os.IsNotExist(err) {
-		log.Fatalln("FATAL : PFS directory does not include inodes directory")
+		Log.Fatal("PFS directory does not include inodes directory")
 	}
+
 	if pathExists(path.Join(pfsDir, "meta/", "pfsd.pid")) {
 		err = os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
 		if err != nil {
-			log.Fatalln("FATAL : Could not remove old pfsd.pid")
+			Log.Fatal("Could not remove old pfsd.pid")
 		}
 	}
 
 	splitAddress := strings.Split(serverAddress, ":")
 	if len(splitAddress) != 2 {
-		log.Fatalln("FATAL : server-address in wrong format")
+		Log.Fatal("Server-address in wrong format")
 	}
 
-	cmd := exec.Command("pfsm", "mount", pfsDir, splitAddress[0], splitAddress[1], args[2])
-	err = cmd.Run()
-	if err != nil {
-		log.Fatalln("FATAL error running pfsm mount command : ", err)
-	}
-
-	outfile, err := os.Create(path.Join(pfsDir, "meta", "logs", "pfsdLog.txt"))
-
-	if err != nil {
-		log.Fatalln("FATAL error creating output file")
+	returncode, err := commands.MountCommand(pfsDir, splitAddress[0], splitAddress[1], args[2])
+	if returncode != returncodes.OK {
+		Log.Fatal("Error running pfs mount command : ", err)
 	}
 
 	if !c.GlobalBool("networkoff") {
@@ -84,13 +79,24 @@ func doMount(c *cli.Context, args []string) {
 		certPath := path.Join(pfsDir, "meta", "cert.pem")
 		keyPath := path.Join(pfsDir, "meta", "key.pem")
 		if pathExists(certPath) && pathExists(keyPath) {
-			log.Println("INFO: Starting PFSD in secure mode.")
+			Log.Info("Starting PFSD in secure mode.")
 			//TODO(terry): Add a way to check if the given cert is its own CA,
 			// and skip validation based on that.
-			cmd = exec.Command("pfsd", "-cert="+certPath, "-key="+keyPath,
-				"-skip_verification", pfsDir, splitAddress[0], splitAddress[1])
-			cmd.Stderr = outfile
+			pfsdArgs := []string{"-cert=" + certPath, "-key=" + keyPath, "-skip_verification",
+				pfsDir, args[2], splitAddress[0], splitAddress[1]}
+			var pfsdFlags []string
+			if c.GlobalBool("verbose") {
+				pfsdFlags = append(pfsdFlags, "-v")
+			}
+			iface := c.String("interface")
+			if iface != "" {
+				pfsdFlags = append(pfsdFlags, "-interface="+iface)
+			}
+			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 			err = cmd.Start()
+			if err != nil {
+				Log.Fatal("Error running pfsd command :", err)
+			}
 		} else {
 			// Start in unsecure mode
 			if !c.Bool("noprompt") {
@@ -103,31 +109,35 @@ func doMount(c *cli.Context, args []string) {
 					os.Exit(1)
 				}
 			}
-			log.Println("INFO: Starting PFSD in unsecure mode.")
-			cmd = exec.Command("pfsd", pfsDir, splitAddress[0], splitAddress[1])
-			cmd.Stderr = outfile
+
+			Log.Info("Starting PFSD in unsecure mode.")
+			pfsdArgs := []string{pfsDir, args[2], splitAddress[0], splitAddress[1]}
+			var pfsdFlags []string
+			if c.GlobalBool("verbose") {
+				pfsdFlags = append(pfsdFlags, "-v")
+			}
+			iface := c.String("interface")
+			if iface != "" {
+				pfsdFlags = append(pfsdFlags, "-interface="+iface)
+			}
+			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 			err = cmd.Start()
+			if err != nil {
+				Log.Fatal("Error running pfsd :", err)
+			}
 		}
-	}
-
-	pfiArgs := []string{pfsDir, args[2]}
-	var pfiFlags []string
-	if c.GlobalBool("verbose") {
-		pfiFlags = append(pfiFlags, "-v")
-	}
-	if c.GlobalBool("networkoff") {
-		pfiFlags = append(pfiFlags, "-n")
-	}
-
-	cmd = exec.Command("pfi", append(pfiFlags, pfiArgs...)...)
-	outfile, err = os.Create(path.Join(pfsDir, "meta", "logs", "pfiLog.txt"))
-
-	if err != nil {
-		log.Fatalln("FATAL error creating output file")
-	}
-	cmd.Stderr = outfile
-	err = cmd.Start()
-	if err != nil {
-		log.Fatalln("FATAL error running pfi command : ", err)
+	} else {
+		//No need to worry about security certs
+		pfsdArgs := []string{pfsDir, args[2], splitAddress[0], splitAddress[1]}
+		var pfsdFlags []string
+		if c.GlobalBool("verbose") {
+			pfsdFlags = append(pfsdFlags, "-v")
+		}
+		pfsdFlags = append(pfsdFlags, "--no_networking")
+		cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
+		err = cmd.Start()
+		if err != nil {
+			Log.Fatal("Error running pfsd :", err)
+		}
 	}
 }

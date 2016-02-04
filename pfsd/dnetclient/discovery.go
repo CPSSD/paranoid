@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/upnp"
-	"log"
 	"net"
 	"time"
 )
@@ -31,10 +30,10 @@ func SetDiscovery(host, port, serverPort string) {
 			dnsAddr, err = net.LookupCNAME(host)
 		}
 		if err != nil {
-			log.Println("ERROR: Could not complete DNS lookup:", err)
+			Log.Error("Could not complete DNS lookup:", err)
 		}
 		if dnsAddr == "" { // If no DNS entries exist
-			log.Fatalln("FATAL: Can not find DNS entry for discovery server:", host)
+			Log.Fatal("Can not find DNS entry for discovery server:", host)
 		}
 		discoveryCommonName = dnsAddr
 	}
@@ -43,7 +42,7 @@ func SetDiscovery(host, port, serverPort string) {
 func JoinDiscovery(pool string) {
 	if err := Join(pool); err != nil {
 		if err = retryJoin(pool); err != nil {
-			log.Fatalln("FATAL: Failure dialing discovery server after multiple attempts, Giving up", err)
+			Log.Fatal("Failure dialing discovery server after multiple attempts, Giving up", err)
 		}
 	}
 	globals.Wait.Add(2)
@@ -56,7 +55,7 @@ func JoinDiscovery(pool string) {
 // relevant to discovery.
 func pingPeers() {
 	// Ping as soon as this node joins
-	pnetclient.Ping(globals.Nodes.GetAll())
+	pnetclient.Ping()
 	timer := time.NewTimer(peerPingInterval)
 	defer timer.Stop()
 	defer globals.Wait.Done()
@@ -67,7 +66,7 @@ func pingPeers() {
 				return
 			}
 		case <-timer.C:
-			pnetclient.Ping(globals.Nodes.GetAll())
+			pnetclient.Ping()
 			timer.Reset(peerPingInterval)
 		}
 	}
@@ -92,12 +91,12 @@ func renew() {
 		select {
 		case _, ok := <-globals.Quit:
 			if !ok {
-				log.Println("INFO: Disconnected from discovery server.")
+				Log.Info("Disconnected from discovery server.")
 				return
 			}
 		case <-timer.C:
 			if err := Renew(); err != nil {
-				log.Println("Failed to Renew Session")
+				Log.Error("Failed to renew session.")
 			}
 			timer.Reset(globals.ResetInterval * time.Millisecond)
 		}

@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"log"
 )
 
 func (s *ParanoidServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.EmptyMessage, error) {
@@ -13,7 +12,7 @@ func (s *ParanoidServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.Emp
 		Port:       req.Port,
 		CommonName: req.CommonName,
 	}
-	log.Println("INFO: Got Ping from Node:", node)
+	Log.Infof("Got Ping from Node:", node)
 	globals.Nodes.Add(node)
 	return &pb.EmptyMessage{}, nil
 }

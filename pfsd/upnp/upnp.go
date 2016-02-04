@@ -2,6 +2,8 @@ package upnp
 
 import (
 	"errors"
+	"flag"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/huin/goupnp/dcps/internetgateway1"
 	"math/rand"
@@ -13,6 +15,10 @@ var (
 	uPnPClientsPPP      []*internetgateway1.WANPPPConnection1
 	ipPortMappedClient  *internetgateway1.WANIPConnection1
 	pppPortMappedClient *internetgateway1.WANPPPConnection1
+
+	iface = flag.String("interface", "default",
+		"network interface on which to perform connections. If not set, will use default interface.")
+	Log *logger.ParanoidLogger
 )
 
 const attemptedPortAssignments = 10
@@ -35,17 +41,15 @@ func DiscoverDevices() error {
 
 func getUnoccupiedPortsIp(client *internetgateway1.WANIPConnection1) []int {
 	m := make(map[int]bool)
-	i := 0
-	for {
+	for i := 1; i < 65536; i++ {
 		_, port, _, _, _, _, _, _, err := client.GetGenericPortMappingEntry(uint16(i))
 		if err != nil {
 			break
 		}
-		i++
 		m[int(port)] = true
 	}
 	openPorts := make([]int, 0)
-	for i = 1; i < 65536; i++ {
+	for i := 1; i < 65536; i++ {
 		if m[i] == false {
 			openPorts = append(openPorts, i)
 		}
@@ -55,17 +59,15 @@ func getUnoccupiedPortsIp(client *internetgateway1.WANIPConnection1) []int {
 
 func getUnoccupiedPortsppp(client *internetgateway1.WANPPPConnection1) []int {
 	m := make(map[int]bool)
-	i := 0
-	for {
+	for i := 1; i < 65536; i++ {
 		_, port, _, _, _, _, _, _, err := client.GetGenericPortMappingEntry(uint16(i))
 		if err != nil {
 			break
 		}
-		i++
 		m[int(port)] = true
 	}
 	openPorts := make([]int, 0)
-	for i = 1; i < 65536; i++ {
+	for i := 1; i < 65536; i++ {
 		if m[i] == false {
 			openPorts = append(openPorts, i)
 		}
@@ -82,8 +84,9 @@ func AddPortMapping(internalPort int) (int, error) {
 		openPorts := getUnoccupiedPortsIp(client)
 		if len(openPorts) > 0 {
 			for i := 0; i < attemptedPortAssignments; i++ {
-				port := openPorts[rand.Intn(len(openPorts)-1)]
-				err := client.AddPortMapping("", uint16(internalPort), "TCP", uint16(port), ip, true, "", 0)
+				port := openPorts[rand.Intn(len(openPorts))]
+				Log.Info("Picked port:", port)
+				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), ip, true, "", 0)
 				if err == nil {
 					ipPortMappedClient = client
 					return port, nil
@@ -95,8 +98,9 @@ func AddPortMapping(internalPort int) (int, error) {
 		openPorts := getUnoccupiedPortsppp(client)
 		if len(openPorts) > 0 {
 			for i := 0; i < attemptedPortAssignments; i++ {
-				port := openPorts[rand.Intn(len(openPorts)-1)]
-				err := client.AddPortMapping("", uint16(internalPort), "TCP", uint16(port), ip, true, "", 0)
+				port := openPorts[rand.Intn(len(openPorts))]
+				Log.Info("Picked port:", port)
+				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), ip, true, "", 0)
 				if err == nil {
 					pppPortMappedClient = client
 					return port, nil
@@ -124,6 +128,9 @@ func GetInternalIp() (string, error) {
 		if (i.Flags & net.FlagLoopback) != 0 {
 			continue
 		}
+		if *iface != "default" && i.Name != *iface {
+			continue
+		}
 		addrs, _ := i.Addrs()
 		for _, addr := range addrs {
 			var ip net.IP
@@ -136,7 +143,7 @@ func GetInternalIp() (string, error) {
 			return ip.String(), nil
 		}
 	}
-	return "", errors.New("No interfaces found")
+	return "", errors.New("No matching interfaces found")
 }
 
 //GetExternalIp gets the external IP of the port mapped device.

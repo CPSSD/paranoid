@@ -13,12 +13,12 @@ func (s *DiscoveryServer) Renew(ctx context.Context, req *pb.JoinRequest) (*pb.E
 	isInNodes := false
 	isActiveNode := false
 
-	for i, node := range Nodes {
-		if node.Data == *req.Node {
-			if node.Active {
+	for i := 0; i < len(Nodes); i++ {
+		if Nodes[i].Data == *req.Node {
+			if Nodes[i].Active {
 				Nodes[i].ExpiryTime = time.Now().Add(RenewInterval)
 				isActiveNode = true
-				Log.Infof("Renew: Node %s renewed", req.Node)
+				Log.Infof("Renew: Node %s:%s renewed", req.Node.Ip, req.Node.Port)
 			}
 			isInNodes = true
 			break
@@ -27,11 +27,11 @@ func (s *DiscoveryServer) Renew(ctx context.Context, req *pb.JoinRequest) (*pb.E
 
 	var returnError error
 	if !isInNodes {
-		Log.Errorf("Renew: node %s not found\n", req.Node)
+		Log.Errorf("Renew: node %s:%s not found", req.Node.Ip, req.Node.Port)
 		returnError = grpc.Errorf(codes.NotFound, "node was not found")
 	}
 	if !isActiveNode {
-		Log.Error("Renew: Renewal time is past deadline for node", req.Node.Ip)
+		Log.Errorf("Renew: Renewal time is past deadline for node %s:%s", req.Node.Ip, req.Node.Port)
 		returnError = grpc.Errorf(codes.DeadlineExceeded, "renewal time is past deadline")
 	}
 	return &pb.EmptyMessage{}, returnError // returns nil if no error

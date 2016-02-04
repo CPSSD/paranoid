@@ -1,24 +1,23 @@
 package pnetserver
 
 import (
+	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
-	"strconv"
+	"os"
 )
 
 func (s *ParanoidServer) Mkdir(ctx context.Context, req *pb.MkdirRequest) (*pb.EmptyMessage, error) {
-	code, _, err := runCommand(nil, "mkdir", ParanoidDir, req.Directory, strconv.FormatUint(uint64(req.Mode), 8))
-	if err != nil {
-		log.Printf("ERROR: Could not make directory: %v with mode: %v \n", req.Directory, req.Mode, err)
+	code, err := commands.MkdirCommand(ParanoidDir, req.Directory, os.FileMode(req.Mode), false)
+	if code != returncodes.OK {
+		Log.Errorf("Could not make directory: %v with mode: %v \n", req.Directory, req.Mode, err)
 		returnError := grpc.Errorf(codes.Internal, "could not make directory: %v with mode: %v\n",
 			req.Directory, req.Mode, err)
 		return &pb.EmptyMessage{}, returnError
 	}
 
-	returnError := convertCodeToError(code, req.Directory)
-	// If returnError is nil here, it's equivalent to returning OK
-	return &pb.EmptyMessage{}, returnError
+	return &pb.EmptyMessage{}, nil
 }
