@@ -5,6 +5,7 @@ package tls
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"github.com/cpssd/paranoid/logger"
 	"io/ioutil"
 	"os"
 	"path"
@@ -13,6 +14,7 @@ import (
 )
 
 func TestGenerateCert(t *testing.T) {
+	Log = logger.New("tlstest", "tlstest", os.DevNull)
 	testPath := path.Join(os.TempDir(), "testCertGen")
 	os.RemoveAll(testPath)
 	os.Mkdir(testPath, 0777)
