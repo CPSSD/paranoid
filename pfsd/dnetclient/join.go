@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
-	"log"
 	"strconv"
 	"time"
 )
@@ -36,7 +35,7 @@ func Join(pool string) error {
 	interval := response.ResetInterval / 10 * 9
 	globals.ResetInterval, err = time.ParseDuration(strconv.FormatInt(interval, 10) + "ms")
 	if err != nil {
-		log.Println("ERROR: Invalid Renew Interval", err)
+		Log.Error("Invalid renew interval.", err)
 	}
 
 	peerList := "Currently Connected: "
@@ -44,9 +43,9 @@ func Join(pool string) error {
 		peerList += node.Ip + ":" + node.Port + ", "
 		globals.Nodes.Add(globals.Node{IP: node.Ip, Port: node.Port})
 	}
-	log.Println(peerList)
+	Log.Info(peerList)
 
-	log.Println("INFO: Successfully joined discovery network")
+	Log.Info("Successfully joined discovery network")
 
 	return nil
 }

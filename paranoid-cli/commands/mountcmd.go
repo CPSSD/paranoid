@@ -74,11 +74,6 @@ func doMount(c *cli.Context, args []string) {
 		Log.Fatal("Error running pfs mount command : ", err)
 	}
 
-	outfile, err := os.Create(path.Join(pfsDir, "meta", "logs", "pfsdLog.txt"))
-	if err != nil {
-		Log.Fatal("Error creating output file")
-	}
-
 	if !c.GlobalBool("networkoff") {
 		// Check if the cert and key files are present.
 		certPath := path.Join(pfsDir, "meta", "cert.pem")
@@ -98,7 +93,6 @@ func doMount(c *cli.Context, args []string) {
 				pfsdFlags = append(pfsdFlags, "-interface="+iface)
 			}
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
-			cmd.Stderr = outfile
 			err = cmd.Start()
 			if err != nil {
 				Log.Fatal("Error running pfsd command :", err)
@@ -127,7 +121,6 @@ func doMount(c *cli.Context, args []string) {
 				pfsdFlags = append(pfsdFlags, "-interface="+iface)
 			}
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
-			cmd.Stderr = outfile
 			err = cmd.Start()
 			if err != nil {
 				Log.Fatal("Error running pfsd :", err)
@@ -142,7 +135,6 @@ func doMount(c *cli.Context, args []string) {
 		}
 		pfsdFlags = append(pfsdFlags, "--no_networking")
 		cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
-		cmd.Stderr = outfile
 		err = cmd.Start()
 		if err != nil {
 			Log.Fatal("Error running pfsd :", err)

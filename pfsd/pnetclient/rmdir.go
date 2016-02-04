@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"log"
 )
 
 func Rmdir(directory string) {
@@ -12,7 +11,7 @@ func Rmdir(directory string) {
 	for _, node := range nodes {
 		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Rmdir error failed to dial ", node)
+			Log.Error("Rmdir: failed to dial ", node)
 			continue
 		}
 		defer conn.Close()
@@ -21,7 +20,7 @@ func Rmdir(directory string) {
 
 		_, err = client.Rmdir(context.Background(), &pb.RmdirRequest{directory})
 		if err != nil {
-			log.Println("Rmdir Error on ", node, "Error:", err)
+			Log.Error("Failed sending rmdir to", node, "Error:", err)
 		}
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 	"time"
 )
 
@@ -24,7 +23,7 @@ func (s *ParanoidServer) Utimes(ctx context.Context, req *pb.UtimesRequest) (*pb
 	}
 	code, err := commands.UtimesCommand(ParanoidDir, req.Path, atime, mtime, false)
 	if code != returncodes.OK {
-		log.Printf("ERROR: Could not modify times of file %s: %v.\n", req.Path, err)
+		Log.Errorf("Could not modify times of file %s: %v.\n", req.Path, err)
 		returnError := grpc.Errorf(codes.Internal, "could not modify times of file %s: %v",
 			req.Path, err)
 		return &pb.EmptyMessage{}, returnError

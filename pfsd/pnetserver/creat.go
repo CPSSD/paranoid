@@ -7,14 +7,13 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 	"os"
 )
 
 func (s *ParanoidServer) Creat(ctx context.Context, req *pb.CreatRequest) (*pb.EmptyMessage, error) {
 	code, err := commands.CreatCommand(ParanoidDir, req.Path, os.FileMode(req.Permissions), false)
 	if code != returncodes.OK {
-		log.Printf("ERROR: Could not create file %s: %v.\n", req.Path, err)
+		Log.Errorf("Could not create file %s: %v.\n", req.Path, err)
 		returnError := grpc.Errorf(codes.Internal, "could not create file %s: %v", req.Path, err)
 		return &pb.EmptyMessage{}, returnError
 	}

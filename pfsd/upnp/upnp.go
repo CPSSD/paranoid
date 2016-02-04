@@ -3,9 +3,9 @@ package upnp
 import (
 	"errors"
 	"flag"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/huin/goupnp/dcps/internetgateway1"
-	"log"
 	"math/rand"
 	"net"
 )
@@ -18,6 +18,7 @@ var (
 
 	iface = flag.String("interface", "default",
 		"network interface on which to perform connections. If not set, will use default interface.")
+	Log *logger.ParanoidLogger
 )
 
 const attemptedPortAssignments = 10
@@ -84,7 +85,7 @@ func AddPortMapping(internalPort int) (int, error) {
 		if len(openPorts) > 0 {
 			for i := 0; i < attemptedPortAssignments; i++ {
 				port := openPorts[rand.Intn(len(openPorts))]
-				log.Println("Picked port:", port)
+				Log.Info("Picked port:", port)
 				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), ip, true, "", 0)
 				if err == nil {
 					ipPortMappedClient = client
@@ -98,7 +99,7 @@ func AddPortMapping(internalPort int) (int, error) {
 		if len(openPorts) > 0 {
 			for i := 0; i < attemptedPortAssignments; i++ {
 				port := openPorts[rand.Intn(len(openPorts))]
-				log.Println("Picked port:", port)
+				Log.Info("Picked port:", port)
 				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), ip, true, "", 0)
 				if err == nil {
 					pppPortMappedClient = client

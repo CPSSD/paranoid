@@ -22,9 +22,10 @@ var tmpdir = path.Join(os.TempDir(), "pfs")
 
 func TestMain(m *testing.M) {
 	// Make sure we start with an empty directory
+	pnetserver.Log = logger.New("pnetserver", "pfsd", os.DevNull)
 	os.RemoveAll(tmpdir)
 	os.Mkdir(tmpdir, 0777)
-	commands.Log = logger.New("pfsdintegaration", "pfsdintegaration", os.DevNull)
+	commands.Log = logger.New("pfsdintegration", "pfsdintegration", os.DevNull)
 	commands.InitCommand(tmpdir)
 	pnetserver.ParanoidDir = tmpdir
 	globals.Port = 10101

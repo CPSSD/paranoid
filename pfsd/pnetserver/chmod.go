@@ -7,14 +7,13 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 	"os"
 )
 
 func (s *ParanoidServer) Chmod(ctx context.Context, req *pb.ChmodRequest) (*pb.EmptyMessage, error) {
 	code, err := commands.ChmodCommand(ParanoidDir, req.Path, os.FileMode(req.Mode), false)
 	if code != returncodes.OK {
-		log.Printf("ERROR: Could not change permissions on file %s: %v.\n", req.Path, err)
+		Log.Errorf("Could not change permissions on file %s: %v.\n", req.Path, err)
 		returnError := grpc.Errorf(codes.Internal, "could not change permissions on file %s: %v",
 			req.Path, err)
 		return &pb.EmptyMessage{}, returnError

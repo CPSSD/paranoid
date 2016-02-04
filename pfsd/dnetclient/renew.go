@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
-	"log"
 )
 
 // Renew function. Will create a goroutine which will send renew to server
@@ -13,7 +12,7 @@ import (
 func Renew() error {
 	conn, err := dialDiscovery()
 	if err != nil {
-		log.Println("ERROR: failed to dial discovery server at ", globals.DiscoveryAddr)
+		Log.Error("Failed to dial discovery server at", globals.DiscoveryAddr)
 		return errors.New("failed to dial discovery server")
 	}
 	defer conn.Close()
@@ -26,6 +25,6 @@ func Renew() error {
 		return errors.New("could not renew discovery membership")
 	}
 
-	log.Println("INFO: Renewed discovery membership")
+	Log.Info("Renewed discovery membership")
 	return nil
 }

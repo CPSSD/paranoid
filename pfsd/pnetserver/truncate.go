@@ -7,13 +7,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 )
 
 func (s *ParanoidServer) Truncate(ctx context.Context, req *pb.TruncateRequest) (*pb.EmptyMessage, error) {
 	code, err := commands.TruncateCommand(ParanoidDir, req.Path, int64(req.Length), false)
 	if code != returncodes.OK {
-		log.Printf("ERROR: Could not truncate file %s: %v.\n", req.Path, err)
+		Log.Errorf("Could not truncate file %s: %v.\n", req.Path, err)
 		returnError := grpc.Errorf(codes.Internal, "could not truncate file %s: %v",
 			req.Path, err)
 		return &pb.EmptyMessage{}, returnError
