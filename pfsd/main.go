@@ -58,15 +58,17 @@ func main() {
 		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <mount_point> <Discovery Server> <Discovery Port>\n")
 		os.Exit(1)
 	}
-	log = logger.New("main", "pfsd", path.Join(flag.Arg(0), "meta", "log"))
-	dnetclient.Log = logger.New("dnetclient", "pfsd", path.Join(flag.Arg(0), "meta", "log"))
-	pnetclient.Log = logger.New("pnetclient", "pfsd", path.Join(flag.Arg(0), "meta", "log"))
-	pnetserver.Log = logger.New("pnetserver", "pfsd", path.Join(flag.Arg(0), "meta", "log"))
+	log = logger.New("main", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	dnetclient.Log = logger.New("dnetclient", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	pnetclient.Log = logger.New("pnetclient", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	pnetserver.Log = logger.New("pnetserver", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	upnp.Log = logger.New("upnp", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 
 	log.SetOutput(logger.STDERR | logger.LOGFILE)
 	dnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	pnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	pnetserver.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	upnp.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {
