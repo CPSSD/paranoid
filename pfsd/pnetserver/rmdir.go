@@ -7,13 +7,12 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 )
 
 func (s *ParanoidServer) Rmdir(ctx context.Context, req *pb.RmdirRequest) (*pb.EmptyMessage, error) {
 	code, err := commands.RmdirCommand(ParanoidDir, req.Directory, false)
 	if code != returncodes.OK {
-		log.Printf("ERROR: Could not remove directory: %v \n", req.Directory, err)
+		Log.Errorf("Could not remove directory: %v \n", req.Directory, err)
 		returnError := grpc.Errorf(codes.Internal, "could not remove directory: %v \n",
 			req.Directory, err)
 		return &pb.EmptyMessage{}, returnError

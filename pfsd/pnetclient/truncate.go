@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"log"
 )
 
 func Truncate(path string, length uint64) {
@@ -12,7 +11,7 @@ func Truncate(path string, length uint64) {
 	for _, node := range nodes {
 		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Truncate error failed to dial ", node)
+			Log.Error("Truncate: failed to dial ", node)
 			continue
 		}
 		defer conn.Close()
@@ -21,7 +20,7 @@ func Truncate(path string, length uint64) {
 
 		_, clientErr := client.Truncate(context.Background(), &pb.TruncateRequest{path, length})
 		if clientErr != nil {
-			log.Println("Truncate Error on ", node, "Error:", err)
+			Log.Error("Failed sending truncate to", node, "Error:", err)
 		}
 	}
 }

@@ -7,14 +7,13 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"log"
 	"os"
 )
 
 func (s *ParanoidServer) Mkdir(ctx context.Context, req *pb.MkdirRequest) (*pb.EmptyMessage, error) {
 	code, err := commands.MkdirCommand(ParanoidDir, req.Directory, os.FileMode(req.Mode), false)
 	if code != returncodes.OK {
-		log.Printf("ERROR: Could not make directory: %v with mode: %v \n", req.Directory, req.Mode, err)
+		Log.Errorf("Could not make directory: %v with mode: %v \n", req.Directory, req.Mode, err)
 		returnError := grpc.Errorf(codes.Internal, "could not make directory: %v with mode: %v\n",
 			req.Directory, req.Mode, err)
 		return &pb.EmptyMessage{}, returnError

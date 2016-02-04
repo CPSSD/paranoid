@@ -6,7 +6,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	"github.com/kardianos/osext"
-	"log"
 	"os"
 	"os/signal"
 	"path"
@@ -18,7 +17,7 @@ func stopAllServices() {
 	if globals.UPnPEnabled {
 		err := upnp.ClearPortMapping(globals.Port)
 		if err != nil {
-			log.Println("Could not clear port mapping. Error : ", err)
+			log.Info("Could not clear port mapping. Error : ", err)
 		}
 	}
 	close(globals.Quit) // Sends stop signal to all goroutines
@@ -30,7 +29,7 @@ func stopAllServices() {
 	// We also wait to give it some time to stop itself.
 	time.Sleep(time.Millisecond * 10)
 	globals.Wait.Done()
-	log.Println("INFO: ParanoidNetwork server stopped.")
+	log.Info("ParanoidNetwork server stopped.")
 	globals.Wait.Wait()
 }
 
@@ -49,31 +48,31 @@ func HandleSignals() {
 }
 
 func handleSIGHUP() {
-	log.Println("INFO: SIGHUP received. Restarting.")
+	log.Info("SIGHUP received. Restarting.")
 	stopAllServices()
-	log.Println("INFO: All services stopped. Forking process.")
+	log.Info("All services stopped. Forking process.")
 	execSpec := &syscall.ProcAttr{
 		Env: os.Environ(),
 	}
 	pathToSelf, err := osext.Executable()
 	if err != nil {
-		log.Println("WARNING: Could not get path to self:", err)
+		log.Warn("Could not get path to self:", err)
 		pathToSelf = os.Args[0]
 	}
 	fork, err := syscall.ForkExec(pathToSelf, os.Args, execSpec)
 	if err != nil {
-		log.Println("ERROR: Could not fork child PFSD instance:", err)
+		log.Error("Could not fork child PFSD instance:", err)
 	} else {
-		log.Println("INFO: Forked successfully. New PID:", fork)
+		log.Info("Forked successfully. New PID:", fork)
 	}
 }
 
 func handleSIGTERM() {
-	log.Println("INFO: SIGTERM received. Exiting.")
+	log.Info("SIGTERM received. Exiting.")
 	stopAllServices()
 	err := os.Remove(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"))
 	if err != nil {
-		log.Println("INFO: Can't remove PID file ", err)
+		log.Info("Can't remove PID file ", err)
 	}
-	log.Println("INFO: All services stopped. Have a nice day.")
+	log.Info("All services stopped. Have a nice day.")
 }

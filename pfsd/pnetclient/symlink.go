@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"log"
 )
 
 func Symlink(oldPath, newPath string) {
@@ -12,7 +11,7 @@ func Symlink(oldPath, newPath string) {
 	for _, node := range nodes {
 		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Symlink error failed to dial ", node)
+			Log.Error("Symlink: failed to dial ", node)
 			continue
 		}
 		defer conn.Close()
@@ -21,7 +20,7 @@ func Symlink(oldPath, newPath string) {
 
 		_, err = client.Symlink(context.Background(), &pb.LinkRequest{oldPath, newPath})
 		if err != nil {
-			log.Println("Link Error on ", node, "Error:", err)
+			Log.Error("Failed sending symkink to", node, "Error:", err)
 		}
 	}
 }

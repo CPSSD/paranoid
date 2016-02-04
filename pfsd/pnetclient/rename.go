@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"log"
 )
 
 func Rename(oldPath, newPath string) {
@@ -12,7 +11,7 @@ func Rename(oldPath, newPath string) {
 	for _, node := range nodes {
 		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Rename error failed to dial ", node)
+			Log.Error("Rename: failed to dial ", node)
 			continue
 		}
 		defer conn.Close()
@@ -21,7 +20,7 @@ func Rename(oldPath, newPath string) {
 
 		_, err = client.Rename(context.Background(), &pb.RenameRequest{oldPath, newPath})
 		if err != nil {
-			log.Println("Rename Error on ", node, "Error:", err)
+			Log.Error("Failed to send rename to", node, "Error:", err)
 		}
 	}
 }

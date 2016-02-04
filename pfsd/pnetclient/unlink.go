@@ -4,7 +4,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"log"
 )
 
 func Unlink(path string) {
@@ -12,7 +11,7 @@ func Unlink(path string) {
 	for _, node := range nodes {
 		conn, err := Dial(node)
 		if err != nil {
-			log.Println("Unlink error failed to dial ", node)
+			Log.Error("Unlink: failed to dial ", node)
 			continue
 		}
 		defer conn.Close()
@@ -21,7 +20,7 @@ func Unlink(path string) {
 
 		_, err = client.Unlink(context.Background(), &pb.UnlinkRequest{path})
 		if err != nil {
-			log.Println("Unlink Error on ", node, "Error:", err)
+			Log.Error("Failed sending unlink to", node, "Error:", err)
 		}
 	}
 }
