@@ -96,7 +96,7 @@ func main() {
 
 		ip, err := upnp.GetIP()
 		if err != nil {
-			log.Fatalln("FATAL: Could not get IP:", err)
+			log.Fatal("Could not get IP:", err)
 		}
 		//Asking for port 0 requests a random free port from the OS.
 		lis, err := net.Listen("tcp", ip+":0")
