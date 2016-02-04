@@ -63,6 +63,11 @@ func main() {
 	pnetclient.Log = logger.New("pnetclient", "pfsd", path.Join(flag.Arg(0), "meta", "log"))
 	pnetserver.Log = logger.New("pnetserver", "pfsd", path.Join(flag.Arg(0), "meta", "log"))
 
+	log.SetOutput(logger.STDERR | logger.LOGFILE)
+	dnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	pnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	pnetserver.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {
 		globals.TLSEnabled = true
