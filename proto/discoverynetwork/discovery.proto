@@ -6,7 +6,6 @@ service DiscoveryNetwork {
   // Discovery Calls
   rpc Join (JoinRequest) returns (JoinResponse) {}
   rpc Disconnect (DisconnectRequest) returns (EmptyMessage) {}
-  rpc Renew (JoinRequest) returns (EmptyMessage) {}
 }
 
 message EmptyMessage {}

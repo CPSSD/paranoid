@@ -11,7 +11,7 @@ import (
 func (s *DiscoveryServer) Disconnect(ctx context.Context, req *pb.DisconnectRequest) (*pb.EmptyMessage, error) {
 	for i := 0; i < len(Nodes); i++ {
 		if Nodes[i].Data.Uuid == req.Node.Uuid {
-			Nodes[i].Active = false
+			Nodes = append(Nodes[:i], Nodes[i+1:]...)
 			Log.Info("Disconnect: Node %s (%s:%s) disconnected", req.Node.Uuid, req.Node.Ip, req.Node.Port)
 			return &pb.EmptyMessage{}, nil
 		}

@@ -16,13 +16,6 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 	// Go through each node and check was the node there
 	for i := 0; i < len(Nodes); i++ {
 		if Nodes[i].Data.Uuid == req.Node.Uuid {
-			if Nodes[i].Active {
-				Log.Errorf("Join: node %s (%s:%s) is already part of the cluster", req.Node.Uuid, req.Node.Ip, req.Node.Port)
-				returnError := grpc.Errorf(codes.AlreadyExists,
-					"node is already part of the cluster")
-				return &pb.JoinResponse{}, returnError
-			}
-
 			if Nodes[i].Pool != req.Pool {
 				Log.Errorf("Join: node belongs to pool %s but tried to join pool %s\n", Nodes[i].Pool, req.Pool)
 				returnError := grpc.Errorf(codes.Internal,
@@ -31,12 +24,13 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 				return &pb.JoinResponse{}, returnError
 			}
 
-			Nodes[i].Active = true
+			Nodes[i].Data.Ip = req.Node.Ip
+			Nodes[i].Data.Port = req.Node.Port
 			return &response, nil
 		}
 	}
 
-	newNode := Node{true, req.Pool, time.Now().Add(RenewInterval), *req.Node}
+	newNode := Node{req.Pool, time.Now().Add(RenewInterval), *req.Node}
 	Nodes = append(Nodes, newNode)
 	Log.Infof("Join: Node %s (%s:%s) joined \n", req.Node.Uuid, req.Node.Ip, req.Node.Port)
 

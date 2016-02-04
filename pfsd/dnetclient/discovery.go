@@ -48,7 +48,6 @@ func JoinDiscovery(pool string) {
 	}
 	globals.Wait.Add(2)
 	go pingPeers()
-	go renew()
 }
 
 // Periodically pings all known nodes on the network. Lives here and not
@@ -82,24 +81,4 @@ func retryJoin(pool string) error {
 		}
 	}
 	return err
-}
-
-func renew() {
-	timer := time.NewTimer(globals.ResetInterval * time.Millisecond)
-	defer timer.Stop()
-	defer globals.Wait.Done()
-	for {
-		select {
-		case _, ok := <-globals.Quit:
-			if !ok {
-				Log.Info("Disconnected from discovery server.")
-				return
-			}
-		case <-timer.C:
-			if err := Renew(); err != nil {
-				Log.Error("Failed to renew session.")
-			}
-			timer.Reset(globals.ResetInterval * time.Millisecond)
-		}
-	}
 }

@@ -94,16 +94,6 @@ func TestDiscoveryNetwork(t *testing.T) {
 		t.Error("Incorrect nodes returned :", joinResponse.Nodes)
 	}
 
-	//Renew node1
-	renewRequest := pb.JoinRequest{
-		Node: &pb.Node{CommonName: "TestNode1", Ip: "1.1.1.1", Port: "1001", Uuid: "blahblah1"},
-		Pool: "TestPool",
-	}
-	_, err = discovery.Renew(nil, &renewRequest)
-	if err != nil {
-		t.Error("Error renewing node1 :", err)
-	}
-
 	//Join node4
 	joinRequest = pb.JoinRequest{
 		Node: &pb.Node{CommonName: "TestNode4", Ip: "1.1.1.3", Port: "1001", Uuid: "blahblah4"},
