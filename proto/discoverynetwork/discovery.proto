@@ -30,4 +30,5 @@ message Node {
   string ip = 1; // required
   string port = 2; // required
   string common_name = 3; // required
+  string uuid = 4; // required
 }
