@@ -18,7 +18,7 @@ func Renew() error {
 	defer conn.Close()
 
 	dclient := pb.NewDiscoveryNetworkClient(conn)
-	pbNode := pb.Node{Ip: ThisNode.IP, Port: ThisNode.Port}
+	pbNode := pb.Node{Ip: ThisNode.IP, Port: ThisNode.Port, Uuid: ThisNode.UUID}
 
 	_, err = dclient.Renew(context.Background(), &pb.JoinRequest{Node: &pbNode})
 	if err != nil {

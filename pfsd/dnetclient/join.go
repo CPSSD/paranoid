@@ -26,6 +26,7 @@ func Join(pool string) error {
 				Ip:         ThisNode.IP,
 				Port:       ThisNode.Port,
 				CommonName: ThisNode.CommonName,
+				Uuid:       ThisNode.UUID,
 			},
 		})
 	if err != nil {

@@ -14,6 +14,7 @@ func SetDiscovery(host, port, serverPort string) {
 		IP:         ipClient,
 		Port:       serverPort,
 		CommonName: globals.CommonName,
+		UUID:       globals.UUID,
 	}
 	globals.DiscoveryAddr = host + ":" + port
 
