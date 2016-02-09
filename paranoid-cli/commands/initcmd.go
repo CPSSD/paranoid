@@ -6,10 +6,13 @@ import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/paranoid-cli/tls"
+	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/user"
 	"path"
 	"path/filepath"
+	"time"
 )
 
 func cleanupPFS(pfsDir string) {
@@ -63,6 +66,20 @@ func Init(c *cli.Context) {
 		cleanupPFS(directory)
 		Log.Fatal("Error running pfs init : ", err)
 	}
+
+	var pool string
+	if pool = c.String("pool"); len(pool) == 0 {
+		poolPrefix := []string{"raging", "violent", "calm", "peaceful", "strange"}
+		poolPostfix := []string{"dolphin", "snake", "elephant", "fox", "dog", "cat"}
+
+		rand.Seed(time.Now().Unix())
+		pool = poolPrefix[rand.Int()%len(poolPrefix)] + "_" + poolPostfix[rand.Int()%len(poolPostfix)]
+	}
+	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool+"\n"), 0600)
+	if err != nil {
+		Log.Fatalf("cannot save pool information: %s", err)
+	}
+	Log.Infof("Using pool name %s", pool)
 
 	if c.Bool("unsecure") {
 		Log.Info("--unsecure specified. PFSD will not use TLS for its communication.")
