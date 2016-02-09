@@ -64,20 +64,7 @@ func main() {
 
 	srv := createRPCServer()
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})
-	go srv.Serve(lis)
-	defer srv.Stop()
+
 	dnetserver.Log.Info("gRPC server created")
-
-	markInactiveNodes()
-}
-
-// Mark the nodes as inactive if their time expires
-func markInactiveNodes() {
-	for {
-		now := time.Now()
-		for i, node := range dnetserver.Nodes {
-			dnetserver.Nodes[i].Active = node.ExpiryTime.Sub(now) > 0
-		}
-		time.Sleep(time.Second * 10)
-	}
+	srv.Serve(lis)
 }

@@ -15,7 +15,6 @@ type DiscoveryServer struct{}
 
 // Node struct to hold the node data
 type Node struct {
-	Active     bool
 	Pool       string
 	ExpiryTime time.Time
 	Data       pb.Node

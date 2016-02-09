@@ -11,6 +11,7 @@ type Node struct {
 	IP         string
 	Port       string
 	CommonName string
+	UUID       string
 }
 
 func (n Node) String() string {
@@ -34,6 +35,9 @@ var Port int
 
 // Common Name of the cert PFSD is using
 var CommonName string
+
+// UUID of the node PFSD is managing
+var UUID string
 
 // If true, TLS is being used in all connections to and from PFSD
 var TLSEnabled bool
