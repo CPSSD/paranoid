@@ -72,6 +72,9 @@ func doMount(c *cli.Context, args []string) {
 	}
 
 	poolBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "pool"))
+	if err != nil {
+		Log.Fatal("unable to read pool information:", err)
+	}
 	pool := string(poolBytes)
 
 	splitAddress := strings.Split(serverAddress, ":")

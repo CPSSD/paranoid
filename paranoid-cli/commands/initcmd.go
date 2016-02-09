@@ -77,7 +77,7 @@ func Init(c *cli.Context) {
 	}
 	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool+"\n"), 0600)
 	if err != nil {
-		Log.Fatalf("cannot save pool information: %s", err)
+		Log.Fatal("cannot save pool information:", err)
 	}
 	Log.Infof("Using pool name %s", pool)
 
