@@ -7,12 +7,10 @@ import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/paranoid-cli/tls"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"os/user"
 	"path"
 	"path/filepath"
-	"time"
 )
 
 func cleanupPFS(pfsDir string) {
@@ -67,13 +65,10 @@ func Init(c *cli.Context) {
 		Log.Fatal("Error running pfs init : ", err)
 	}
 
+	// Either create a new pool name or use the one for a flag and save to meta/pool
 	var pool string
 	if pool = c.String("pool"); len(pool) == 0 {
-		poolPrefix := []string{"raging", "violent", "calm", "peaceful", "strange"}
-		poolPostfix := []string{"dolphin", "snake", "elephant", "fox", "dog", "cat"}
-
-		rand.Seed(time.Now().Unix())
-		pool = poolPrefix[rand.Int()%len(poolPrefix)] + "_" + poolPostfix[rand.Int()%len(poolPostfix)]
+		pool = getRandomName()
 	}
 	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool+"\n"), 0600)
 	if err != nil {
