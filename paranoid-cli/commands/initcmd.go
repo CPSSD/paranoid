@@ -70,7 +70,7 @@ func Init(c *cli.Context) {
 	if pool = c.String("pool"); len(pool) == 0 {
 		pool = getRandomName()
 	}
-	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool+"\n"), 0600)
+	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool), 0600)
 	if err != nil {
 		Log.Fatal("cannot save pool information:", err)
 	}
