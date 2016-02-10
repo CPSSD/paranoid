@@ -40,6 +40,15 @@ func isLeader(server *RaftNetworkServer) bool {
 	return server.state.GetCurrentState() == LEADER
 }
 
+func getLeader(cluster []*RaftNetworkServer) *RaftNetworkServer {
+	for i := 0; i < len(cluster); i++ {
+		if isLeader(cluster[i]) {
+			return cluster[i]
+		}
+	}
+	return nil
+}
+
 func TestRaftElection(t *testing.T) {
 	node1Lis, node1Port := startListener()
 	node1 := setUpNode("node1", "localhost", node1Port, "_")
@@ -56,25 +65,20 @@ func TestRaftElection(t *testing.T) {
 	defer node2srv.Stop()
 	defer node3srv.Stop()
 
+	cluster := []*RaftNetworkServer{node1RaftServer, node2RaftServer, node3RaftServer}
+
 	Log.Info("Searching for leader")
 	count := 0
+	var leader *RaftNetworkServer
 	for {
 		count++
 		if count > 5 {
-			t.Error("Failed to select leader")
-			break
+			t.Fatal("Failed to select leader")
 		}
 		time.Sleep(5 * time.Second)
-		if isLeader(node1RaftServer) {
-			t.Log("Node1 selected as leader for term", node1RaftServer.state.GetCurrentTerm())
-			break
-		}
-		if isLeader(node2RaftServer) {
-			t.Log("Node2 selected as leader for term", node2RaftServer.state.GetCurrentTerm())
-			break
-		}
-		if isLeader(node3RaftServer) {
-			t.Log("Node3 selected as leader for term", node3RaftServer.state.GetCurrentTerm())
+		leader = getLeader(cluster)
+		if leader != nil {
+			t.Log(leader.state.nodeId, "selected as leader for term", leader.state.GetCurrentTerm())
 			break
 		}
 	}

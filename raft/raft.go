@@ -76,6 +76,7 @@ func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVote
 }
 
 func getRandomElectionTimeout() time.Duration {
+	rand.Seed(time.Now().UnixNano())
 	return time.Duration(ELECTION_TIMEOUT + rand.Intn(ELECTION_TIMEOUT))
 }
 
@@ -102,7 +103,6 @@ func (s *RaftNetworkServer) electionTimeOut() {
 }
 
 func Dial(node Node, timeoutMiliseconds time.Duration) (*grpc.ClientConn, error) {
-	Log.Info("Dialing ", node)
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTimeout(timeoutMiliseconds*time.Millisecond))
 	//TODO: tls support
