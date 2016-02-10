@@ -90,6 +90,8 @@ func AddPortMapping(internalPort int) (int, error) {
 				if err == nil {
 					ipPortMappedClient = client
 					return port, nil
+				} else {
+					Log.Warn("Unable to map port", port, ". Error:", err)
 				}
 			}
 		}
@@ -104,6 +106,8 @@ func AddPortMapping(internalPort int) (int, error) {
 				if err == nil {
 					pppPortMappedClient = client
 					return port, nil
+				} else {
+					Log.Warn("Unable to map port", port, ". Error:", err)
 				}
 			}
 		}
