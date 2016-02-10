@@ -30,10 +30,11 @@ type RaftNetworkServer struct {
 }
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
-	s.ElectionTimeoutReset <- true
 	if req.Term < s.state.GetCurrentTerm() {
 		return &pb.AppendEntriesResponse{s.state.GetCurrentTerm(), false}, nil
 	}
+
+	s.ElectionTimeoutReset <- true
 
 	if req.Term > s.state.GetCurrentTerm() {
 		s.state.SetCurrentTerm(req.Term)
@@ -228,7 +229,7 @@ func (s *RaftNetworkServer) sendHeartBeat(node Node) {
 	nextIndex := s.state.GetNextIndex(node)
 	conn, err := Dial(node, HEARTBEAT_TIMEOUT)
 	defer conn.Close()
-	if err != nil {
+	if err == nil {
 		client := pb.NewRaftNetworkClient(conn)
 		if s.state.log.GetMostRecentIndex() >= nextIndex {
 			prevLogEntry := s.state.log.GetLogEntry(nextIndex - 1)
@@ -245,7 +246,7 @@ func (s *RaftNetworkServer) sendHeartBeat(node Node) {
 				Entries:      []*pb.Entry{&s.state.log.GetLogEntry(nextIndex).Entry},
 				LeaderCommit: s.state.GetCommitIndex(),
 			})
-			if err != nil {
+			if err == nil {
 				if response.Term > s.state.GetCurrentTerm() {
 					s.state.StopLeading <- true
 				} else if response.Success == false {
@@ -269,7 +270,7 @@ func (s *RaftNetworkServer) sendHeartBeat(node Node) {
 				Entries:      []*pb.Entry{},
 				LeaderCommit: s.state.GetCommitIndex(),
 			})
-			if err != nil {
+			if err == nil {
 				if response.Term > s.state.GetCurrentTerm() {
 					s.state.StopLeading <- true
 				}
@@ -289,7 +290,12 @@ func (s *RaftNetworkServer) manageLeading() {
 				return
 			}
 		case <-s.state.StartLeading:
+			Log.Info("Started leading for term ", s.state.GetCurrentTerm())
 			s.state.leaderState = newLeaderState(true, &s.state.peers, s.state.log.GetMostRecentIndex())
+			for i := 0; i < len(s.state.peers); i++ {
+				s.Wait.Add(1)
+				go s.sendHeartBeat(s.state.peers[i])
+			}
 			timer := time.NewTimer(HEARTBEAT * time.Millisecond)
 			for {
 				select {
@@ -302,6 +308,7 @@ func (s *RaftNetworkServer) manageLeading() {
 					break
 				case <-timer.C:
 					timer.Reset(HEARTBEAT * time.Millisecond)
+					s.ElectionTimeoutReset <- true
 					for i := 0; i < len(s.state.peers); i++ {
 						s.Wait.Add(1)
 						go s.sendHeartBeat(s.state.peers[i])
@@ -314,9 +321,11 @@ func (s *RaftNetworkServer) manageLeading() {
 
 func newRaftNetworkServer(nodeId string, peers []Node) *RaftNetworkServer {
 	raftServer := &RaftNetworkServer{state: newRaftState(nodeId, peers)}
-	raftServer.Wait.Add(2)
+	raftServer.Wait.Add(3)
+	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
+	go raftServer.manageLeading()
 	return raftServer
 }
 

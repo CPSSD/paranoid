@@ -16,8 +16,8 @@ type LogEntry struct {
 
 //Will involve disk reading in the future and possibly some form of caching
 func (l *RaftLog) GetLogEntry(index uint64) *LogEntry {
-	adjustedIndex := index - l.startIndex - 1
-	if int(adjustedIndex) > len(l.logEntries) {
+	adjustedIndex := int(index) - int(l.startIndex) - 1
+	if adjustedIndex > len(l.logEntries) || adjustedIndex < 0 {
 		return nil
 	}
 	return &l.logEntries[adjustedIndex]
@@ -31,7 +31,7 @@ func (l *RaftLog) GetMostRecentTerm() uint64 {
 }
 
 func (l *RaftLog) GetMostRecentIndex() uint64 {
-	return 1 + l.startIndex + uint64(len(l.logEntries))
+	return l.startIndex + uint64(len(l.logEntries))
 }
 
 //Will involve reading from disk in the future

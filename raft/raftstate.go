@@ -38,7 +38,7 @@ func newLeaderState(isLeader bool, peers *[]Node, lastLogIndex uint64) *LeaderSt
 		MatchIndex: make([]uint64, len(*peers)),
 	}
 	for i := 0; i < len(*peers); i++ {
-		leaderState.NextIndex[i] = lastLogIndex
+		leaderState.NextIndex[i] = lastLogIndex + 1
 		leaderState.MatchIndex[i] = 0
 	}
 	return leaderState
