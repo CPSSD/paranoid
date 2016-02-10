@@ -22,15 +22,66 @@ func (n Node) String() string {
 }
 
 type LeaderState struct {
-	IsLeader   bool
 	NextIndex  []uint64
 	MatchIndex []uint64
 }
 
-func newLeaderState() *LeaderState {
-	return &LeaderState{
-		IsLeader: false,
+func newLeaderState(isLeader bool, peers *[]Node, lastLogIndex uint64) *LeaderState {
+	if isLeader == false {
+		return &LeaderState{
+			NextIndex:  make([]uint64, 0),
+			MatchIndex: make([]uint64, 0),
+		}
 	}
+	leaderState := &LeaderState{
+		NextIndex:  make([]uint64, len(*peers)),
+		MatchIndex: make([]uint64, len(*peers)),
+	}
+	for i := 0; i < len(*peers); i++ {
+		leaderState.NextIndex[i] = lastLogIndex
+		leaderState.MatchIndex[i] = 0
+	}
+	return leaderState
+}
+
+func (s *RaftState) GetNextIndex(node Node) uint64 {
+	for i := 0; i < len(s.peers); i++ {
+		if s.peers[i].NodeID == node.NodeID {
+			return s.leaderState.NextIndex[i]
+		}
+	}
+	Log.Fatal("Could not get nextIndex. Node not found")
+	return 0
+}
+
+func (s *RaftState) GetMatchIndex(node Node) uint64 {
+	for i := 0; i < len(s.peers); i++ {
+		if s.peers[i].NodeID == node.NodeID {
+			return s.leaderState.MatchIndex[i]
+		}
+	}
+	Log.Fatal("Could not get matchIndex. Node not found")
+	return 0
+}
+
+func (s *RaftState) SetNextIndex(node Node, x uint64) {
+	for i := 0; i < len(s.peers); i++ {
+		if s.peers[i].NodeID == node.NodeID {
+			s.leaderState.NextIndex[i] = x
+			return
+		}
+	}
+	Log.Fatal("Could not set next index")
+}
+
+func (s *RaftState) SetMatchIndex(node Node, x uint64) {
+	for i := 0; i < len(s.peers); i++ {
+		if s.peers[i].NodeID == node.NodeID {
+			s.leaderState.MatchIndex[i] = x
+			return
+		}
+	}
+	Log.Fatal("Could not set match index")
 }
 
 type RaftState struct {
@@ -47,7 +98,8 @@ type RaftState struct {
 	leaderState *LeaderState
 
 	StartElection chan bool
-	StopElection  chan bool
+	StartLeading  chan bool
+	StopLeading   chan bool
 }
 
 func (s *RaftState) GetCurrentTerm() uint64 {
@@ -65,20 +117,23 @@ func (s *RaftState) GetCurrentState() int {
 
 func (s *RaftState) SetCurrentState(x int) {
 	if s.currentState == LEADER {
-		//Need to step down as leader. Stop heartbeat loop
-	}
-	if s.currentState == CANDIDATE {
-		//Need to end current election
-		s.StopElection <- true
+		s.StopLeading <- true
 	}
 	s.currentState = x
 	if x == CANDIDATE {
-		//Need to start an eleciton.
 		s.StartElection <- true
 	}
 	if x == LEADER {
-		//Need to start election loop
+		s.StartLeading <- true
 	}
+}
+
+func (s *RaftState) GetCommitIndex() uint64 {
+	return s.commitIndex
+}
+
+func (s *RaftState) SetCommitIndex(x uint64) {
+	s.commitIndex = x
 }
 
 func (s *RaftState) GetVotedFor() string {
@@ -91,7 +146,7 @@ func (s *RaftState) SetVotedFor(x string) {
 
 //Will involve reading from disk in the future
 func newRaftState(nodeId string, peers []Node) *RaftState {
-	return &RaftState{
+	raftState := &RaftState{
 		nodeId:      nodeId,
 		peers:       peers,
 		currentTerm: 0,
@@ -99,6 +154,10 @@ func newRaftState(nodeId string, peers []Node) *RaftState {
 		log:         newRaftLog(),
 		commitIndex: 0,
 		lastApplied: 0,
-		leaderState: newLeaderState(),
+		leaderState: newLeaderState(false, nil, 0),
 	}
+	raftState.StartElection = make(chan bool, 100)
+	raftState.StartLeading = make(chan bool, 100)
+	raftState.StopLeading = make(chan bool, 100)
+	return raftState
 }
