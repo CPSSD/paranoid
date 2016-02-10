@@ -6,7 +6,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pfi/filesystem"
 	"github.com/cpssd/paranoid/pfsd/pfi/util"
-	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/hanwen/go-fuse/fuse/nodefs"
@@ -17,7 +17,8 @@ func StartPfi(pfsDir, mountPoint string, logOutput, sendOverNetwork bool) {
 	defer globals.Wait.Done()
 	// Create a logger
 	var err error
-	util.Log = logger.New("pfi", "pfi", os.DevNull)
+	util.Log = logger.New("pfi", "pfsd", path.Join(pfsDir, "meta", "logs"))
+	util.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	util.LogOutput = logOutput
 	util.SendOverNetwork = sendOverNetwork
@@ -25,7 +26,8 @@ func StartPfi(pfsDir, mountPoint string, logOutput, sendOverNetwork bool) {
 		util.Log.SetLogLevel(logger.VERBOSE)
 	}
 
-	commands.Log = logger.New("libpfs", "libpfs", os.DevNull)
+	commands.Log = logger.New("libpfs", "pfsd", path.Join(pfsDir, "meta", "logs"))
+	commands.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	if logOutput {
 		commands.Log.SetLogLevel(logger.VERBOSE)
