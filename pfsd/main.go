@@ -94,6 +94,12 @@ func main() {
 	if !*noNetwork {
 		pnetserver.ParanoidDir = flag.Arg(0)
 
+		uuid, err := ioutil.ReadFile(path.Join(pnetserver.ParanoidDir, "meta", "uuid"))
+		if err != nil {
+			log.Fatal("Could not get node UUID:", err)
+		}
+		globals.UUID = string(uuid)
+
 		ip, err := upnp.GetIP()
 		if err != nil {
 			log.Fatal("Could not get IP:", err)
