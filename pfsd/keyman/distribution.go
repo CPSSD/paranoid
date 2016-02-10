@@ -1,7 +1,7 @@
 // Functions for deconstructing and reconstructing an AES key.
 // Written according to http://cs.jhu.edu/~sdoshi/crypto/papers/shamirturing.pdf
 //
-// See github.com/cpssd/paranoid/docs/key_management_v0.1.md for more information.
+// See docs/key_management_v0.1.md for more information.
 
 package keyman
 
