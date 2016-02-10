@@ -323,6 +323,7 @@ func newRaftNetworkServer(nodeId string, peers []Node) *RaftNetworkServer {
 	raftServer := &RaftNetworkServer{state: newRaftState(nodeId, peers)}
 	raftServer.Wait.Add(3)
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
+	raftServer.Quit = make(chan bool)
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()

@@ -82,4 +82,24 @@ func TestRaftElection(t *testing.T) {
 			break
 		}
 	}
+
+	//Shutdown current leader, make sure an election is triggered and another leader is found
+	close(leader.Quit)
+	time.Sleep(5 * time.Second)
+
+	for {
+		count++
+		if count > 5 {
+			t.Fatal("Failed to select leader after original leader is shut down")
+		}
+		time.Sleep(5 * time.Second)
+		newleader := getLeader(cluster)
+		if leader == newleader {
+			t.Fatal("Old leader failed to shut down")
+		}
+		if leader != nil {
+			t.Log(newleader.state.nodeId, "selected as leader for term", leader.state.GetCurrentTerm())
+			break
+		}
+	}
 }
