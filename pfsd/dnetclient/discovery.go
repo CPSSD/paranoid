@@ -46,7 +46,7 @@ func JoinDiscovery(pool string) {
 			Log.Fatal("Failure dialing discovery server after multiple attempts, Giving up", err)
 		}
 	}
-	globals.Wait.Add(2)
+	globals.Wait.Add(1)
 	go pingPeers()
 }
 
