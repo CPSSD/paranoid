@@ -41,12 +41,36 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 		s.state.SetCurrentState(FOLLOWER)
 	}
 
-	preLogEntry := s.state.log.GetLogEntry(req.PrevLogIndex)
-	if preLogEntry == nil || preLogEntry.Term != req.PrevLogTerm {
-		return &pb.AppendEntriesResponse{s.state.GetCurrentTerm(), false}, nil
+	if req.PrevLogIndex != 0 {
+		preLogEntry := s.state.log.GetLogEntry(req.PrevLogIndex)
+		if preLogEntry == nil || preLogEntry.Term != req.PrevLogTerm {
+			return &pb.AppendEntriesResponse{s.state.GetCurrentTerm(), false}, nil
+		}
 	}
 
-	return &pb.AppendEntriesResponse{s.state.GetCurrentTerm(), false}, nil
+	for i := uint64(0); i < uint64(len(req.Entries)); i++ {
+		logIndex := req.PrevLogIndex + 1 + i
+		logEntryAtIndex := s.state.log.GetLogEntry(logIndex)
+		if logEntryAtIndex != nil {
+			if logEntryAtIndex.Term != req.Term {
+				s.state.log.DiscardLogEntries(logIndex)
+				s.state.log.AppendEntry(req.Entries[logIndex], req.Term)
+			}
+		} else {
+			s.state.log.AppendEntry(req.Entries[logIndex], req.Term)
+		}
+	}
+
+	if req.LeaderCommit > s.state.GetCommitIndex() {
+		lastLogIndex := s.state.log.GetMostRecentIndex()
+		if lastLogIndex < req.LeaderCommit {
+			s.state.SetCommitIndex(lastLogIndex)
+		} else {
+			s.state.SetCommitIndex(req.LeaderCommit)
+		}
+	}
+
+	return &pb.AppendEntriesResponse{s.state.GetCurrentTerm(), true}, nil
 }
 
 func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVoteRequest) (*pb.RequestVoteResponse, error) {

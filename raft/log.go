@@ -34,6 +34,18 @@ func (l *RaftLog) GetMostRecentIndex() uint64 {
 	return l.startIndex + uint64(len(l.logEntries))
 }
 
+func (l *RaftLog) DiscardLogEntries(startIndex uint64) {
+	l.logEntries = l.logEntries[:startIndex]
+}
+
+func (l *RaftLog) AppendEntry(entry *pb.Entry, term uint64) {
+	logEntry := LogEntry{
+		Entry: *entry,
+		Term:  term,
+	}
+	l.logEntries = append(l.logEntries, logEntry)
+}
+
 //Will involve reading from disk in the future
 func newRaftLog() *RaftLog {
 	var logEntries []LogEntry
