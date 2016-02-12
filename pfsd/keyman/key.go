@@ -2,6 +2,7 @@ package keyman
 
 import (
 	"crypto/aes"
+	"crypto/rand"
 	"crypto/sha256"
 )
 
@@ -22,6 +23,18 @@ func NewKey(data []byte) (*Key, error) {
 		bytes:       data,
 		fingerprint: sha256.Sum256(data),
 	}, nil
+}
+
+func GenerateKey(size int) (*Key, error) {
+	switch size {
+	case 16, 24, 32:
+		break
+	default:
+		return nil, aes.KeySizeError(size)
+	}
+	data := make([]byte, size)
+	rand.Read(data)
+	return NewKey(data)
 }
 
 func (key Key) GetBytes() []byte {
