@@ -12,10 +12,15 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"io/ioutil"
 	"net"
 	"os"
+	"os/exec"
 	"path"
+	"strconv"
+	"syscall"
 	"testing"
+	"time"
 )
 
 var tmpdir = path.Join(os.TempDir(), "pfs")
@@ -268,5 +273,82 @@ func TestRmdir(t *testing.T) {
 	_, err = client.Rmdir(context.Background(), &req)
 	if grpc.Code(err) != codes.OK {
 		t.Error("Rmdir did not return OK. Actual:", err)
+	}
+}
+
+func createTestDir(t *testing.T, name string) {
+	os.RemoveAll(path.Join(os.TempDir(), name))
+	err := os.Mkdir(path.Join(os.TempDir(), name), 0777)
+	if err != nil {
+		t.Fatal("Error creating directory", err)
+	}
+}
+
+func removeTestDir(name string) {
+	time.Sleep(1 * time.Second)
+	os.RemoveAll(path.Join(os.TempDir(), name))
+}
+
+func TestKillSignal(t *testing.T) {
+	createTestDir(t, "testksMountpoint")
+	defer removeTestDir("testksMountpoint")
+	createTestDir(t, "testksDirectory")
+	defer removeTestDir("testksDirectory")
+
+	discovery := exec.Command("discovery-server", "--port=10102")
+	err := discovery.Start()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := discovery.Process.Kill()
+		if err != nil {
+			t.Error("Failed to kill discovery server,", err)
+		}
+	}()
+
+	_, err = commands.InitCommand(path.Join(os.TempDir(), "testksDirectory"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pfsd := exec.Command("pfsd", path.Join(os.TempDir(), "testksDirectory"), path.Join(os.TempDir(), "testksMountpoint"), "localhost", "10102")
+	err = pfsd.Start()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pfsd.Process.Kill()
+
+	time.Sleep(5 * time.Second)
+
+	pidPath := path.Join(os.TempDir(), "testksDirectory", "meta", "pfsd.pid")
+	if _, err := os.Stat(pidPath); err == nil {
+		pidByte, err := ioutil.ReadFile(pidPath)
+		if err != nil {
+			t.Fatal("Can't read pid file", err)
+		}
+		pid, err := strconv.Atoi(string(pidByte))
+		if err != nil {
+			t.Fatal("Incorrect pid information", err)
+		}
+		err = syscall.Kill(pid, syscall.SIGTERM)
+		if err != nil {
+			t.Fatal("Can not kill PFSD,", err)
+		}
+
+		done := make(chan bool, 1)
+		go func() {
+			pfsd.Wait()
+			done <- true
+		}()
+
+		select {
+		case <-time.After(10 * time.Second):
+			t.Fatal("pfsd did not finish within 10 seconds")
+		case <-done:
+			break
+		}
+	} else {
+		t.Fatal("Could not read pid file:", err)
 	}
 }
