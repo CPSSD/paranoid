@@ -3,6 +3,7 @@ package raft
 
 import (
 	"github.com/cpssd/paranoid/logger"
+	pb "github.com/cpssd/paranoid/proto/raft"
 	"log"
 	"net"
 	"os"
@@ -49,12 +50,22 @@ func getLeader(cluster []*RaftNetworkServer) *RaftNetworkServer {
 	return nil
 }
 
+func closeListener(lis *net.Listener) {
+	if lis != nil {
+		(*lis).Close()
+	}
+}
+
 func TestRaftElection(t *testing.T) {
+	Log.Info("Testing leader eleciton")
 	node1Lis, node1Port := startListener()
+	defer closeListener(node1Lis)
 	node1 := setUpNode("node1", "localhost", node1Port, "_")
 	node2Lis, node2Port := startListener()
+	defer closeListener(node2Lis)
 	node2 := setUpNode("node2", "localhost", node2Port, "_")
 	node3Lis, node3Port := startListener()
+	defer closeListener(node3Lis)
 	node3 := setUpNode("node3", "localhost", node3Port, "_")
 	Log.Info("Listeners set up")
 
@@ -101,5 +112,31 @@ func TestRaftElection(t *testing.T) {
 			t.Log(newleader.state.nodeId, "selected as leader for term", leader.state.GetCurrentTerm())
 			break
 		}
+	}
+}
+
+func TestRaftLogReplication(t *testing.T) {
+	Log.Info("Testing log replication")
+	node1Lis, node1Port := startListener()
+	defer closeListener(node1Lis)
+	node1 := setUpNode("node1", "localhost", node1Port, "_")
+	node2Lis, node2Port := startListener()
+	defer closeListener(node2Lis)
+	node2 := setUpNode("node2", "localhost", node2Port, "_")
+	node3Lis, node3Port := startListener()
+	defer closeListener(node3Lis)
+	node3 := setUpNode("node3", "localhost", node3Port, "_")
+	Log.Info("Listeners set up")
+
+	node1RaftServer, node1srv := startRaft(node1Lis, "node1", []Node{node2, node3})
+	_, node2srv := startRaft(node2Lis, "node2", []Node{node1, node3})
+	_, node3srv := startRaft(node3Lis, "node3", []Node{node1, node2})
+	defer node1srv.Stop()
+	defer node2srv.Stop()
+	defer node3srv.Stop()
+
+	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{10})
+	if err == nil {
+		t.Error("Failed to replicate entry,", err)
 	}
 }

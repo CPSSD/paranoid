@@ -17,7 +17,7 @@ type LogEntry struct {
 //Will involve disk reading in the future and possibly some form of caching
 func (l *RaftLog) GetLogEntry(index uint64) *LogEntry {
 	adjustedIndex := int(index) - int(l.startIndex) - 1
-	if adjustedIndex > len(l.logEntries) || adjustedIndex < 0 {
+	if adjustedIndex+1 > len(l.logEntries) || adjustedIndex < 0 {
 		return nil
 	}
 	return &l.logEntries[adjustedIndex]
