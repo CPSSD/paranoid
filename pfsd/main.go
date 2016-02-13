@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/cpssd/paranoid/logger"
+	"github.com/cpssd/paranoid/pfsd/activitylogger"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pfi"
@@ -145,6 +146,7 @@ func main() {
 
 		dnetclient.SetDiscovery(flag.Arg(2), flag.Arg(3), strconv.Itoa(port))
 		dnetclient.JoinDiscovery("_")
+		activitylogger.Init(pnetserver.ParanoidDir)
 		startRPCServer(&lis)
 	}
 	createPid("pfsd")
