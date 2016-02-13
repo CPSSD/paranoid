@@ -28,6 +28,7 @@ type RaftNetworkServer struct {
 	state *RaftState
 	Wait  sync.WaitGroup
 
+	QuitChannelClosed    bool
 	Quit                 chan bool
 	ElectionTimeoutReset chan bool
 
@@ -75,6 +76,7 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 		} else {
 			s.state.SetCommitIndex(req.LeaderCommit)
 		}
+		s.state.ApplyLogEntries()
 	}
 
 	return &pb.AppendEntriesResponse{s.state.GetCurrentTerm(), true}, nil
@@ -166,12 +168,16 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 			}
 		} else {
 			select {
-			case <-time.After(10 * time.Second):
+			case <-time.After(20 * time.Second):
 				return errors.New("Could not find a leader")
 			case <-s.state.LeaderElected:
-				err := s.sendLeaderLogEntry(entry)
-				if err != nil {
-					return err
+				if s.state.GetCurrentState() == LEADER {
+					s.addLogEntry(entry)
+				} else {
+					err := s.sendLeaderLogEntry(entry)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -207,7 +213,6 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 		case entryIndex := <-s.state.EntryApplied:
 			logEntry := s.state.log.GetLogEntry(entryIndex)
 			if logEntry.Entry == *entry {
-				Log.Info("Entry sucessfully commited to log: ", logEntry.Entry)
 				return nil
 			}
 		}
@@ -228,6 +233,7 @@ func (s *RaftNetworkServer) electionTimeOut() {
 		select {
 		case _, ok := <-s.Quit:
 			if !ok {
+				s.QuitChannelClosed = true
 				Log.Info("Exiting election timeout loop")
 				return
 			}
@@ -309,6 +315,7 @@ func (s *RaftNetworkServer) runElection() {
 		select {
 		case _, ok := <-s.Quit:
 			if !ok {
+				s.QuitChannelClosed = true
 				Log.Info("Exiting election loop")
 				return
 			}
@@ -348,6 +355,7 @@ func (s *RaftNetworkServer) manageElections() {
 		select {
 		case _, ok := <-s.Quit:
 			if !ok {
+				s.QuitChannelClosed = true
 				Log.Info("Exiting elction managment loop")
 				return
 			}
@@ -421,6 +429,7 @@ func (s *RaftNetworkServer) manageLeading() {
 		case <-s.state.SendAppendEntries:
 		case _, ok := <-s.Quit:
 			if !ok {
+				s.QuitChannelClosed = true
 				Log.Info("Exiting leading managment loop")
 				return
 			}
@@ -436,6 +445,7 @@ func (s *RaftNetworkServer) manageLeading() {
 				select {
 				case _, ok := <-s.Quit:
 					if !ok {
+						s.QuitChannelClosed = true
 						Log.Info("Exiting heartbeat loop")
 						return
 					}
@@ -466,6 +476,7 @@ func newRaftNetworkServer(nodeId string, peers []Node) *RaftNetworkServer {
 	raftServer.Wait.Add(3)
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
+	raftServer.QuitChannelClosed = false
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()

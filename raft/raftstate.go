@@ -134,6 +134,7 @@ func (s *RaftState) SetCurrentState(x int) {
 		s.StartElection <- true
 	}
 	if x == LEADER {
+		s.SetLeaderId(s.nodeId)
 		s.StartLeading <- true
 	}
 }
@@ -199,7 +200,7 @@ func (s *RaftState) ApplyLogEntries() {
 }
 
 func (s *RaftState) calculateNewCommitIndex() {
-	majority := len(s.peers)
+	majority := len(s.peers) / 2
 	if len(s.peers)%2 == 0 {
 		majority++
 	}
@@ -208,7 +209,7 @@ func (s *RaftState) calculateNewCommitIndex() {
 		if s.log.GetLogEntry(i).Term == s.GetCurrentTerm() {
 			count := 1
 			for j := 0; j < len(s.leaderState.MatchIndex); j++ {
-				if s.leaderState.MatchIndex[j] > i {
+				if s.leaderState.MatchIndex[j] >= i {
 					count++
 				}
 			}
@@ -233,6 +234,7 @@ func newRaftState(nodeId string, peers []Node) *RaftState {
 		log:         newRaftLog(),
 		commitIndex: 0,
 		lastApplied: 0,
+		leaderId:    "",
 		leaderState: newLeaderState(false, nil, 0),
 	}
 	raftState.StartElection = make(chan bool, 100)
