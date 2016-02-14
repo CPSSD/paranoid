@@ -1,7 +1,6 @@
 package activitylogger
 
 import (
-	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"github.com/golang/protobuf/proto"
 	"log"
 	"os"
@@ -12,10 +11,11 @@ import (
 // listenAppendLog listens to the appendLogChan for incoming log entries.
 // ensures synchronus ordered logging to eliminate race conditions
 func listenAppendLog() {
+	paused = false
 	for {
 		select {
 		case le := <-appendLogChan:
-			protoData := getEntryDate(le)
+			protoData := getEntryData(le)
 			entryTypeData := make([]byte, 1)
 			entryTypeData[0] = byte(le.EntryType)
 			fileData := append(entryTypeData, protoData...)
@@ -32,101 +32,42 @@ func listenAppendLog() {
 
 			file.Close()
 			currentIndex++
+		case <-pauseChan:
+			paused = true
+			<-resumeChan
+			paused = false
 		case <-killChan:
 			return
 		}
 	}
 }
 
-func getEntryDate(le logEntry) []byte {
+func getEntryData(le logEntry) []byte {
 	var message proto.Message
 
 	switch le.EntryType {
 	case typeChmod:
-		path, success := le.Params[0].(string)
-		failedConversionCheck(success, "chmod", le.Params)
-		mode, success := le.Params[1].(uint32)
-		failedConversionCheck(success, "chmod", le.Params)
-		message = &pb.ChmodRequest{path, mode}
-
+		message = LogEntryToChmodProto(le)
 	case typeCreat:
-		path, success := le.Params[0].(string)
-		failedConversionCheck(success, "creat", le.Params)
-		mode, success := le.Params[1].(uint32)
-		failedConversionCheck(success, "creat", le.Params)
-		message = &pb.CreatRequest{path, mode}
-
+		message = LogEntryToCreatProto(le)
 	case typeLink:
-		oldPath, success := le.Params[0].(string)
-		failedConversionCheck(success, "link", le.Params)
-		newPath, success := le.Params[1].(string)
-		failedConversionCheck(success, "link", le.Params)
-		message = &pb.LinkRequest{oldPath, newPath}
-
+		message = LogEntryToLinkProto(le)
 	case typeMkdir:
-		path, success := le.Params[0].(string)
-		failedConversionCheck(success, "mkdir", le.Params)
-		mode, success := le.Params[1].(uint32)
-		failedConversionCheck(success, "mkdir", le.Params)
-		message = &pb.MkdirRequest{path, mode}
-
+		message = LogEntryToMkdirProto(le)
 	case typeRename:
-		oldPath, success := le.Params[0].(string)
-		failedConversionCheck(success, "rename", le.Params)
-		newPath, success := le.Params[1].(string)
-		failedConversionCheck(success, "rename", le.Params)
-		message = &pb.RenameRequest{oldPath, newPath}
-
+		message = LogEntryToRenameProto(le)
 	case typeRmdir:
-		path, success := le.Params[0].(string)
-		failedConversionCheck(success, "rmdir", le.Params)
-		message = &pb.RmdirRequest{path}
-
+		message = LogEntryToRmdirProto(le)
 	case typeSymLink:
-		oldPath, success := le.Params[0].(string)
-		failedConversionCheck(success, "symLink", le.Params)
-		newPath, success := le.Params[1].(string)
-		failedConversionCheck(success, "symLink", le.Params)
-		message = &pb.LinkRequest{oldPath, newPath}
-
+		message = LogEntryToSymLinkProto(le)
 	case typeTruncate:
-		path, success := le.Params[0].(string)
-		failedConversionCheck(success, "truncate", le.Params)
-		length, success := le.Params[1].(uint64)
-		failedConversionCheck(success, "truncate", le.Params)
-		message = &pb.TruncateRequest{path, length}
-
+		message = LogEntryToTruncateProto(le)
 	case typeUnlink:
-		path, success := le.Params[0].(string)
-		failedConversionCheck(success, "unlink", le.Params)
-		message = &pb.UnlinkRequest{path}
-
+		message = LogEntryToUnlinkProto(le)
 	case typeUtimes:
-		//(path string, accessSeconds, accessNanoSeconds, modifySeconds, modifyNanoSeconds int64)
-		path, success := le.Params[0].(string)
-		failedConversionCheck(success, "utimes", le.Params)
-		sec, success := le.Params[1].(int64)
-		failedConversionCheck(success, "utimes", le.Params)
-		nanSec, success := le.Params[2].(int64)
-		failedConversionCheck(success, "utimes", le.Params)
-		modSec, success := le.Params[3].(int64)
-		failedConversionCheck(success, "utimes", le.Params)
-		modNanSec, success := le.Params[4].(int64)
-		failedConversionCheck(success, "utimes", le.Params)
-		message = &pb.UtimesRequest{path, sec, nanSec, modSec, modNanSec}
-
+		message = LogEntryToUtimesProto(le)
 	case typeWrite:
-		//(path string, data []byte, offset, length uint64)
-		path, success := le.Params[0].(string)
-		failedConversionCheck(success, "write", le.Params)
-		data, success := le.Params[1].([]byte)
-		failedConversionCheck(success, "write", le.Params)
-		off, success := le.Params[2].(uint64)
-		failedConversionCheck(success, "write", le.Params)
-		len, success := le.Params[3].(uint64)
-		failedConversionCheck(success, "write", le.Params)
-		message = &pb.WriteRequest{path, data, off, len}
-
+		message = LogEntryToWriteProto(le)
 	default:
 		log.Fatalln("Activity logger, unrecognised EntryType:", le.EntryType)
 	}
@@ -136,16 +77,4 @@ func getEntryDate(le logEntry) []byte {
 		log.Fatalln(err)
 	}
 	return data
-}
-
-// failedConversionCheck is a helper function for error checking for getEntryData
-func failedConversionCheck(success bool, logType string, params ...interface{}) {
-	if !success {
-		log.Fatalln("Activity logger: Bad parameters for", logType, "logEntry\n", params)
-	}
-}
-
-// Append appends a new entry to the activity log
-func AppendLog(entryType uint8, params ...interface{}) {
-	appendLogChan <- logEntry{entryType, params}
 }
