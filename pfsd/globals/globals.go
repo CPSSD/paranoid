@@ -19,6 +19,9 @@ func (n Node) String() string {
 	return fmt.Sprintf("%s:%s", n.IP, n.Port)
 }
 
+// Node information for the current node
+var ThisNode Node
+
 // If UPnP is enabled and a port mapping has been establised.
 var UPnPEnabled bool
 
@@ -87,10 +90,10 @@ func (ns *nodes) GetAll() []Node {
 //	--------------------
 
 // Global key used by this instance of PFSD
-var EncryptionKey keyman.Key
+var EncryptionKey *keyman.Key
 
 // Indicates when the system has been locked and keys have been distributed
 var SystemLocked bool = false
 
 // Map of Nodes to their KeyPiece held by this node
-var HeldKeyPieces = make(map[Node]keyman.KeyPiece)
+var HeldKeyPieces = make(map[Node]*keyman.KeyPiece)

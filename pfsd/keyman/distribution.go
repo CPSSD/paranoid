@@ -10,7 +10,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 )
 
@@ -34,7 +33,7 @@ func (e *FingerMismatchError) Error() string {
 
 // Generates numPieces KeyPieces from key. requiredPieces is the number of KeyPieces
 // needed to reconstruct the original key.
-func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]KeyPiece, error) {
+func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]*KeyPiece, error) {
 	// Some input validation
 	if requiredPieces > numPieces {
 		return nil, errors.New("requiredPieces cannot be longer than numPieces")
@@ -54,7 +53,7 @@ func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]KeyPiece, erro
 		coefficients[i] = tmp
 	}
 
-	pieces := make([]KeyPiece, numPieces)
+	pieces := make([]*KeyPiece, numPieces)
 	for x := int64(1); x <= numPieces; x++ {
 		total := big.NewInt(0)
 		for i := int64(0); i < requiredPieces; i++ {
@@ -63,7 +62,7 @@ func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]KeyPiece, erro
 			total.Add(total, degreeTotal)
 		}
 		total.Mod(total, prime)
-		pieces[x-1] = KeyPiece{
+		pieces[x-1] = &KeyPiece{
 			Data:              total.Bytes(),
 			ParentFingerprint: key.GetFingerprint(),
 			Prime:             prime,
@@ -75,7 +74,7 @@ func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]KeyPiece, erro
 
 // Rebuild a Key from a set of KeyPieces. This function will succeed iff
 // len(pieces) > requiredPieces from the Generate function.
-func RebuildKey(pieces []KeyPiece) (*Key, error) {
+func RebuildKey(pieces []*KeyPiece) (*Key, error) {
 	fingerprint := pieces[0].ParentFingerprint
 	for _, v := range pieces {
 		if v.ParentFingerprint != fingerprint {
@@ -118,7 +117,6 @@ func RebuildKey(pieces []KeyPiece) (*Key, error) {
 	keyBytes := sum.Bytes()
 	keyFingerprint := sha256.Sum256(keyBytes)
 	if keyFingerprint != pieces[0].ParentFingerprint {
-		log.Println(keyBytes)
 		return nil, &FingerMismatchError{pieces[0].ParentFingerprint, keyFingerprint}
 	}
 	return &Key{

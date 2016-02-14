@@ -23,10 +23,10 @@ func Join(pool string) error {
 		&pb.JoinRequest{
 			Pool: pool,
 			Node: &pb.Node{
-				Ip:         ThisNode.IP,
-				Port:       ThisNode.Port,
-				CommonName: ThisNode.CommonName,
-				Uuid:       ThisNode.UUID,
+				Ip:         globals.ThisNode.IP,
+				Port:       globals.ThisNode.Port,
+				CommonName: globals.ThisNode.CommonName,
+				Uuid:       globals.ThisNode.UUID,
 			},
 		})
 	if err != nil {

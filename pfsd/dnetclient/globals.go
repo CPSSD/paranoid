@@ -12,8 +12,7 @@ import (
 const peerPingInterval time.Duration = time.Minute
 
 var (
-	// ThisNode has to be set before calling Join
-	ThisNode            globals.Node
+	// globals.ThisNode has to be set before calling Join
 	discoveryCommonName string
 
 	Log *logger.ParanoidLogger

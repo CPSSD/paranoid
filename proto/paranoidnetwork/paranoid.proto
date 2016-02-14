@@ -25,8 +25,6 @@ service ParanoidNetwork {
     rpc Rmdir (RmdirRequest) returns (EmptyMessage) {}
 
     // Cryptography calls
-    rpc Lock (EmptyMessage) returns (EmptyMessage) {}
-    rpc Unlock (EmptyMessage) returns (EmptyMessage) {}
     rpc SendKeyPiece (KeyPiece) returns (EmptyMessage) {}
     rpc RequestKeyPiece (PingRequest) returns (KeyPiece) {}
 }
