@@ -2,6 +2,7 @@ package globals
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	"sync"
 	"time"
 )
@@ -80,3 +81,16 @@ func (ns *nodes) GetAll() []Node {
 	}
 	return res
 }
+
+//	--------------------
+//	---- Encryption ----
+//	--------------------
+
+// Global key used by this instance of PFSD
+var EncryptionKey keyman.Key
+
+// Indicates when the system has been locked and keys have been distributed
+var SystemLocked bool = false
+
+// Map of Nodes to their KeyPiece held by this node
+var HeldKeyPieces = make(map[Node]keyman.KeyPiece)
