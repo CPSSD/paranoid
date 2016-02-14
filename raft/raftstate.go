@@ -1,7 +1,10 @@
 package raft
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"sync"
 )
 
@@ -52,6 +55,9 @@ type RaftState struct {
 	waitingForApplied bool
 	EntryApplied      chan uint64
 	ApplyEntriesLock  sync.Mutex
+
+	persistentStateFile string
+	persistentStateLock sync.Mutex
 }
 
 func newLeaderState(isLeader bool, peers *[]Node, lastLogIndex uint64) *LeaderState {
@@ -119,6 +125,7 @@ func (s *RaftState) GetCurrentTerm() uint64 {
 func (s *RaftState) SetCurrentTerm(x uint64) {
 	s.votedFor = ""
 	s.currentTerm = x
+	s.savePersistentState()
 }
 
 func (s *RaftState) GetCurrentState() int {
@@ -161,6 +168,7 @@ func (s *RaftState) GetVotedFor() string {
 
 func (s *RaftState) SetVotedFor(x string) {
 	s.votedFor = x
+	s.savePersistentState()
 }
 
 func (s *RaftState) GetLeaderId() string {
@@ -180,6 +188,7 @@ func (s *RaftState) GetLastApplied() uint64 {
 
 func (s *RaftState) SetLastApplied(x uint64) {
 	s.lastApplied = x
+	s.savePersistentState()
 }
 
 func (s *RaftState) ApplyLogEntries() {
@@ -224,19 +233,80 @@ func (s *RaftState) calculateNewCommitIndex() {
 	}
 }
 
-//Will involve reading from disk in the future
-func newRaftState(nodeId string, peers []Node) *RaftState {
-	raftState := &RaftState{
-		nodeId:      nodeId,
-		peers:       peers,
-		currentTerm: 0,
-		votedFor:    "",
-		log:         newRaftLog(),
-		commitIndex: 0,
-		lastApplied: 0,
-		leaderId:    "",
-		leaderState: newLeaderState(false, nil, 0),
+type persistentState struct {
+	CurrentTerm uint64 `json:"currentterm"`
+	VotedFor    string `json:"votedfor"`
+	LastApplied uint64 `json:"lastapplied"`
+}
+
+func (s *RaftState) savePersistentState() {
+	s.persistentStateLock.Lock()
+	defer s.persistentStateLock.Unlock()
+	perState := &persistentState{
+		CurrentTerm: s.GetCurrentTerm(),
+		VotedFor:    s.GetVotedFor(),
+		LastApplied: s.GetLastApplied(),
 	}
+
+	persistentStateBytes, err := json.Marshal(perState)
+	if err != nil {
+		Log.Fatal("Error saving persistent state to disk:", err)
+	}
+
+	err = ioutil.WriteFile(s.persistentStateFile, persistentStateBytes, 0600)
+	if err != nil {
+		Log.Fatal("Error saving persistent state to disk:", err)
+	}
+}
+
+func getPersistentState(persistentStateFile string) *persistentState {
+	if _, err := os.Stat(persistentStateFile); os.IsNotExist(err) {
+		return nil
+	}
+	persistentFileContents, err := ioutil.ReadFile(persistentStateFile)
+	if err != nil {
+		Log.Fatal("Error reading persistent state from disk:", err)
+	}
+
+	perState := &persistentState{}
+	err = json.Unmarshal(persistentFileContents, &perState)
+	if err != nil {
+		Log.Fatal("Error reading persistent state from disk:", err)
+	}
+	return perState
+}
+
+func newRaftState(nodeId, persistentStateFile string, peers []Node) *RaftState {
+	persistentState := getPersistentState(persistentStateFile)
+	var raftState *RaftState
+	if persistentState == nil {
+		raftState = &RaftState{
+			nodeId:              nodeId,
+			peers:               peers,
+			currentTerm:         0,
+			votedFor:            "",
+			log:                 newRaftLog(),
+			commitIndex:         0,
+			lastApplied:         0,
+			leaderId:            "",
+			leaderState:         newLeaderState(false, nil, 0),
+			persistentStateFile: persistentStateFile,
+		}
+	} else {
+		raftState = &RaftState{
+			nodeId:              nodeId,
+			peers:               peers,
+			currentTerm:         persistentState.CurrentTerm,
+			votedFor:            persistentState.VotedFor,
+			log:                 newRaftLog(),
+			commitIndex:         0,
+			lastApplied:         persistentState.LastApplied,
+			leaderId:            "",
+			leaderState:         newLeaderState(false, nil, 0),
+			persistentStateFile: persistentStateFile,
+		}
+	}
+
 	raftState.StartElection = make(chan bool, 100)
 	raftState.StartLeading = make(chan bool, 100)
 	raftState.StopLeading = make(chan bool, 100)

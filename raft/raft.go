@@ -13,11 +13,12 @@ import (
 )
 
 const (
-	ELECTION_TIMEOUT     time.Duration = 3000
-	HEARTBEAT            time.Duration = 1000
-	REQUEST_VOTE_TIMEOUT time.Duration = 5500
-	HEARTBEAT_TIMEOUT    time.Duration = 3000
-	SEND_ENTRY_TIMEOUT   time.Duration = 7500
+	ELECTION_TIMEOUT      time.Duration = 3000
+	HEARTBEAT             time.Duration = 1000
+	REQUEST_VOTE_TIMEOUT  time.Duration = 5500
+	HEARTBEAT_TIMEOUT     time.Duration = 3000
+	SEND_ENTRY_TIMEOUT    time.Duration = 7500
+	ENTRY_APPLIED_TIMEOUT time.Duration = 20000
 )
 
 var (
@@ -120,6 +121,7 @@ func (s *RaftNetworkServer) getLeader() *Node {
 
 func (s *RaftNetworkServer) addLogEntry(entry *pb.Entry) {
 	s.state.log.AppendEntry(entry, s.state.GetCurrentTerm())
+	s.state.calculateNewCommitIndex()
 	s.state.SendAppendEntries <- true
 }
 
@@ -204,8 +206,8 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 		}
 	}
 
-	//Wait for the log entry to be commited
-	timer := time.NewTimer(20 * time.Second)
+	//Wait for the log entry to be applied
+	timer := time.NewTimer(ENTRY_APPLIED_TIMEOUT * time.Millisecond)
 	for {
 		select {
 		case <-timer.C:
@@ -300,6 +302,12 @@ func (s *RaftNetworkServer) runElection() {
 	if s.state.GetVotedFor() == "" {
 		s.state.SetVotedFor(s.state.nodeId)
 		votesGranted++
+	}
+
+	if votesGranted >= votesRequired {
+		Log.Info("Node elected leader with", votesGranted, " votes")
+		s.state.SetCurrentState(LEADER)
+		return
 	}
 
 	Log.Info("Sending RequestVote RPCs to peers")
@@ -471,8 +479,8 @@ func (s *RaftNetworkServer) manageLeading() {
 	}
 }
 
-func newRaftNetworkServer(nodeId string, peers []Node) *RaftNetworkServer {
-	raftServer := &RaftNetworkServer{state: newRaftState(nodeId, peers)}
+func newRaftNetworkServer(nodeId, persistentStateFile string, peers []Node) *RaftNetworkServer {
+	raftServer := &RaftNetworkServer{state: newRaftState(nodeId, persistentStateFile, peers)}
 	raftServer.Wait.Add(3)
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
@@ -483,10 +491,10 @@ func newRaftNetworkServer(nodeId string, peers []Node) *RaftNetworkServer {
 	return raftServer
 }
 
-func startRaft(lis *net.Listener, nodeId string, peers []Node) (*RaftNetworkServer, *grpc.Server) {
+func startRaft(lis *net.Listener, nodeId, persistentStateFile string, peers []Node) (*RaftNetworkServer, *grpc.Server) {
 	var opts []grpc.ServerOption
 	srv := grpc.NewServer(opts...)
-	raftServer := newRaftNetworkServer(nodeId, peers)
+	raftServer := newRaftNetworkServer(nodeId, persistentStateFile, peers)
 	pb.RegisterRaftNetworkServer(srv, raftServer)
 	raftServer.Wait.Add(1)
 	go func() {
