@@ -11,7 +11,7 @@ import (
 var (
 	logDir        string
 	currentIndex  int
-	appendLogChan chan logEntry
+	appendLogChan chan LogEntry
 	killChan      chan bool
 	pauseChan     chan bool
 	resumeChan    chan bool
@@ -32,14 +32,14 @@ const (
 	typeWrite
 )
 
-// logEntry is an abstaction of a log entry to be passed through the appendLog channel
-type logEntry struct {
+// LogEntry is an abstaction of a log entry to be passed through the appendLog channel
+type LogEntry struct {
 	EntryType uint8
 	Params    []interface{}
 }
 
-func newLogEntry(typ uint8, params ...interface{}) logEntry {
-	return logEntry{typ, params}
+func newLogEntry(typ uint8, params ...interface{}) LogEntry {
+	return LogEntry{typ, params}
 }
 
 // Init initialises the logger
@@ -69,7 +69,7 @@ func Init(paranoidDirectory string) {
 		currentIndex++
 	}
 
-	appendLogChan = make(chan logEntry, 200)
+	appendLogChan = make(chan LogEntry, 200)
 	killChan = make(chan bool, 1)
 	pauseChan = make(chan bool, 1)
 	resumeChan = make(chan bool, 1)
@@ -82,8 +82,4 @@ func LastLogIndex() int {
 		return -1
 	}
 	return currentIndex
-}
-
-func Get(index int) {
-
 }

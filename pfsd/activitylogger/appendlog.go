@@ -14,9 +14,15 @@ func listenAppendLog() {
 	paused = false
 	for {
 		select {
+		case <-killChan:
+			return
+		case <-pauseChan:
+			paused = true
+			<-resumeChan
+			paused = false
 		case le := <-appendLogChan:
 			protoData := getEntryData(le)
-			entryTypeData := make([]byte, 1)
+			entryTypeData := make([]byte, 1, 1)
 			entryTypeData[0] = byte(le.EntryType)
 			fileData := append(entryTypeData, protoData...)
 
@@ -32,17 +38,11 @@ func listenAppendLog() {
 
 			file.Close()
 			currentIndex++
-		case <-pauseChan:
-			paused = true
-			<-resumeChan
-			paused = false
-		case <-killChan:
-			return
 		}
 	}
 }
 
-func getEntryData(le logEntry) []byte {
+func getEntryData(le LogEntry) []byte {
 	var message proto.Message
 
 	switch le.EntryType {
@@ -77,4 +77,12 @@ func getEntryData(le logEntry) []byte {
 		log.Fatalln(err)
 	}
 	return data
+}
+
+func pause() {
+	pauseChan <- true
+}
+
+func resume() {
+	resumeChan <- true
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // LogEntryToChmodProto Converys a LogEntry to a *pb.ChmodRequest
-func LogEntryToChmodProto(le logEntry) *pb.ChmodRequest {
+func LogEntryToChmodProto(le LogEntry) *pb.ChmodRequest {
 	path, success := le.Params[0].(string)
 	failedConversionCheck(success, "chmod", le.Params)
 	mode, success := le.Params[1].(uint32)
@@ -15,7 +15,7 @@ func LogEntryToChmodProto(le logEntry) *pb.ChmodRequest {
 }
 
 // LogEntryToCreatProto Converys a LogEntry to a *pb.CreatRequest
-func LogEntryToCreatProto(le logEntry) *pb.CreatRequest {
+func LogEntryToCreatProto(le LogEntry) *pb.CreatRequest {
 	path, success := le.Params[0].(string)
 	failedConversionCheck(success, "creat", le.Params)
 	mode, success := le.Params[1].(uint32)
@@ -24,7 +24,7 @@ func LogEntryToCreatProto(le logEntry) *pb.CreatRequest {
 }
 
 // LogEntryToLinkProto Converys a LogEntry to a *pb.LinkRequest
-func LogEntryToLinkProto(le logEntry) *pb.LinkRequest {
+func LogEntryToLinkProto(le LogEntry) *pb.LinkRequest {
 	oldPath, success := le.Params[0].(string)
 	failedConversionCheck(success, "link", le.Params)
 	newPath, success := le.Params[1].(string)
@@ -33,7 +33,7 @@ func LogEntryToLinkProto(le logEntry) *pb.LinkRequest {
 }
 
 // LogEntryToMkdirProto Converys a LogEntry to a *pb.MkdirRequest
-func LogEntryToMkdirProto(le logEntry) *pb.MkdirRequest {
+func LogEntryToMkdirProto(le LogEntry) *pb.MkdirRequest {
 	path, success := le.Params[0].(string)
 	failedConversionCheck(success, "mkdir", le.Params)
 	mode, success := le.Params[1].(uint32)
@@ -42,7 +42,7 @@ func LogEntryToMkdirProto(le logEntry) *pb.MkdirRequest {
 }
 
 // LogEntryToRenameProto Converys a LogEntry to a *pb.RenameRequest
-func LogEntryToRenameProto(le logEntry) *pb.RenameRequest {
+func LogEntryToRenameProto(le LogEntry) *pb.RenameRequest {
 	oldPath, success := le.Params[0].(string)
 	failedConversionCheck(success, "rename", le.Params)
 	newPath, success := le.Params[1].(string)
@@ -51,14 +51,14 @@ func LogEntryToRenameProto(le logEntry) *pb.RenameRequest {
 }
 
 // LogEntryToRmdirProto Converys a LogEntry to a *pb.RmdirRequest
-func LogEntryToRmdirProto(le logEntry) *pb.RmdirRequest {
+func LogEntryToRmdirProto(le LogEntry) *pb.RmdirRequest {
 	path, success := le.Params[0].(string)
 	failedConversionCheck(success, "rmdir", le.Params)
 	return &pb.RmdirRequest{path}
 }
 
 // LogEntryToSymLinkProto Converys a LogEntry to a *pb.LinkRequest
-func LogEntryToSymLinkProto(le logEntry) *pb.LinkRequest {
+func LogEntryToSymLinkProto(le LogEntry) *pb.LinkRequest {
 	oldPath, success := le.Params[0].(string)
 	failedConversionCheck(success, "symLink", le.Params)
 	newPath, success := le.Params[1].(string)
@@ -67,7 +67,7 @@ func LogEntryToSymLinkProto(le logEntry) *pb.LinkRequest {
 }
 
 // LogEntryToTruncateProto Converys a LogEntry to a *pb.TruncateRequest
-func LogEntryToTruncateProto(le logEntry) *pb.TruncateRequest {
+func LogEntryToTruncateProto(le LogEntry) *pb.TruncateRequest {
 	path, success := le.Params[0].(string)
 	failedConversionCheck(success, "truncate", le.Params)
 	length, success := le.Params[1].(uint64)
@@ -76,14 +76,14 @@ func LogEntryToTruncateProto(le logEntry) *pb.TruncateRequest {
 }
 
 // LogEntryToUnlinkProto Converys a LogEntry to a *pb.UnlinkRequest
-func LogEntryToUnlinkProto(le logEntry) *pb.UnlinkRequest {
+func LogEntryToUnlinkProto(le LogEntry) *pb.UnlinkRequest {
 	path, success := le.Params[0].(string)
 	failedConversionCheck(success, "unlink", le.Params)
 	return &pb.UnlinkRequest{path}
 }
 
 // LogEntryToUtimesProto Converys a LogEntry to a *pb.UtimesRequest
-func LogEntryToUtimesProto(le logEntry) *pb.UtimesRequest {
+func LogEntryToUtimesProto(le LogEntry) *pb.UtimesRequest {
 	path, success := le.Params[0].(string)
 	failedConversionCheck(success, "utimes", le.Params)
 	sec, success := le.Params[1].(int64)
@@ -98,7 +98,7 @@ func LogEntryToUtimesProto(le logEntry) *pb.UtimesRequest {
 }
 
 // LogEntryToWriteProto Converys a LogEntry to a *pb.WriteRequest
-func LogEntryToWriteProto(le logEntry) *pb.WriteRequest {
+func LogEntryToWriteProto(le LogEntry) *pb.WriteRequest {
 	path, success := le.Params[0].(string)
 	failedConversionCheck(success, "write", le.Params)
 	data, success := le.Params[1].([]byte)
@@ -110,64 +110,64 @@ func LogEntryToWriteProto(le logEntry) *pb.WriteRequest {
 	return &pb.WriteRequest{path, data, off, len}
 }
 
-// ChmodProtoToLogEntry converts a ChmodRequest protobuf into a logEntry
-func ChmodProtoToLogEntry(pro *pb.ChmodRequest) logEntry {
+// ChmodProtoToLogEntry converts a ChmodRequest protobuf into a LogEntry
+func ChmodProtoToLogEntry(pro *pb.ChmodRequest) LogEntry {
 	return newLogEntry(typeChmod, pro.Path, pro.Mode)
 }
 
-// CreatProtoToLogEntry converts a CreatRequest protobuf into a logEntry
-func CreatProtoToLogEntry(pro *pb.CreatRequest) logEntry {
+// CreatProtoToLogEntry converts a CreatRequest protobuf into a LogEntry
+func CreatProtoToLogEntry(pro *pb.CreatRequest) LogEntry {
 	return newLogEntry(typeCreat, pro.Path, pro.Permissions)
 }
 
-// LinkProtoToLogEntry converts a LinkRequest protobuf into a logEntry
-func LinkProtoToLogEntry(pro *pb.LinkRequest) logEntry {
+// LinkProtoToLogEntry converts a LinkRequest protobuf into a LogEntry
+func LinkProtoToLogEntry(pro *pb.LinkRequest) LogEntry {
 	return newLogEntry(typeLink, pro.OldPath, pro.NewPath)
 }
 
-// MkdirProtoToLogEntry converts a MkdirRequest protobuf into a logEntry
-func MkdirProtoToLogEntry(pro *pb.MkdirRequest) logEntry {
+// MkdirProtoToLogEntry converts a MkdirRequest protobuf into a LogEntry
+func MkdirProtoToLogEntry(pro *pb.MkdirRequest) LogEntry {
 	return newLogEntry(typeMkdir, pro.Directory, pro.Mode)
 }
 
-// RenameProtoToLogEntry converts a RenameRequest protobuf into a logEntry
-func RenameProtoToLogEntry(pro *pb.RenameRequest) logEntry {
+// RenameProtoToLogEntry converts a RenameRequest protobuf into a LogEntry
+func RenameProtoToLogEntry(pro *pb.RenameRequest) LogEntry {
 	return newLogEntry(typeRename, pro.OldPath, pro.NewPath)
 }
 
-// RmdirProtoToLogEntry converts a RmdirRequest protobuf into a logEntry
-func RmdirProtoToLogEntry(pro *pb.RmdirRequest) logEntry {
+// RmdirProtoToLogEntry converts a RmdirRequest protobuf into a LogEntry
+func RmdirProtoToLogEntry(pro *pb.RmdirRequest) LogEntry {
 	return newLogEntry(typeRmdir, pro.Directory)
 }
 
-// SymLinkProtoToLogEntry converts a LinkRequest protobuf into a logEntry
-func SymLinkProtoToLogEntry(pro *pb.LinkRequest) logEntry {
+// SymLinkProtoToLogEntry converts a LinkRequest protobuf into a LogEntry
+func SymLinkProtoToLogEntry(pro *pb.LinkRequest) LogEntry {
 	return newLogEntry(typeSymLink, pro.OldPath, pro.NewPath)
 }
 
-// TruncateProtoToLogEntry converts a TruncateRequest protobuf into a logEntry
-func TruncateProtoToLogEntry(pro *pb.TruncateRequest) logEntry {
+// TruncateProtoToLogEntry converts a TruncateRequest protobuf into a LogEntry
+func TruncateProtoToLogEntry(pro *pb.TruncateRequest) LogEntry {
 	return newLogEntry(typeTruncate, pro.Path, pro.Length)
 }
 
-// UnlinkProtoToLogEntry converts a UnlinkRequest protobuf into a logEntry
-func UnlinkProtoToLogEntry(pro *pb.UnlinkRequest) logEntry {
+// UnlinkProtoToLogEntry converts a UnlinkRequest protobuf into a LogEntry
+func UnlinkProtoToLogEntry(pro *pb.UnlinkRequest) LogEntry {
 	return newLogEntry(typeUnlink, pro.Path)
 }
 
-// UtimesProtoToLogEntry converts a UtimesRequest protobuf into a logEntry
-func UtimesProtoToLogEntry(pro *pb.UtimesRequest) logEntry {
+// UtimesProtoToLogEntry converts a UtimesRequest protobuf into a LogEntry
+func UtimesProtoToLogEntry(pro *pb.UtimesRequest) LogEntry {
 	return newLogEntry(typeUtimes, pro.Path, pro.AccessSeconds, pro.AccessNanoseconds, pro.ModifySeconds, pro.ModifyNanoseconds)
 }
 
-// WriteProtoToLogEntry converts a WriteRequest protobuf into a logEntry
-func WriteProtoToLogEntry(pro *pb.WriteRequest) logEntry {
+// WriteProtoToLogEntry converts a WriteRequest protobuf into a LogEntry
+func WriteProtoToLogEntry(pro *pb.WriteRequest) LogEntry {
 	return newLogEntry(typeWrite, pro.Path, pro.Data, pro.Offset, pro.Length)
 }
 
 // failedConversionCheck is a helper function for error checking for getEntryData
 func failedConversionCheck(success bool, logType string, params ...interface{}) {
 	if !success {
-		log.Fatalln("Activity logger: Bad parameters for", logType, "logEntry\n", params)
+		log.Fatalln("Activity logger: Bad parameters for", logType, "LogEntry\n", params)
 	}
 }
