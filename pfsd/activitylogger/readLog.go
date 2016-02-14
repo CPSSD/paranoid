@@ -105,7 +105,7 @@ func getLogEntryFromFileData(data []byte) (LogEntry, error) {
 	}
 }
 
-// Get returns the Logentry at a given index
+// Get returns the LogEntry at a given index
 func Get(index int) (LogEntry, error) {
 	pause()
 	defer resume()
@@ -118,4 +118,24 @@ func Get(index int) (LogEntry, error) {
 		log.Fatalln("The log:", index, "must have been tampered with, err:", err)
 	}
 	return le, nil
+}
+
+// GetAllLogsAfter returns a list of LogEntrys including and after the index given
+func GetAllLogsAfter(index int) ([]LogEntry, error) {
+	pause()
+	defer resume()
+	if index < 0 || index >= currentIndex {
+		return nil, errors.New("Index out of bounds")
+	}
+	entries := make([]LogEntry, currentIndex-index)
+	entryIndex := 0
+	for logIndex := index; logIndex < currentIndex; logIndex++ {
+		entry, err := Get(logIndex)
+		if err != nil {
+			return nil, err
+		}
+		entries[entryIndex] = entry
+		entryIndex++
+	}
+	return entries, nil
 }
