@@ -1,4 +1,5 @@
 // +build !integration
+
 package raft
 
 import (
