@@ -46,27 +46,27 @@ func getEntryData(le LogEntry) []byte {
 	var message proto.Message
 
 	switch le.EntryType {
-	case typeChmod:
+	case TypeChmod:
 		message = LogEntryToChmodProto(le)
-	case typeCreat:
+	case TypeCreat:
 		message = LogEntryToCreatProto(le)
-	case typeLink:
+	case TypeLink:
 		message = LogEntryToLinkProto(le)
-	case typeMkdir:
+	case TypeMkdir:
 		message = LogEntryToMkdirProto(le)
-	case typeRename:
+	case TypeRename:
 		message = LogEntryToRenameProto(le)
-	case typeRmdir:
+	case TypeRmdir:
 		message = LogEntryToRmdirProto(le)
-	case typeSymLink:
+	case TypeSymLink:
 		message = LogEntryToSymLinkProto(le)
-	case typeTruncate:
+	case TypeTruncate:
 		message = LogEntryToTruncateProto(le)
-	case typeUnlink:
+	case TypeUnlink:
 		message = LogEntryToUnlinkProto(le)
-	case typeUtimes:
+	case TypeUtimes:
 		message = LogEntryToUtimesProto(le)
-	case typeWrite:
+	case TypeWrite:
 		message = LogEntryToWriteProto(le)
 	default:
 		log.Fatalln("Activity logger, unrecognised EntryType:", le.EntryType)
@@ -85,4 +85,9 @@ func pause() {
 
 func resume() {
 	resumeChan <- true
+}
+
+// Appendlog adds an entry to the log
+func Appendlog(typ uint8, params ...interface{}) {
+	appendLogChan <- newLogEntry(typ, params...)
 }

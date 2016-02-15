@@ -23,77 +23,77 @@ func getLogEntryFromFileData(data []byte) (LogEntry, error) {
 	protoData := data[1:]
 
 	switch typ {
-	case typeChmod:
+	case TypeChmod:
 		ms := &pb.ChmodRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return ChmodProtoToLogEntry(ms), nil
-	case typeCreat:
+	case TypeCreat:
 		ms := &pb.CreatRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return CreatProtoToLogEntry(ms), nil
-	case typeLink:
+	case TypeLink:
 		ms := &pb.LinkRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return LinkProtoToLogEntry(ms), nil
-	case typeMkdir:
+	case TypeMkdir:
 		ms := &pb.MkdirRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return MkdirProtoToLogEntry(ms), nil
-	case typeRename:
+	case TypeRename:
 		ms := &pb.RenameRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return RenameProtoToLogEntry(ms), nil
-	case typeRmdir:
+	case TypeRmdir:
 		ms := &pb.RmdirRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return RmdirProtoToLogEntry(ms), nil
-	case typeSymLink:
+	case TypeSymLink:
 		ms := &pb.LinkRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return SymLinkProtoToLogEntry(ms), nil
-	case typeTruncate:
+	case TypeTruncate:
 		ms := &pb.TruncateRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return TruncateProtoToLogEntry(ms), nil
-	case typeUnlink:
+	case TypeUnlink:
 		ms := &pb.UnlinkRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return UnlinkProtoToLogEntry(ms), nil
-	case typeUtimes:
+	case TypeUtimes:
 		ms := &pb.UtimesRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		return UtimesProtoToLogEntry(ms), nil
-	case typeWrite:
+	case TypeWrite:
 		ms := &pb.WriteRequest{}
 		err := proto.Unmarshal(protoData, ms)
 		if err != nil {

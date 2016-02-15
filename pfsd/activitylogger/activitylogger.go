@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strconv"
 )
 
 var (
@@ -18,18 +17,19 @@ var (
 	paused        bool
 )
 
+// enumerator for entry types
 const (
-	typeChmod uint8 = iota
-	typeCreat
-	typeLink
-	typeMkdir
-	typeRename
-	typeRmdir
-	typeSymLink
-	typeTruncate
-	typeUnlink
-	typeUtimes
-	typeWrite
+	TypeChmod uint8 = iota
+	TypeCreat
+	TypeLink
+	TypeMkdir
+	TypeRename
+	TypeRmdir
+	TypeSymLink
+	TypeTruncate
+	TypeUnlink
+	TypeUtimes
+	TypeWrite
 )
 
 // LogEntry is an abstaction of a log entry to be passed through the appendLog channel
@@ -59,16 +59,7 @@ func Init(paranoidDirectory string) {
 		}
 	}
 
-	if len(fileDescriptors) == 0 {
-		currentIndex = 0
-	} else {
-		currentIndex, err = strconv.Atoi(fileDescriptors[len(fileDescriptors)-1].Name())
-		if err != nil {
-			log.Fatalln(err)
-		}
-		currentIndex++
-	}
-
+	currentIndex = len(fileDescriptors)
 	appendLogChan = make(chan LogEntry, 200)
 	killChan = make(chan bool, 1)
 	pauseChan = make(chan bool, 1)
@@ -78,8 +69,5 @@ func Init(paranoidDirectory string) {
 
 // LastLogIndex returns the index
 func LastLogIndex() int {
-	if currentIndex == 0 {
-		return -1
-	}
-	return currentIndex
+	return currentIndex - 1
 }
