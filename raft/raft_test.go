@@ -134,6 +134,13 @@ func TestRaftElection(t *testing.T) {
 
 	//Shutdown current leader, make sure an election is triggered and another leader is found
 	close(leader.Quit)
+	if leader.state.nodeId == "node1" {
+		node1srv.Stop()
+	} else if leader.state.nodeId == "node2" {
+		node2srv.Stop()
+	} else {
+		node3srv.Stop()
+	}
 	time.Sleep(5 * time.Second)
 
 	for {
@@ -255,6 +262,7 @@ func TestRaftPersistentState(t *testing.T) {
 	}
 
 	close(node1RaftServer.Quit)
+	node1srv.Stop()
 	time.Sleep(1 * time.Second)
 
 	currentTerm := node1RaftServer.state.GetCurrentTerm()
