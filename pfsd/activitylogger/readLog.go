@@ -120,8 +120,8 @@ func Get(index int) (LogEntry, error) {
 	return le, nil
 }
 
-// GetAllLogsAfter returns a list of LogEntrys including and after the index given
-func GetAllLogsAfter(index int) ([]LogEntry, error) {
+// GetAllEntriesSince returns a list of LogEntrys including and after the index given
+func GetAllEntriesSince(index int) ([]LogEntry, error) {
 	pause()
 	defer resume()
 	if index < 0 || index >= currentIndex {
