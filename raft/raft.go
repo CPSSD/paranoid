@@ -111,10 +111,9 @@ func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVote
 
 func (s *RaftNetworkServer) getLeader() *Node {
 	leaderId := s.state.GetLeaderId()
-	for i := 0; i < len(s.state.peers); i++ {
-		if s.state.peers[i].NodeID == leaderId {
-			return &s.state.peers[i]
-		}
+	if leaderId != "" {
+		node := s.state.Configuration.GetNode(leaderId)
+		return &node
 	}
 	return nil
 }
@@ -260,7 +259,7 @@ func Dial(node *Node, timeoutMiliseconds time.Duration) (*grpc.ClientConn, error
 	return conn, err
 }
 
-func (s *RaftNetworkServer) requestPeerVote(node *Node, term uint64, voteChannel chan *pb.RequestVoteResponse) {
+func (s *RaftNetworkServer) requestPeerVote(node *Node, term uint64, voteChannel chan *voteResponse) {
 	defer s.Wait.Done()
 	for {
 		if term != s.state.GetCurrentTerm() || s.state.GetCurrentState() != CANDIDATE {
@@ -278,47 +277,44 @@ func (s *RaftNetworkServer) requestPeerVote(node *Node, term uint64, voteChannel
 				s.state.log.GetMostRecentTerm()})
 			Log.Info("Got response from", node)
 			if err == nil {
-				voteChannel <- response
+				voteChannel <- &voteResponse{response, node.NodeID}
 				return
 			}
 		}
 	}
 }
 
-func (s *RaftNetworkServer) getRequiredVotes() int {
-	nodecount := 1 + len(s.state.peers)
-	if nodecount%2 == 0 {
-		return nodecount/2 + 1
-	}
-	return nodecount / 2
+type voteResponse struct {
+	response *pb.RequestVoteResponse
+	nodeId   string
 }
 
 func (s *RaftNetworkServer) runElection() {
 	defer s.Wait.Done()
 	term := s.state.GetCurrentTerm()
-	votesGranted := 0
-	votesRequired := s.getRequiredVotes()
+	var votesGranted []string
 
-	if s.state.GetVotedFor() == "" {
+	if s.state.GetVotedFor() == "" && s.state.Configuration.InConfiguration(s.state.nodeId) {
 		s.state.SetVotedFor(s.state.nodeId)
-		votesGranted++
+		votesGranted = append(votesGranted, s.state.nodeId)
 	}
 
-	if votesGranted >= votesRequired {
-		Log.Info("Node elected leader with", votesGranted, " votes")
+	if s.state.Configuration.HasMajority(votesGranted) {
+		Log.Info("Node elected leader with", len(votesGranted), " votes")
 		s.state.SetCurrentState(LEADER)
 		return
 	}
 
 	Log.Info("Sending RequestVote RPCs to peers")
-	voteChannel := make(chan *pb.RequestVoteResponse)
-	for i := 0; i < len(s.state.peers); i++ {
+	voteChannel := make(chan *voteResponse)
+	peers := s.state.Configuration.GetPeersList()
+	for i := 0; i < len(peers); i++ {
 		s.Wait.Add(1)
-		go s.requestPeerVote(&s.state.peers[i], term, voteChannel)
+		go s.requestPeerVote(&peers[i], term, voteChannel)
 	}
 
 	votesReturned := 0
-	votesRequested := len(s.state.peers)
+	votesRequested := len(peers)
 	for {
 		select {
 		case _, ok := <-s.Quit:
@@ -333,17 +329,17 @@ func (s *RaftNetworkServer) runElection() {
 			}
 			votesReturned++
 			if vote != nil {
-				if vote.Term > s.state.GetCurrentTerm() {
+				if vote.response.Term > s.state.GetCurrentTerm() {
 					Log.Info("Stopping election, higher term encountered.")
-					s.state.SetCurrentTerm(vote.Term)
+					s.state.SetCurrentTerm(vote.response.Term)
 					s.state.SetCurrentState(FOLLOWER)
 					return
 				} else {
-					if vote.VoteGranted == true {
-						votesGranted++
-						Log.Info("Vote granted. Current votes :", votesGranted)
-						if votesGranted >= votesRequired {
-							Log.Info("Node elected leader with", votesGranted, " votes")
+					if vote.response.VoteGranted == true {
+						votesGranted = append(votesGranted, vote.nodeId)
+						Log.Info("Vote granted. Current votes :", len(votesGranted))
+						if s.state.Configuration.HasMajority(votesGranted) {
+							Log.Info("Node elected leader with", len(votesGranted), " votes")
 							s.state.SetCurrentState(LEADER)
 							return
 						}
@@ -376,7 +372,7 @@ func (s *RaftNetworkServer) manageElections() {
 
 func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 	defer s.Wait.Done()
-	nextIndex := s.state.GetNextIndex(node)
+	nextIndex := s.state.Configuration.GetNextIndex(node.NodeID)
 	conn, err := Dial(node, HEARTBEAT_TIMEOUT)
 	defer conn.Close()
 	if err == nil {
@@ -401,12 +397,12 @@ func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 					s.state.StopLeading <- true
 				} else if response.Success == false {
 					if s.state.GetCurrentState() == LEADER {
-						s.state.SetNextIndex(node, nextIndex-1)
+						s.state.Configuration.SetNextIndex(node.NodeID, nextIndex-1)
 					}
 				} else if response.Success {
 					if s.state.GetCurrentState() == LEADER {
-						s.state.SetNextIndex(node, nextIndex+1)
-						s.state.SetMatchIndex(node, nextIndex)
+						s.state.Configuration.SetNextIndex(node.NodeID, nextIndex+1)
+						s.state.Configuration.SetMatchIndex(node.NodeID, nextIndex)
 						s.state.calculateNewCommitIndex()
 					}
 				}
@@ -443,10 +439,11 @@ func (s *RaftNetworkServer) manageLeading() {
 			}
 		case <-s.state.StartLeading:
 			Log.Info("Started leading for term ", s.state.GetCurrentTerm())
-			s.state.leaderState = newLeaderState(true, &s.state.peers, s.state.log.GetMostRecentIndex())
-			for i := 0; i < len(s.state.peers); i++ {
+			s.state.Configuration.ResetNodeIndexs(s.state.log.GetMostRecentIndex())
+			peers := s.state.Configuration.GetPeersList()
+			for i := 0; i < len(peers); i++ {
 				s.Wait.Add(1)
-				go s.sendHeartBeat(&s.state.peers[i])
+				go s.sendHeartBeat(&peers[i])
 			}
 			timer := time.NewTimer(HEARTBEAT * time.Millisecond)
 			for {
@@ -462,16 +459,18 @@ func (s *RaftNetworkServer) manageLeading() {
 				case <-s.state.SendAppendEntries:
 					timer.Reset(HEARTBEAT * time.Millisecond)
 					s.ElectionTimeoutReset <- true
-					for i := 0; i < len(s.state.peers); i++ {
+					peers = s.state.Configuration.GetPeersList()
+					for i := 0; i < len(peers); i++ {
 						s.Wait.Add(1)
-						go s.sendHeartBeat(&s.state.peers[i])
+						go s.sendHeartBeat(&peers[i])
 					}
 				case <-timer.C:
 					timer.Reset(HEARTBEAT * time.Millisecond)
 					s.ElectionTimeoutReset <- true
-					for i := 0; i < len(s.state.peers); i++ {
+					peers = s.state.Configuration.GetPeersList()
+					for i := 0; i < len(peers); i++ {
 						s.Wait.Add(1)
-						go s.sendHeartBeat(&s.state.peers[i])
+						go s.sendHeartBeat(&peers[i])
 					}
 				}
 			}
@@ -479,8 +478,8 @@ func (s *RaftNetworkServer) manageLeading() {
 	}
 }
 
-func newRaftNetworkServer(nodeId, persistentStateFile string, peers []Node) *RaftNetworkServer {
-	raftServer := &RaftNetworkServer{state: newRaftState(nodeId, persistentStateFile, peers)}
+func newRaftNetworkServer(nodeDetails Node, persistentStateFile string, peers []Node) *RaftNetworkServer {
+	raftServer := &RaftNetworkServer{state: newRaftState(nodeDetails, persistentStateFile, peers)}
 	raftServer.Wait.Add(3)
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
@@ -491,10 +490,10 @@ func newRaftNetworkServer(nodeId, persistentStateFile string, peers []Node) *Raf
 	return raftServer
 }
 
-func startRaft(lis *net.Listener, nodeId, persistentStateFile string, peers []Node) (*RaftNetworkServer, *grpc.Server) {
+func startRaft(lis *net.Listener, nodeDetails Node, persistentStateFile string, peers []Node) (*RaftNetworkServer, *grpc.Server) {
 	var opts []grpc.ServerOption
 	srv := grpc.NewServer(opts...)
-	raftServer := newRaftNetworkServer(nodeId, persistentStateFile, peers)
+	raftServer := newRaftNetworkServer(nodeDetails, persistentStateFile, peers)
 	pb.RegisterRaftNetworkServer(srv, raftServer)
 	raftServer.Wait.Add(1)
 	go func() {

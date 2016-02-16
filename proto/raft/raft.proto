@@ -29,8 +29,29 @@ message AppendEntriesRequest {
 }
 
 //Will be replaced with pfs commands
+message StateMachineCommand {
+    uint64 number = 1; // required 
+}
+
+message Node {
+    string ip = 1; // required
+    string port = 2; // required
+    string common_name = 3; // required
+    string node_id = 4; // required
+}
+
+message Configuration {
+    repeated Node nodes = 1; // required
+}
+
 message Entry {
-    uint64 number = 1; // required
+    enum EntryType {
+      StateMachineCommand = 0;
+      ConfigurationChange = 1;
+    }
+    EntryType type = 1; // required 
+    StateMachineCommand command = 2; // optional 
+    Configuration config = 3; // optional 
 }
 
 message AppendEntriesResponse {

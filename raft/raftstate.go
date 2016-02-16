@@ -3,6 +3,7 @@ package raft
 import (
 	"encoding/json"
 	"fmt"
+	pb "github.com/cpssd/paranoid/proto/raft"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -25,17 +26,11 @@ func (n Node) String() string {
 	return fmt.Sprintf("%s:%s", n.IP, n.Port)
 }
 
-type LeaderState struct {
-	NextIndex  []uint64
-	MatchIndex []uint64
-}
-
 type RaftState struct {
-	SpecialNumber uint64
+	specialNumber uint64
 
 	nodeId       string
 	currentState int
-	peers        []Node
 
 	currentTerm uint64
 	votedFor    string
@@ -43,8 +38,8 @@ type RaftState struct {
 	commitIndex uint64
 	lastApplied uint64
 
-	leaderId    string
-	leaderState *LeaderState
+	leaderId      string
+	Configuration *Configuration
 
 	StartElection     chan bool
 	StartLeading      chan bool
@@ -58,64 +53,6 @@ type RaftState struct {
 
 	persistentStateFile string
 	persistentStateLock sync.Mutex
-}
-
-func newLeaderState(isLeader bool, peers *[]Node, lastLogIndex uint64) *LeaderState {
-	if isLeader == false {
-		return &LeaderState{
-			NextIndex:  make([]uint64, 0),
-			MatchIndex: make([]uint64, 0),
-		}
-	}
-	leaderState := &LeaderState{
-		NextIndex:  make([]uint64, len(*peers)),
-		MatchIndex: make([]uint64, len(*peers)),
-	}
-	for i := 0; i < len(*peers); i++ {
-		leaderState.NextIndex[i] = lastLogIndex + 1
-		leaderState.MatchIndex[i] = 0
-	}
-	return leaderState
-}
-
-func (s *RaftState) GetNextIndex(node *Node) uint64 {
-	for i := 0; i < len(s.peers); i++ {
-		if s.peers[i].NodeID == node.NodeID {
-			return s.leaderState.NextIndex[i]
-		}
-	}
-	Log.Fatal("Could not get nextIndex. Node not found")
-	return 0
-}
-
-func (s *RaftState) GetMatchIndex(node *Node) uint64 {
-	for i := 0; i < len(s.peers); i++ {
-		if s.peers[i].NodeID == node.NodeID {
-			return s.leaderState.MatchIndex[i]
-		}
-	}
-	Log.Fatal("Could not get matchIndex. Node not found")
-	return 0
-}
-
-func (s *RaftState) SetNextIndex(node *Node, x uint64) {
-	for i := 0; i < len(s.peers); i++ {
-		if s.peers[i].NodeID == node.NodeID {
-			s.leaderState.NextIndex[i] = x
-			return
-		}
-	}
-	Log.Fatal("Could not set next index")
-}
-
-func (s *RaftState) SetMatchIndex(node *Node, x uint64) {
-	for i := 0; i < len(s.peers); i++ {
-		if s.peers[i].NodeID == node.NodeID {
-			s.leaderState.MatchIndex[i] = x
-			return
-		}
-	}
-	Log.Fatal("Could not set match index")
 }
 
 func (s *RaftState) GetCurrentTerm() uint64 {
@@ -191,6 +128,25 @@ func (s *RaftState) SetLastApplied(x uint64) {
 	s.savePersistentState()
 }
 
+func (s *RaftState) SetSpecialNumber(x uint64) {
+	s.specialNumber = x
+	s.savePersistentState()
+}
+
+func (s *RaftState) GetSpecialNumber() uint64 {
+	return s.specialNumber
+}
+
+func (s *RaftState) applyLogEntry(logEntry *LogEntry) {
+	if logEntry.Entry.Type == pb.Entry_StateMachineCommand {
+		stateMachineCommand := logEntry.Entry.GetCommand()
+		if stateMachineCommand == nil {
+			Log.Fatal("Error applying log to state machine")
+		}
+		s.SetSpecialNumber(stateMachineCommand.Number)
+	}
+}
+
 func (s *RaftState) ApplyLogEntries() {
 	s.ApplyEntriesLock.Lock()
 	defer s.ApplyEntriesLock.Unlock()
@@ -199,7 +155,7 @@ func (s *RaftState) ApplyLogEntries() {
 	if commitIndex > lastApplied {
 		for i := lastApplied + 1; i <= commitIndex; i++ {
 			logEntry := s.log.GetLogEntry(i)
-			s.SpecialNumber = logEntry.Entry.Number
+			s.applyLogEntry(logEntry)
 			s.SetLastApplied(i)
 			if s.GetWaitingForApplied() {
 				s.EntryApplied <- i
@@ -209,43 +165,33 @@ func (s *RaftState) ApplyLogEntries() {
 }
 
 func (s *RaftState) calculateNewCommitIndex() {
-	majority := len(s.peers) / 2
-	if len(s.peers)%2 == 0 {
-		majority++
-	}
 	lastCommitIndex := s.GetCommitIndex()
-	for i := lastCommitIndex + 1; i <= s.log.GetMostRecentIndex(); i++ {
-		if s.log.GetLogEntry(i).Term == s.GetCurrentTerm() {
-			count := 1
-			for j := 0; j < len(s.leaderState.MatchIndex); j++ {
-				if s.leaderState.MatchIndex[j] >= i {
-					count++
-				}
-			}
-			if count < majority {
-				break
-			}
-			s.SetCommitIndex(i)
+	currentTerm := s.GetCurrentTerm()
+	newCommitIndex := s.Configuration.CalculateNewCommitIndex(lastCommitIndex, currentTerm, s.log)
+
+	if currentTerm == s.GetCurrentTerm() {
+		if newCommitIndex > s.GetCommitIndex() {
+			s.SetCommitIndex(newCommitIndex)
+			s.ApplyLogEntries()
 		}
-	}
-	if s.GetCommitIndex() > lastCommitIndex {
-		s.ApplyLogEntries()
 	}
 }
 
 type persistentState struct {
-	CurrentTerm uint64 `json:"currentterm"`
-	VotedFor    string `json:"votedfor"`
-	LastApplied uint64 `json:"lastapplied"`
+	SpecialNumber uint64 `json:"specialnumber"`
+	CurrentTerm   uint64 `json:"currentterm"`
+	VotedFor      string `json:"votedfor"`
+	LastApplied   uint64 `json:"lastapplied"`
 }
 
 func (s *RaftState) savePersistentState() {
 	s.persistentStateLock.Lock()
 	defer s.persistentStateLock.Unlock()
 	perState := &persistentState{
-		CurrentTerm: s.GetCurrentTerm(),
-		VotedFor:    s.GetVotedFor(),
-		LastApplied: s.GetLastApplied(),
+		SpecialNumber: s.GetSpecialNumber(),
+		CurrentTerm:   s.GetCurrentTerm(),
+		VotedFor:      s.GetVotedFor(),
+		LastApplied:   s.GetLastApplied(),
 	}
 
 	persistentStateBytes, err := json.Marshal(perState)
@@ -276,33 +222,34 @@ func getPersistentState(persistentStateFile string) *persistentState {
 	return perState
 }
 
-func newRaftState(nodeId, persistentStateFile string, peers []Node) *RaftState {
+func newRaftState(myNodeDetails Node, persistentStateFile string, peers []Node) *RaftState {
 	persistentState := getPersistentState(persistentStateFile)
+	nodes := append(peers, myNodeDetails)
 	var raftState *RaftState
 	if persistentState == nil {
 		raftState = &RaftState{
-			nodeId:              nodeId,
-			peers:               peers,
+			specialNumber:       0,
+			nodeId:              myNodeDetails.NodeID,
 			currentTerm:         0,
 			votedFor:            "",
 			log:                 newRaftLog(),
 			commitIndex:         0,
 			lastApplied:         0,
 			leaderId:            "",
-			leaderState:         newLeaderState(false, nil, 0),
+			Configuration:       newConfiguration(nodes, myNodeDetails.NodeID, 0),
 			persistentStateFile: persistentStateFile,
 		}
 	} else {
 		raftState = &RaftState{
-			nodeId:              nodeId,
-			peers:               peers,
+			specialNumber:       persistentState.SpecialNumber,
+			nodeId:              myNodeDetails.NodeID,
 			currentTerm:         persistentState.CurrentTerm,
 			votedFor:            persistentState.VotedFor,
 			log:                 newRaftLog(),
 			commitIndex:         0,
 			lastApplied:         persistentState.LastApplied,
 			leaderId:            "",
-			leaderState:         newLeaderState(false, nil, 0),
+			Configuration:       newConfiguration(nodes, myNodeDetails.NodeID, 0),
 			persistentStateFile: persistentStateFile,
 		}
 	}
