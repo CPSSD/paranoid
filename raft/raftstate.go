@@ -47,9 +47,10 @@ type RaftState struct {
 	SendAppendEntries chan bool
 	LeaderElected     chan bool
 
-	waitingForApplied bool
-	EntryApplied      chan uint64
-	ApplyEntriesLock  sync.Mutex
+	waitingForApplied    bool
+	EntryApplied         chan uint64
+	ConfigurationApplied chan *pb.Configuration
+	ApplyEntriesLock     sync.Mutex
 
 	persistentStateFile string
 	persistentStateLock sync.Mutex
@@ -144,6 +145,13 @@ func (s *RaftState) applyLogEntry(logEntry *LogEntry) {
 			Log.Fatal("Error applying log to state machine")
 		}
 		s.SetSpecialNumber(stateMachineCommand.Number)
+	} else if logEntry.Entry.Type == pb.Entry_ConfigurationChange {
+		config := logEntry.Entry.GetConfig()
+		if config != nil {
+			s.ConfigurationApplied <- config
+		} else {
+			Log.Fatal("Error applying configuration update")
+		}
 	}
 }
 
@@ -260,5 +268,6 @@ func newRaftState(myNodeDetails Node, persistentStateFile string, peers []Node) 
 	raftState.SendAppendEntries = make(chan bool, 100)
 	raftState.LeaderElected = make(chan bool, 1)
 	raftState.EntryApplied = make(chan uint64, 100)
+	raftState.ConfigurationApplied = make(chan *pb.Configuration, 100)
 	return raftState
 }

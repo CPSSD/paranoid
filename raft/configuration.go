@@ -34,9 +34,36 @@ func (c *Configuration) GetNode(nodeID string) Node {
 func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64) {
 	c.futureConfigurationActive = true
 	c.futureConfiguration = nodes
+	c.futureNextIndex = make([]uint64, len(nodes))
+	c.futureMatchIndex = make([]uint64, len(nodes))
+
 	for i := 0; i < len(nodes); i++ {
 		c.futureNextIndex[i] = lastLogIndex + 1
 		c.futureMatchIndex[i] = 0
+	}
+}
+
+func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex uint64) {
+	if len(nodes) == len(c.futureConfiguration) {
+		futureToCurrent := true
+		for i := 0; i < len(nodes); i++ {
+			if c.inFutureConfiguration(nodes[i].NodeID) == false {
+				futureToCurrent = false
+				break
+			}
+		}
+		if futureToCurrent {
+			c.FutureToCurrentConfiguration()
+			return
+		}
+	}
+
+	c.currentConfiguration = nodes
+	c.currentNextIndex = make([]uint64, len(nodes))
+	c.currentMatchIndex = make([]uint64, len(nodes))
+	for i := 0; i < len(nodes); i++ {
+		c.currentNextIndex[i] = lastLogIndex + 1
+		c.currentMatchIndex[i] = 0
 	}
 }
 

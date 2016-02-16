@@ -41,7 +41,12 @@ message Node {
 }
 
 message Configuration {
-    repeated Node nodes = 1; // required
+    enum ConfigurationType {
+      CurrentConfiguration = 0;
+      FutureConfiguration = 1;
+    }
+    ConfigurationType type = 1; // required
+    repeated Node nodes = 2; // required
 }
 
 message Entry {

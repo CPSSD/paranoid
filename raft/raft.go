@@ -6,8 +6,10 @@ import (
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"io/ioutil"
 	"math/rand"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -63,10 +65,10 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 		if logEntryAtIndex != nil {
 			if logEntryAtIndex.Term != req.Term {
 				s.state.log.DiscardLogEntries(logIndex)
-				s.state.log.AppendEntry(req.Entries[logIndex], req.Term)
+				s.appendLogEntry(req.Entries[i])
 			}
 		} else {
-			s.state.log.AppendEntry(req.Entries[i], req.Term)
+			s.appendLogEntry(req.Entries[i])
 		}
 	}
 
@@ -85,6 +87,10 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 
 func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVoteRequest) (*pb.RequestVoteResponse, error) {
 	if req.Term < s.state.GetCurrentTerm() {
+		return &pb.RequestVoteResponse{s.state.GetCurrentTerm(), false}, nil
+	}
+
+	if s.state.GetCurrentState() != CANDIDATE {
 		return &pb.RequestVoteResponse{s.state.GetCurrentTerm(), false}, nil
 	}
 
@@ -118,18 +124,59 @@ func (s *RaftNetworkServer) getLeader() *Node {
 	return nil
 }
 
-func (s *RaftNetworkServer) addLogEntry(entry *pb.Entry) {
+func protoNodesToNodes(protoNodes []*pb.Node) []Node {
+	nodes := make([]Node, len(protoNodes))
+	for i := 0; i < len(protoNodes); i++ {
+		nodes[i] = Node{
+			IP:         protoNodes[i].Ip,
+			Port:       protoNodes[i].Port,
+			CommonName: protoNodes[i].CommonName,
+			NodeID:     protoNodes[i].NodeId,
+		}
+	}
+	return nodes
+}
+
+func (s *RaftNetworkServer) appendLogEntry(entry *pb.Entry) {
+	if entry.Type == pb.Entry_ConfigurationChange {
+		config := entry.GetConfig()
+		if config == nil {
+			Log.Fatal("Incorrect entry information. No configuration present")
+		}
+		if config.Type == pb.Configuration_CurrentConfiguration {
+			s.state.Configuration.UpdateCurrentConfiguration(protoNodesToNodes(config.Nodes), s.state.log.GetMostRecentIndex())
+		} else {
+			s.state.Configuration.NewFutureConfiguration(protoNodesToNodes(config.Nodes), s.state.log.GetMostRecentIndex())
+		}
+	}
 	s.state.log.AppendEntry(entry, s.state.GetCurrentTerm())
+}
+
+func (s *RaftNetworkServer) addLogEntryLeader(entry *pb.Entry) error {
+	if entry.Type == pb.Entry_ConfigurationChange {
+		config := entry.GetConfig()
+		if config != nil {
+			if config.Type == pb.Configuration_FutureConfiguration {
+				if s.state.Configuration.GetFutureConfigurationActive() {
+					return errors.New("Can not change confirugation while another configuration change is underway")
+				}
+			}
+		} else {
+			return errors.New("Incorrect entry information. No configuration present")
+		}
+	}
+	s.appendLogEntry(entry)
 	s.state.calculateNewCommitIndex()
 	s.state.SendAppendEntries <- true
+	return nil
 }
 
 func (s *RaftNetworkServer) ClientToLeaderRequest(ctx context.Context, req *pb.EntryRequest) (*pb.EmptyMessage, error) {
 	if s.state.GetCurrentState() != LEADER {
 		return &pb.EmptyMessage{}, errors.New("Node is not the current leader")
 	}
-	s.addLogEntry(req.Entry)
-	return &pb.EmptyMessage{}, nil
+	err := s.addLogEntryLeader(req.Entry)
+	return &pb.EmptyMessage{}, err
 }
 
 func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
@@ -160,7 +207,10 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 
 	//Add entry to leaders log
 	if currentState == LEADER {
-		s.addLogEntry(entry)
+		err := s.addLogEntryLeader(entry)
+		if err != nil {
+			return err
+		}
 	} else if currentState == FOLLOWER {
 		if s.state.GetLeaderId() != "" {
 			err := s.sendLeaderLogEntry(entry)
@@ -173,7 +223,10 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 				return errors.New("Could not find a leader")
 			case <-s.state.LeaderElected:
 				if s.state.GetCurrentState() == LEADER {
-					s.addLogEntry(entry)
+					err := s.addLogEntryLeader(entry)
+					if err != nil {
+						return err
+					}
 				} else {
 					err := s.sendLeaderLogEntry(entry)
 					if err != nil {
@@ -196,7 +249,10 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 			}
 		}
 		if currentState == LEADER {
-			s.addLogEntry(entry)
+			err := s.addLogEntryLeader(entry)
+			if err != nil {
+				return err
+			}
 		} else {
 			err := s.sendLeaderLogEntry(entry)
 			if err != nil {
@@ -219,6 +275,40 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 		}
 	}
 	return nil
+}
+
+func generateNewUUID() string {
+	uuidBytes, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
+	if err != nil {
+		Log.Fatal("Error generating new UUID:", err)
+	}
+	return strings.TrimSpace(string(uuidBytes))
+}
+
+func convertNodesToProto(nodes []Node) []*pb.Node {
+	protoNodes := make([]*pb.Node, len(nodes))
+	for i := 0; i < len(nodes); i++ {
+		protoNodes[i] = &pb.Node{
+			Ip:         nodes[i].IP,
+			Port:       nodes[i].Port,
+			CommonName: nodes[i].CommonName,
+			NodeId:     nodes[i].NodeID,
+		}
+	}
+	return protoNodes
+}
+
+func (s *RaftNetworkServer) RequestChangeConfiguration(nodes []Node) error {
+	entry := &pb.Entry{
+		Type:    pb.Entry_ConfigurationChange,
+		Uuid:    generateNewUUID(),
+		Command: nil,
+		Config: &pb.Configuration{
+			Type:  pb.Configuration_FutureConfiguration,
+			Nodes: convertNodesToProto(nodes),
+		},
+	}
+	return s.RequestAddLogEntry(entry)
 }
 
 func getRandomElectionTimeout() time.Duration {
@@ -478,15 +568,56 @@ func (s *RaftNetworkServer) manageLeading() {
 	}
 }
 
+func (s *RaftNetworkServer) manageConfigurationChanges() {
+	defer s.Wait.Done()
+	for {
+		select {
+		case _, ok := <-s.Quit:
+			if !ok {
+				s.QuitChannelClosed = true
+				Log.Info("Exiting configuration managment loop")
+				return
+			}
+		case config := <-s.state.ConfigurationApplied:
+			if config.Type == pb.Configuration_CurrentConfiguration {
+				inConfig := false
+				for i := 0; i < len(config.Nodes); i++ {
+					if config.Nodes[i].NodeId == s.state.nodeId {
+						inConfig = true
+						break
+					}
+				}
+				if inConfig == false {
+					s.state.SetCurrentState(FOLLOWER)
+				}
+			} else {
+				if s.state.GetCurrentState() == LEADER {
+					newConfig := &pb.Entry{
+						Type:    pb.Entry_ConfigurationChange,
+						Uuid:    generateNewUUID(),
+						Command: nil,
+						Config: &pb.Configuration{
+							Type:  pb.Configuration_CurrentConfiguration,
+							Nodes: config.Nodes,
+						},
+					}
+					s.addLogEntryLeader(newConfig)
+				}
+			}
+		}
+	}
+}
+
 func newRaftNetworkServer(nodeDetails Node, persistentStateFile string, peers []Node) *RaftNetworkServer {
 	raftServer := &RaftNetworkServer{state: newRaftState(nodeDetails, persistentStateFile, peers)}
-	raftServer.Wait.Add(3)
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
 	raftServer.QuitChannelClosed = false
+	raftServer.Wait.Add(4)
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()
+	go raftServer.manageConfigurationChanges()
 	return raftServer
 }
 
