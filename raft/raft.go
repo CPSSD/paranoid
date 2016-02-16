@@ -213,7 +213,7 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 			return errors.New("Waited too long to commit log entry")
 		case entryIndex := <-s.state.EntryApplied:
 			logEntry := s.state.log.GetLogEntry(entryIndex)
-			if logEntry.Entry == *entry {
+			if logEntry.Entry.Uuid == entry.Uuid {
 				return nil
 			}
 		}

@@ -54,10 +54,9 @@ func getLeader(cluster []*RaftNetworkServer) *RaftNetworkServer {
 				highestTerm = currentTerm
 				highestIndex = i
 			}
-			return cluster[i]
 		}
 	}
-	if highestIndex > 0 {
+	if highestIndex >= 0 {
 		return cluster[highestIndex]
 	}
 	return nil
@@ -76,6 +75,7 @@ func stopRaftServer(raftServer *RaftNetworkServer) {
 }
 
 func createPersistentFile(persistentFile string) string {
+	removePersistentFile(persistentFile)
 	dir, _ := path.Split(persistentFile)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0700)
@@ -218,7 +218,7 @@ func TestRaftLogReplication(t *testing.T) {
 	defer node3srv.Stop()
 	defer stopRaftServer(node3RaftServer)
 
-	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, &pb.StateMachineCommand{10}, nil})
+	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, "test1", &pb.StateMachineCommand{10}, nil})
 	cluster := []*RaftNetworkServer{node1RaftServer, node2RaftServer, node3RaftServer}
 	leader := getLeader(cluster)
 
@@ -255,7 +255,7 @@ func TestRaftPersistentState(t *testing.T) {
 	defer node1srv.Stop()
 	defer stopRaftServer(node1RaftServer)
 
-	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, &pb.StateMachineCommand{10}, nil})
+	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, "request1", &pb.StateMachineCommand{10}, nil})
 	if err != nil {
 		t.Fatal("Test setup failed,", err)
 	}

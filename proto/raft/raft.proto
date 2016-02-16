@@ -50,8 +50,9 @@ message Entry {
       ConfigurationChange = 1;
     }
     EntryType type = 1; // required 
-    StateMachineCommand command = 2; // optional 
-    Configuration config = 3; // optional 
+    string uuid = 2; // required
+    StateMachineCommand command = 3; // optional 
+    Configuration config = 4; // optional 
 }
 
 message AppendEntriesResponse {
