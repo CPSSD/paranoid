@@ -299,6 +299,7 @@ func convertNodesToProto(nodes []Node) []*pb.Node {
 }
 
 func (s *RaftNetworkServer) RequestChangeConfiguration(nodes []Node) error {
+	Log.Info("Configuration change requested")
 	entry := &pb.Entry{
 		Type:    pb.Entry_ConfigurationChange,
 		Uuid:    generateNewUUID(),

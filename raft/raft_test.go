@@ -188,6 +188,10 @@ func verifySpecialNumber(raftServer *RaftNetworkServer, x uint64, waitIntervals 
 }
 
 func TestRaftLogReplication(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
+
 	Log.Info("Testing log replication")
 	node1Lis, node1Port := startListener()
 	defer closeListener(node1Lis)
@@ -244,6 +248,9 @@ func TestRaftLogReplication(t *testing.T) {
 }
 
 func TestRaftPersistentState(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
 	Log.Info("Testing persistent state")
 	node1Lis, node1Port := startListener()
 	node1 := setUpNode("node1", "localhost", node1Port, "_")
@@ -302,5 +309,66 @@ func TestRaftPersistentState(t *testing.T) {
 	}
 	if node1RebootRaftServer.state.GetVotedFor() != votedFor {
 		t.Fatal("Voted for not restored after reboot. Last applied:", node1RebootRaftServer.state.GetVotedFor())
+	}
+}
+
+func TestJoiningCluster(t *testing.T) {
+	Log.Info("Testing log replication")
+
+	node1Lis, node1Port := startListener()
+	defer closeListener(node1Lis)
+	node1 := setUpNode("node1", "localhost", node1Port, "_")
+
+	node2Lis, node2Port := startListener()
+	defer closeListener(node2Lis)
+	node2 := setUpNode("node2", "localhost", node2Port, "_")
+
+	node3Lis, node3Port := startListener()
+	defer closeListener(node3Lis)
+	node3 := setUpNode("node3", "localhost", node3Port, "_")
+
+	node4Lis, node4Port := startListener()
+	defer closeListener(node4Lis)
+	node4 := setUpNode("node4", "localhost", node4Port, "_")
+
+	Log.Info("Listeners set up")
+
+	node1PersistentPath := createPersistentFile(path.Join(os.TempDir(), "rafttest3", "node1"))
+	defer removePersistentFile(node1PersistentPath)
+	node1RaftServer, node1srv := startRaft(node1Lis, node1, node1PersistentPath, []Node{node2, node3})
+	defer node1srv.Stop()
+	defer stopRaftServer(node1RaftServer)
+
+	node2PersistentPath := createPersistentFile(path.Join(os.TempDir(), "rafttest3", "node2"))
+	defer removePersistentFile(node2PersistentPath)
+	node2RaftServer, node2srv := startRaft(node2Lis, node2, node2PersistentPath, []Node{node1, node3})
+	defer node2srv.Stop()
+	defer stopRaftServer(node2RaftServer)
+
+	node3PersistentPath := createPersistentFile(path.Join(os.TempDir(), "rafttest3", "node3"))
+	defer removePersistentFile(node3PersistentPath)
+	node3RaftServer, node3srv := startRaft(node3Lis, node3, node3PersistentPath, []Node{node1, node2})
+	defer node3srv.Stop()
+	defer stopRaftServer(node3RaftServer)
+
+	node4PersistentPath := createPersistentFile(path.Join(os.TempDir(), "rafttest3", "node4"))
+	defer removePersistentFile(node4PersistentPath)
+	node4RaftServer, node4srv := startRaft(node4Lis, node4, node4PersistentPath, []Node{})
+	defer node4srv.Stop()
+	defer stopRaftServer(node4RaftServer)
+
+	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, generateNewUUID(), &pb.StateMachineCommand{10}, nil})
+	if err != nil {
+		t.Fatal("Test setup failed:", err)
+	}
+
+	err = node2RaftServer.RequestChangeConfiguration([]Node{node1, node2, node3, node4})
+	if err != nil {
+		t.Fatal("Unabled to change configuration:", err)
+	}
+
+	err = verifySpecialNumber(node4RaftServer, 10, 10)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
