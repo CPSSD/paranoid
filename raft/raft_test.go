@@ -62,6 +62,23 @@ func getLeader(cluster []*RaftNetworkServer) *RaftNetworkServer {
 	return nil
 }
 
+func getLeaderTimeout(cluster []*RaftNetworkServer, timeoutSeconds int) *RaftNetworkServer {
+	var leader *RaftNetworkServer
+	count := 0
+	for {
+		count++
+		if count > timeoutSeconds {
+			break
+		}
+		time.Sleep(1 * time.Second)
+		leader = getLeader(cluster)
+		if leader != nil {
+			break
+		}
+	}
+	return leader
+}
+
 func closeListener(lis *net.Listener) {
 	if lis != nil {
 		(*lis).Close()
@@ -128,19 +145,11 @@ func TestRaftElection(t *testing.T) {
 	cluster := []*RaftNetworkServer{node1RaftServer, node2RaftServer, node3RaftServer}
 
 	Log.Info("Searching for leader")
-	count := 0
-	var leader *RaftNetworkServer
-	for {
-		count++
-		if count > 5 {
-			t.Fatal("Failed to select leader")
-		}
-		time.Sleep(5 * time.Second)
-		leader = getLeader(cluster)
-		if leader != nil {
-			t.Log(leader.state.nodeId, "selected as leader for term", leader.state.GetCurrentTerm())
-			break
-		}
+	leader := getLeaderTimeout(cluster, 25)
+	if leader != nil {
+		t.Log(leader.state.nodeId, "selected as leader for term", leader.state.GetCurrentTerm())
+	} else {
+		t.Fatal("Failed to select leader")
 	}
 
 	//Shutdown current leader, make sure an election is triggered and another leader is found
@@ -154,6 +163,7 @@ func TestRaftElection(t *testing.T) {
 	}
 	time.Sleep(5 * time.Second)
 
+	count := 0
 	for {
 		count++
 		if count > 5 {
@@ -251,6 +261,7 @@ func TestRaftPersistentState(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping test in short mode")
 	}
+
 	Log.Info("Testing persistent state")
 	node1Lis, node1Port := startListener()
 	node1 := setUpNode("node1", "localhost", node1Port, "_")
@@ -269,18 +280,9 @@ func TestRaftPersistentState(t *testing.T) {
 
 	cluster := []*RaftNetworkServer{node1RaftServer}
 
-	count := 0
-	var leader *RaftNetworkServer
-	for {
-		count++
-		if count > 5 {
-			t.Fatal("Test setup failed: Failed to select leader")
-		}
-		time.Sleep(1 * time.Second)
-		leader = getLeader(cluster)
-		if leader != nil {
-			break
-		}
+	leader := getLeaderTimeout(cluster, 1)
+	if leader == nil {
+		t.Fatal("Test setup failed: Failed to select leader")
 	}
 
 	close(node1RaftServer.Quit)
@@ -312,8 +314,12 @@ func TestRaftPersistentState(t *testing.T) {
 	}
 }
 
-func TestJoiningCluster(t *testing.T) {
-	Log.Info("Testing log replication")
+func TestRaftConfigurationChange(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
+
+	Log.Info("Testing joinging and leaving cluster")
 
 	node1Lis, node1Port := startListener()
 	defer closeListener(node1Lis)
@@ -370,5 +376,56 @@ func TestJoiningCluster(t *testing.T) {
 	err = verifySpecialNumber(node4RaftServer, 10, 10)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	cluster := []*RaftNetworkServer{node1RaftServer, node2RaftServer, node3RaftServer, node4RaftServer}
+
+	leader := getLeaderTimeout(cluster, 15)
+	if leader == nil {
+		t.Fatal("Unable to find a leader")
+	}
+
+	Log.Info(leader.state.nodeId, " is to leave configuration")
+
+	newNodes := []Node{node1, node2, node3, node4}
+	for i := 0; i < len(newNodes); i++ {
+		if newNodes[i].NodeID == leader.state.nodeId {
+			newNodes = append(newNodes[:i], newNodes[i+1:]...)
+			Log.Info("Removing leader from new set of nodes")
+			break
+		}
+	}
+
+	err = node1RaftServer.RequestChangeConfiguration(newNodes)
+	if err != nil {
+		t.Fatal("Unable to change configuration:", err)
+	}
+
+	count := 0
+	var newLeader *RaftNetworkServer
+	for {
+		count++
+		if count > 10 {
+			t.Fatal("Old leader did not stepdown in time")
+		}
+		time.Sleep(1 * time.Second)
+		newLeader = getLeader(cluster)
+		if newLeader != nil && newLeader.state.nodeId != leader.state.nodeId {
+			break
+		}
+	}
+
+	time.Sleep(HEARTBEAT * 2)
+
+	if node1RaftServer.state.nodeId != leader.state.nodeId {
+		err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, generateNewUUID(), &pb.StateMachineCommand{1337}, nil})
+		if err != nil {
+			t.Fatal("Unable to commit new entry:", err)
+		}
+	} else {
+		err := node2RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, generateNewUUID(), &pb.StateMachineCommand{1337}, nil})
+		if err != nil {
+			t.Fatal("Unable to commit new entry:", err)
+		}
 	}
 }

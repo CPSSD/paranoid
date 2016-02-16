@@ -118,8 +118,10 @@ func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVote
 func (s *RaftNetworkServer) getLeader() *Node {
 	leaderId := s.state.GetLeaderId()
 	if leaderId != "" {
-		node := s.state.Configuration.GetNode(leaderId)
-		return &node
+		if s.state.Configuration.InConfiguration(leaderId) {
+			node := s.state.Configuration.GetNode(leaderId)
+			return &node
+		}
 	}
 	return nil
 }
@@ -547,7 +549,7 @@ func (s *RaftNetworkServer) manageLeading() {
 						return
 					}
 				case <-s.state.StopLeading:
-					break
+					return
 				case <-s.state.SendAppendEntries:
 					timer.Reset(HEARTBEAT * time.Millisecond)
 					s.ElectionTimeoutReset <- true
@@ -590,6 +592,7 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 					}
 				}
 				if inConfig == false {
+					Log.Info("Node not included in current configuration", s.state.nodeId)
 					s.state.SetCurrentState(FOLLOWER)
 				}
 			} else {
