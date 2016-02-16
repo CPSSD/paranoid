@@ -525,6 +525,7 @@ func (s *RaftNetworkServer) manageLeading() {
 		case _, ok := <-s.Quit:
 			if !ok {
 				s.QuitChannelClosed = true
+				s.state.SetCurrentState(INACTIVE)
 				Log.Info("Exiting leading managment loop")
 				return
 			}

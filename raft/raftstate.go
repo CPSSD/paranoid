@@ -13,6 +13,7 @@ const (
 	FOLLOWER int = iota
 	CANDIDATE
 	LEADER
+	INACTIVE
 )
 
 type Node struct {
