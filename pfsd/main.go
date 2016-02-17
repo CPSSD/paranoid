@@ -91,8 +91,9 @@ func main() {
 		}
 	}
 
+	pnetserver.ParanoidDir = flag.Arg(0)
+
 	if !*noNetwork {
-		pnetserver.ParanoidDir = flag.Arg(0)
 
 		uuid, err := ioutil.ReadFile(path.Join(pnetserver.ParanoidDir, "meta", "uuid"))
 		if err != nil {
