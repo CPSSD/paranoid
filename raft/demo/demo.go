@@ -1,13 +1,94 @@
-package demo
+package main
 
 import (
 	"github.com/cpssd/paranoid/logger"
+	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft"
 	"github.com/cpssd/paranoid/raft/rafttestutil"
 	"log"
+	"math/rand"
 	"os"
 	"path"
+	"strconv"
+	"sync"
+	"time"
 )
+
+const (
+	DEMO_DURATION         time.Duration = 50 * time.Second
+	PRINT_TIME            time.Duration = 5 * time.Second
+	RANDOM_NUMBER_GEN_MIN time.Duration = 3000 * time.Millisecond
+	RANDOM_NUMBER_GEN_MAX time.Duration = 10000 * time.Millisecond
+)
+
+var (
+	waitGroup sync.WaitGroup
+)
+
+func getRandomInterval() time.Duration {
+	interval := int(RANDOM_NUMBER_GEN_MAX) - int(RANDOM_NUMBER_GEN_MIN)
+	randx := rand.Intn(interval)
+	return RANDOM_NUMBER_GEN_MIN + time.Duration(randx)
+}
+
+func manageNode(raftServer *raft.RaftNetworkServer) {
+	defer waitGroup.Done()
+	testTimer := time.NewTimer(DEMO_DURATION)
+	randomNumTimer := time.NewTimer(getRandomInterval())
+	for {
+		select {
+		case <-testTimer.C:
+			return
+		case <-randomNumTimer.C:
+			randomNumber := rand.Intn(1000)
+			log.Println(raftServer.State.NodeId, "requesting that", randomNumber, "be added to the log")
+			err := raftServer.RequestAddLogEntry(&pb.Entry{
+				pb.Entry_StateMachineCommand,
+				rafttestutil.GenerateNewUUID(),
+				&pb.StateMachineCommand{uint64(randomNumber)},
+				nil,
+			})
+			if err == nil {
+				log.Println(raftServer.State.NodeId, "successfullly added", randomNumber, "to the log")
+			} else {
+				log.Println(raftServer.State.NodeId, "could not add", randomNumber, "to the log:", err)
+			}
+			randomNumTimer.Reset(getRandomInterval())
+		}
+	}
+}
+
+func printLogs(cluster []*raft.RaftNetworkServer) {
+	defer waitGroup.Done()
+	testTimer := time.NewTimer(DEMO_DURATION)
+	printTimer := time.NewTimer(PRINT_TIME)
+	for {
+		select {
+		case <-testTimer.C:
+			return
+		case <-printTimer.C:
+			printTimer.Reset(PRINT_TIME)
+			log.Println("Printing node logs:")
+			for i := 0; i < len(cluster); i++ {
+				logsString := ""
+				for j := uint64(1); j <= cluster[i].State.Log.GetMostRecentIndex(); j++ {
+					logsString = logsString + " " + strconv.Itoa(int(cluster[i].State.Log.GetLogEntry(j).Entry.GetCommand().Number))
+				}
+				log.Println(cluster[i].State.NodeId, "Logs:", logsString)
+			}
+		}
+	}
+}
+
+func performDemo(node1RaftServer, node2RaftServer, node3RaftServer *raft.RaftNetworkServer) {
+	waitGroup.Add(4)
+	go manageNode(node1RaftServer)
+	go manageNode(node2RaftServer)
+	go manageNode(node3RaftServer)
+	go printLogs([]*raft.RaftNetworkServer{node1RaftServer, node2RaftServer, node3RaftServer})
+
+	waitGroup.Wait()
+}
 
 func setupDemo() {
 	node1Lis, node1Port := rafttestutil.StartListener()
@@ -37,9 +118,12 @@ func setupDemo() {
 	node3RaftServer, node3srv := raft.StartRaft(node3Lis, node3, node3PersistentPath, []raft.Node{node1, node2})
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
+
+	performDemo(node1RaftServer, node2RaftServer, node3RaftServer)
 }
 
 func createDemoDirectory() {
+	removeDemoDirectory()
 	err := os.Mkdir(path.Join(os.TempDir(), "raftdemo"), 0777)
 	if err != nil {
 		log.Fatalln("Error creating demo directory:", err)
@@ -47,17 +131,18 @@ func createDemoDirectory() {
 }
 
 func removeDemoDirectory() {
-	err := os.RemoveAll(path.Join(os.TempDir(), "raftdemo"))
-	if err != nil {
-		log.Println("Could not delete demo directory:", err)
-	}
+	os.RemoveAll(path.Join(os.TempDir(), "raftdemo"))
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	createDemoDirectory()
 	defer removeDemoDirectory()
-	raft.Log = logger.New("raftdemo", "raftdemo", path.Join(os.TempDir(), "raftdemo", "logs"))
-	raft.Log.SetOutput(logger.LOGFILE)
+	raft.Log = logger.New("raftdemo", "raftdemo", path.Join(os.TempDir(), "raftdemo"))
+	err := raft.Log.SetOutput(logger.LOGFILE)
+	if err != nil {
+		log.Println("Could not set file logging:", err)
+	}
 
 	setupDemo()
 }
