@@ -6,6 +6,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -19,7 +20,7 @@ import (
 //If the file system doesn't exist it creates it.
 func Mount(c *cli.Context) {
 	args := c.Args()
-	if len(args) < 3 {
+	if len(args) < 2 {
 		cli.ShowCommandHelp(c, "mount")
 		os.Exit(1)
 	}
@@ -27,7 +28,13 @@ func Mount(c *cli.Context) {
 }
 
 func doMount(c *cli.Context, args []string) {
-	serverAddress := args[0]
+	var serverAddress string
+	if serverAddress = c.String("discovery-addr"); len(serverAddress) == 0 {
+		serverAddress = "paranoid.discovery.razoft.net:10101"
+	}
+	pfsName := args[0]
+	mountPoint := args[1]
+
 	if c.GlobalBool("networkoff") == false {
 		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
 		if err != nil {
@@ -39,7 +46,7 @@ func doMount(c *cli.Context, args []string) {
 	if err != nil {
 		Log.Fatal(err)
 	}
-	pfsDir := path.Join(usr.HomeDir, ".pfs", args[1])
+	pfsDir := path.Join(usr.HomeDir, ".pfs", pfsName)
 
 	if _, err := os.Stat(pfsDir); os.IsNotExist(err) {
 		Log.Fatal("PFS directory does not exist")
@@ -64,12 +71,18 @@ func doMount(c *cli.Context, args []string) {
 		}
 	}
 
+	poolBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "pool"))
+	if err != nil {
+		Log.Fatal("unable to read pool information:", err)
+	}
+	pool := string(poolBytes)
+
 	splitAddress := strings.Split(serverAddress, ":")
 	if len(splitAddress) != 2 {
-		Log.Fatal("Server-address in wrong format")
+		Log.Fatal("discovery address in wrong format. Should be HOST:PORT")
 	}
 
-	returncode, err := commands.MountCommand(pfsDir, splitAddress[0], splitAddress[1], args[2])
+	returncode, err := commands.MountCommand(pfsDir, splitAddress[0], splitAddress[1], mountPoint)
 	if returncode != returncodes.OK {
 		Log.Fatal("Error running pfs mount command : ", err)
 	}
@@ -83,7 +96,7 @@ func doMount(c *cli.Context, args []string) {
 			//TODO(terry): Add a way to check if the given cert is its own CA,
 			// and skip validation based on that.
 			pfsdArgs := []string{"-cert=" + certPath, "-key=" + keyPath, "-skip_verification",
-				pfsDir, args[2], splitAddress[0], splitAddress[1]}
+				pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool}
 			var pfsdFlags []string
 			if c.GlobalBool("verbose") {
 				pfsdFlags = append(pfsdFlags, "-v")
@@ -111,7 +124,7 @@ func doMount(c *cli.Context, args []string) {
 			}
 
 			Log.Info("Starting PFSD in unsecure mode.")
-			pfsdArgs := []string{pfsDir, args[2], splitAddress[0], splitAddress[1]}
+			pfsdArgs := []string{pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool}
 			var pfsdFlags []string
 			if c.GlobalBool("verbose") {
 				pfsdFlags = append(pfsdFlags, "-v")
@@ -128,7 +141,7 @@ func doMount(c *cli.Context, args []string) {
 		}
 	} else {
 		//No need to worry about security certs
-		pfsdArgs := []string{pfsDir, args[2], splitAddress[0], splitAddress[1]}
+		pfsdArgs := []string{pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool}
 		var pfsdFlags []string
 		if c.GlobalBool("verbose") {
 			pfsdFlags = append(pfsdFlags, "-v")

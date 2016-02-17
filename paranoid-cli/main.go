@@ -10,14 +10,14 @@ import (
 )
 
 func main() {
-	pfscommands.Log = logger.New("libpfs", "libpfs", os.DevNull)
-	commands.Log = logger.New("commands", "paranoidcli", os.DevNull)
+	pfscommands.Log = logger.New("libpfs", "paranoidcli", os.DevNull)
+	commands.Log = logger.New("command", "paranoidcli", os.DevNull)
 	tls.Log = logger.New("tls", "paranoidcli", os.DevNull)
 
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
 	app.HelpName = "paranoid-cli"
-	app.Version = "0.3.0"
+	app.Version = "0.4.0"
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:  "verbose",
@@ -47,12 +47,16 @@ func main() {
 					Name:  "key",
 					Usage: "path to existing key file",
 				},
+				cli.StringFlag{
+					Name:  "p, pool",
+					Usage: "name of the pool, defaults to random",
+				},
 			},
 		},
 		{
 			Name:      "mount",
 			Usage:     "mount a paranoid file system",
-			ArgsUsage: "discovery-server-address pfs-name mountpoint",
+			ArgsUsage: "pfs-name mountpoint",
 			Action:    commands.Mount,
 			Flags: []cli.Flag{
 				cli.BoolFlag{
@@ -62,6 +66,10 @@ func main() {
 				cli.StringFlag{
 					Name:  "i, interface",
 					Usage: "name a network interface over which to make connections. Defaults to default interface",
+				},
+				cli.StringFlag{
+					Name:  "d, discovery-addr",
+					Usage: "Use a custom discovery server. Specified with ip:port. Defaults to public discovery server",
 				},
 			},
 		},

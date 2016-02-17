@@ -6,6 +6,7 @@ import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/paranoid-cli/tls"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
@@ -63,6 +64,17 @@ func Init(c *cli.Context) {
 		cleanupPFS(directory)
 		Log.Fatal("Error running pfs init : ", err)
 	}
+
+	// Either create a new pool name or use the one for a flag and save to meta/pool
+	var pool string
+	if pool = c.String("pool"); len(pool) == 0 {
+		pool = getRandomName()
+	}
+	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool), 0600)
+	if err != nil {
+		Log.Fatal("cannot save pool information:", err)
+	}
+	Log.Infof("Using pool name %s", pool)
 
 	if c.Bool("unsecure") {
 		Log.Info("--unsecure specified. PFSD will not use TLS for its communication.")
