@@ -119,8 +119,12 @@ func (s *RaftNetworkServer) getLeader() *Node {
 	leaderId := s.state.GetLeaderId()
 	if leaderId != "" {
 		if s.state.Configuration.InConfiguration(leaderId) {
-			node := s.state.Configuration.GetNode(leaderId)
-			return &node
+			node, err := s.state.Configuration.GetNode(leaderId)
+			if err == nil {
+				return &node
+			} else {
+				return nil
+			}
 		}
 	}
 	return nil

@@ -8,7 +8,7 @@ service RaftNetwork {
 
     rpc AppendEntries (AppendEntriesRequest) returns (AppendEntriesResponse) {}
     rpc RequestVote (RequestVoteRequest) returns (RequestVoteResponse) {}
-	rpc ClientToLeaderRequest (EntryRequest) returns (EmptyMessage) {}
+    rpc ClientToLeaderRequest (EntryRequest) returns (EmptyMessage) {}
 }
 
 message EmptyMessage {}

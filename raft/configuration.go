@@ -1,6 +1,10 @@
 package raft
 
-//The configuration of a given raft server
+import (
+	"errors"
+)
+
+//Configuration manages configuration information of a raft server
 type Configuration struct {
 	myNodeId                  string
 	futureConfigurationActive bool
@@ -14,21 +18,20 @@ type Configuration struct {
 	futureMatchIndex    []uint64
 }
 
-func (c *Configuration) GetNode(nodeID string) Node {
+func (c *Configuration) GetNode(nodeID string) (Node, error) {
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		if c.currentConfiguration[i].NodeID == nodeID {
-			return c.currentConfiguration[i]
+			return c.currentConfiguration[i], nil
 		}
 	}
 
 	for i := 0; i < len(c.futureConfiguration); i++ {
 		if c.futureConfiguration[i].NodeID == nodeID {
-			return c.futureConfiguration[i]
+			return c.futureConfiguration[i], nil
 		}
 	}
 
-	Log.Fatal("Node not found in configuration")
-	return Node{}
+	return Node{}, errors.New("Node not found in configuration")
 }
 
 func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64) {
