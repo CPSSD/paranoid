@@ -46,5 +46,8 @@ func setup(logDirectory string) {
 func LastEntryIndex() int {
 	indexLock.Lock()
 	defer indexLock.Unlock()
-	return currentIndex
+	if currentIndex == 1000000 {
+		return -1
+	}
+	return currentIndex - 1
 }

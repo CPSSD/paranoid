@@ -25,6 +25,7 @@ func GetEntry(index int) (entry *pb.Entry, err error) {
 		return nil, errors.New("Failed to read logfile")
 	}
 
+	entry = &pb.Entry{}
 	err = proto.Unmarshal(fileData, entry)
 	if err != nil {
 		return nil, errors.New("Failed to Unmarshal file data")
