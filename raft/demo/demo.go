@@ -1,10 +1,14 @@
 package main
 
 import (
+	"flag"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft"
 	"github.com/cpssd/paranoid/raft/rafttestutil"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
+	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -23,6 +27,7 @@ const (
 
 var (
 	waitGroup sync.WaitGroup
+	demo      = flag.Int("demo", 0, "Which demo to run (1-3). 0 for all demos")
 )
 
 func getRandomInterval() time.Duration {
@@ -40,6 +45,9 @@ func manageNode(raftServer *raft.RaftNetworkServer) {
 		case <-testTimer.C:
 			return
 		case <-randomNumTimer.C:
+			if raftServer.QuitChannelClosed {
+				return
+			}
 			randomNumber := rand.Intn(1000)
 			log.Println(raftServer.State.NodeId, "requesting that", randomNumber, "be added to the log")
 			err := raftServer.RequestAddLogEntry(&pb.Entry{
@@ -80,7 +88,8 @@ func printLogs(cluster []*raft.RaftNetworkServer) {
 	}
 }
 
-func performDemo(node1RaftServer, node2RaftServer, node3RaftServer *raft.RaftNetworkServer) {
+func performDemoOne(node1RaftServer, node2RaftServer, node3RaftServer *raft.RaftNetworkServer) {
+	log.Println("Running basic raft demo")
 	waitGroup.Add(4)
 	go manageNode(node1RaftServer)
 	go manageNode(node2RaftServer)
@@ -90,7 +99,24 @@ func performDemo(node1RaftServer, node2RaftServer, node3RaftServer *raft.RaftNet
 	waitGroup.Wait()
 }
 
-func setupDemo() {
+func performDemoTwo(node1srv *grpc.Server, node1RaftServer, node2RaftServer, node3RaftServer *raft.RaftNetworkServer) {
+	log.Println("Running raft node crash demo")
+	waitGroup.Add(4)
+	go manageNode(node1RaftServer)
+	go manageNode(node2RaftServer)
+	go manageNode(node3RaftServer)
+	go printLogs([]*raft.RaftNetworkServer{node1RaftServer, node2RaftServer, node3RaftServer})
+
+	//Node1 will crash after 20 seconds
+	time.Sleep(20 * time.Second)
+	log.Println("Crashing node1")
+	node1srv.Stop()
+	rafttestutil.StopRaftServer(node1RaftServer)
+
+	waitGroup.Wait()
+}
+
+func setupDemo(demoNum int) {
 	node1Lis, node1Port := rafttestutil.StartListener()
 	defer rafttestutil.CloseListener(node1Lis)
 	node1 := rafttestutil.SetUpNode("node1", "localhost", node1Port, "_")
@@ -119,7 +145,11 @@ func setupDemo() {
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
 
-	performDemo(node1RaftServer, node2RaftServer, node3RaftServer)
+	if demoNum == 1 {
+		performDemoOne(node1RaftServer, node2RaftServer, node3RaftServer)
+	} else if demoNum == 2 {
+		performDemoTwo(node1srv, node1RaftServer, node2RaftServer, node3RaftServer)
+	}
 }
 
 func createDemoDirectory() {
@@ -134,6 +164,11 @@ func removeDemoDirectory() {
 	os.RemoveAll(path.Join(os.TempDir(), "raftdemo"))
 }
 
+func createFileWriter(logPath string, component string) (io.Writer, error) {
+	return os.OpenFile(path.Join(logPath, component+".log"),
+		os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	createDemoDirectory()
@@ -144,5 +179,24 @@ func main() {
 		log.Println("Could not set file logging:", err)
 	}
 
-	setupDemo()
+	writer, err := createFileWriter(path.Join(os.TempDir(), "raftdemo"), "grpclog")
+	if err != nil {
+		log.Println("Could not redirect grpc output")
+	} else {
+		grpclog.SetLogger(log.New(writer, "", log.LstdFlags))
+	}
+
+	flag.Parse()
+
+	demo := *demo
+	if demo == 0 {
+		setupDemo(1)
+		setupDemo(2)
+		setupDemo(3)
+	} else {
+		if demo > 3 || demo < 1 {
+			log.Fatal("Bad demo number specified")
+		}
+		setupDemo(demo)
+	}
 }
