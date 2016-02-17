@@ -14,7 +14,7 @@ service RaftNetwork {
 message EmptyMessage {}
 
 message EntryRequest {
-	Entry entry = 1; //required
+    Entry entry = 1; //required
 }
 
 message AppendEntriesRequest {
