@@ -1,8 +1,9 @@
+// +build !integration
+
 package activitylogger
 
 import (
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/pfsd/activitylogger"
 	pb "github.com/cpssd/paranoid/proto/activitylogger"
 	"io/ioutil"
 	"os"
@@ -14,14 +15,6 @@ var (
 	Log     *logger.ParanoidLogger
 	testDir string
 )
-
-func TestMain(m *testing.M) {
-	Log = logger.New("commandsTest", "pfsmTest", os.DevNull)
-	testDir = path.Join(os.TempDir(), "paranoidTest")
-	defer removeTestDir()
-
-	os.Exit(m.Run())
-}
 
 func createTestDir() {
 	err := os.RemoveAll(testDir)
@@ -45,12 +38,16 @@ func removeTestDir() {
 }
 
 func TestWriteReadDelete(t *testing.T) {
+	Log = logger.New("commandsTest", "pfsmTest", os.DevNull)
+	testDir = path.Join(os.TempDir(), "paranoidTest")
+	removeTestDir()
 	createTestDir()
-	activitylogger.Init(testDir)
+
+	Init(testDir)
 	logDir := path.Join(testDir, "meta", "activity_logs")
 
 	// Testing Write functionality
-	i, err := activitylogger.WriteEntry(&pb.Entry{
+	i, err := WriteEntry(&pb.Entry{
 		Type: 0,
 		Path: "ThisIsAPath",
 	})
@@ -58,7 +55,7 @@ func TestWriteReadDelete(t *testing.T) {
 		t.Error("received error writing log, err:", err)
 	}
 
-	i, err = activitylogger.WriteEntry(&pb.Entry{
+	i, err = WriteEntry(&pb.Entry{
 		Type: 0,
 		Path: "ThisIsAPath2",
 	})
@@ -79,12 +76,12 @@ func TestWriteReadDelete(t *testing.T) {
 	}
 
 	// Testing Read functionality
-	li := activitylogger.LastEntryIndex()
+	li := LastEntryIndex()
 	if li != 1000001 {
 		t.Error("LastEntryIndex not what it should be: ", li)
 	}
 
-	e, err := activitylogger.GetEntry(activitylogger.LastEntryIndex())
+	e, err := GetEntry(LastEntryIndex())
 	if err != nil {
 		t.Error("Error received when reading log: ", err)
 	}
@@ -94,7 +91,7 @@ func TestWriteReadDelete(t *testing.T) {
 	}
 
 	// Testing Delete functionality
-	err = activitylogger.DeleteEntry(1000000)
+	err = DeleteEntry(1000000)
 	if err != nil {
 		t.Error("Error received when deleting log: ", err)
 	}
