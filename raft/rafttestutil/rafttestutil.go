@@ -41,6 +41,8 @@ func SetUpNode(name, ip, port, commonName string) raft.Node {
 func CloseListener(lis *net.Listener) {
 	if lis != nil {
 		(*lis).Close()
+		file, _ := (*lis).(*net.TCPListener).File()
+		file.Close()
 	}
 }
 

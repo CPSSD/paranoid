@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
+	"net"
 	"os"
 	"path"
 	"strconv"
@@ -19,10 +20,12 @@ import (
 )
 
 const (
-	DEMO_DURATION         time.Duration = 50 * time.Second
-	PRINT_TIME            time.Duration = 5 * time.Second
-	RANDOM_NUMBER_GEN_MIN time.Duration = 3000 * time.Millisecond
-	RANDOM_NUMBER_GEN_MAX time.Duration = 10000 * time.Millisecond
+	DEMO_DURATION            time.Duration = 50 * time.Second
+	PRINT_TIME               time.Duration = 5 * time.Second
+	RANDOM_NUMBER_GEN_MIN    time.Duration = 3000 * time.Millisecond
+	RANDOM_NUMBER_GEN_MAX    time.Duration = 10000 * time.Millisecond
+	RANDOM_DROP_INTERVAL_MIN time.Duration = 5000 * time.Millisecond
+	RANDOM_DROP_INTERVAL_MAX time.Duration = 10000 * time.Millisecond
 )
 
 var (
@@ -34,6 +37,25 @@ func getRandomInterval() time.Duration {
 	interval := int(RANDOM_NUMBER_GEN_MAX) - int(RANDOM_NUMBER_GEN_MIN)
 	randx := rand.Intn(interval)
 	return RANDOM_NUMBER_GEN_MIN + time.Duration(randx)
+}
+
+func getRandomDropInterval() time.Duration {
+	interval := int(RANDOM_DROP_INTERVAL_MAX) - int(RANDOM_DROP_INTERVAL_MIN)
+	randx := rand.Intn(interval)
+	return RANDOM_DROP_INTERVAL_MIN + time.Duration(randx)
+}
+
+func getRandomDrop() time.Duration {
+	randomChance := rand.Intn(100)
+	if randomChance < 20 { //5 to 8 second drop
+		interval := int(8*time.Second) - int(5*time.Second)
+		randx := rand.Intn(interval)
+		return time.Second*5 + time.Duration(randx)
+	}
+	// 2 to 5 second drop
+	interval := int(5*time.Second) - int(2*time.Second)
+	randx := rand.Intn(interval)
+	return time.Second*2 + time.Duration(randx)
 }
 
 func manageNode(raftServer *raft.RaftNetworkServer) {
@@ -116,6 +138,53 @@ func performDemoTwo(node1srv *grpc.Server, node1RaftServer, node2RaftServer, nod
 	waitGroup.Wait()
 }
 
+func bringBackUp(currentlyDown []bool, nodePorts []string, nodeServers []*grpc.Server, nodeListners []*net.Listener, raftServers []*raft.RaftNetworkServer, nodeNum int) {
+	rafttestutil.CloseListener(nodeListners[nodeNum])
+	time.Sleep(getRandomDrop())
+	rafttestutil.CloseListener(nodeListners[nodeNum])
+	lis, err := net.Listen("tcp", ":"+nodePorts[nodeNum])
+	if err != nil {
+		//log.Printf("Failed to start listening. Retrying later : %v.\n", err)
+		bringBackUp(currentlyDown, nodePorts, nodeServers, nodeListners, raftServers, nodeNum)
+		return
+	}
+	log.Println(raftServers[nodeNum].State.NodeId, "coming back up")
+	nodeListners[nodeNum] = &lis
+	go nodeServers[nodeNum].Serve(lis)
+	currentlyDown[nodeNum] = false
+}
+
+func performDemoThree(nodePorts []string, nodeServers []*grpc.Server, nodeListners []*net.Listener, raftServers []*raft.RaftNetworkServer) {
+	log.Println("Running raft message drop demo")
+	waitGroup.Add(4)
+	go manageNode(raftServers[0])
+	go manageNode(raftServers[1])
+	go manageNode(raftServers[2])
+	go printLogs(raftServers)
+
+	nodeDowns := make([]bool, 3)
+	testTimer := time.NewTimer(DEMO_DURATION)
+	nodeDownTimer := time.NewTimer(getRandomDropInterval())
+	for {
+		select {
+		case <-testTimer.C:
+			goto end
+		case <-nodeDownTimer.C:
+			nodeDown := rand.Intn(3)
+			if nodeDowns[nodeDown] == false {
+				nodeDowns[nodeDown] = true
+				log.Println(raftServers[nodeDown].State.NodeId, "dropping messages")
+				rafttestutil.CloseListener(nodeListners[nodeDown])
+				go bringBackUp(nodeDowns, nodePorts, nodeServers, nodeListners, raftServers, nodeDown)
+			}
+			nodeDownTimer.Reset(getRandomDropInterval())
+		}
+	}
+
+end:
+	waitGroup.Wait()
+}
+
 func setupDemo(demoNum int) {
 	node1Lis, node1Port := rafttestutil.StartListener()
 	defer rafttestutil.CloseListener(node1Lis)
@@ -149,6 +218,11 @@ func setupDemo(demoNum int) {
 		performDemoOne(node1RaftServer, node2RaftServer, node3RaftServer)
 	} else if demoNum == 2 {
 		performDemoTwo(node1srv, node1RaftServer, node2RaftServer, node3RaftServer)
+	} else if demoNum == 3 {
+		performDemoThree([]string{node1Port, node2Port, node2Port},
+			[]*grpc.Server{node1srv, node2srv, node3srv},
+			[]*net.Listener{node1Lis, node2Lis, node3Lis},
+			[]*raft.RaftNetworkServer{node1RaftServer, node2RaftServer, node3RaftServer})
 	}
 }
 
