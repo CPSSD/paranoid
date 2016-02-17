@@ -2,7 +2,6 @@ package activitylogger
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path"
 	"strconv"
@@ -10,8 +9,9 @@ import (
 
 // DeleteEntry deletes an entry in the logs per index and all logs after it
 func DeleteEntry(index int) error {
-	pause()
-	defer resume()
+	indexLock.Lock()
+	defer indexLock.Unlock()
+
 	if index < 0 || index >= currentIndex {
 		return errors.New("Index out of bounds")
 	}
@@ -19,7 +19,7 @@ func DeleteEntry(index int) error {
 	for i := currentIndex - 1; i >= index; i-- {
 		err := os.Remove(path.Join(logDir, strconv.Itoa(i)))
 		if err != nil {
-			log.Fatalln("Activity logger: failed to delete log of index:", index, "with error:", err)
+			pLog.Fatal("Activity logger: failed to delete log of index:", index, "with error:", err)
 		}
 		currentIndex--
 	}

@@ -1,73 +1,50 @@
 package activitylogger
 
 import (
+	"github.com/cpssd/paranoid/logger"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
+	"sync"
 )
 
 var (
-	logDir        string
-	currentIndex  int
-	appendLogChan chan LogEntry
-	killChan      chan bool
-	pauseChan     chan bool
-	resumeChan    chan bool
-	paused        bool
+	logDir       string
+	currentIndex int
+	indexLock    sync.Mutex
+	pLog         *logger.ParanoidLogger
 )
-
-// enumerator for entry types
-const (
-	TypeChmod uint8 = iota
-	TypeCreat
-	TypeLink
-	TypeMkdir
-	TypeRename
-	TypeRmdir
-	TypeSymLink
-	TypeTruncate
-	TypeUnlink
-	TypeUtimes
-	TypeWrite
-)
-
-// LogEntry is an abstaction of a log entry to be passed through the appendLog channel
-type LogEntry struct {
-	EntryType uint8
-	Params    []interface{}
-}
-
-func newLogEntry(typ uint8, params ...interface{}) LogEntry {
-	return LogEntry{typ, params}
-}
 
 // Init initialises the logger
 func Init(paranoidDirectory string) {
 	logDir = path.Join(paranoidDirectory, "meta", "activity_logs")
+	pLog = logger.New("Activity Logger", "pfsd", path.Join(paranoidDirectory, "meta", "logs"))
 	fileDescriptors, err := ioutil.ReadDir(logDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			err1 := os.Mkdir(logDir, 0777)
-			if err1 != nil {
-				log.Fatalln(err1)
-			}
+			setup(logDir)
+			return
 		} else if os.IsPermission(err) {
-			log.Fatalln("Activity logger does not have permissions for: ", logDir)
+			pLog.Fatal("Activity logger does not have permissions for: ", logDir)
 		} else {
-			log.Fatalln(err)
+			pLog.Fatal(err)
 		}
 	}
-
-	currentIndex = len(fileDescriptors)
-	appendLogChan = make(chan LogEntry, 200)
-	killChan = make(chan bool, 1)
-	pauseChan = make(chan bool, 1)
-	resumeChan = make(chan bool, 1)
-	go listenAppendLog()
+	currentIndex = len(fileDescriptors) + 1000000
 }
 
-// LastLogIndex returns the index
-func LastLogIndex() int {
-	return currentIndex - 1
+// setup is called when the log directory does not exist
+func setup(logDirectory string) {
+	err := os.MkdirAll(logDirectory, 0777)
+	if err != nil {
+		pLog.Fatal("failed to create log directory")
+	}
+	currentIndex = 1000000
+}
+
+// LastEntryIndex returns the index of the last log entry
+func LastEntryIndex() int {
+	indexLock.Lock()
+	defer indexLock.Unlock()
+	return currentIndex
 }
