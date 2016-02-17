@@ -30,12 +30,12 @@ func (n Node) String() string {
 type RaftState struct {
 	specialNumber uint64
 
-	nodeId       string
+	NodeId       string
 	currentState int
 
 	currentTerm uint64
 	votedFor    string
-	log         *RaftLog
+	Log         *RaftLog
 	commitIndex uint64
 	lastApplied uint64
 
@@ -80,7 +80,7 @@ func (s *RaftState) SetCurrentState(x int) {
 		s.StartElection <- true
 	}
 	if x == LEADER {
-		s.SetLeaderId(s.nodeId)
+		s.SetLeaderId(s.NodeId)
 		s.StartLeading <- true
 	}
 }
@@ -139,15 +139,15 @@ func (s *RaftState) GetSpecialNumber() uint64 {
 	return s.specialNumber
 }
 
-func (s *RaftState) applyLogEntry(logEntry *LogEntry) {
-	if logEntry.Entry.Type == pb.Entry_StateMachineCommand {
-		stateMachineCommand := logEntry.Entry.GetCommand()
+func (s *RaftState) applyLogEntry(LogEntry *LogEntry) {
+	if LogEntry.Entry.Type == pb.Entry_StateMachineCommand {
+		stateMachineCommand := LogEntry.Entry.GetCommand()
 		if stateMachineCommand == nil {
-			Log.Fatal("Error applying log to state machine")
+			Log.Fatal("Error applying Log to state machine")
 		}
 		s.SetSpecialNumber(stateMachineCommand.Number)
-	} else if logEntry.Entry.Type == pb.Entry_ConfigurationChange {
-		config := logEntry.Entry.GetConfig()
+	} else if LogEntry.Entry.Type == pb.Entry_ConfigurationChange {
+		config := LogEntry.Entry.GetConfig()
 		if config != nil {
 			s.ConfigurationApplied <- config
 		} else {
@@ -163,8 +163,8 @@ func (s *RaftState) ApplyLogEntries() {
 	commitIndex := s.GetCommitIndex()
 	if commitIndex > lastApplied {
 		for i := lastApplied + 1; i <= commitIndex; i++ {
-			logEntry := s.log.GetLogEntry(i)
-			s.applyLogEntry(logEntry)
+			LogEntry := s.Log.GetLogEntry(i)
+			s.applyLogEntry(LogEntry)
 			s.SetLastApplied(i)
 			if s.GetWaitingForApplied() {
 				s.EntryApplied <- i
@@ -176,7 +176,7 @@ func (s *RaftState) ApplyLogEntries() {
 func (s *RaftState) calculateNewCommitIndex() {
 	lastCommitIndex := s.GetCommitIndex()
 	currentTerm := s.GetCurrentTerm()
-	newCommitIndex := s.Configuration.CalculateNewCommitIndex(lastCommitIndex, currentTerm, s.log)
+	newCommitIndex := s.Configuration.CalculateNewCommitIndex(lastCommitIndex, currentTerm, s.Log)
 
 	if currentTerm == s.GetCurrentTerm() {
 		if newCommitIndex > s.GetCommitIndex() {
@@ -238,10 +238,10 @@ func newRaftState(myNodeDetails Node, persistentStateFile string, peers []Node) 
 	if persistentState == nil {
 		raftState = &RaftState{
 			specialNumber:       0,
-			nodeId:              myNodeDetails.NodeID,
+			NodeId:              myNodeDetails.NodeID,
 			currentTerm:         0,
 			votedFor:            "",
-			log:                 newRaftLog(),
+			Log:                 newRaftLog(),
 			commitIndex:         0,
 			lastApplied:         0,
 			leaderId:            "",
@@ -251,10 +251,10 @@ func newRaftState(myNodeDetails Node, persistentStateFile string, peers []Node) 
 	} else {
 		raftState = &RaftState{
 			specialNumber:       persistentState.SpecialNumber,
-			nodeId:              myNodeDetails.NodeID,
+			NodeId:              myNodeDetails.NodeID,
 			currentTerm:         persistentState.CurrentTerm,
 			votedFor:            persistentState.VotedFor,
-			log:                 newRaftLog(),
+			Log:                 newRaftLog(),
 			commitIndex:         0,
 			lastApplied:         persistentState.LastApplied,
 			leaderId:            "",
