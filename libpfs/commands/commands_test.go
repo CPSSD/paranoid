@@ -7,6 +7,7 @@ import (
 	"github.com/cpssd/paranoid/logger"
 	"os"
 	"path"
+	"strconv"
 	"syscall"
 	"testing"
 	"time"
@@ -23,6 +24,10 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func removeTestDir() {
+	os.RemoveAll(testDirectory)
+}
+
 func createTestDir() {
 	err := os.RemoveAll(testDirectory)
 	if err != nil {
@@ -35,11 +40,7 @@ func createTestDir() {
 	}
 }
 
-func removeTestDir() {
-	os.RemoveAll(testDirectory)
-}
-
-func setupTestDirectory() {
+func SetupTestDirectory() {
 	createTestDir()
 
 	code, err := InitCommand(testDirectory)
@@ -49,7 +50,7 @@ func setupTestDirectory() {
 }
 
 func TestSimpleCommandUsage(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
@@ -72,7 +73,7 @@ func TestSimpleCommandUsage(t *testing.T) {
 }
 
 func TestComplexCommandUsage(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
@@ -118,7 +119,7 @@ func TestComplexCommandUsage(t *testing.T) {
 }
 
 func TestFilePermissionsCommands(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
@@ -179,7 +180,7 @@ func TestFilePermissionsCommands(t *testing.T) {
 }
 
 func TestENOENT(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, _, _ := ReadCommand(testDirectory, "test.txt", -1, -1)
 	if code != returncodes.ENOENT {
@@ -198,7 +199,7 @@ func TestENOENT(t *testing.T) {
 }
 
 func TestFilesystemCommands(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
@@ -244,7 +245,7 @@ func TestFilesystemCommands(t *testing.T) {
 }
 
 func TestLinkCommand(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
@@ -316,7 +317,7 @@ func TestLinkCommand(t *testing.T) {
 }
 
 func TestSymlinkcommand(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 	code, err := SymlinkCommand(testDirectory, "testfolder/testlink", "testsymlink", false)
 	if code != returncodes.OK {
 		t.Error("Symlink did not return OK. Actual:", code, " Error:", err)
@@ -345,7 +346,7 @@ func TestSymlinkcommand(t *testing.T) {
 }
 
 func TestUtimes(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
@@ -374,7 +375,7 @@ func TestUtimes(t *testing.T) {
 }
 
 func TestTruncate(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
@@ -402,7 +403,7 @@ func TestTruncate(t *testing.T) {
 }
 
 func TestSimpleDirectoryUsage(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	code, err := MkdirCommand(testDirectory, "documents", os.FileMode(0777), false)
 	if code != returncodes.OK {
@@ -438,7 +439,7 @@ func TestSimpleDirectoryUsage(t *testing.T) {
 }
 
 func TestComplexDirectoryUsage(t *testing.T) {
-	setupTestDirectory()
+	SetupTestDirectory()
 
 	// directory within directory
 	code, err := MkdirCommand(testDirectory, "documents", os.FileMode(0777), false)
@@ -570,5 +571,126 @@ func TestComplexDirectoryUsage(t *testing.T) {
 
 	if files[0] != "docs" {
 		t.Error("File is not equal to 'docs':", files[0])
+	}
+}
+
+func BenchmarkCreat(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
+	}
+}
+
+func BenchmarkWrite(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
+		WriteCommand(testDirectory, "test.txt"+str, 0, 0, []byte("Hello World"), false)
+	}
+}
+
+func BenchmarkRename(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
+		RenameCommand(testDirectory, "test.txt"+str, "test2.txt"+str, false)
+	}
+}
+
+func BenchmarkRead(b *testing.B) {
+	createTestDir()
+	CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
+	for n := 0; n < b.N; n++ {
+		ReadCommand(testDirectory, "test.txt", 0, 0)
+	}
+}
+
+func BenchmarkStat(b *testing.B) {
+	createTestDir()
+	CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
+	for n := 0; n < b.N; n++ {
+		StatCommand(testDirectory, "test.txt")
+	}
+}
+
+func BenchmarkAccess(b *testing.B) {
+	createTestDir()
+	CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
+	for n := 0; n < b.N; n++ {
+		AccessCommand(testDirectory, "test.txt", 0)
+	}
+}
+
+func BenchmarkTruncate(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
+		TruncateCommand(testDirectory, "test.txt"+str, 3, false)
+	}
+}
+
+func BenchmarkUtimes(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		atime := time.Unix(100, 100)
+		mtime := time.Unix(500, 250)
+		CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
+		UtimesCommand(testDirectory, "test.txt"+str, &atime, &mtime, false)
+	}
+}
+
+func BenchmarkMkDir(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		MkdirCommand(testDirectory, "testDir"+str, os.FileMode(0777), false)
+	}
+}
+
+func BenchmarkRmDir(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		MkdirCommand(testDirectory, "testDir"+str, os.FileMode(0777), false)
+		RmdirCommand(testDirectory, "testDir"+str, false)
+	}
+}
+
+func BenchmarkReadDir(b *testing.B) {
+	createTestDir()
+	MkdirCommand(testDirectory, "testDir", os.FileMode(0777), false)
+	CreatCommand(path.Join(testDirectory, "testDir"), "test.txt", os.FileMode(0777), false)
+	for n := 0; n < b.N; n++ {
+		ReadDirCommand(testDirectory, "testDir")
+	}
+}
+
+func BenchmarkLink(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
+		LinkCommand(testDirectory, "test.txt"+str, "test2.txt"+str, false)
+	}
+}
+
+func BenchmarkSymLink(b *testing.B) {
+	createTestDir()
+	for n := 0; n < b.N; n++ {
+		str := strconv.Itoa(n)
+		SymlinkCommand(testDirectory, "testfolder/testlink", "testsymlink"+str, false)
+	}
+}
+
+func BenchmarkReadLink(b *testing.B) {
+	createTestDir()
+	SymlinkCommand(testDirectory, "testfolder/testlink", "testsymlink", false)
+	for n := 0; n < b.N; n++ {
+		ReadlinkCommand(testDirectory, "testsymlink")
 	}
 }
