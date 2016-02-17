@@ -16,6 +16,7 @@ var testDirectory string
 
 func TestMain(m *testing.M) {
 	Log = logger.New("commandsTest", "pfsmTest", os.DevNull)
+	Log.SetLogLevel(logger.ERROR)
 	testDirectory = path.Join(os.TempDir(), "paranoidTest")
 	defer removeTestDir()
 
