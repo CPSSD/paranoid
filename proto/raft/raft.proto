@@ -5,7 +5,6 @@ syntax = "proto3";
 package raft;
 
 service RaftNetwork {
-
     rpc AppendEntries (AppendEntriesRequest) returns (AppendEntriesResponse) {}
     rpc RequestVote (RequestVoteRequest) returns (RequestVoteResponse) {}
     rpc ClientToLeaderRequest (EntryRequest) returns (EmptyMessage) {}

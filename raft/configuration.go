@@ -141,7 +141,7 @@ func getRequiredVotes(nodeCount int) int {
 	return (nodeCount / 2) + 1
 }
 
-//Check has a majority of votes have been recieved given a list of NodeIDs
+//Check has a majority of votes have been received given a list of NodeIDs
 func (c *Configuration) HasMajority(votesRecieved []string) bool {
 	currentRequiredVotes := getRequiredVotes(len(c.currentConfiguration))
 	count := 0
