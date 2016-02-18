@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
-	"math"
 	"time"
 )
 
@@ -15,13 +14,7 @@ const lockWaitDuration time.Duration = time.Minute * 1
 // Chunks key and sends the pieces to other nodes on the network.
 func Lock() error {
 	numPieces := int64(len(globals.Nodes.GetAll()) + 1)
-	requiredPieces := int64(math.Ceil(float64(numPieces) / 2.0))
-	// If we have numPieces==4 we'll get requiredPieces==2, but we'd
-	// prefer 3 for a majority, so we add 1 to requiredPieces if
-	// numPieces is even.
-	if numPieces%2 == 0 {
-		requiredPieces++
-	}
+	requiredPieces := numPieces/2 + 1
 	pieces, err := keyman.GeneratePieces(globals.EncryptionKey, numPieces, requiredPieces)
 	if err != nil {
 		log.Error("Could not chunk key:", err)
