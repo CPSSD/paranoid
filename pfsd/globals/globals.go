@@ -92,6 +92,8 @@ func (ns *nodes) GetAll() []Node {
 // Global key used by this instance of PFSD
 var EncryptionKey *keyman.Key
 
+// TODO(terry): Make SystemLocked and HeldKeyPieces persist on disk between reloads.
+
 // Indicates when the system has been locked and keys have been distributed
 var SystemLocked bool = false
 
