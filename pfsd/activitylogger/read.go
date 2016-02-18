@@ -10,7 +10,7 @@ import (
 )
 
 // GetEntry will read an entry at the given index returning
-// the protobuf and an error if somethign went wrong
+// the protobuf and an error if something went wrong
 func (al *ActivityLogger) GetEntry(index uint64) (entry *pb.Entry, err error) {
 	al.indexLock.Lock()
 	defer al.indexLock.Unlock()
@@ -63,5 +63,5 @@ func (al *ActivityLogger) GetEntriesSince(index uint64) (entries []*pb.Entry, er
 		entries[i-index] = entry
 	}
 
-	return entries, err
+	return entries, nil
 }
