@@ -154,6 +154,11 @@ func main() {
 	createPid("pfsd")
 	globals.Wait.Add(1)
 	go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
+
+	if globals.SystemLocked {
+		globals.Wait.Add(1)
+		go UnlockWorker()
+	}
 	HandleSignals()
 }
 

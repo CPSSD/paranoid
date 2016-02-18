@@ -10,6 +10,7 @@ import (
 )
 
 const unlockQueryInterval time.Duration = time.Second * 30
+const lockWaitDuration time.Duration = time.Minute * 1
 
 // Chunks key and sends the pieces to other nodes on the network.
 func Lock() error {
