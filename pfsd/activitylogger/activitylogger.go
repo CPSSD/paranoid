@@ -46,10 +46,12 @@ func (al *ActivityLogger) LastEntryIndex() uint64 {
 	return al.currentIndex - 1
 }
 
+// f12ci converts a fileIndex to a convenient index
 func fi2ci(i uint64) uint64 {
 	return i - 1000000
 }
 
+// ci2fi converts a convenient to a fileIndex
 func ci2fi(i uint64) uint64 {
 	return i + 1000000
 }
