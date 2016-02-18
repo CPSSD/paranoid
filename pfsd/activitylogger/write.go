@@ -11,12 +11,12 @@ import (
 
 // WriteEntry will write the entry provided and return the
 // index of the entry and an error object if somethign went wrong
-func WriteEntry(en *pb.Entry) (index int, err error) {
-	indexLock.Lock()
-	defer indexLock.Unlock()
+func (al *ActivityLogger) WriteEntry(en *pb.Entry) (index uint64, err error) {
+	al.indexLock.Lock()
+	defer al.indexLock.Unlock()
 
-	fileIndex := currentIndex
-	filePath := path.Join(logDir, strconv.Itoa(fileIndex))
+	fileIndex := ci2fi(al.currentIndex)
+	filePath := path.Join(al.logDir, strconv.FormatUint(fileIndex, 10))
 
 	protoData, err := proto.Marshal(en)
 	if err != nil {
@@ -33,12 +33,12 @@ func WriteEntry(en *pb.Entry) (index int, err error) {
 	if err != nil {
 		err1 := os.Remove(filePath)
 		if err1 != nil {
-			pLog.Fatal("Failed to write proto to file at index: ", fileIndex,
+			al.pLog.Fatal("Failed to write proto to file at index: ", fileIndex,
 				" and received an erro when trying to remove the created logfile, err: ", err1)
 		}
 		return 0, errors.New("Failed to write proto to file")
 	}
 
-	currentIndex++
-	return fileIndex, nil
+	al.currentIndex++
+	return fi2ci(fileIndex), nil
 }
