@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"os/exec"
@@ -356,7 +357,7 @@ func TestKillSignal(t *testing.T) {
 func BenchmarkPing(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		req := pb.PingRequest{
 			Ip:   "0.0.0.0",
@@ -369,7 +370,7 @@ func BenchmarkPing(b *testing.B) {
 func BenchmarkCreat(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n + 1000)
 		rand := strconv.Itoa(rand.Intn(100000))
@@ -384,7 +385,7 @@ func BenchmarkCreat(b *testing.B) {
 func BenchmarkWrite(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
 		commands.CreatCommand(tmpdir, "writeBench.txt"+str, os.FileMode(0777), false)
@@ -401,7 +402,7 @@ func BenchmarkWrite(b *testing.B) {
 func BenchmarkChmod(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
 		commands.CreatCommand(tmpdir, "chmodBench.txt"+str, os.FileMode(0744), false)
@@ -416,7 +417,7 @@ func BenchmarkChmod(b *testing.B) {
 func BenchmarkUtimes(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
 		commands.CreatCommand(tmpdir, "utimeBench.txt"+str, os.FileMode(0777), false)
@@ -434,7 +435,7 @@ func BenchmarkUtimes(b *testing.B) {
 func BenchmarkTruncate(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
 		commands.CreatCommand(tmpdir, "truncateBench.txt"+str, os.FileMode(0777), false)
@@ -449,7 +450,7 @@ func BenchmarkTruncate(b *testing.B) {
 func BenchmarkRename(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
 		rand := strconv.Itoa(rand.Intn(100000))
@@ -465,7 +466,7 @@ func BenchmarkRename(b *testing.B) {
 func BenchmarkLink(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
 		rand := strconv.Itoa(rand.Intn(100000))
@@ -481,7 +482,7 @@ func BenchmarkLink(b *testing.B) {
 func BenchmarkMkdir(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
 		req := pb.MkdirRequest{
@@ -495,7 +496,7 @@ func BenchmarkMkdir(b *testing.B) {
 func BenchmarkRmdir(b *testing.B) {
 	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
 	defer conn.Close()
-	conn, _ := grpc.Dial("localhost:10101", grpc.WithInsecure())
+	client := pb.NewParanoidNetworkClient(conn)
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
 		commands.MkdirCommand(tmpdir, "rmDirBench"+str, os.FileMode(0777), false)
