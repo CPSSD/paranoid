@@ -1,6 +1,6 @@
 // +build !integration
 
-package raft
+package test
 
 import (
 	"fmt"
@@ -84,15 +84,9 @@ func TestRaftElection(t *testing.T) {
 		}
 		time.Sleep(5 * time.Second)
 		newLeader := rafttestutil.GetLeader(cluster)
-		if leader == newLeader {
-			if count > 2 {
-				t.Fatal("Old leader failed to shut down")
-			}
-		} else {
-			if newLeader != nil {
-				t.Log(newLeader.State.NodeId, "selected as leader for term", newLeader.State.GetCurrentTerm())
-				break
-			}
+		if newLeader != nil && leader != newLeader {
+			t.Log(newLeader.State.NodeId, "selected as leader for term", newLeader.State.GetCurrentTerm())
+			break
 		}
 	}
 }
@@ -321,7 +315,7 @@ func TestRaftConfigurationChange(t *testing.T) {
 		if count > 10 {
 			t.Fatal("Old leader did not stepdown in time")
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 		newLeader = rafttestutil.GetLeader(cluster)
 		if newLeader != nil && newLeader.State.NodeId != leader.State.NodeId {
 			break
