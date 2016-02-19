@@ -18,7 +18,6 @@ func TestMain(m *testing.M) {
 	Log = logger.New("commandsTest", "pfsmTest", os.DevNull)
 	testDirectory = path.Join(os.TempDir(), "paranoidTest")
 	defer removeTestDir()
-
 	os.Exit(m.Run())
 }
 
