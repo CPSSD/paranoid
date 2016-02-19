@@ -1,4 +1,4 @@
-// +build !integration !benchmark
+// +build !integration
 
 package logger
 
