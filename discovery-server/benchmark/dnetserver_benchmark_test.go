@@ -15,6 +15,7 @@ func TestMain(m *testing.M) {
 	Log.SetLogLevel(logger.ERROR)
 	os.Exit(m.Run())
 }
+
 func BenchmarkJoin(b *testing.B) {
 	discovery := DiscoveryServer{}
 	for n := 0; n < b.N; n++ {

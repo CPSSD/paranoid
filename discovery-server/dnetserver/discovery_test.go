@@ -11,7 +11,6 @@ import (
 
 func TestMain(m *testing.M) {
 	Log = logger.New("discoveryTest", "discoveryTest", "/dev/null")
-	Log.SetLogLevel(logger.ERROR)
 	os.Exit(m.Run())
 }
 

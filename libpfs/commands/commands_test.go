@@ -16,14 +16,9 @@ var testDirectory string
 
 func TestMain(m *testing.M) {
 	Log = logger.New("commandsTest", "pfsmTest", os.DevNull)
-	Log.SetLogLevel(logger.ERROR)
 	testDirectory = path.Join(os.TempDir(), "paranoidTest")
 	defer removeTestDir()
 	os.Exit(m.Run())
-}
-
-func removeTestDir() {
-	os.RemoveAll(testDirectory)
 }
 
 func createTestDir() {
@@ -36,6 +31,10 @@ func createTestDir() {
 	if err != nil {
 		Log.Fatal("error creating test directory:", err)
 	}
+}
+
+func removeTestDir() {
+	os.RemoveAll(testDirectory)
 }
 
 func setupTestDirectory() {
