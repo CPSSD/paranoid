@@ -3,10 +3,13 @@
 package keyman
 
 import (
+	"github.com/cpssd/paranoid/logger"
+	"os"
 	"testing"
 )
 
 func TestDistributionGoodRebuild(t *testing.T) {
+	Log = logger.New("keyman", "pfsd", os.DevNull)
 	keyBytes := []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
 	key, _ := NewKey(keyBytes)
 	pieces, _ := GeneratePieces(key, 5, 3)

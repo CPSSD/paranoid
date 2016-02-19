@@ -5,6 +5,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
+	"sort"
 	"time"
 )
 
@@ -14,7 +15,8 @@ const lockWaitDuration time.Duration = time.Minute * 1
 // Chunks key and sends the pieces to other nodes on the network.
 func Lock() error {
 	numPieces := int64(len(globals.Nodes.GetAll()) + 1)
-	requiredPieces := numPieces/2 + 1
+	requiredPieces := numPieces / 2
+	log.Info("Generating pieces.")
 	pieces, err := keyman.GeneratePieces(globals.EncryptionKey, numPieces, requiredPieces)
 	if err != nil {
 		log.Error("Could not chunk key:", err)
@@ -35,18 +37,24 @@ func Lock() error {
 
 // Get our keypieces from the other nodes and rebuild our key
 func Unlock() error {
+	log.Info("Attempting to unlock.")
 	pieces, err := pnetclient.RequestKeyPieces()
 	if err != nil {
 		log.Error("Could not get key pieces.")
 		return fmt.Errorf("could not get key pieces: %s", err)
 	}
+	// Add our own KeyPiece in with the others.
+	pieces = append(pieces, globals.HeldKeyPieces[globals.ThisNode])
+	// Sort pieces according to piece.Seq. Required by rebuilding algorithm.
+	sort.Sort(keyman.KeyPieceSorter(pieces))
 	key, err := keyman.RebuildKey(pieces)
 	if err != nil {
-		log.Warn("Could not rebuild key: %s", err)
+		log.Warn("Could not rebuild key:", err)
 		return fmt.Errorf("could not rebuild key: %s", err)
 	}
 	globals.EncryptionKey = key
 	globals.SystemLocked = false
+	log.Info("Successfully unlocked system.")
 
 	return nil
 }

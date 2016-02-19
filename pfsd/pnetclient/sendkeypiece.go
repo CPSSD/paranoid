@@ -20,11 +20,17 @@ func SendKeyPiece(piece *keyman.KeyPiece) {
 
 	client := pb.NewParanoidNetworkClient(conn)
 
+	thisNodeProto := &pb.PingRequest{
+		Ip:         globals.ThisNode.IP,
+		Port:       globals.ThisNode.Port,
+		CommonName: globals.ThisNode.CommonName,
+	}
 	keyProto := &pb.KeyPiece{
 		Data:              piece.Data,
 		ParentFingerprint: piece.ParentFingerprint[:],
 		Prime:             piece.Prime.Bytes(),
 		Seq:               piece.Seq,
+		OwnerNode:         thisNodeProto,
 	}
 	_, err = client.SendKeyPiece(context.Background(), keyProto)
 	if err != nil {

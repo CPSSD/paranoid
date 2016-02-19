@@ -22,6 +22,20 @@ type KeyPiece struct {
 	Seq               int64    // Where f(Seq) = Data, for some polynomial f
 }
 
+type KeyPieceSorter []*KeyPiece
+
+func (s KeyPieceSorter) Len() int {
+	return len(s)
+}
+
+func (s KeyPieceSorter) Less(i, j int) bool {
+	return s[i].Seq < s[j].Seq
+}
+
+func (s KeyPieceSorter) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
 type FingerMismatchError struct {
 	ExpectedFingerprint [32]byte
 	ActualFingerprint   [32]byte
@@ -73,7 +87,7 @@ func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]*KeyPiece, err
 }
 
 // Rebuild a Key from a set of KeyPieces. This function will succeed iff
-// len(pieces) > requiredPieces from the Generate function.
+// len(pieces) >= requiredPieces from the Generate function.
 func RebuildKey(pieces []*KeyPiece) (*Key, error) {
 	fingerprint := pieces[0].ParentFingerprint
 	for _, v := range pieces {
@@ -117,7 +131,8 @@ func RebuildKey(pieces []*KeyPiece) (*Key, error) {
 	keyBytes := sum.Bytes()
 	keyFingerprint := sha256.Sum256(keyBytes)
 	if keyFingerprint != pieces[0].ParentFingerprint {
-		return nil, &FingerMismatchError{pieces[0].ParentFingerprint, keyFingerprint}
+		// Even if the key is wrong, we return it, for debugging purposes.
+		return &Key{keyBytes, keyFingerprint}, &FingerMismatchError{pieces[0].ParentFingerprint, keyFingerprint}
 	}
 	return &Key{
 		bytes:       keyBytes,

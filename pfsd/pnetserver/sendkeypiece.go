@@ -13,7 +13,7 @@ import (
 func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*pb.EmptyMessage, error) {
 	for _, node := range globals.Nodes.GetAll() {
 		if node.IP == req.OwnerNode.Ip && node.Port == req.OwnerNode.Port && node.CommonName == req.OwnerNode.CommonName {
-			var prime *big.Int
+			var prime big.Int
 			prime.SetBytes(req.Prime)
 			// We must convert a slice to an array
 			var fingerArray [32]byte
@@ -21,10 +21,11 @@ func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*p
 			piece := &keyman.KeyPiece{
 				Data:              req.Data,
 				ParentFingerprint: fingerArray,
-				Prime:             prime,
+				Prime:             &prime,
 				Seq:               req.Seq,
 			}
 			globals.HeldKeyPieces[node] = piece
+			Log.Info("Received KeyPiece from", node)
 			return &pb.EmptyMessage{}, nil
 		}
 	}

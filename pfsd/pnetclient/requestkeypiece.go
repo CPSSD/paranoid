@@ -1,7 +1,6 @@
 package pnetclient
 
 import (
-	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
@@ -15,7 +14,7 @@ func RequestKeyPieces() ([]*keyman.KeyPiece, error) {
 		conn, err := Dial(node)
 		if err != nil {
 			Log.Error("RequestKeyPiece: failed to dial ", node)
-			return nil, fmt.Errorf("failed to dial %s", node)
+			continue
 		}
 		defer conn.Close()
 
@@ -29,7 +28,9 @@ func RequestKeyPieces() ([]*keyman.KeyPiece, error) {
 		pieceProto, err := client.RequestKeyPiece(context.Background(), thisNodeProto)
 		if err != nil {
 			Log.Error("Failed requesting KeyPiece from", node, "Error:", err)
+			continue
 		}
+		Log.Info("Received KeyPiece from", node)
 		var fingerprintArray [32]byte
 		copy(fingerprintArray[:], pieceProto.ParentFingerprint)
 		var primeBig big.Int
