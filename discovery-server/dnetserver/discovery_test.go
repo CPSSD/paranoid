@@ -6,7 +6,6 @@ import (
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"os"
-	"strconv"
 	"testing"
 )
 
@@ -106,33 +105,5 @@ func TestDiscoveryNetwork(t *testing.T) {
 	}
 	if len(joinResponse.Nodes) != 3 {
 		t.Error("Incorrect nodes returned :", joinResponse.Nodes)
-	}
-}
-
-func BenchmarkJoin(b *testing.B) {
-	discovery := DiscoveryServer{}
-	for n := 0; n < b.N; n++ {
-		str := strconv.Itoa(n)
-		joinRequest := pb.JoinRequest{
-			Node: &pb.Node{CommonName: "TestNode" + str, Ip: "1.1.1." + str, Port: "1001", Uuid: "blahblah" + str},
-			Pool: "TestPool",
-		}
-		discovery.Join(nil, &joinRequest)
-	}
-}
-
-func BenchmarkDisco(b *testing.B) {
-	discovery := DiscoveryServer{}
-	for n := 0; n < b.N; n++ {
-		str := strconv.Itoa(n)
-		joinRequest := pb.JoinRequest{
-			Node: &pb.Node{CommonName: "TestNode" + str, Ip: "1.1.1.1" + str, Port: "1001", Uuid: "blahblah"},
-			Pool: "TestPool",
-		}
-		discovery.Join(nil, &joinRequest)
-		disconnect := pb.DisconnectRequest{
-			Node: &pb.Node{CommonName: "TestNode" + str, Ip: "1.1.1.1" + str, Port: "1001", Uuid: "blahblah"},
-		}
-		discovery.Disconnect(nil, &disconnect)
 	}
 }
