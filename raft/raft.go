@@ -245,7 +245,7 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 		count := 0
 		for {
 			count++
-			if count > 20 {
+			if count > 40 {
 				return errors.New("Could not find a leader")
 			}
 			time.Sleep(500 * time.Millisecond)
