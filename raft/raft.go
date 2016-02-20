@@ -40,6 +40,12 @@ type RaftNetworkServer struct {
 }
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
+	if s.State.Configuration.InConfiguration(req.LeaderId) == false {
+		if s.State.Configuration.InConfiguration(s.State.NodeId) == false {
+			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+		}
+	}
+
 	if req.Term < s.State.GetCurrentTerm() {
 		return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
 	}
@@ -86,6 +92,12 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 }
 
 func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVoteRequest) (*pb.RequestVoteResponse, error) {
+	if s.State.Configuration.InConfiguration(req.CandidateId) == false {
+		if s.State.Configuration.InConfiguration(s.State.NodeId) == false {
+			return &pb.RequestVoteResponse{s.State.GetCurrentTerm(), false}, nil
+		}
+	}
+
 	if req.Term < s.State.GetCurrentTerm() {
 		return &pb.RequestVoteResponse{s.State.GetCurrentTerm(), false}, nil
 	}
@@ -178,6 +190,10 @@ func (s *RaftNetworkServer) addLogEntryLeader(entry *pb.Entry) error {
 }
 
 func (s *RaftNetworkServer) ClientToLeaderRequest(ctx context.Context, req *pb.EntryRequest) (*pb.EmptyMessage, error) {
+	if s.State.Configuration.InConfiguration(req.SenderId) == false {
+		return &pb.EmptyMessage{}, errors.New("Node is not in the configuration")
+	}
+
 	if s.State.GetCurrentState() != LEADER {
 		return &pb.EmptyMessage{}, errors.New("Node is not the current leader")
 	}
@@ -195,7 +211,7 @@ func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
 	defer conn.Close()
 	if err == nil {
 		client := pb.NewRaftNetworkClient(conn)
-		_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{entry})
+		_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{s.State.NodeId, entry})
 		return err
 	}
 	return err
@@ -553,6 +569,7 @@ func (s *RaftNetworkServer) manageLeading() {
 						return
 					}
 				case <-s.State.StopLeading:
+					Log.Info("Stopped leading")
 					return
 				case <-s.State.SendAppendEntries:
 					timer.Reset(HEARTBEAT * time.Millisecond)
