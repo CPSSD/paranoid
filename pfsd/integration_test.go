@@ -318,6 +318,10 @@ func TestKillSignal(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pfsd.Process.Kill()
+	defer func() {
+		cmd := exec.Command("fuserunmount", "-z", "-u", path.Join(os.TempDir(), "testksMountPoint"))
+		cmd.Run()
+	}()
 
 	time.Sleep(5 * time.Second)
 
