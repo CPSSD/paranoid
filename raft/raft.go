@@ -41,7 +41,7 @@ type RaftNetworkServer struct {
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
 	if s.State.Configuration.InConfiguration(req.LeaderId) == false {
-		if s.State.Configuration.InConfiguration(s.State.NodeId) == false {
+		if s.State.Configuration.MyConfigurationGood() {
 			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
 		}
 	}
@@ -93,7 +93,7 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 
 func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVoteRequest) (*pb.RequestVoteResponse, error) {
 	if s.State.Configuration.InConfiguration(req.CandidateId) == false {
-		if s.State.Configuration.InConfiguration(s.State.NodeId) == false {
+		if s.State.Configuration.MyConfigurationGood() {
 			return &pb.RequestVoteResponse{s.State.GetCurrentTerm(), false}, nil
 		}
 	}
