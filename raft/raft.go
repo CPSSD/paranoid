@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	ELECTION_TIMEOUT      time.Duration = 3000
-	HEARTBEAT             time.Duration = 1000
-	REQUEST_VOTE_TIMEOUT  time.Duration = 5500
-	HEARTBEAT_TIMEOUT     time.Duration = 3000
-	SEND_ENTRY_TIMEOUT    time.Duration = 7500
-	ENTRY_APPLIED_TIMEOUT time.Duration = 20000
+	ELECTION_TIMEOUT      time.Duration = 3000 * time.Millisecond
+	HEARTBEAT             time.Duration = 1000 * time.Millisecond
+	REQUEST_VOTE_TIMEOUT  time.Duration = 5500 * time.Millisecond
+	HEARTBEAT_TIMEOUT     time.Duration = 3000 * time.Millisecond
+	SEND_ENTRY_TIMEOUT    time.Duration = 7500 * time.Millisecond
+	ENTRY_APPLIED_TIMEOUT time.Duration = 20000 * time.Millisecond
 )
 
 var (
@@ -40,6 +40,12 @@ type RaftNetworkServer struct {
 }
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
+	if s.State.Configuration.InConfiguration(req.LeaderId) == false {
+		if s.State.Configuration.MyConfigurationGood() {
+			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+		}
+	}
+
 	if req.Term < s.State.GetCurrentTerm() {
 		return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
 	}
@@ -86,6 +92,12 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 }
 
 func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVoteRequest) (*pb.RequestVoteResponse, error) {
+	if s.State.Configuration.InConfiguration(req.CandidateId) == false {
+		if s.State.Configuration.MyConfigurationGood() {
+			return &pb.RequestVoteResponse{s.State.GetCurrentTerm(), false}, nil
+		}
+	}
+
 	if req.Term < s.State.GetCurrentTerm() {
 		return &pb.RequestVoteResponse{s.State.GetCurrentTerm(), false}, nil
 	}
@@ -178,6 +190,10 @@ func (s *RaftNetworkServer) addLogEntryLeader(entry *pb.Entry) error {
 }
 
 func (s *RaftNetworkServer) ClientToLeaderRequest(ctx context.Context, req *pb.EntryRequest) (*pb.EmptyMessage, error) {
+	if s.State.Configuration.InConfiguration(req.SenderId) == false {
+		return &pb.EmptyMessage{}, errors.New("Node is not in the configuration")
+	}
+
 	if s.State.GetCurrentState() != LEADER {
 		return &pb.EmptyMessage{}, errors.New("Node is not the current leader")
 	}
@@ -195,7 +211,7 @@ func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
 	defer conn.Close()
 	if err == nil {
 		client := pb.NewRaftNetworkClient(conn)
-		_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{entry})
+		_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{s.State.NodeId, entry})
 		return err
 	}
 	return err
@@ -268,7 +284,7 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
 	}
 
 	//Wait for the Log entry to be applied
-	timer := time.NewTimer(ENTRY_APPLIED_TIMEOUT * time.Millisecond)
+	timer := time.NewTimer(ENTRY_APPLIED_TIMEOUT)
 	for {
 		select {
 		case <-timer.C:
@@ -324,7 +340,7 @@ func getRandomElectionTimeout() time.Duration {
 }
 
 func (s *RaftNetworkServer) electionTimeOut() {
-	timer := time.NewTimer(getRandomElectionTimeout() * time.Millisecond)
+	timer := time.NewTimer(getRandomElectionTimeout())
 	defer s.Wait.Done()
 	defer timer.Stop()
 	for {
@@ -336,19 +352,19 @@ func (s *RaftNetworkServer) electionTimeOut() {
 				return
 			}
 		case <-s.ElectionTimeoutReset:
-			timer.Reset(getRandomElectionTimeout() * time.Millisecond)
+			timer.Reset(getRandomElectionTimeout())
 		case <-timer.C:
 			Log.Info("Starting new election")
 			s.State.SetCurrentTerm(s.State.GetCurrentTerm() + 1)
 			s.State.SetCurrentState(CANDIDATE)
-			timer.Reset(getRandomElectionTimeout() * time.Millisecond)
+			timer.Reset(getRandomElectionTimeout())
 		}
 	}
 }
 
 func Dial(node *Node, timeoutMiliseconds time.Duration) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTimeout(timeoutMiliseconds*time.Millisecond))
+	opts = append(opts, grpc.WithTimeout(timeoutMiliseconds))
 	//TODO: tls support
 	opts = append(opts, grpc.WithInsecure())
 
@@ -543,7 +559,7 @@ func (s *RaftNetworkServer) manageLeading() {
 				s.Wait.Add(1)
 				go s.sendHeartBeat(&peers[i])
 			}
-			timer := time.NewTimer(HEARTBEAT * time.Millisecond)
+			timer := time.NewTimer(HEARTBEAT)
 			for {
 				select {
 				case _, ok := <-s.Quit:
@@ -553,9 +569,10 @@ func (s *RaftNetworkServer) manageLeading() {
 						return
 					}
 				case <-s.State.StopLeading:
+					Log.Info("Stopped leading")
 					return
 				case <-s.State.SendAppendEntries:
-					timer.Reset(HEARTBEAT * time.Millisecond)
+					timer.Reset(HEARTBEAT)
 					s.ElectionTimeoutReset <- true
 					peers = s.State.Configuration.GetPeersList()
 					for i := 0; i < len(peers); i++ {
@@ -563,7 +580,7 @@ func (s *RaftNetworkServer) manageLeading() {
 						go s.sendHeartBeat(&peers[i])
 					}
 				case <-timer.C:
-					timer.Reset(HEARTBEAT * time.Millisecond)
+					timer.Reset(HEARTBEAT)
 					s.ElectionTimeoutReset <- true
 					peers = s.State.Configuration.GetPeersList()
 					for i := 0; i < len(peers); i++ {

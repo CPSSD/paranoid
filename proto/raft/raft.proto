@@ -13,7 +13,8 @@ service RaftNetwork {
 message EmptyMessage {}
 
 message EntryRequest {
-    Entry entry = 1; //required
+    string sender_id = 1; // required
+    Entry entry = 2; // required
 }
 
 message AppendEntriesRequest {

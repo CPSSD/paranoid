@@ -107,6 +107,15 @@ func (c *Configuration) InConfiguration(nodeID string) bool {
 	return c.inCurrentConfiguration(nodeID) || c.inFutureConfiguration(nodeID)
 }
 
+func (c *Configuration) MyConfigurationGood() bool {
+	if c.InConfiguration(c.myNodeId) {
+		if c.GetTotalPossibleVotes() > 1 {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Configuration) GetTotalPossibleVotes() int {
 	votes := len(c.currentConfiguration)
 	for i := 0; i < len(c.futureConfiguration); i++ {

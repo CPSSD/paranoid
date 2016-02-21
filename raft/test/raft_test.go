@@ -322,7 +322,7 @@ func TestRaftConfigurationChange(t *testing.T) {
 		}
 	}
 
-	time.Sleep(raft.HEARTBEAT * 2)
+	time.Sleep(raft.HEARTBEAT_TIMEOUT * 2)
 
 	if node1RaftServer.State.NodeId != leader.State.NodeId {
 		err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, rafttestutil.GenerateNewUUID(), &pb.StateMachineCommand{1337}, nil})
