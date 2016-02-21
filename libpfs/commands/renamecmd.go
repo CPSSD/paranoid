@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
+	"io/ioutil"
 	"os"
 	"path"
 	"syscall"
@@ -45,7 +46,23 @@ func RenameCommand(directory, oldFileName, newFileName string, sendOverNetwork b
 	}
 
 	if newFileType != typeENOENT {
-		return returncodes.EEXIST, errors.New(newFileName + " already exists")
+		//Renaming is allowed when a file already exists, unless the existing file is a non empty directory
+		if newFileType == typeFile {
+			_, err := UnlinkCommand(directory, newFileName, false)
+			if err != nil {
+				return returncodes.EEXIST, errors.New(newFileName + " already exists")
+			}
+		} else if newFileType == typeDir {
+			dirpath := getParanoidPath(directory, newFileName)
+			files, err := ioutil.ReadDir(dirpath)
+			if err != nil || len(files) > 0 {
+				return returncodes.ENOTEMPTY, errors.New(newFileName + " is not empty")
+			}
+			_, err = RmdirCommand(directory, newFileName, false)
+			if err != nil {
+				return returncodes.EEXIST, errors.New(newFileName + " already exists")
+			}
+		}
 	}
 
 	inodeBytes, code, err := getFileInode(oldFilePath)
