@@ -68,6 +68,7 @@ func UtimesCommand(directory, fileName string, atime, mtime *time.Time, sendOver
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
 	}
+	defer file.Close()
 
 	fi, err := file.Stat()
 	if err != nil {

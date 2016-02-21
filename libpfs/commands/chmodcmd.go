@@ -60,6 +60,7 @@ func ChmodCommand(directory, fileName string, perms os.FileMode, sendOverNetwork
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("unexpected error attempting to open file:", err)
 	}
+	defer contentsFile.Close()
 
 	err = contentsFile.Chmod(perms)
 	if err != nil {

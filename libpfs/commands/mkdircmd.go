@@ -57,6 +57,7 @@ func MkdirCommand(directory, dirName string, mode os.FileMode, sendOverNetwork b
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
 	}
+	defer contentsFile.Close()
 
 	err = contentsFile.Chmod(os.FileMode(mode))
 	if err != nil {
@@ -67,6 +68,7 @@ func MkdirCommand(directory, dirName string, mode os.FileMode, sendOverNetwork b
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error creating info file:", err)
 	}
+	defer dirInfoFile.Close()
 
 	_, err = dirInfoFile.Write(inodeBytes)
 	if err != nil {
@@ -77,6 +79,7 @@ func MkdirCommand(directory, dirName string, mode os.FileMode, sendOverNetwork b
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error creating inode file:", err)
 	}
+	defer inodeFile.Close()
 
 	nodeData := &inode{
 		Inode: inodeString,

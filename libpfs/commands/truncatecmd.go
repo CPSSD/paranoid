@@ -76,6 +76,7 @@ func TruncateCommand(directory, fileName string, length int64, sendOverNetwork b
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
 	}
+	defer contentsFile.Close()
 
 	err = contentsFile.Truncate(length)
 	if err != nil {
