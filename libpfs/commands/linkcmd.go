@@ -98,6 +98,7 @@ func LinkCommand(directory, existingFileName, targetFileName string, sendOverNet
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening file:", err)
 	}
+	defer openedFile.Close()
 
 	Log.Verbose("link : truncating file " + inodePath)
 	err = openedFile.Truncate(0)

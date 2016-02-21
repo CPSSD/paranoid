@@ -80,6 +80,7 @@ func ReadCommand(directory, fileName string, offset, length int64) (returnCode i
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file", err), nil
 	}
+	defer file.Close()
 
 	var fileBuffer bytes.Buffer
 	bytesRead := make([]byte, 1024)

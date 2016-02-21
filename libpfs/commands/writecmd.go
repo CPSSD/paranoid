@@ -78,6 +78,7 @@ func WriteCommand(directory, fileName string, offset, length int64, data []byte,
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err), 0
 	}
+	defer contentsFile.Close()
 
 	if offset == -1 {
 		offset = 0
