@@ -72,7 +72,7 @@ func CreatCommand(directory, fileName string, perms os.FileMode, sendOverNetwork
 		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
 	}
 
-	err = contentsFile.Chmod(os.FileMode(perms))
+	err = contentsFile.Chmod(perms)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error changing file permissions:", err)
 	}
