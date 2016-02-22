@@ -17,7 +17,7 @@ type keyPieceUnion struct {
 	err   error
 }
 
-func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w sync.WaitGroup) {
+func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w *sync.WaitGroup) {
 	defer w.Done()
 	conn, err := Dial(node)
 	if err != nil {
@@ -42,6 +42,7 @@ func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w sync.WaitGroup) 
 			piece: nil,
 			err:   fmt.Errorf("failed requesting KeyPiece from %s: %s", node, err),
 		}
+		return
 	}
 	Log.Info("Received KeyPiece from", node)
 	var fingerprintArray [32]byte
@@ -58,6 +59,7 @@ func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w sync.WaitGroup) 
 		piece: piece,
 		err:   nil,
 	}
+	return
 }
 
 // Asks every known node for a KeyPiece belonging to this node.
@@ -68,8 +70,9 @@ func RequestKeyPieces() ([]*keyman.KeyPiece, error) {
 
 	for _, node := range globals.Nodes.GetAll() {
 		wait.Add(1)
-		go requestKeyPiece(node, unionChan, wait)
+		go requestKeyPiece(node, unionChan, &wait)
 	}
+	Log.Info("Waiting for KeyPieces.")
 	wait.Wait()
 	close(unionChan)
 
