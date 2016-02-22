@@ -37,7 +37,7 @@ func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w *sync.WaitGroup)
 	}
 	pieceProto, err := client.RequestKeyPiece(context.Background(), thisNodeProto)
 	if err != nil {
-		Log.Error("Failed requesting KeyPiece from", node, "Error:", err)
+		Log.Warn("Failed requesting KeyPiece from", node, "Error:", err)
 		c <- keyPieceUnion{
 			piece: nil,
 			err:   fmt.Errorf("failed requesting KeyPiece from %s: %s", node, err),
