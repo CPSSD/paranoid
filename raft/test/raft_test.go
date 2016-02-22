@@ -24,6 +24,7 @@ func TestRaftElection(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping in short testing mode")
 	}
+	t.Parallel()
 
 	raft.Log.Info("Testing leader eleciton")
 	node1Lis, node1Port := rafttestutil.StartListener()
@@ -108,6 +109,7 @@ func TestRaftLogReplication(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping test in short mode")
 	}
+	t.Parallel()
 
 	raft.Log.Info("Testing log replication")
 	node1Lis, node1Port := rafttestutil.StartListener()
@@ -168,13 +170,14 @@ func TestRaftPersistentState(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping test in short mode")
 	}
+	t.Parallel()
 
 	raft.Log.Info("Testing persistent State")
 	node1Lis, node1Port := rafttestutil.StartListener()
 	node1 := rafttestutil.SetUpNode("node1", "localhost", node1Port, "_")
 	defer rafttestutil.CloseListener(node1Lis)
 
-	node1PersistentPath := rafttestutil.CreatePersistentFile(path.Join(os.TempDir(), "rafttest2", "node1"))
+	node1PersistentPath := rafttestutil.CreatePersistentFile(path.Join(os.TempDir(), "rafttest4", "node1"))
 	defer rafttestutil.RemovePersistentFile(node1PersistentPath)
 	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, node1PersistentPath, []raft.Node{})
 	defer node1srv.Stop()
@@ -225,6 +228,7 @@ func TestRaftConfigurationChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping test in short mode")
 	}
+	t.Parallel()
 
 	raft.Log.Info("Testing joinging and leaving cluster")
 
