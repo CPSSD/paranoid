@@ -1,4 +1,4 @@
-package dnetserver_test
+package dnetservertest
 
 import (
 	. "github.com/cpssd/paranoid/discovery-server/dnetserver"

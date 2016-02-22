@@ -1,4 +1,4 @@
-package benchmark
+package benchmarkpfsd
 
 import (
 	"flag"
@@ -31,8 +31,11 @@ func TestMain(m *testing.M) {
 	commands.InitCommand(tmpdir)
 	commands.Log.SetLogLevel(logger.ERROR)
 	pnetserver.ParanoidDir = tmpdir
-	globals.Port = 10101
-	lis, _ := net.Listen("tcp", ":10101")
+	globals.Port = 10102
+	lis, err := net.Listen("tcp", ":10102")
+	if err != nil {
+		syslog.Fatal("Error Creating PFSD server:", err)
+	}
 	srv := grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	go srv.Serve(lis)
@@ -41,8 +44,8 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func BenchmarkPing(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDPing(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -60,8 +63,8 @@ func BenchmarkPing(b *testing.B) {
 	}
 }
 
-func BenchmarkCreat(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDCreat(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -81,8 +84,8 @@ func BenchmarkCreat(b *testing.B) {
 	}
 }
 
-func BenchmarkWrite(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDWrite(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -104,8 +107,8 @@ func BenchmarkWrite(b *testing.B) {
 	}
 }
 
-func BenchmarkChmod(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDChmod(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -125,8 +128,8 @@ func BenchmarkChmod(b *testing.B) {
 	}
 }
 
-func BenchmarkUtimes(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDUtimes(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -149,8 +152,8 @@ func BenchmarkUtimes(b *testing.B) {
 	}
 }
 
-func BenchmarkTruncate(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDTruncate(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -170,8 +173,8 @@ func BenchmarkTruncate(b *testing.B) {
 	}
 }
 
-func BenchmarkRename(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDRename(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -192,8 +195,8 @@ func BenchmarkRename(b *testing.B) {
 	}
 }
 
-func BenchmarkLink(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDLink(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -214,8 +217,8 @@ func BenchmarkLink(b *testing.B) {
 	}
 }
 
-func BenchmarkMkdir(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDMkdir(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
@@ -235,8 +238,8 @@ func BenchmarkMkdir(b *testing.B) {
 	}
 }
 
-func BenchmarkRmdir(b *testing.B) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
+func BenchmarkPFSDRmdir(b *testing.B) {
+	conn, err := grpc.Dial("localhost:10102", grpc.WithInsecure())
 	if err != nil {
 		syslog.Fatal("Error Dialing server:", err)
 	}
