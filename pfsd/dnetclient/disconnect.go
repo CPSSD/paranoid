@@ -19,7 +19,7 @@ func Disconnect() error {
 	dclient := pb.NewDiscoveryNetworkClient(conn)
 
 	_, err = dclient.Disconnect(context.Background(),
-		&pb.DisconnectRequest{Node: &pb.Node{Ip: ThisNode.IP, Port: ThisNode.Port, Uuid: ThisNode.UUID}})
+		&pb.DisconnectRequest{Node: &pb.Node{Ip: globals.ThisNode.IP, Port: globals.ThisNode.Port, Uuid: globals.ThisNode.UUID}})
 	if err != nil {
 		Log.Error("Could not send disconnect message")
 		return errors.New("could not send disconnect message")

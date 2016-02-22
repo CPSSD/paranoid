@@ -23,6 +23,10 @@ service ParanoidNetwork {
     rpc Chmod (ChmodRequest) returns (EmptyMessage) {}
     rpc Mkdir (MkdirRequest) returns (EmptyMessage) {}
     rpc Rmdir (RmdirRequest) returns (EmptyMessage) {}
+
+    // Cryptography calls
+    rpc SendKeyPiece (KeyPiece) returns (EmptyMessage) {}
+    rpc RequestKeyPiece (PingRequest) returns (KeyPiece) {}
 }
 
 message EmptyMessage {}
@@ -91,4 +95,14 @@ message MkdirRequest {
 
 message RmdirRequest {
     string directory = 1; // required
+}
+
+message KeyPiece {
+    bytes data = 1; // required
+    bytes parent_fingerprint = 2; // required
+    bytes prime = 3; // required
+    int64 seq = 4; // required
+
+    // The Node data for the node who owns this KeyPiece
+    PingRequest owner_node = 5; // required
 }

@@ -10,7 +10,7 @@ import (
 
 func SetDiscovery(host, port, serverPort string) {
 	ipClient, _ := upnp.GetIP()
-	ThisNode = globals.Node{
+	globals.ThisNode = globals.Node{
 		IP:         ipClient,
 		Port:       serverPort,
 		CommonName: globals.CommonName,

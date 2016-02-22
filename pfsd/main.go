@@ -6,6 +6,7 @@ import (
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pfi"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
@@ -63,12 +64,14 @@ func main() {
 	pnetclient.Log = logger.New("pnetclient", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	pnetserver.Log = logger.New("pnetserver", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	upnp.Log = logger.New("upnp", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	keyman.Log = logger.New("keyman", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 
 	log.SetOutput(logger.STDERR | logger.LOGFILE)
 	dnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	pnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	pnetserver.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	upnp.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	keyman.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {
@@ -151,6 +154,11 @@ func main() {
 	createPid("pfsd")
 	globals.Wait.Add(1)
 	go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
+
+	if globals.SystemLocked {
+		globals.Wait.Add(1)
+		go UnlockWorker()
+	}
 	HandleSignals()
 }
 

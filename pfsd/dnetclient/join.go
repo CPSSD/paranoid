@@ -10,6 +10,7 @@ import (
 )
 
 // Join function to call in order to join the server
+// globals.ThisNode must be set before calling this.
 func Join(pool string) error {
 	conn, err := dialDiscovery()
 	if err != nil {
@@ -23,10 +24,10 @@ func Join(pool string) error {
 		&pb.JoinRequest{
 			Pool: pool,
 			Node: &pb.Node{
-				Ip:         ThisNode.IP,
-				Port:       ThisNode.Port,
-				CommonName: ThisNode.CommonName,
-				Uuid:       ThisNode.UUID,
+				Ip:         globals.ThisNode.IP,
+				Port:       globals.ThisNode.Port,
+				CommonName: globals.ThisNode.CommonName,
+				Uuid:       globals.ThisNode.UUID,
 			},
 		})
 	if err != nil {

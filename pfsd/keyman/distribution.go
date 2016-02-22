@@ -10,17 +10,16 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 )
 
 const PrimeSize int = 320 // 40 bytes
 
 type KeyPiece struct {
-	data              []byte
-	parentFingerprint [32]byte // The SHA-256 fingerprint of the key it was generated from.
-	prime             *big.Int // The prime number used in the generation of this KeyPiece.
-	seq               int64    // Where f(seq) = data, for some polynomial f
+	Data              []byte
+	ParentFingerprint [32]byte // The SHA-256 fingerprint of the key it was generated from.
+	Prime             *big.Int // The prime number used in the generation of this KeyPiece.
+	Seq               int64    // Where f(Seq) = Data, for some polynomial f
 }
 
 type FingerMismatchError struct {
@@ -34,7 +33,7 @@ func (e *FingerMismatchError) Error() string {
 
 // Generates numPieces KeyPieces from key. requiredPieces is the number of KeyPieces
 // needed to reconstruct the original key.
-func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]KeyPiece, error) {
+func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]*KeyPiece, error) {
 	// Some input validation
 	if requiredPieces > numPieces {
 		return nil, errors.New("requiredPieces cannot be longer than numPieces")
@@ -54,7 +53,7 @@ func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]KeyPiece, erro
 		coefficients[i] = tmp
 	}
 
-	pieces := make([]KeyPiece, numPieces)
+	pieces := make([]*KeyPiece, numPieces)
 	for x := int64(1); x <= numPieces; x++ {
 		total := big.NewInt(0)
 		for i := int64(0); i < requiredPieces; i++ {
@@ -63,32 +62,32 @@ func GeneratePieces(key *Key, numPieces, requiredPieces int64) ([]KeyPiece, erro
 			total.Add(total, degreeTotal)
 		}
 		total.Mod(total, prime)
-		pieces[x-1] = KeyPiece{
-			data:              total.Bytes(),
-			parentFingerprint: key.GetFingerprint(),
-			prime:             prime,
-			seq:               x,
+		pieces[x-1] = &KeyPiece{
+			Data:              total.Bytes(),
+			ParentFingerprint: key.GetFingerprint(),
+			Prime:             prime,
+			Seq:               x,
 		}
 	}
 	return pieces, nil
 }
 
 // Rebuild a Key from a set of KeyPieces. This function will succeed iff
-// len(pieces) > requiredPieces from the Generate function.
-func RebuildKey(pieces []KeyPiece) (*Key, error) {
-	fingerprint := pieces[0].parentFingerprint
+// len(pieces) >= requiredPieces from the Generate function.
+func RebuildKey(pieces []*KeyPiece) (*Key, error) {
+	fingerprint := pieces[0].ParentFingerprint
 	for _, v := range pieces {
-		if v.parentFingerprint != fingerprint {
+		if v.ParentFingerprint != fingerprint {
 			return nil, errors.New("not all pieces come from the same key")
 		}
 	}
-	prime := pieces[0].prime
+	prime := pieces[0].Prime
 	inputs := make([]int64, len(pieces))
 	outputs := make([]*big.Int, len(pieces))
 	for i, v := range pieces {
-		inputs[i] = v.seq
+		inputs[i] = v.Seq
 		var tmp big.Int
-		tmp.SetBytes(v.data)
+		tmp.SetBytes(v.Data)
 		outputs[i] = &tmp
 	}
 
@@ -98,14 +97,17 @@ func RebuildKey(pieces []KeyPiece) (*Key, error) {
 		numerator := big.NewInt(1)
 		denominator := big.NewInt(1)
 		for j := int64(0); j < int64(len(pieces)); j++ {
-			if j != i {
-				// Go doesn't let you chain big.Int operations, so we have to have
-				// several separate statements instead.
-				numerator.Mul(numerator, big.NewInt(-j-1))
-				numerator.Mod(numerator, prime)
-				denominator.Mul(denominator, big.NewInt(i-j))
-				denominator.Mod(denominator, prime)
+			if j == i {
+				continue
 			}
+			startpos := pieces[i].Seq
+			nextpos := pieces[j].Seq
+			// Go doesn't let you chain big.Int operations, so we have to have
+			// several separate statements instead.
+			numerator.Mul(numerator, big.NewInt(-nextpos))
+			numerator.Mod(numerator, prime)
+			denominator.Mul(denominator, big.NewInt(startpos-nextpos))
+			denominator.Mod(denominator, prime)
 		}
 		output := outputs[i]
 		tmp := new(big.Int).Mul(output, numerator)
@@ -117,9 +119,9 @@ func RebuildKey(pieces []KeyPiece) (*Key, error) {
 	}
 	keyBytes := sum.Bytes()
 	keyFingerprint := sha256.Sum256(keyBytes)
-	if keyFingerprint != pieces[0].parentFingerprint {
-		log.Println(keyBytes)
-		return nil, &FingerMismatchError{pieces[0].parentFingerprint, keyFingerprint}
+	if keyFingerprint != pieces[0].ParentFingerprint {
+		// Even if the key is wrong, we return it, for debugging purposes.
+		return &Key{keyBytes, keyFingerprint}, &FingerMismatchError{pieces[0].ParentFingerprint, keyFingerprint}
 	}
 	return &Key{
 		bytes:       keyBytes,
