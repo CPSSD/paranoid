@@ -183,7 +183,7 @@ func BenchmarkReadDir(b *testing.B) {
 	if code != returncodes.OK {
 		log.Fatal("error making benchDir:", err)
 	}
-	code, err = CreatCommand(path.Join(testDirectory, "testDir"), "test.txt", os.FileMode(0777), false)
+	code, err = CreatCommand(testDirectory, path.Join("testDir", "test.txt"), os.FileMode(0777), false)
 	if code != returncodes.OK {
 		log.Fatal("error creating test file:", err)
 	}
