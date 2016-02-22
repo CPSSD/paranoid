@@ -1,4 +1,4 @@
-package benchmark
+package libpfsbenchmark
 
 import (
 	. "github.com/cpssd/paranoid/libpfs/commands"

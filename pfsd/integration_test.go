@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"io/ioutil"
+	syslog "log"
 	"net"
 	"os"
 	"os/exec"
@@ -34,7 +35,10 @@ func TestMain(m *testing.M) {
 	commands.InitCommand(tmpdir)
 	pnetserver.ParanoidDir = tmpdir
 	globals.Port = 10101
-	lis, _ := net.Listen("tcp", ":10101")
+	lis, err := net.Listen("tcp", ":10101")
+	if err != nil {
+		syslog.Fatal("Error Creating PFSD server:", err)
+	}
 	srv := grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	go srv.Serve(lis)
