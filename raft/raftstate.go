@@ -140,12 +140,12 @@ func (s *RaftState) GetSpecialNumber() uint64 {
 }
 
 func (s *RaftState) applyLogEntry(LogEntry *LogEntry) {
-	if LogEntry.Entry.Type == pb.Entry_StateMachineCommand {
-		stateMachineCommand := LogEntry.Entry.GetCommand()
-		if stateMachineCommand == nil {
+	if LogEntry.Entry.Type == pb.Entry_Demo {
+		demoCommand := LogEntry.Entry.GetDemo()
+		if demoCommand == nil {
 			Log.Fatal("Error applying Log to state machine")
 		}
-		s.SetSpecialNumber(stateMachineCommand.Number)
+		s.SetSpecialNumber(demoCommand.Number)
 	} else if LogEntry.Entry.Type == pb.Entry_ConfigurationChange {
 		config := LogEntry.Entry.GetConfig()
 		if config != nil {

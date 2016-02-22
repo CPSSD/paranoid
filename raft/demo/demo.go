@@ -73,10 +73,9 @@ func manageNode(raftServer *raft.RaftNetworkServer) {
 			randomNumber := rand.Intn(1000)
 			log.Println(raftServer.State.NodeId, "requesting that", randomNumber, "be added to the log")
 			err := raftServer.RequestAddLogEntry(&pb.Entry{
-				pb.Entry_StateMachineCommand,
-				rafttestutil.GenerateNewUUID(),
-				&pb.StateMachineCommand{uint64(randomNumber)},
-				nil,
+				Type: pb.Entry_StateMachineCommand,
+				Uuid: rafttestutil.GenerateNewUUID(),
+				Demo: &pb.DemoCommand{uint64(randomNumber)},
 			})
 			if err == nil {
 				log.Println(raftServer.State.NodeId, "successfullly added", randomNumber, "to the log")
@@ -102,7 +101,7 @@ func printLogs(cluster []*raft.RaftNetworkServer) {
 			for i := 0; i < len(cluster); i++ {
 				logsString := ""
 				for j := uint64(1); j <= cluster[i].State.Log.GetMostRecentIndex(); j++ {
-					logsString = logsString + " " + strconv.Itoa(int(cluster[i].State.Log.GetLogEntry(j).Entry.GetCommand().Number))
+					logsString = logsString + " " + strconv.Itoa(int(cluster[i].State.Log.GetLogEntry(j).Entry.GetDemo().Number))
 				}
 				log.Println(cluster[i].State.NodeId, "Logs:", logsString)
 			}

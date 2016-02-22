@@ -2,7 +2,7 @@ package activitylogger
 
 import (
 	"errors"
-	pb "github.com/cpssd/paranoid/proto/activitylogger"
+	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
 	"path"
@@ -11,7 +11,7 @@ import (
 
 // GetEntry will read an entry at the given index returning
 // the protobuf and an error if something went wrong
-func (al *ActivityLogger) GetEntry(index uint64) (entry *pb.Entry, err error) {
+func (al *ActivityLogger) GetEntry(index uint64) (entry *pb.LogEntry, err error) {
 	al.indexLock.Lock()
 	defer al.indexLock.Unlock()
 
@@ -26,7 +26,7 @@ func (al *ActivityLogger) GetEntry(index uint64) (entry *pb.Entry, err error) {
 		return nil, errors.New("Failed to read logfile")
 	}
 
-	entry = &pb.Entry{}
+	entry = &pb.LogEntry{}
 	err = proto.Unmarshal(fileData, entry)
 	if err != nil {
 		return nil, errors.New("Failed to Unmarshal file data")

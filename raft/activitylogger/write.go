@@ -2,7 +2,7 @@ package activitylogger
 
 import (
 	"errors"
-	pb "github.com/cpssd/paranoid/proto/activitylogger"
+	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/golang/protobuf/proto"
 	"os"
 	"path"
@@ -11,7 +11,7 @@ import (
 
 // WriteEntry will write the entry provided and return the
 // index of the entry and an error object if somethign went wrong
-func (al *ActivityLogger) WriteEntry(en *pb.Entry) (index uint64, err error) {
+func (al *ActivityLogger) WriteEntry(en *pb.LogEntry) (index uint64, err error) {
 	al.indexLock.Lock()
 	defer al.indexLock.Unlock()
 

@@ -139,7 +139,11 @@ func TestRaftLogReplication(t *testing.T) {
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
 
-	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, "test1", &pb.StateMachineCommand{10}, nil})
+	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+		Type: pb.Entry_Demo,
+		Uuid: rafttestutil.GenerateNewUUID(),
+		Demo: &pb.DemoCommand{10},
+	})
 	cluster := []*raft.RaftNetworkServer{node1RaftServer, node2RaftServer, node3RaftServer}
 	leader := rafttestutil.GetLeader(cluster)
 
@@ -180,7 +184,11 @@ func TestRaftPersistentState(t *testing.T) {
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
 
-	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, "request1", &pb.StateMachineCommand{10}, nil})
+	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+		Type: pb.Entry_Demo,
+		Uuid: rafttestutil.GenerateNewUUID(),
+		Demo: &pb.DemoCommand{10},
+	})
 	if err != nil {
 		t.Fatal("Test setup failed,", err)
 	}
@@ -270,7 +278,11 @@ func TestRaftConfigurationChange(t *testing.T) {
 	defer node4srv.Stop()
 	defer rafttestutil.StopRaftServer(node4RaftServer)
 
-	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, rafttestutil.GenerateNewUUID(), &pb.StateMachineCommand{10}, nil})
+	err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+		Type: pb.Entry_Demo,
+		Uuid: rafttestutil.GenerateNewUUID(),
+		Demo: &pb.DemoCommand{10},
+	})
 	if err != nil {
 		t.Fatal("Test setup failed:", err)
 	}
@@ -325,12 +337,20 @@ func TestRaftConfigurationChange(t *testing.T) {
 	time.Sleep(raft.HEARTBEAT_TIMEOUT * 2)
 
 	if node1RaftServer.State.NodeId != leader.State.NodeId {
-		err := node1RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, rafttestutil.GenerateNewUUID(), &pb.StateMachineCommand{1337}, nil})
+		err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+			Type: pb.Entry_Demo,
+			Uuid: rafttestutil.GenerateNewUUID(),
+			Demo: &pb.DemoCommand{1337},
+		})
 		if err != nil {
 			t.Fatal("Unable to commit new entry:", err)
 		}
 	} else {
-		err := node2RaftServer.RequestAddLogEntry(&pb.Entry{pb.Entry_StateMachineCommand, rafttestutil.GenerateNewUUID(), &pb.StateMachineCommand{1337}, nil})
+		err := node2RaftServer.RequestAddLogEntry(&pb.Entry{
+			Type: pb.Entry_StateMachineCommand,
+			Uuid: rafttestutil.GenerateNewUUID(),
+			Demo: &pb.DemoCommand{1337},
+		})
 		if err != nil {
 			t.Fatal("Unable to commit new entry:", err)
 		}

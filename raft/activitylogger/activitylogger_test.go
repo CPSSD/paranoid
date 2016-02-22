@@ -4,7 +4,7 @@ package activitylogger
 
 import (
 	"github.com/cpssd/paranoid/logger"
-	pb "github.com/cpssd/paranoid/proto/activitylogger"
+	pb "github.com/cpssd/paranoid/proto/raft"
 	"io/ioutil"
 	"os"
 	"path"
@@ -47,18 +47,32 @@ func TestWriteReadDelete(t *testing.T) {
 	logDir := path.Join(testDir, "meta", "activity_logs")
 
 	// Testing Write functionality
-	i, err := al.WriteEntry(&pb.Entry{
-		Type: 0,
-		Path: "ThisIsAPath",
-	})
+	i, err := al.WriteEntry(
+		&pb.LogEntry{
+			Term: 0,
+			Entry: &pb.Entry{
+				Type: pb.Entry_StateMachineCommand,
+				Command: &pb.StateMachineCommand{
+					Type: 0,
+					Path: "ThisIsAPath",
+				},
+			},
+		})
 	if err != nil || i != 1 {
 		t.Error("received error writing log, err:", err)
 	}
 
-	i, err = al.WriteEntry(&pb.Entry{
-		Type: 0,
-		Path: "ThisIsAPath2",
-	})
+	i, err = al.WriteEntry(
+		&pb.LogEntry{
+			Term: 0,
+			Entry: &pb.Entry{
+				Type: pb.Entry_StateMachineCommand,
+				Command: &pb.StateMachineCommand{
+					Type: 0,
+					Path: "ThisIsAPath2",
+				},
+			},
+		})
 	if err != nil || i != 2 {
 		t.Error("received error writing log, err:", err)
 	}
@@ -86,7 +100,7 @@ func TestWriteReadDelete(t *testing.T) {
 		t.Error("Error received when reading log: ", err)
 	}
 
-	if e.Type != 0 || e.Path != "ThisIsAPath2" {
+	if e.GetEntry().GetCommand().Type != 0 || e.GetEntry().GetCommand().Path != "ThisIsAPath2" {
 		t.Error("Bad protobuf received from read: ", e)
 	}
 
