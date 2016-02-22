@@ -22,20 +22,6 @@ type KeyPiece struct {
 	Seq               int64    // Where f(Seq) = Data, for some polynomial f
 }
 
-type KeyPieceSorter []*KeyPiece
-
-func (s KeyPieceSorter) Len() int {
-	return len(s)
-}
-
-func (s KeyPieceSorter) Less(i, j int) bool {
-	return s[i].Seq < s[j].Seq
-}
-
-func (s KeyPieceSorter) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
 type FingerMismatchError struct {
 	ExpectedFingerprint [32]byte
 	ActualFingerprint   [32]byte
@@ -111,14 +97,17 @@ func RebuildKey(pieces []*KeyPiece) (*Key, error) {
 		numerator := big.NewInt(1)
 		denominator := big.NewInt(1)
 		for j := int64(0); j < int64(len(pieces)); j++ {
-			if j != i {
-				// Go doesn't let you chain big.Int operations, so we have to have
-				// several separate statements instead.
-				numerator.Mul(numerator, big.NewInt(-j-1))
-				numerator.Mod(numerator, prime)
-				denominator.Mul(denominator, big.NewInt(i-j))
-				denominator.Mod(denominator, prime)
+			if j == i {
+				continue
 			}
+			startpos := pieces[i].Seq
+			nextpos := pieces[j].Seq
+			// Go doesn't let you chain big.Int operations, so we have to have
+			// several separate statements instead.
+			numerator.Mul(numerator, big.NewInt(-nextpos))
+			numerator.Mod(numerator, prime)
+			denominator.Mul(denominator, big.NewInt(startpos-nextpos))
+			denominator.Mod(denominator, prime)
 		}
 		output := outputs[i]
 		tmp := new(big.Int).Mul(output, numerator)
