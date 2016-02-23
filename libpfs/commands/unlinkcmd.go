@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
@@ -13,7 +12,7 @@ import (
 )
 
 // UnlinkCommand removes a filename link from an inode.
-func UnlinkCommand(directory, fileName string, sendOverNetwork bool) (returnCode int, returnError error) {
+func UnlinkCommand(directory, fileName string) (returnCode int, returnError error) {
 	Log.Info("unlink command called")
 
 	err := getFileSystemLock(directory, exclusiveLock)
@@ -115,8 +114,5 @@ func UnlinkCommand(directory, fileName string, sendOverNetwork bool) (returnCode
 		}
 	}
 
-	if sendOverNetwork {
-		pnetclient.Unlink(fileName)
-	}
 	return returncodes.OK, nil
 }

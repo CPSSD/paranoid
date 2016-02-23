@@ -4,14 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 	"syscall"
 )
 
 //TruncateCommand reduces the file given to the new length
-func TruncateCommand(directory, fileName string, length int64, sendOverNetwork bool) (returnCode int, returnError error) {
+func TruncateCommand(directory, fileName string, length int64) (returnCode int, returnError error) {
 	Log.Info("truncate command given")
 	Log.Verbose("truncate : given directory = " + directory)
 
@@ -83,8 +82,5 @@ func TruncateCommand(directory, fileName string, length int64, sendOverNetwork b
 		return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file:", err)
 	}
 
-	if sendOverNetwork {
-		pnetclient.Truncate(fileName, uint64(length))
-	}
 	return returncodes.OK, nil
 }
