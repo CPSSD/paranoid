@@ -9,11 +9,12 @@ import (
 	"time"
 )
 
-//Starts a raft server given a listener, node information a directory to store information and a list of peers
-func StartRaft(lis *net.Listener, nodeDetails Node, raftInfoDirectory string, peers []Node) (*RaftNetworkServer, *grpc.Server) {
+//Starts a raft server given a listener, node information a directory to store information
+//A test congfiguration can be given to allow for easier testing but should not be used normally.
+func StartRaft(lis *net.Listener, nodeDetails Node, raftInfoDirectory string, testConfiguration *StartConfiguration) (*RaftNetworkServer, *grpc.Server) {
 	var opts []grpc.ServerOption
 	srv := grpc.NewServer(opts...)
-	raftServer := newRaftNetworkServer(nodeDetails, raftInfoDirectory, peers)
+	raftServer := newRaftNetworkServer(nodeDetails, raftInfoDirectory, testConfiguration)
 	pb.RegisterRaftNetworkServer(srv, raftServer)
 	raftServer.Wait.Add(1)
 	go func() {

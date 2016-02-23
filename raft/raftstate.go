@@ -35,6 +35,7 @@ func (n Node) String() string {
 }
 
 type RaftState struct {
+	//Used for testing purposes
 	specialNumber uint64
 
 	NodeId       string
@@ -241,9 +242,8 @@ func getPersistentState(persistentStateFile string) *persistentState {
 	return perState
 }
 
-func newRaftState(myNodeDetails Node, raftInfoDirectory string, peers []Node) *RaftState {
+func newRaftState(myNodeDetails Node, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftState {
 	persistentState := getPersistentState(path.Join(raftInfoDirectory, PersistentStateFileName))
-	nodes := append(peers, myNodeDetails)
 	var raftState *RaftState
 	if persistentState == nil {
 		raftState = &RaftState{
@@ -255,7 +255,7 @@ func newRaftState(myNodeDetails Node, raftInfoDirectory string, peers []Node) *R
 			commitIndex:       0,
 			lastApplied:       0,
 			leaderId:          "",
-			Configuration:     newConfiguration(nodes, myNodeDetails.NodeID, 0),
+			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails),
 			raftInfoDirectory: raftInfoDirectory,
 		}
 	} else {
@@ -268,7 +268,7 @@ func newRaftState(myNodeDetails Node, raftInfoDirectory string, peers []Node) *R
 			commitIndex:       0,
 			lastApplied:       persistentState.LastApplied,
 			leaderId:          "",
-			Configuration:     newConfiguration(nodes, myNodeDetails.NodeID, 0),
+			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails),
 			raftInfoDirectory: raftInfoDirectory,
 		}
 	}

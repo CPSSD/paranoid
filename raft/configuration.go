@@ -1,8 +1,17 @@
 package raft
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/cpssd/paranoid/raft/raftlog"
+	"io/ioutil"
+	"os"
+	"path"
+	"sync"
+)
+
+const (
+	PersistentConfigurationFileName string = "persistentConfigFile"
 )
 
 //Configuration manages configuration information of a raft server
@@ -17,6 +26,22 @@ type Configuration struct {
 	futureConfiguration []Node
 	futureNextIndex     []uint64
 	futureMatchIndex    []uint64
+
+	raftInfoDirectory    string
+	persistentConfigLock sync.Mutex
+}
+
+//persistentConfiguration is the configuration information that is saved to disk
+type persistentConfiguration struct {
+	FutureConfigurationActive bool   `json:"futureconfigactive"`
+	CurrentConfiguration      []Node `json:"currentconfig"`
+	FutureConfiguration       []Node `json:"futureconfig"`
+}
+
+//StartConfiguration is used to start a raft node with a specific congiuration for testing purposes
+//or if the node is the first node to join a cluster
+type StartConfiguration struct {
+	Peers []Node
 }
 
 func (c *Configuration) GetNode(nodeID string) (Node, error) {
@@ -40,6 +65,8 @@ func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64
 	c.futureConfiguration = nodes
 	c.futureNextIndex = make([]uint64, len(nodes))
 	c.futureMatchIndex = make([]uint64, len(nodes))
+
+	c.savePersistentConfiguration()
 
 	for i := 0; i < len(nodes); i++ {
 		c.futureNextIndex[i] = lastLogIndex + 1
@@ -65,6 +92,8 @@ func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex ui
 	c.currentConfiguration = nodes
 	c.currentNextIndex = make([]uint64, len(nodes))
 	c.currentMatchIndex = make([]uint64, len(nodes))
+	c.savePersistentConfiguration()
+
 	for i := 0; i < len(nodes); i++ {
 		c.currentNextIndex[i] = lastLogIndex + 1
 		c.currentMatchIndex[i] = 0
@@ -84,6 +113,8 @@ func (c *Configuration) FutureToCurrentConfiguration() {
 	c.futureConfiguration = []Node{}
 	c.futureNextIndex = []uint64{}
 	c.futureMatchIndex = []uint64{}
+
+	c.savePersistentConfiguration()
 }
 
 func (c *Configuration) inCurrentConfiguration(nodeID string) bool {
@@ -145,9 +176,6 @@ func (c *Configuration) GetPeersList() []Node {
 }
 
 func getRequiredVotes(nodeCount int) int {
-	if nodeCount == 0 {
-		return 0
-	}
 	return (nodeCount / 2) + 1
 }
 
@@ -297,16 +325,80 @@ func (c *Configuration) CalculateNewCommitIndex(lastCommitIndex, term uint64, lo
 	return newCommitIndex
 }
 
-func newConfiguration(nodes []Node, nodeId string, lastLogIndex uint64) *Configuration {
-	config := &Configuration{
-		myNodeId:             nodeId,
-		currentConfiguration: nodes,
-		currentNextIndex:     make([]uint64, len(nodes)),
-		currentMatchIndex:    make([]uint64, len(nodes)),
+func (c *Configuration) savePersistentConfiguration() {
+	c.persistentConfigLock.Lock()
+	defer c.persistentConfigLock.Unlock()
+	perState := &persistentConfiguration{
+		FutureConfigurationActive: c.futureConfigurationActive,
+		CurrentConfiguration:      c.currentConfiguration,
+		FutureConfiguration:       c.futureConfiguration,
 	}
-	for i := 0; i < len(nodes); i++ {
-		config.currentNextIndex[i] = lastLogIndex + 1
-		config.currentMatchIndex[i] = 0
+
+	persistentCofigBytes, err := json.Marshal(perState)
+	if err != nil {
+		Log.Fatal("Error saving persistent state to disk:", err)
+	}
+
+	err = ioutil.WriteFile(path.Join(c.raftInfoDirectory, PersistentConfigurationFileName), persistentCofigBytes, 0600)
+	if err != nil {
+		Log.Fatal("Error saving persistent state to disk:", err)
+	}
+}
+
+func getPersistentConfiguration(persistentConfigurationFile string) *persistentConfiguration {
+	if _, err := os.Stat(persistentConfigurationFile); os.IsNotExist(err) {
+		return nil
+	}
+	persistentFileContents, err := ioutil.ReadFile(persistentConfigurationFile)
+	if err != nil {
+		Log.Fatal("Error reading persistent state from disk:", err)
+	}
+
+	perConfig := &persistentConfiguration{}
+	err = json.Unmarshal(persistentFileContents, &perConfig)
+	if err != nil {
+		Log.Fatal("Error reading persistent state from disk:", err)
+	}
+	return perConfig
+}
+
+func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfiguration, myNodeDetails Node) *Configuration {
+	var config *Configuration
+	if testConfiguration != nil {
+		config = &Configuration{
+			myNodeId:          myNodeDetails.NodeID,
+			raftInfoDirectory: raftInfoDirectory,
+
+			currentConfiguration: append(testConfiguration.Peers, myNodeDetails),
+			currentNextIndex:     make([]uint64, len(testConfiguration.Peers)+1),
+			currentMatchIndex:    make([]uint64, len(testConfiguration.Peers)+1),
+		}
+	} else {
+		persistentConfig := getPersistentConfiguration(path.Join(raftInfoDirectory, PersistentConfigurationFileName))
+		if persistentConfig != nil {
+			config = &Configuration{
+				myNodeId:          myNodeDetails.NodeID,
+				raftInfoDirectory: raftInfoDirectory,
+
+				currentConfiguration: persistentConfig.CurrentConfiguration,
+				currentNextIndex:     make([]uint64, len(persistentConfig.CurrentConfiguration)),
+				currentMatchIndex:    make([]uint64, len(persistentConfig.CurrentConfiguration)),
+
+				futureConfigurationActive: persistentConfig.FutureConfigurationActive,
+				futureConfiguration:       persistentConfig.FutureConfiguration,
+				futureNextIndex:           make([]uint64, len(persistentConfig.FutureConfiguration)),
+				futureMatchIndex:          make([]uint64, len(persistentConfig.FutureConfiguration)),
+			}
+		} else {
+			config = &Configuration{
+				myNodeId:          myNodeDetails.NodeID,
+				raftInfoDirectory: raftInfoDirectory,
+
+				currentConfiguration: []Node{},
+				currentNextIndex:     []uint64{},
+				currentMatchIndex:    []uint64{},
+			}
+		}
 	}
 	return config
 }
