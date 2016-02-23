@@ -4,6 +4,7 @@ import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/pfsd/pfi/util"
+	"github.com/cpssd/paranoid/raft"
 	"os"
 	"time"
 
@@ -49,7 +50,15 @@ func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status
 //Write writes to a file
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	util.Log.Info("Write called on file : " + f.Name)
-	code, err, bytesWritten := commands.WriteCommand(util.PfsDirectory, f.Name, off, int64(len(content)), content, util.SendOverNetwork)
+	var code int
+	var err error
+	var bytesWritten int
+	if util.SendOverNetwork {
+		code, err, bytesWritten = util.RaftServer.RequestWriteCommand(util.PfsDirectory, f.Name, off, int64(len(content)), content)
+	} else {
+		code, err, bytesWritten = commands.WriteCommand(util.PfsDirectory, f.Name, off, int64(len(content)), content)
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running write command :", err)
 	}

@@ -10,5 +10,6 @@ const (
 	EISDIR      //Is Directory
 	EIO         //Input/Output error
 	ENOTDIR     //Isn't Directory
+	EBUSY       //System is busy
 	EUNEXPECTED //Unforseen error
 )

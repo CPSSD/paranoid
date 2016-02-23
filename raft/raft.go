@@ -555,8 +555,8 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 	}
 }
 
-func newRaftNetworkServer(nodeDetails Node, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftNetworkServer {
-	raftServer := &RaftNetworkServer{State: newRaftState(nodeDetails, raftInfoDirectory, testConfiguration)}
+func newRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftNetworkServer {
+	raftServer := &RaftNetworkServer{State: newRaftState(nodeDetails, pfsDirectory, raftInfoDirectory, testConfiguration)}
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
 	raftServer.QuitChannelClosed = false

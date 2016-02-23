@@ -72,7 +72,7 @@ func manageNode(raftServer *raft.RaftNetworkServer) {
 			}
 			randomNumber := rand.Intn(1000)
 			log.Println(raftServer.State.NodeId, "requesting that", randomNumber, "be added to the log")
-			err := raftServer.RequestAddLogEntry(&pb.Entry{
+			err, _ := raftServer.RequestAddLogEntry(&pb.Entry{
 				Type: pb.Entry_Demo,
 				Uuid: rafttestutil.GenerateNewUUID(),
 				Demo: &pb.DemoCommand{uint64(randomNumber)},
@@ -201,19 +201,19 @@ func setupDemo(demoNum int) {
 
 	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node1"))
 	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
-	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, node1RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node2, node3}})
+	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, "", node1RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node2, node3}})
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
 
 	node2RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node2"))
 	defer rafttestutil.RemoveRaftDirectory(node2RaftDirectory)
-	node2RaftServer, node2srv := raft.StartRaft(node2Lis, node2, node2RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node3}})
+	node2RaftServer, node2srv := raft.StartRaft(node2Lis, node2, "", node2RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node3}})
 	defer node2srv.Stop()
 	defer rafttestutil.StopRaftServer(node2RaftServer)
 
 	node3RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node3"))
 	defer rafttestutil.RemoveRaftDirectory(node3RaftDirectory)
-	node3RaftServer, node3srv := raft.StartRaft(node3Lis, node3, node3RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node2}})
+	node3RaftServer, node3srv := raft.StartRaft(node3Lis, node3, "", node3RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node2}})
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
 

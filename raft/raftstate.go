@@ -39,6 +39,7 @@ type RaftState struct {
 	specialNumber uint64
 
 	NodeId       string
+	pfsDirectory string
 	currentState int
 
 	currentTerm uint64
@@ -57,7 +58,7 @@ type RaftState struct {
 	LeaderElected     chan bool
 
 	waitingForApplied    bool
-	EntryApplied         chan uint64
+	EntryApplied         chan *EntryAppliedInfo
 	ConfigurationApplied chan *pb.Configuration
 	ApplyEntriesLock     sync.Mutex
 
@@ -147,7 +148,7 @@ func (s *RaftState) GetSpecialNumber() uint64 {
 	return s.specialNumber
 }
 
-func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) {
+func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 	if logEntry.Entry.Type == pb.Entry_Demo {
 		demoCommand := logEntry.Entry.GetDemo()
 		if demoCommand == nil {
@@ -161,7 +162,17 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) {
 		} else {
 			Log.Fatal("Error applying configuration update")
 		}
+	} else if logEntry.Entry.Type == pb.Entry_StateMachineCommand {
+		libpfsCommand := logEntry.Entry.GetCommand()
+		if libpfsCommand == nil {
+			Log.Fatal("Error applying Log to state machine")
+		}
+		if s.pfsDirectory == "" {
+			Log.Fatal("PfsDirectory is not set")
+		}
+		return performLibPfsCommand(s.pfsDirectory, libpfsCommand)
 	}
+	return nil
 }
 
 func (s *RaftState) ApplyLogEntries() {
@@ -175,10 +186,13 @@ func (s *RaftState) ApplyLogEntries() {
 			if err != nil {
 				Log.Fatal("Unable to get log entry1:", err)
 			}
-			s.applyLogEntry(LogEntry)
+			result := s.applyLogEntry(LogEntry)
 			s.SetLastApplied(i)
 			if s.GetWaitingForApplied() {
-				s.EntryApplied <- i
+				s.EntryApplied <- &EntryAppliedInfo{
+					Index:  i,
+					Result: result,
+				}
 			}
 		}
 	}
@@ -242,12 +256,13 @@ func getPersistentState(persistentStateFile string) *persistentState {
 	return perState
 }
 
-func newRaftState(myNodeDetails Node, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftState {
+func newRaftState(myNodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftState {
 	persistentState := getPersistentState(path.Join(raftInfoDirectory, PersistentStateFileName))
 	var raftState *RaftState
 	if persistentState == nil {
 		raftState = &RaftState{
 			specialNumber:     0,
+			pfsDirectory:      pfsDirectory,
 			NodeId:            myNodeDetails.NodeID,
 			currentTerm:       0,
 			votedFor:          "",
@@ -261,6 +276,7 @@ func newRaftState(myNodeDetails Node, raftInfoDirectory string, testConfiguratio
 	} else {
 		raftState = &RaftState{
 			specialNumber:     persistentState.SpecialNumber,
+			pfsDirectory:      pfsDirectory,
 			NodeId:            myNodeDetails.NodeID,
 			currentTerm:       persistentState.CurrentTerm,
 			votedFor:          persistentState.VotedFor,
@@ -278,7 +294,7 @@ func newRaftState(myNodeDetails Node, raftInfoDirectory string, testConfiguratio
 	raftState.StopLeading = make(chan bool, 100)
 	raftState.SendAppendEntries = make(chan bool, 100)
 	raftState.LeaderElected = make(chan bool, 1)
-	raftState.EntryApplied = make(chan uint64, 100)
+	raftState.EntryApplied = make(chan *EntryAppliedInfo, 100)
 	raftState.ConfigurationApplied = make(chan *pb.Configuration, 100)
 	return raftState
 }
