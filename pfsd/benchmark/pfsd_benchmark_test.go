@@ -1,3 +1,5 @@
+// +build !integration
+
 package benchmarkpfsd
 
 import (
@@ -34,6 +36,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		syslog.Fatal("Error Creating PFSD server:", err)
 	}
+	defer lis.Close()
 	srv := grpc.NewServer()
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
 	go srv.Serve(lis)
