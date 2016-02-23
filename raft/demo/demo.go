@@ -73,7 +73,7 @@ func manageNode(raftServer *raft.RaftNetworkServer) {
 			randomNumber := rand.Intn(1000)
 			log.Println(raftServer.State.NodeId, "requesting that", randomNumber, "be added to the log")
 			err := raftServer.RequestAddLogEntry(&pb.Entry{
-				Type: pb.Entry_StateMachineCommand,
+				Type: pb.Entry_Demo,
 				Uuid: rafttestutil.GenerateNewUUID(),
 				Demo: &pb.DemoCommand{uint64(randomNumber)},
 			})
@@ -101,7 +101,11 @@ func printLogs(cluster []*raft.RaftNetworkServer) {
 			for i := 0; i < len(cluster); i++ {
 				logsString := ""
 				for j := uint64(1); j <= cluster[i].State.Log.GetMostRecentIndex(); j++ {
-					logsString = logsString + " " + strconv.Itoa(int(cluster[i].State.Log.GetLogEntry(j).Entry.GetDemo().Number))
+					logEntry, err := cluster[i].State.Log.GetLogEntry(j)
+					if err != nil {
+						log.Fatalln("Error reading log entry:", err)
+					}
+					logsString = logsString + " " + strconv.Itoa(int(logEntry.Entry.GetDemo().Number))
 				}
 				log.Println(cluster[i].State.NodeId, "Logs:", logsString)
 			}
@@ -195,21 +199,21 @@ func setupDemo(demoNum int) {
 	defer rafttestutil.CloseListener(node3Lis)
 	node3 := rafttestutil.SetUpNode("node3", "localhost", node3Port, "_")
 
-	node1PersistentPath := rafttestutil.CreatePersistentFile(path.Join(os.TempDir(), "rafttest1", "node1"))
-	defer rafttestutil.RemovePersistentFile(node1PersistentPath)
-	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, node1PersistentPath, []raft.Node{node2, node3})
+	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node1"))
+	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
+	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, node1RaftDirectory, []raft.Node{node2, node3})
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
 
-	node2PersistentPath := rafttestutil.CreatePersistentFile(path.Join(os.TempDir(), "rafttest1", "node2"))
-	defer rafttestutil.RemovePersistentFile(node2PersistentPath)
-	node2RaftServer, node2srv := raft.StartRaft(node2Lis, node2, node2PersistentPath, []raft.Node{node1, node3})
+	node2RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node2"))
+	defer rafttestutil.RemoveRaftDirectory(node2RaftDirectory)
+	node2RaftServer, node2srv := raft.StartRaft(node2Lis, node2, node2RaftDirectory, []raft.Node{node1, node3})
 	defer node2srv.Stop()
 	defer rafttestutil.StopRaftServer(node2RaftServer)
 
-	node3PersistentPath := rafttestutil.CreatePersistentFile(path.Join(os.TempDir(), "rafttest1", "node3"))
-	defer rafttestutil.RemovePersistentFile(node3PersistentPath)
-	node3RaftServer, node3srv := raft.StartRaft(node3Lis, node3, node3PersistentPath, []raft.Node{node1, node2})
+	node3RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node3"))
+	defer rafttestutil.RemoveRaftDirectory(node3RaftDirectory)
+	node3RaftServer, node3srv := raft.StartRaft(node3Lis, node3, node3RaftDirectory, []raft.Node{node1, node2})
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
 

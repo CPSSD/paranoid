@@ -2,6 +2,7 @@ package raft
 
 import (
 	"errors"
+	"github.com/cpssd/paranoid/raft/raftlog"
 )
 
 //Configuration manages configuration information of a raft server
@@ -245,7 +246,7 @@ func (c *Configuration) SetMatchIndex(nodeID string, x uint64) {
 	}
 }
 
-func (c *Configuration) CalculateNewCommitIndex(lastCommitIndex, term uint64, log *RaftLog) uint64 {
+func (c *Configuration) CalculateNewCommitIndex(lastCommitIndex, term uint64, log *raftlog.RaftLog) uint64 {
 	if log.GetMostRecentTerm() != term {
 		return lastCommitIndex
 	}
@@ -255,7 +256,11 @@ func (c *Configuration) CalculateNewCommitIndex(lastCommitIndex, term uint64, lo
 	newCommitIndex := lastCommitIndex
 
 	for i := lastCommitIndex + 1; i <= log.GetMostRecentIndex(); i++ {
-		if log.GetLogEntry(i).Term == term {
+		logEntry, err := log.GetLogEntry(i)
+		if err != nil {
+			Log.Fatal("Unable to get log entry:", err)
+		}
+		if logEntry.Term == term {
 			currentCount := 0
 			if c.inCurrentConfiguration(c.myNodeId) {
 				currentCount = 1

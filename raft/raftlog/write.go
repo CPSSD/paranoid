@@ -1,4 +1,4 @@
-package activitylogger
+package raftlog
 
 import (
 	"errors"
@@ -9,14 +9,14 @@ import (
 	"strconv"
 )
 
-// WriteEntry will write the entry provided and return the
+// AppendEntry will write the entry provided and return the
 // index of the entry and an error object if somethign went wrong
-func (al *ActivityLogger) WriteEntry(en *pb.LogEntry) (index uint64, err error) {
-	al.indexLock.Lock()
-	defer al.indexLock.Unlock()
+func (rl *RaftLog) AppendEntry(en *pb.LogEntry) (index uint64, err error) {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
 
-	fileIndex := ci2fi(al.currentIndex)
-	filePath := path.Join(al.logDir, strconv.FormatUint(fileIndex, 10))
+	fileIndex := ci2fi(rl.currentIndex)
+	filePath := path.Join(rl.logDir, strconv.FormatUint(fileIndex, 10))
 
 	protoData, err := proto.Marshal(en)
 	if err != nil {
@@ -33,12 +33,13 @@ func (al *ActivityLogger) WriteEntry(en *pb.LogEntry) (index uint64, err error) 
 	if err != nil {
 		err1 := os.Remove(filePath)
 		if err1 != nil {
-			al.pLog.Fatal("Failed to write proto to file at index: ", fileIndex,
-				" and received an erro when trying to remove the created logfile, err: ", err1)
+			rl.pLog.Fatal("Failed to write proto to file at index: ", fileIndex,
+				" and received an error when trying to remove the created logfile, err: ", err1)
 		}
 		return 0, errors.New("Failed to write proto to file")
 	}
 
-	al.currentIndex++
+	rl.mostRecentTerm = en.Term
+	rl.currentIndex++
 	return fi2ci(fileIndex), nil
 }

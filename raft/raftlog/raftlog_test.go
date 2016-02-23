@@ -1,6 +1,6 @@
 // +build !integration
 
-package activitylogger
+package raftlog
 
 import (
 	"github.com/cpssd/paranoid/logger"
@@ -43,11 +43,11 @@ func TestWriteReadDelete(t *testing.T) {
 	removeTestDir()
 	createTestDir()
 
-	al := New(testDir)
 	logDir := path.Join(testDir, "meta", "activity_logs")
+	rl := New(logDir)
 
 	// Testing Write functionality
-	i, err := al.WriteEntry(
+	i, err := rl.AppendEntry(
 		&pb.LogEntry{
 			Term: 0,
 			Entry: &pb.Entry{
@@ -62,7 +62,7 @@ func TestWriteReadDelete(t *testing.T) {
 		t.Error("received error writing log, err:", err)
 	}
 
-	i, err = al.WriteEntry(
+	i, err = rl.AppendEntry(
 		&pb.LogEntry{
 			Term: 0,
 			Entry: &pb.Entry{
@@ -90,12 +90,12 @@ func TestWriteReadDelete(t *testing.T) {
 	}
 
 	// Testing Read functionality
-	li := al.LastEntryIndex()
+	li := rl.GetMostRecentIndex()
 	if li != 2 {
-		t.Error("LastEntryIndex not what it should be: ", li)
+		t.Error("Most recent index not what it should be: ", li)
 	}
 
-	e, err := al.GetEntry(al.LastEntryIndex())
+	e, err := rl.GetLogEntry(rl.GetMostRecentIndex())
 	if err != nil {
 		t.Error("Error received when reading log: ", err)
 	}
@@ -105,7 +105,7 @@ func TestWriteReadDelete(t *testing.T) {
 	}
 
 	// Testing Delete functionality
-	err = al.DeleteEntry(1)
+	err = rl.DiscardLogEntries(1)
 	if err != nil {
 		t.Error("Error received when deleting log: ", err)
 	}
@@ -116,6 +116,6 @@ func TestWriteReadDelete(t *testing.T) {
 	}
 
 	if len(files) != 0 {
-		t.Error("number of files in directory is not what it shoudl be, delete error.")
+		t.Error("number of files in directory is not what it should be, delete error.")
 	}
 }

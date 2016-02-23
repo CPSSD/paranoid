@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	pb "github.com/cpssd/paranoid/proto/raft"
+	"github.com/cpssd/paranoid/raft/raftlog"
 	"io/ioutil"
 	"os"
+	"path"
 	"sync"
 )
 
@@ -14,6 +16,11 @@ const (
 	CANDIDATE
 	LEADER
 	INACTIVE
+)
+
+const (
+	PersistentStateFileName string = "persistentStateFile"
+	LogDirectory            string = "raft_logs"
 )
 
 type Node struct {
@@ -35,7 +42,7 @@ type RaftState struct {
 
 	currentTerm uint64
 	votedFor    string
-	Log         *RaftLog
+	Log         *raftlog.RaftLog
 	commitIndex uint64
 	lastApplied uint64
 
@@ -53,7 +60,7 @@ type RaftState struct {
 	ConfigurationApplied chan *pb.Configuration
 	ApplyEntriesLock     sync.Mutex
 
-	persistentStateFile string
+	raftInfoDirectory   string
 	persistentStateLock sync.Mutex
 }
 
@@ -139,15 +146,15 @@ func (s *RaftState) GetSpecialNumber() uint64 {
 	return s.specialNumber
 }
 
-func (s *RaftState) applyLogEntry(LogEntry *LogEntry) {
-	if LogEntry.Entry.Type == pb.Entry_Demo {
-		demoCommand := LogEntry.Entry.GetDemo()
+func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) {
+	if logEntry.Entry.Type == pb.Entry_Demo {
+		demoCommand := logEntry.Entry.GetDemo()
 		if demoCommand == nil {
 			Log.Fatal("Error applying Log to state machine")
 		}
 		s.SetSpecialNumber(demoCommand.Number)
-	} else if LogEntry.Entry.Type == pb.Entry_ConfigurationChange {
-		config := LogEntry.Entry.GetConfig()
+	} else if logEntry.Entry.Type == pb.Entry_ConfigurationChange {
+		config := logEntry.Entry.GetConfig()
 		if config != nil {
 			s.ConfigurationApplied <- config
 		} else {
@@ -163,7 +170,10 @@ func (s *RaftState) ApplyLogEntries() {
 	commitIndex := s.GetCommitIndex()
 	if commitIndex > lastApplied {
 		for i := lastApplied + 1; i <= commitIndex; i++ {
-			LogEntry := s.Log.GetLogEntry(i)
+			LogEntry, err := s.Log.GetLogEntry(i)
+			if err != nil {
+				Log.Fatal("Unable to get log entry1:", err)
+			}
 			s.applyLogEntry(LogEntry)
 			s.SetLastApplied(i)
 			if s.GetWaitingForApplied() {
@@ -208,7 +218,7 @@ func (s *RaftState) savePersistentState() {
 		Log.Fatal("Error saving persistent state to disk:", err)
 	}
 
-	err = ioutil.WriteFile(s.persistentStateFile, persistentStateBytes, 0600)
+	err = ioutil.WriteFile(path.Join(s.raftInfoDirectory, PersistentStateFileName), persistentStateBytes, 0600)
 	if err != nil {
 		Log.Fatal("Error saving persistent state to disk:", err)
 	}
@@ -231,35 +241,35 @@ func getPersistentState(persistentStateFile string) *persistentState {
 	return perState
 }
 
-func newRaftState(myNodeDetails Node, persistentStateFile string, peers []Node) *RaftState {
-	persistentState := getPersistentState(persistentStateFile)
+func newRaftState(myNodeDetails Node, raftInfoDirectory string, peers []Node) *RaftState {
+	persistentState := getPersistentState(path.Join(raftInfoDirectory, PersistentStateFileName))
 	nodes := append(peers, myNodeDetails)
 	var raftState *RaftState
 	if persistentState == nil {
 		raftState = &RaftState{
-			specialNumber:       0,
-			NodeId:              myNodeDetails.NodeID,
-			currentTerm:         0,
-			votedFor:            "",
-			Log:                 newRaftLog(),
-			commitIndex:         0,
-			lastApplied:         0,
-			leaderId:            "",
-			Configuration:       newConfiguration(nodes, myNodeDetails.NodeID, 0),
-			persistentStateFile: persistentStateFile,
+			specialNumber:     0,
+			NodeId:            myNodeDetails.NodeID,
+			currentTerm:       0,
+			votedFor:          "",
+			Log:               raftlog.New(path.Join(raftInfoDirectory, LogDirectory)),
+			commitIndex:       0,
+			lastApplied:       0,
+			leaderId:          "",
+			Configuration:     newConfiguration(nodes, myNodeDetails.NodeID, 0),
+			raftInfoDirectory: raftInfoDirectory,
 		}
 	} else {
 		raftState = &RaftState{
-			specialNumber:       persistentState.SpecialNumber,
-			NodeId:              myNodeDetails.NodeID,
-			currentTerm:         persistentState.CurrentTerm,
-			votedFor:            persistentState.VotedFor,
-			Log:                 newRaftLog(),
-			commitIndex:         0,
-			lastApplied:         persistentState.LastApplied,
-			leaderId:            "",
-			Configuration:       newConfiguration(nodes, myNodeDetails.NodeID, 0),
-			persistentStateFile: persistentStateFile,
+			specialNumber:     persistentState.SpecialNumber,
+			NodeId:            myNodeDetails.NodeID,
+			currentTerm:       persistentState.CurrentTerm,
+			votedFor:          persistentState.VotedFor,
+			Log:               raftlog.New(path.Join(raftInfoDirectory, LogDirectory)),
+			commitIndex:       0,
+			lastApplied:       persistentState.LastApplied,
+			leaderId:          "",
+			Configuration:     newConfiguration(nodes, myNodeDetails.NodeID, 0),
+			raftInfoDirectory: raftInfoDirectory,
 		}
 	}
 
