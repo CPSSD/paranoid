@@ -351,7 +351,7 @@ func TestRaftConfigurationChange(t *testing.T) {
 		}
 	} else {
 		err, _ := node2RaftServer.RequestAddLogEntry(&pb.Entry{
-			Type: pb.Entry_StateMachineCommand,
+			Type: pb.Entry_Demo,
 			Uuid: rafttestutil.GenerateNewUUID(),
 			Demo: &pb.DemoCommand{1337},
 		})

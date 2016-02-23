@@ -26,7 +26,12 @@ func Ping() {
 
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err = client.Ping(context.Background(), &pb.PingRequest{ip, port, globals.CommonName})
+		_, err = client.Ping(context.Background(), &pb.PingRequest{
+			Ip:         ip,
+			Port:       port,
+			CommonName: globals.CommonName,
+			Uuid:       globals.UUID,
+		})
 		if err != nil {
 			Log.Error("Can't ping ", node)
 		}
