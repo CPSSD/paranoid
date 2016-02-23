@@ -24,6 +24,7 @@ func TestRaftElection(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping in short testing mode")
 	}
+	t.Parallel()
 
 	raft.Log.Info("Testing leader eleciton")
 	node1Lis, node1Port := rafttestutil.StartListener()
@@ -108,6 +109,7 @@ func TestRaftLogReplication(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping test in short mode")
 	}
+	t.Parallel()
 
 	raft.Log.Info("Testing log replication")
 	node1Lis, node1Port := rafttestutil.StartListener()
@@ -172,13 +174,14 @@ func TestRaftPersistentState(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping test in short mode")
 	}
+	t.Parallel()
 
 	raft.Log.Info("Testing persistent State")
 	node1Lis, node1Port := rafttestutil.StartListener()
 	node1 := rafttestutil.SetUpNode("node1", "localhost", node1Port, "_")
 	defer rafttestutil.CloseListener(node1Lis)
 
-	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest2", "node1"))
+	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest4", "node1"))
 	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
 	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, node1RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{}})
 	defer node1srv.Stop()
@@ -233,6 +236,7 @@ func TestRaftConfigurationChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping test in short mode")
 	}
+	t.Parallel()
 
 	raft.Log.Info("Testing joinging and leaving cluster")
 
@@ -369,7 +373,7 @@ func TestStartNodeOutOfConfiguration(t *testing.T) {
 	defer rafttestutil.CloseListener(node1Lis)
 	node1 := rafttestutil.SetUpNode("node1", "localhost", node1Port, "_")
 
-	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest3", "node1"))
+	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest5", "node1"))
 	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
 	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, node1RaftDirectory, nil)
 	defer node1srv.Stop()
