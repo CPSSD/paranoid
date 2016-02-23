@@ -8,11 +8,22 @@ import (
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"google.golang.org/grpc"
 	"net"
+	"os"
 	"time"
 )
 
 const (
 	TYPE_WRITE uint32 = iota
+	TYPE_CREAT
+	TYPE_CHMOD
+	TYPE_TRUNCATE
+	TYPE_UTIMES
+	TYPE_RENAME
+	TYPE_LINK
+	TYPE_SYMLINK
+	TYPE_UNLINK
+	TYPE_MKDIR
+	TYPE_RMDIR
 )
 
 type StateMachineResult struct {
@@ -151,6 +162,180 @@ func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length 
 	return stateMachineResult.Code, stateMachineResult.Err, stateMachineResult.BytesWritten
 }
 
+func (s *RaftNetworkServer) RequestCreatCommand(filePath string, mode uint32) (returnCode int, returnError error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type: TYPE_CREAT,
+			Path: filePath,
+			Mode: mode,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestChmodCommand(filePath string, mode uint32) (returnCode int, returnError error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type: TYPE_CHMOD,
+			Path: filePath,
+			Mode: mode,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestTruncateCommand(filePath string, length uint64) (returnCode int, returnError error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type:   TYPE_TRUNCATE,
+			Path:   filePath,
+			Length: length,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestUtimesCommand(filePath string, accessSeconds, accessNanoSeconds, modifySeconds,
+	modifyNanoSeconds int64) (returnCode int, returnError error) {
+
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type:              TYPE_UTIMES,
+			Path:              filePath,
+			AccessSeconds:     accessSeconds,
+			AccessNanoseconds: accessNanoSeconds,
+			ModifySeconds:     modifySeconds,
+			ModifyNanoseconds: modifyNanoSeconds,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestRenameCommand(oldPath, newPath string) (returnCode int, returnError error) {
+
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type:    TYPE_RENAME,
+			OldPath: oldPath,
+			NewPath: newPath,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestLinkCommand(oldPath, newPath string) (returnCode int, returnError error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type:    TYPE_LINK,
+			OldPath: oldPath,
+			NewPath: newPath,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestSymlinkCommand(oldPath, newPath string) (returnCode int, returnError error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type:    TYPE_SYMLINK,
+			OldPath: oldPath,
+			NewPath: newPath,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestUnlinkCommand(filePath string) (returnCode int, returnError error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type: TYPE_UNLINK,
+			Path: filePath,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestMkdirCommand(filePath string, mode uint32) (returnCode int, returnError error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type: TYPE_MKDIR,
+			Path: filePath,
+			Mode: mode,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
+func (s *RaftNetworkServer) RequestRmdirCommand(filePath string) (returnCode int, returnError error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_StateMachineCommand,
+		Uuid: generateNewUUID(),
+		Command: &pb.StateMachineCommand{
+			Type: TYPE_RMDIR,
+			Path: filePath,
+		},
+	}
+	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	if err != nil {
+		return returncodes.EBUSY, err
+	}
+	return stateMachineResult.Code, stateMachineResult.Err
+}
+
 func (s *RaftNetworkServer) RequestChangeConfiguration(nodes []Node) error {
 	Log.Info("Configuration change requested")
 	entry := &pb.Entry{
@@ -170,6 +355,46 @@ func performLibPfsCommand(directory string, command *pb.StateMachineCommand) *St
 	case TYPE_WRITE:
 		code, err, bytesWritten := commands.WriteCommand(directory, command.Path, int64(command.Offset), int64(command.Length), command.Data)
 		return &StateMachineResult{code, err, bytesWritten}
+	case TYPE_CREAT:
+		code, err := commands.CreatCommand(directory, command.Path, os.FileMode(command.Mode))
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_CHMOD:
+		code, err := commands.ChmodCommand(directory, command.Path, os.FileMode(command.Mode))
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_TRUNCATE:
+		code, err := commands.TruncateCommand(directory, command.Path, int64(command.Length))
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_UTIMES:
+		var atime *time.Time
+		var mtime *time.Time
+		if command.AccessNanoseconds != 0 || command.AccessSeconds != 0 {
+			time := time.Unix(command.AccessSeconds, command.AccessNanoseconds)
+			atime = &time
+		}
+		if command.ModifyNanoseconds != 0 || command.ModifySeconds != 0 {
+			time := time.Unix(command.ModifySeconds, command.ModifyNanoseconds)
+			mtime = &time
+		}
+		code, err := commands.UtimesCommand(directory, command.Path, atime, mtime)
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_RENAME:
+		code, err := commands.RenameCommand(directory, command.OldPath, command.NewPath)
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_LINK:
+		code, err := commands.LinkCommand(directory, command.OldPath, command.NewPath)
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_SYMLINK:
+		code, err := commands.SymlinkCommand(directory, command.OldPath, command.NewPath)
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_UNLINK:
+		code, err := commands.UnlinkCommand(directory, command.Path)
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_MKDIR:
+		code, err := commands.MkdirCommand(directory, command.Path, os.FileMode(command.Mode))
+		return &StateMachineResult{Code: code, Err: err}
+	case TYPE_RMDIR:
+		code, err := commands.RmdirCommand(directory, command.Path)
+		return &StateMachineResult{Code: code, Err: err}
 	}
 	Log.Fatal("Unrecognised command type")
 	return nil

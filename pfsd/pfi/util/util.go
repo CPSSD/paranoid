@@ -3,6 +3,7 @@ package util
 import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
+	"github.com/cpssd/paranoid/raft"
 	"github.com/hanwen/go-fuse/fuse"
 	"syscall"
 )
@@ -12,6 +13,7 @@ var PfsDirectory string
 var LogOutput bool
 var SendOverNetwork bool
 var Log *logger.ParanoidLogger
+var RaftServer *raft.RaftNetworkServer
 
 func GetFuseReturnCode(retcode int) fuse.Status {
 	switch retcode {
