@@ -347,14 +347,24 @@ func (c *Configuration) savePersistentConfiguration() {
 		FutureConfiguration:       c.futureConfiguration,
 	}
 
-	persistentCofigBytes, err := json.Marshal(perState)
+	persistentConfigBytes, err := json.Marshal(perState)
 	if err != nil {
-		Log.Fatal("Error saving persistent state to disk:", err)
+		Log.Fatal("Error saving persistent confiuration to disk:", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(c.raftInfoDirectory, PersistentConfigurationFileName), persistentCofigBytes, 0600)
+	if _, err := os.Stat(c.raftInfoDirectory); os.IsNotExist(err) {
+		Log.Fatal("Raft Info Directory does not exist:", err)
+	}
+
+	newPeristentFile := path.Join(c.raftInfoDirectory, PersistentConfigurationFileName+"-new")
+	err = ioutil.WriteFile(newPeristentFile, persistentConfigBytes, 0600)
 	if err != nil {
-		Log.Fatal("Error saving persistent state to disk:", err)
+		Log.Fatal("Error writing new persistent configuration to disk:", err)
+	}
+
+	err = os.Rename(newPeristentFile, path.Join(c.raftInfoDirectory, PersistentConfigurationFileName))
+	if err != nil {
+		Log.Fatal("Error saving persistent configuration to disk:", err)
 	}
 }
 

@@ -52,7 +52,7 @@ func StopRaftServer(raftServer *raft.RaftNetworkServer) {
 }
 
 func CreateRaftDirectory(raftDirectory string) string {
-	RemoveRaftDirectory(raftDirectory)
+	os.RemoveAll(raftDirectory)
 	err := os.MkdirAll(raftDirectory, 0700)
 	if err != nil {
 		log.Fatal("Error creating raft directory:", err)
@@ -61,6 +61,9 @@ func CreateRaftDirectory(raftDirectory string) string {
 }
 
 func RemoveRaftDirectory(raftDirectory string) {
+	//Need to sleep, as otherwise this can cause a directory that the tests are using to be removed before
+	//the raft servers have shut down. Causing the tests to fail.
+	time.Sleep(time.Second)
 	os.RemoveAll(raftDirectory)
 }
 

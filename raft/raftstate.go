@@ -234,7 +234,17 @@ func (s *RaftState) savePersistentState() {
 		Log.Fatal("Error saving persistent state to disk:", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(s.raftInfoDirectory, PersistentStateFileName), persistentStateBytes, 0600)
+	if _, err := os.Stat(s.raftInfoDirectory); os.IsNotExist(err) {
+		Log.Fatal("Raft Info Directory does not exist:", err)
+	}
+
+	newPeristentFile := path.Join(s.raftInfoDirectory, PersistentStateFileName+"-new")
+	err = ioutil.WriteFile(newPeristentFile, persistentStateBytes, 0600)
+	if err != nil {
+		Log.Fatal("Error writing new persistent state to disk:", err)
+	}
+
+	err = os.Rename(newPeristentFile, path.Join(s.raftInfoDirectory, PersistentStateFileName))
 	if err != nil {
 		Log.Fatal("Error saving persistent state to disk:", err)
 	}
