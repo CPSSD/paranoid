@@ -134,7 +134,6 @@ func doMount(c *cli.Context, args []string) {
 				pfsdFlags = append(pfsdFlags, "-interface="+iface)
 			}
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
-			cmd.Stderr = os.Stderr
 			err = cmd.Start()
 			if err != nil {
 				Log.Fatal("Error running pfsd :", err)

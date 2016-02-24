@@ -346,12 +346,14 @@ func (s *RaftNetworkServer) RequestChangeConfiguration(nodes []Node) error {
 			Nodes: convertNodesToProto(nodes),
 		},
 	}
-	Log.Info("Nodes:", entry.Config.Nodes)
 	err, _ := s.RequestAddLogEntry(entry)
 	return err
 }
 
 func (s *RaftNetworkServer) RequestAddNodeToConfiguration(node Node) error {
+	if s.State.Configuration.InConfiguration(node.NodeID) {
+		return nil
+	}
 	nodes := append(s.State.Configuration.GetNodesList(), node)
 	return s.RequestChangeConfiguration(nodes)
 }

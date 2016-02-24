@@ -63,7 +63,7 @@ func PingPeers() error {
 			return errors.New("Failed to join raft cluster")
 		default:
 			err := pnetclient.Ping()
-			if err != nil {
+			if err == nil {
 				return nil
 			}
 		}
