@@ -3,18 +3,9 @@
 package main
 
 import (
-	"flag"
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/pfsd/globals"
-	"github.com/cpssd/paranoid/pfsd/pnetserver"
-	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"io/ioutil"
-	syslog "log"
-	"net"
 	"os"
 	"os/exec"
 	"path"
@@ -23,47 +14,6 @@ import (
 	"testing"
 	"time"
 )
-
-var tmpdir = path.Join(os.TempDir(), "pfs")
-
-func TestMain(m *testing.M) {
-	// Make sure we start with an empty directory
-	pnetserver.Log = logger.New("pnetserver", "pfsd", os.DevNull)
-	os.RemoveAll(tmpdir)
-	os.Mkdir(tmpdir, 0777)
-	commands.Log = logger.New("pfsdintegration", "pfsdintegration", os.DevNull)
-	commands.InitCommand(tmpdir)
-	pnetserver.ParanoidDir = tmpdir
-	globals.Port = 10101
-	lis, err := net.Listen("tcp", ":10101")
-	if err != nil {
-		syslog.Fatal("Error Creating PFSD server:", err)
-	}
-	defer lis.Close()
-	srv := grpc.NewServer()
-	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
-	go srv.Serve(lis)
-	flag.Parse()
-	exitCode := m.Run()
-	os.Exit(exitCode)
-}
-
-func TestPing(t *testing.T) {
-	conn, err := grpc.Dial("localhost:10101", grpc.WithInsecure())
-	if err != nil {
-		t.Fatalf("Could not connect to server: %s", err)
-	}
-	defer conn.Close()
-	client := pb.NewParanoidNetworkClient(conn)
-	req := pb.PingRequest{
-		Ip:   "0.0.0.0",
-		Port: "0",
-	}
-	_, err = client.Ping(context.Background(), &req)
-	if grpc.Code(err) != codes.OK {
-		t.Errorf("Ping did not return OK. Actual: %s", err)
-	}
-}
 
 func createTestDir(t *testing.T, name string) {
 	os.RemoveAll(path.Join(os.TempDir(), name))
@@ -83,6 +33,8 @@ func TestKillSignal(t *testing.T) {
 	defer removeTestDir("testksMountpoint")
 	createTestDir(t, "testksDirectory")
 	defer removeTestDir("testksDirectory")
+
+	commands.Log = logger.New("pfsdintegration", "pfsdintegration", os.DevNull)
 
 	discovery := exec.Command("discovery-server", "--port=10102")
 	err := discovery.Start()
