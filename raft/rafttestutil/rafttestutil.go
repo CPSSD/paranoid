@@ -53,7 +53,7 @@ func StopRaftServer(raftServer *raft.RaftNetworkServer) {
 }
 
 func CreatePersistentFile(persistentFile string) string {
-	RemovePersistentFile(persistentFile)
+	os.Remove(persistentFile)
 	dir, _ := path.Split(persistentFile)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0700)
@@ -65,6 +65,9 @@ func CreatePersistentFile(persistentFile string) string {
 }
 
 func RemovePersistentFile(persistentFile string) {
+	//Need to sleep, as otherwise this can cause a directory that the tests are using to be removed before
+	//the raft servers have shut down. Causing the tests to fail.
+	time.Sleep(time.Second)
 	os.Remove(persistentFile)
 }
 
