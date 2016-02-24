@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
@@ -74,7 +75,7 @@ func startRPCServer(lis *net.Listener) {
 	go srv.Serve(*lis)
 
 	//Do we need to request to join a cluster
-	if raftNetworkServer.State.Configuration.MyConfigurationGood() == false {
+	if raftNetworkServer.State.Configuration.HasConfiguration() == false {
 		err := dnetclient.PingPeers()
 		if err != nil {
 			log.Fatal("Unable to join a raft cluster")
@@ -96,6 +97,7 @@ func main() {
 	upnp.Log = logger.New("upnp", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	keyman.Log = logger.New("keyman", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	raft.Log = logger.New("raft", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	commands.Log = logger.New("libpfs", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 
 	log.SetOutput(logger.STDERR | logger.LOGFILE)
 	dnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
@@ -104,6 +106,11 @@ func main() {
 	upnp.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	keyman.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	raft.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	commands.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+
+	if *verbose {
+		commands.Log.SetLogLevel(logger.VERBOSE)
+	}
 
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {

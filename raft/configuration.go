@@ -148,6 +148,10 @@ func (c *Configuration) MyConfigurationGood() bool {
 	return false
 }
 
+func (c *Configuration) HasConfiguration() bool {
+	return c.InConfiguration(c.myNodeId)
+}
+
 func (c *Configuration) GetTotalPossibleVotes() int {
 	votes := len(c.currentConfiguration)
 	for i := 0; i < len(c.futureConfiguration); i++ {

@@ -1,7 +1,6 @@
 package pfi
 
 import (
-	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pfi/filesystem"
@@ -31,13 +30,6 @@ func StartPfi(pfsDir, mountPoint string, logOutput bool, raftServer *raft.RaftNe
 
 	if logOutput {
 		util.Log.SetLogLevel(logger.VERBOSE)
-	}
-
-	commands.Log = logger.New("libpfs", "pfsd", path.Join(pfsDir, "meta", "logs"))
-	commands.Log.SetOutput(logger.STDERR | logger.LOGFILE)
-
-	if logOutput {
-		commands.Log.SetLogLevel(logger.VERBOSE)
 	}
 
 	util.PfsDirectory, err = filepath.Abs(pfsDir)
