@@ -1,6 +1,7 @@
 package pnetclient
 
 import (
+	"errors"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
@@ -8,7 +9,8 @@ import (
 	"strconv"
 )
 
-func Ping() {
+//Ping a peer asking to join raft network
+func Ping() error {
 	ip, err := upnp.GetIP()
 	if err != nil {
 		Log.Fatal("Can not ping peers: unable to get IP. Error:", err)
@@ -16,6 +18,7 @@ func Ping() {
 
 	nodes := globals.Nodes.GetAll()
 	for _, node := range nodes {
+		Log.Info("Pinging node:", node)
 		port := strconv.Itoa(globals.Port)
 
 		conn, err := Dial(node)
@@ -34,6 +37,9 @@ func Ping() {
 		})
 		if err != nil {
 			Log.Error("Can't ping ", node)
+		} else {
+			return nil
 		}
 	}
+	return errors.New("Unable to join raft network")
 }

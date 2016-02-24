@@ -6,6 +6,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pfi/filesystem"
 	"github.com/cpssd/paranoid/pfsd/pfi/util"
+	"github.com/cpssd/paranoid/raft"
 	"path"
 	"path/filepath"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/hanwen/go-fuse/fuse/pathfs"
 )
 
-func StartPfi(pfsDir, mountPoint string, logOutput, sendOverNetwork bool) {
+func StartPfi(pfsDir, mountPoint string, logOutput bool, raftServer *raft.RaftNetworkServer) {
 	defer globals.Wait.Done()
 	// Create a logger
 	var err error
@@ -21,7 +22,13 @@ func StartPfi(pfsDir, mountPoint string, logOutput, sendOverNetwork bool) {
 	util.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	util.LogOutput = logOutput
-	util.SendOverNetwork = sendOverNetwork
+	util.RaftServer = raftServer
+	if raftServer == nil {
+		util.SendOverNetwork = false
+	} else {
+		util.SendOverNetwork = true
+	}
+
 	if logOutput {
 		util.Log.SetLogLevel(logger.VERBOSE)
 	}

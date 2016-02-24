@@ -175,6 +175,15 @@ func (c *Configuration) GetPeersList() []Node {
 	return peers
 }
 
+func (c *Configuration) GetNodesList() []Node {
+	peers := c.GetPeersList()
+	myNode, err := c.GetNode(c.myNodeId)
+	if err == nil {
+		return append(peers, myNode)
+	}
+	return peers
+}
+
 func getRequiredVotes(nodeCount int) int {
 	return (nodeCount / 2) + 1
 }

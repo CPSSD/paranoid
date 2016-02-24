@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/pfsd/upnp"
@@ -22,8 +21,9 @@ func stopAllServices() {
 	}
 	close(globals.Quit) // Sends stop signal to all goroutines
 	if !*noNetwork {
-		dnetclient.Disconnect() // Disconnect from the discovery server
+		close(raftNetworkServer.Quit)
 		srv.Stop()
+		raftNetworkServer.Wait.Wait()
 	}
 	// Since srv can't talk to the waitgroup itself, we do on its behalf
 	// We also wait to give it some time to stop itself.

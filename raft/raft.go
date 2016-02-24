@@ -341,6 +341,9 @@ func (s *RaftNetworkServer) runElection() {
 
 	votesReturned := 0
 	votesRequested := len(peers)
+	if votesRequested == 0 {
+		return
+	}
 	for {
 		select {
 		case _, ok := <-s.Quit:
@@ -525,6 +528,7 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 				return
 			}
 		case config := <-s.State.ConfigurationApplied:
+			Log.Info("New configuration applied:", config)
 			if config.Type == pb.Configuration_CurrentConfiguration {
 				inConfig := false
 				for i := 0; i < len(config.Nodes); i++ {
@@ -555,7 +559,7 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 	}
 }
 
-func newRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftNetworkServer {
+func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftNetworkServer {
 	raftServer := &RaftNetworkServer{State: newRaftState(nodeDetails, pfsDirectory, raftInfoDirectory, testConfiguration)}
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)

@@ -44,7 +44,7 @@ func StartRaft(lis *net.Listener, nodeDetails Node, pfsDirectory, raftInfoDirect
 
 	var opts []grpc.ServerOption
 	srv := grpc.NewServer(opts...)
-	raftServer := newRaftNetworkServer(nodeDetails, pfsDirectory, raftInfoDirectory, startConfiguration)
+	raftServer := NewRaftNetworkServer(nodeDetails, pfsDirectory, raftInfoDirectory, startConfiguration)
 	pb.RegisterRaftNetworkServer(srv, raftServer)
 	raftServer.Wait.Add(1)
 	go func() {
@@ -337,7 +337,7 @@ func (s *RaftNetworkServer) RequestRmdirCommand(filePath string) (returnCode int
 }
 
 func (s *RaftNetworkServer) RequestChangeConfiguration(nodes []Node) error {
-	Log.Info("Configuration change requested")
+	Log.Info("Configuration change requested:", nodes)
 	entry := &pb.Entry{
 		Type: pb.Entry_ConfigurationChange,
 		Uuid: generateNewUUID(),
@@ -346,8 +346,14 @@ func (s *RaftNetworkServer) RequestChangeConfiguration(nodes []Node) error {
 			Nodes: convertNodesToProto(nodes),
 		},
 	}
+	Log.Info("Nodes:", entry.Config.Nodes)
 	err, _ := s.RequestAddLogEntry(entry)
 	return err
+}
+
+func (s *RaftNetworkServer) RequestAddNodeToConfiguration(node Node) error {
+	nodes := append(s.State.Configuration.GetNodesList(), node)
+	return s.RequestChangeConfiguration(nodes)
 }
 
 func performLibPfsCommand(directory string, command *pb.StateMachineCommand) *StateMachineResult {
