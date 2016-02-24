@@ -22,6 +22,10 @@ const (
 	ENTRY_APPLIED_TIMEOUT time.Duration = 20000 * time.Millisecond
 )
 
+const (
+	MAX_APPEND_ENTRIES uint64 = 100 //How many entries can be sent in one append entries request
+)
+
 var (
 	Log *logger.ParanoidLogger
 )
@@ -34,19 +38,20 @@ type RaftNetworkServer struct {
 	Quit                 chan bool
 	ElectionTimeoutReset chan bool
 
-	addEntryLock  sync.Mutex
-	clientRequest *pb.Entry
+	appendEntriesLock sync.Mutex
+	addEntryLock      sync.Mutex
+	clientRequest     *pb.Entry
 }
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
 	if s.State.Configuration.InConfiguration(req.LeaderId) == false {
 		if s.State.Configuration.MyConfigurationGood() {
-			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
 		}
 	}
 
 	if req.Term < s.State.GetCurrentTerm() {
-		return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+		return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
 	}
 
 	s.ElectionTimeoutReset <- true
@@ -59,24 +64,26 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 
 	if req.PrevLogIndex != 0 {
 		if s.State.Log.GetMostRecentIndex() < req.PrevLogIndex {
-			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), s.State.Log.GetMostRecentIndex() + 1, false}, nil
 		}
 		preLogEntry, err := s.State.Log.GetLogEntry(req.PrevLogIndex)
 		if err != nil {
 			Log.Fatal("Unable to get log entry:", err)
 		}
 		if preLogEntry.Term != req.PrevLogTerm {
-			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
 		}
 	}
 
+	s.appendEntriesLock.Lock()
+	defer s.appendEntriesLock.Unlock()
 	for i := uint64(0); i < uint64(len(req.Entries)); i++ {
 		logIndex := req.PrevLogIndex + 1 + i
 
 		if s.State.Log.GetMostRecentIndex() >= logIndex {
 			logEntryAtIndex, err := s.State.Log.GetLogEntry(logIndex)
 			if err != nil {
-				Log.Fatal("Unable to get log entry3:", err)
+				Log.Fatal("Unable to get log entry:", err)
 			}
 			if logEntryAtIndex.Term != req.Term {
 				s.State.Log.DiscardLogEntries(logIndex)
@@ -97,7 +104,7 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 		s.State.ApplyLogEntries()
 	}
 
-	return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), true}, nil
+	return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, true}, nil
 }
 
 func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVoteRequest) (*pb.RequestVoteResponse, error) {
@@ -411,22 +418,23 @@ func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 			if nextIndex-1 > 0 {
 				prevLogEntry, err := s.State.Log.GetLogEntry(nextIndex - 1)
 				if err != nil {
-					Log.Fatal("Unable to get log entry4:", err)
+					Log.Fatal("Unable to get log entry at", nextIndex-1, ":", err)
 				}
 				prevLogTerm = prevLogEntry.Term
 			}
 
-			nextLogEntry, err := s.State.Log.GetLogEntry(nextIndex)
+			nextLogEntries, err := s.State.Log.GetLogEntries(nextIndex, MAX_APPEND_ENTRIES)
 			if err != nil {
 				Log.Fatal("Unable to get log entry:", err)
 			}
+			numLogEntries := uint64(len(nextLogEntries))
 
 			response, err := client.AppendEntries(context.Background(), &pb.AppendEntriesRequest{
 				Term:         s.State.GetCurrentTerm(),
 				LeaderId:     s.State.NodeId,
 				PrevLogIndex: nextIndex - 1,
 				PrevLogTerm:  prevLogTerm,
-				Entries:      []*pb.Entry{nextLogEntry.Entry},
+				Entries:      nextLogEntries,
 				LeaderCommit: s.State.GetCommitIndex(),
 			})
 			if err == nil {
@@ -434,12 +442,16 @@ func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 					s.State.StopLeading <- true
 				} else if response.Success == false {
 					if s.State.GetCurrentState() == LEADER {
-						s.State.Configuration.SetNextIndex(node.NodeID, nextIndex-1)
+						if response.NextIndex == 0 {
+							s.State.Configuration.SetNextIndex(node.NodeID, nextIndex-1)
+						} else {
+							s.State.Configuration.SetNextIndex(node.NodeID, response.NextIndex)
+						}
 					}
 				} else if response.Success {
 					if s.State.GetCurrentState() == LEADER {
-						s.State.Configuration.SetNextIndex(node.NodeID, nextIndex+1)
-						s.State.Configuration.SetMatchIndex(node.NodeID, nextIndex)
+						s.State.Configuration.SetNextIndex(node.NodeID, nextIndex+numLogEntries)
+						s.State.Configuration.SetMatchIndex(node.NodeID, nextIndex+numLogEntries-1)
 						s.State.calculateNewCommitIndex()
 					}
 				}

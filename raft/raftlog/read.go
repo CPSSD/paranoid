@@ -38,6 +38,17 @@ func (rl *RaftLog) GetLogEntry(index uint64) (entry *pb.LogEntry, err error) {
 // GeEntriesSince returns a list of entries including and after the one
 // at the given index, and an error object if somethign went wrong
 func (rl *RaftLog) GetEntriesSince(index uint64) (entries []*pb.Entry, err error) {
+	return rl.GetLogEntries(index, 100000000)
+}
+
+func min(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func (rl *RaftLog) GetLogEntries(index, maxCount uint64) (entries []*pb.Entry, err error) {
 	rl.indexLock.Lock()
 	defer rl.indexLock.Unlock()
 
@@ -45,8 +56,8 @@ func (rl *RaftLog) GetEntriesSince(index uint64) (entries []*pb.Entry, err error
 		return nil, errors.New("Index out of bounds")
 	}
 
-	entries = make([]*pb.Entry, rl.currentIndex-index)
-	for i := index; i < rl.currentIndex; i++ {
+	entries = make([]*pb.Entry, min(rl.currentIndex-index, maxCount))
+	for i := index; i < min(rl.currentIndex, index+maxCount); i++ {
 		fileIndex := ci2fi(i)
 		filePath := path.Join(rl.logDir, strconv.FormatUint(fileIndex, 10))
 		fileData, err := ioutil.ReadFile(filePath)
@@ -54,13 +65,13 @@ func (rl *RaftLog) GetEntriesSince(index uint64) (entries []*pb.Entry, err error
 			return nil, errors.New("Failed to read logfile")
 		}
 
-		var entry *pb.Entry
+		entry := &pb.LogEntry{}
 		err = proto.Unmarshal(fileData, entry)
 		if err != nil {
 			return nil, errors.New("Failed to Unmarshal file data")
 		}
 
-		entries[i-index] = entry
+		entries[i-index] = entry.Entry
 	}
 
 	return entries, nil

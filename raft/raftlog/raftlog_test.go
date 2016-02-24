@@ -104,6 +104,19 @@ func TestWriteReadDelete(t *testing.T) {
 		t.Error("Bad protobuf received from read: ", e)
 	}
 
+	entries, err := rl.GetEntriesSince(1)
+	if len(entries) != 2 {
+		t.Fatal("Incorrect entries returned")
+	}
+
+	if entries[0].GetCommand().Path != "ThisIsAPath" {
+		t.Error("Bad protobuf received from getEntiresSince: ", entries[0])
+	}
+
+	if entries[1].GetCommand().Path != "ThisIsAPath2" {
+		t.Error("Bad protobuf received from getEntiresSince: ", entries[1])
+	}
+
 	// Testing Delete functionality
 	err = rl.DiscardLogEntries(1)
 	if err != nil {
