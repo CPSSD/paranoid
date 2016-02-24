@@ -100,6 +100,7 @@ func (s *RaftState) GetCommitIndex() uint64 {
 
 func (s *RaftState) SetCommitIndex(x uint64) {
 	s.commitIndex = x
+	s.SendAppendEntries <- true
 }
 
 func (s *RaftState) SetWaitingForApplied(x bool) {
