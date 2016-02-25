@@ -64,10 +64,11 @@ func CreatePersistentFile(persistentFile string) string {
 	return persistentFile
 }
 
-func RemovePersistentFile(persistentFile string) {
-	//Need to sleep, as otherwise this can cause a directory that the tests are using to be removed before
-	//the raft servers have shut down. Causing the tests to fail.
-	time.Sleep(time.Second)
+func RemovePersistentFile(persistentFile string, raftServer *raft.RaftNetworkServer) {
+	if raftServer != nil {
+		//Need to wait for server to shut down or the file could be removed while in use
+		raftServer.Wait.Wait()
+	}
 	os.Remove(persistentFile)
 }
 
