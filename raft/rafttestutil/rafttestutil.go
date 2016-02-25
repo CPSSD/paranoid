@@ -53,7 +53,7 @@ func StopRaftServer(raftServer *raft.RaftNetworkServer) {
 }
 
 func CreatePersistentFile(persistentFile string) string {
-	RemovePersistentFile(persistentFile)
+	os.Remove(persistentFile)
 	dir, _ := path.Split(persistentFile)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0700)
@@ -64,7 +64,11 @@ func CreatePersistentFile(persistentFile string) string {
 	return persistentFile
 }
 
-func RemovePersistentFile(persistentFile string) {
+func RemovePersistentFile(persistentFile string, raftServer *raft.RaftNetworkServer) {
+	if raftServer != nil {
+		//Need to wait for server to shut down or the file could be removed while in use
+		raftServer.Wait.Wait()
+	}
 	os.Remove(persistentFile)
 }
 
