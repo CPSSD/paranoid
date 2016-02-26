@@ -44,6 +44,9 @@ type RaftNetworkServer struct {
 }
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
+	s.appendEntriesLock.Lock()
+	defer s.appendEntriesLock.Unlock()
+
 	if s.State.Configuration.InConfiguration(req.LeaderId) == false {
 		if s.State.Configuration.MyConfigurationGood() {
 			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
@@ -75,8 +78,6 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 		}
 	}
 
-	s.appendEntriesLock.Lock()
-	defer s.appendEntriesLock.Unlock()
 	for i := uint64(0); i < uint64(len(req.Entries)); i++ {
 		logIndex := req.PrevLogIndex + 1 + i
 
