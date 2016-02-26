@@ -44,7 +44,7 @@ func StartRaft(lis *net.Listener, nodeDetails Node, pfsDirectory, raftInfoDirect
 
 	var opts []grpc.ServerOption
 	srv := grpc.NewServer(opts...)
-	raftServer := NewRaftNetworkServer(nodeDetails, pfsDirectory, raftInfoDirectory, startConfiguration)
+	raftServer := NewRaftNetworkServer(nodeDetails, pfsDirectory, raftInfoDirectory, startConfiguration, false, false)
 	pb.RegisterRaftNetworkServer(srv, raftServer)
 	raftServer.Wait.Add(1)
 	go func() {

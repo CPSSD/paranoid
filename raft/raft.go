@@ -1,11 +1,13 @@
 package raft
 
 import (
+	"crypto/tls"
 	"errors"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"math/rand"
 	"strings"
@@ -33,6 +35,10 @@ var (
 type RaftNetworkServer struct {
 	State *RaftState
 	Wait  sync.WaitGroup
+
+	nodeDetails   Node
+	TLSEnabled    bool
+	TLSSkipVerify bool
 
 	QuitChannelClosed    bool
 	Quit                 chan bool
@@ -224,7 +230,7 @@ func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
 		return errors.New("Unable to find leader")
 	}
 
-	conn, err := Dial(leaderNode, SEND_ENTRY_TIMEOUT)
+	conn, err := s.Dial(leaderNode, SEND_ENTRY_TIMEOUT)
 	defer conn.Close()
 	if err == nil {
 		client := pb.NewRaftNetworkClient(conn)
@@ -283,11 +289,18 @@ func (s *RaftNetworkServer) electionTimeOut() {
 	}
 }
 
-func Dial(node *Node, timeoutMiliseconds time.Duration) (*grpc.ClientConn, error) {
+func (s *RaftNetworkServer) Dial(node *Node, timeoutMiliseconds time.Duration) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTimeout(timeoutMiliseconds))
-	//TODO: tls support
-	opts = append(opts, grpc.WithInsecure())
+	if s.TLSEnabled {
+		creds := credentials.NewTLS(&tls.Config{
+			ServerName:         s.nodeDetails.CommonName,
+			InsecureSkipVerify: s.TLSSkipVerify,
+		})
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
 
 	conn, err := grpc.Dial(node.String(), opts...)
 	return conn, err
@@ -301,7 +314,7 @@ func (s *RaftNetworkServer) requestPeerVote(node *Node, term uint64, voteChannel
 			return
 		}
 		Log.Info("Dialing ", node)
-		conn, err := Dial(node, REQUEST_VOTE_TIMEOUT)
+		conn, err := s.Dial(node, REQUEST_VOTE_TIMEOUT)
 		defer conn.Close()
 		if err == nil {
 			client := pb.NewRaftNetworkClient(conn)
@@ -410,7 +423,7 @@ func (s *RaftNetworkServer) manageElections() {
 func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 	defer s.Wait.Done()
 	nextIndex := s.State.Configuration.GetNextIndex(node.NodeID)
-	conn, err := Dial(node, HEARTBEAT_TIMEOUT)
+	conn, err := s.Dial(node, HEARTBEAT_TIMEOUT)
 	defer conn.Close()
 	if err == nil {
 		client := pb.NewRaftNetworkClient(conn)
@@ -572,12 +585,17 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 	}
 }
 
-func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftNetworkServer {
+func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration,
+	TLSEnabled, TLSSkipVerify bool) *RaftNetworkServer {
+
 	raftServer := &RaftNetworkServer{State: newRaftState(nodeDetails, pfsDirectory, raftInfoDirectory, testConfiguration)}
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
 	raftServer.QuitChannelClosed = false
 	raftServer.Wait.Add(4)
+	raftServer.nodeDetails = nodeDetails
+	raftServer.TLSEnabled = TLSEnabled
+	raftServer.TLSSkipVerify = TLSSkipVerify
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()

@@ -64,15 +64,23 @@ func startRPCServer(lis *net.Listener) {
 		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, pnetserver.ParanoidDir, path.Join(pnetserver.ParanoidDir, "meta", "raft"),
 			&raft.StartConfiguration{
 				Peers: []raft.Node{},
-			})
+			},
+			globals.TLSEnabled, globals.TLSSkipVerify)
 	} else {
-		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, pnetserver.ParanoidDir, path.Join(pnetserver.ParanoidDir, "meta", "raft"), nil)
+		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, pnetserver.ParanoidDir, path.Join(pnetserver.ParanoidDir, "meta", "raft"), nil,
+			globals.TLSEnabled, globals.TLSSkipVerify)
 	}
 	rpb.RegisterRaftNetworkServer(srv, raftNetworkServer)
 	pnetserver.RaftNetworkServer = raftNetworkServer
 
 	globals.Wait.Add(1)
-	go srv.Serve(*lis)
+	go func() {
+		err := srv.Serve(*lis)
+		log.Info("Server stopped")
+		if err != nil {
+			log.Fatal("Server stopped because of an error:", err)
+		}
+	}()
 
 	//Do we need to request to join a cluster
 	if raftNetworkServer.State.Configuration.HasConfiguration() == false {
@@ -143,12 +151,8 @@ func main() {
 		}
 		globals.UUID = string(uuid)
 
-		ip, err := upnp.GetIP()
-		if err != nil {
-			log.Fatal("Could not get IP:", err)
-		}
 		//Asking for port 0 requests a random free port from the OS.
-		lis, err := net.Listen("tcp", ip+":0")
+		lis, err := net.Listen("tcp", ":0")
 		if err != nil {
 			log.Fatalf("Failed to start listening : %v.\n", err)
 		}
