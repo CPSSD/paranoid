@@ -29,6 +29,7 @@ type Configuration struct {
 
 	raftInfoDirectory    string
 	persistentConfigLock sync.Mutex
+	configLock           sync.Mutex
 }
 
 //persistentConfiguration is the configuration information that is saved to disk
@@ -45,6 +46,9 @@ type StartConfiguration struct {
 }
 
 func (c *Configuration) GetNode(nodeID string) (Node, error) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		if c.currentConfiguration[i].NodeID == nodeID {
 			return c.currentConfiguration[i], nil
@@ -61,6 +65,9 @@ func (c *Configuration) GetNode(nodeID string) (Node, error) {
 }
 
 func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	c.futureConfigurationActive = true
 	c.futureConfiguration = nodes
 	c.futureNextIndex = make([]uint64, len(nodes))
@@ -75,16 +82,19 @@ func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64
 }
 
 func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex uint64) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	if len(nodes) == len(c.futureConfiguration) {
 		futureToCurrent := true
 		for i := 0; i < len(nodes); i++ {
-			if c.inFutureConfiguration(nodes[i].NodeID) == false {
+			if c.inFutureConfigurationUnsafe(nodes[i].NodeID) == false {
 				futureToCurrent = false
 				break
 			}
 		}
 		if futureToCurrent {
-			c.FutureToCurrentConfiguration()
+			c.futureToCurrentConfiguration()
 			return
 		}
 	}
@@ -104,7 +114,7 @@ func (c *Configuration) GetFutureConfigurationActive() bool {
 	return c.futureConfigurationActive
 }
 
-func (c *Configuration) FutureToCurrentConfiguration() {
+func (c *Configuration) futureToCurrentConfiguration() {
 	c.futureConfigurationActive = false
 	c.currentConfiguration = c.futureConfiguration
 	c.currentNextIndex = c.futureNextIndex
@@ -118,6 +128,18 @@ func (c *Configuration) FutureToCurrentConfiguration() {
 }
 
 func (c *Configuration) inCurrentConfiguration(nodeID string) bool {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	for i := 0; i < len(c.currentConfiguration); i++ {
+		if c.currentConfiguration[i].NodeID == nodeID {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Configuration) inCurrentConfigurationUnsafe(nodeID string) bool {
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		if c.currentConfiguration[i].NodeID == nodeID {
 			return true
@@ -127,6 +149,18 @@ func (c *Configuration) inCurrentConfiguration(nodeID string) bool {
 }
 
 func (c *Configuration) inFutureConfiguration(nodeID string) bool {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	for i := 0; i < len(c.futureConfiguration); i++ {
+		if c.futureConfiguration[i].NodeID == nodeID {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Configuration) inFutureConfigurationUnsafe(nodeID string) bool {
 	for i := 0; i < len(c.futureConfiguration); i++ {
 		if c.futureConfiguration[i].NodeID == nodeID {
 			return true
@@ -153,9 +187,12 @@ func (c *Configuration) HasConfiguration() bool {
 }
 
 func (c *Configuration) GetTotalPossibleVotes() int {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	votes := len(c.currentConfiguration)
 	for i := 0; i < len(c.futureConfiguration); i++ {
-		if c.inCurrentConfiguration(c.futureConfiguration[i].NodeID) == false {
+		if c.inCurrentConfigurationUnsafe(c.futureConfiguration[i].NodeID) == false {
 			votes++
 		}
 	}
@@ -163,6 +200,9 @@ func (c *Configuration) GetTotalPossibleVotes() int {
 }
 
 func (c *Configuration) GetPeersList() []Node {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	var peers []Node
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		if c.currentConfiguration[i].NodeID != c.myNodeId {
@@ -171,7 +211,7 @@ func (c *Configuration) GetPeersList() []Node {
 	}
 	for i := 0; i < len(c.futureConfiguration); i++ {
 		if c.futureConfiguration[i].NodeID != c.myNodeId {
-			if c.inCurrentConfiguration(c.futureConfiguration[i].NodeID) == false {
+			if c.inCurrentConfigurationUnsafe(c.futureConfiguration[i].NodeID) == false {
 				peers = append(peers, c.futureConfiguration[i])
 			}
 		}
@@ -194,10 +234,13 @@ func getRequiredVotes(nodeCount int) int {
 
 //Check has a majority of votes have been received given a list of NodeIDs
 func (c *Configuration) HasMajority(votesRecieved []string) bool {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	currentRequiredVotes := getRequiredVotes(len(c.currentConfiguration))
 	count := 0
 	for i := 0; i < len(votesRecieved); i++ {
-		if c.inCurrentConfiguration(votesRecieved[i]) {
+		if c.inCurrentConfigurationUnsafe(votesRecieved[i]) {
 			count++
 		}
 	}
@@ -209,7 +252,7 @@ func (c *Configuration) HasMajority(votesRecieved []string) bool {
 		futureRequiredVotes := getRequiredVotes(len(c.futureConfiguration))
 		count = 0
 		for i := 0; i < len(votesRecieved); i++ {
-			if c.inFutureConfiguration(votesRecieved[i]) {
+			if c.inFutureConfigurationUnsafe(votesRecieved[i]) {
 				count++
 			}
 		}
@@ -221,6 +264,9 @@ func (c *Configuration) HasMajority(votesRecieved []string) bool {
 }
 
 func (c *Configuration) ResetNodeIndexs(lastLogIndex uint64) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		c.currentNextIndex[i] = lastLogIndex + 1
 		c.currentMatchIndex[i] = 0
@@ -232,6 +278,9 @@ func (c *Configuration) ResetNodeIndexs(lastLogIndex uint64) {
 }
 
 func (c *Configuration) GetNextIndex(nodeID string) uint64 {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		if c.currentConfiguration[i].NodeID == nodeID {
 			return c.currentNextIndex[i]
@@ -247,6 +296,9 @@ func (c *Configuration) GetNextIndex(nodeID string) uint64 {
 }
 
 func (c *Configuration) GetMatchIndex(nodeID string) uint64 {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		if c.currentConfiguration[i].NodeID == nodeID {
 			return c.currentMatchIndex[i]
@@ -262,6 +314,9 @@ func (c *Configuration) GetMatchIndex(nodeID string) uint64 {
 }
 
 func (c *Configuration) SetNextIndex(nodeID string, x uint64) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		if c.currentConfiguration[i].NodeID == nodeID {
 			c.currentNextIndex[i] = x
@@ -275,6 +330,9 @@ func (c *Configuration) SetNextIndex(nodeID string, x uint64) {
 }
 
 func (c *Configuration) SetMatchIndex(nodeID string, x uint64) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	for i := 0; i < len(c.currentConfiguration); i++ {
 		if c.currentConfiguration[i].NodeID == nodeID {
 			c.currentMatchIndex[i] = x
@@ -288,6 +346,9 @@ func (c *Configuration) SetMatchIndex(nodeID string, x uint64) {
 }
 
 func (c *Configuration) CalculateNewCommitIndex(lastCommitIndex, term uint64, log *raftlog.RaftLog) uint64 {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
 	if log.GetMostRecentTerm() != term {
 		return lastCommitIndex
 	}
@@ -303,7 +364,7 @@ func (c *Configuration) CalculateNewCommitIndex(lastCommitIndex, term uint64, lo
 		}
 		if logEntry.Term == term {
 			currentCount := 0
-			if c.inCurrentConfiguration(c.myNodeId) {
+			if c.inCurrentConfigurationUnsafe(c.myNodeId) {
 				currentCount = 1
 			}
 			for j := 0; j < len(c.currentMatchIndex); j++ {
@@ -319,7 +380,7 @@ func (c *Configuration) CalculateNewCommitIndex(lastCommitIndex, term uint64, lo
 
 			if c.futureConfigurationActive {
 				futureCount := 0
-				if c.inFutureConfiguration(c.myNodeId) {
+				if c.inFutureConfigurationUnsafe(c.myNodeId) {
 					futureCount = 1
 				}
 				for j := 0; j < len(c.futureMatchIndex); j++ {
