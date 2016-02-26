@@ -39,19 +39,22 @@ func TestRaftElection(t *testing.T) {
 	raft.Log.Info("Listeners set up")
 
 	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node1"))
-	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
+	var node1RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory, node1RaftServer)
 	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, "", node1RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node2, node3}})
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
 
 	node2RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node2"))
-	defer rafttestutil.RemoveRaftDirectory(node2RaftDirectory)
+	var node2RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node2RaftDirectory, node2RaftServer)
 	node2RaftServer, node2srv := raft.StartRaft(node2Lis, node2, "", node2RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node3}})
 	defer node2srv.Stop()
 	defer rafttestutil.StopRaftServer(node2RaftServer)
 
 	node3RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest1", "node3"))
-	defer rafttestutil.RemoveRaftDirectory(node3RaftDirectory)
+	var node3RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node3RaftDirectory, node3RaftServer)
 	node3RaftServer, node3srv := raft.StartRaft(node3Lis, node3, "", node3RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node2}})
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
@@ -124,19 +127,22 @@ func TestRaftLogReplication(t *testing.T) {
 	raft.Log.Info("Listeners set up")
 
 	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest2", "node1"))
-	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
+	var node1RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory, node1RaftServer)
 	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, "", node1RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node2, node3}})
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
 
 	node2RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest2", "node2"))
-	defer rafttestutil.RemoveRaftDirectory(node2RaftDirectory)
+	var node2RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node2RaftDirectory, node2RaftServer)
 	node2RaftServer, node2srv := raft.StartRaft(node2Lis, node2, "", node2RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node3}})
 	defer node2srv.Stop()
 	defer rafttestutil.StopRaftServer(node2RaftServer)
 
 	node3RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest2", "node3"))
-	defer rafttestutil.RemoveRaftDirectory(node3RaftDirectory)
+	var node3RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node3RaftDirectory, node3RaftServer)
 	node3RaftServer, node3srv := raft.StartRaft(node3Lis, node3, "", node3RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node2}})
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
@@ -182,7 +188,8 @@ func TestRaftPersistentState(t *testing.T) {
 	defer rafttestutil.CloseListener(node1Lis)
 
 	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest4", "node1"))
-	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
+	var node1RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory, node1RaftServer)
 	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, "", node1RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{}})
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
@@ -259,25 +266,29 @@ func TestRaftConfigurationChange(t *testing.T) {
 	raft.Log.Info("Listeners set up")
 
 	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest3", "node1"))
-	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
+	var node1RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory, node1RaftServer)
 	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, "", node1RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node2, node3}})
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
 
 	node2RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest3", "node2"))
-	defer rafttestutil.RemoveRaftDirectory(node2RaftDirectory)
+	var node2RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node2RaftDirectory, node2RaftServer)
 	node2RaftServer, node2srv := raft.StartRaft(node2Lis, node2, "", node2RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node3}})
 	defer node2srv.Stop()
 	defer rafttestutil.StopRaftServer(node2RaftServer)
 
 	node3RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest3", "node3"))
-	defer rafttestutil.RemoveRaftDirectory(node3RaftDirectory)
+	var node3RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node3RaftDirectory, node3RaftServer)
 	node3RaftServer, node3srv := raft.StartRaft(node3Lis, node3, "", node3RaftDirectory, &raft.StartConfiguration{Peers: []raft.Node{node1, node2}})
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
 
 	node4RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest3", "node4"))
-	defer rafttestutil.RemoveRaftDirectory(node4RaftDirectory)
+	var node4RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node4RaftDirectory, node4RaftServer)
 	node4RaftServer, node4srv := raft.StartRaft(node4Lis, node4, "", node4RaftDirectory, nil)
 	defer node4srv.Stop()
 	defer rafttestutil.StopRaftServer(node4RaftServer)
@@ -374,7 +385,8 @@ func TestStartNodeOutOfConfiguration(t *testing.T) {
 	node1 := rafttestutil.SetUpNode("node1", "localhost", node1Port, "_")
 
 	node1RaftDirectory := rafttestutil.CreateRaftDirectory(path.Join(os.TempDir(), "rafttest5", "node1"))
-	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory)
+	var node1RaftServer *raft.RaftNetworkServer
+	defer rafttestutil.RemoveRaftDirectory(node1RaftDirectory, node1RaftServer)
 	node1RaftServer, node1srv := raft.StartRaft(node1Lis, node1, "", node1RaftDirectory, nil)
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
