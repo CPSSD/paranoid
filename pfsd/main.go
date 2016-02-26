@@ -9,6 +9,7 @@ import (
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/ignore"
 	"github.com/cpssd/paranoid/pfsd/intercom"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pfi"
@@ -234,6 +235,7 @@ func main() {
 
 	globals.ParanoidDir = paranoidDirAbs
 	globals.MountPoint = mountPointAbs
+	ignore.IgnoreFile = path.Join(mountPointAbs, ".pfsignore")
 	setupLogging()
 
 	getFileSystemAttributes()
@@ -257,6 +259,9 @@ func main() {
 		if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
 			log.Fatal("Discovery port must be a number between 1 and 65535, inclusive.")
 		}
+	}
+
+	if !*noNetwork {
 
 		uuid, err := ioutil.ReadFile(path.Join(globals.ParanoidDir, "meta", "uuid"))
 		if err != nil {
