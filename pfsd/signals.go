@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/intercom"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	"github.com/kardianos/osext"
@@ -24,6 +25,12 @@ func stopAllServices() {
 	if !*noNetwork {
 		dnetclient.Disconnect() // Disconnect from the discovery server
 		srv.Stop()
+	}
+	err := intercom.ShutdownServer()
+	if err != nil {
+		log.Warn("Could not shut down internal communication server:", err)
+	} else {
+		log.Info("Internal communication server stopped.")
 	}
 	// Since srv can't talk to the waitgroup itself, we do on its behalf
 	// We also wait to give it some time to stop itself.

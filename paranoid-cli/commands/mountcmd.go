@@ -6,13 +6,16 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/intercom"
 	"io/ioutil"
 	"net"
+	"net/rpc"
 	"os"
 	"os/exec"
 	"os/user"
 	"path"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -153,4 +156,33 @@ func doMount(c *cli.Context, args []string) {
 			Log.Fatal("Error running pfsd :", err)
 		}
 	}
+	// Now that we've successfully told PFSD to start, ping it until we can confirm it is up
+	var ws sync.WaitGroup
+	ws.Add(1)
+	go func() {
+		defer ws.Done()
+		socketPath := path.Join(pfsDir, "meta", "intercom.sock")
+		after := time.After(time.Second * 10)
+		for {
+			select {
+			case <-after:
+				fmt.Printf("PFSD failed to start: received no response from PFSD. See %s for more information.\n",
+					path.Join(pfsDir, "meta", "logs", "pfsd.log"))
+				return
+			default:
+				var resp intercom.EmptyMessage
+				client, err := rpc.Dial("unix", socketPath)
+				if err != nil {
+					time.Sleep(time.Second)
+					continue
+				}
+				err = client.Call("IntercomServer.ConfirmUp", new(intercom.EmptyMessage), &resp)
+				if err == nil {
+					return
+				}
+				time.Sleep(time.Second)
+			}
+		}
+	}()
+	ws.Wait()
 }
