@@ -60,27 +60,37 @@ type RaftState struct {
 	waitingForApplied    bool
 	EntryApplied         chan *EntryAppliedInfo
 	ConfigurationApplied chan *pb.Configuration
-	ApplyEntriesLock     sync.Mutex
 
 	raftInfoDirectory   string
 	persistentStateLock sync.Mutex
+	stateChangeLock     sync.Mutex
 }
 
 func (s *RaftState) GetCurrentTerm() uint64 {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.currentTerm
 }
 
 func (s *RaftState) SetCurrentTerm(x uint64) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
 	s.votedFor = ""
 	s.currentTerm = x
 	s.savePersistentState()
 }
 
 func (s *RaftState) GetCurrentState() int {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.currentState
 }
 
 func (s *RaftState) SetCurrentState(x int) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
 	if s.currentState == LEADER {
 		s.StopLeading <- true
 	}
@@ -89,42 +99,66 @@ func (s *RaftState) SetCurrentState(x int) {
 		s.StartElection <- true
 	}
 	if x == LEADER {
-		s.SetLeaderId(s.NodeId)
+		s.setLeaderIdUnsafe(s.NodeId)
 		s.StartLeading <- true
 	}
 }
 
 func (s *RaftState) GetCommitIndex() uint64 {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.commitIndex
 }
 
 func (s *RaftState) SetCommitIndex(x uint64) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	s.commitIndex = x
 	s.SendAppendEntries <- true
 }
 
 func (s *RaftState) SetWaitingForApplied(x bool) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	s.waitingForApplied = x
 }
 
 func (s *RaftState) GetWaitingForApplied() bool {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.waitingForApplied
 }
 
 func (s *RaftState) GetVotedFor() string {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.votedFor
 }
 
 func (s *RaftState) SetVotedFor(x string) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	s.votedFor = x
 	s.savePersistentState()
 }
 
 func (s *RaftState) GetLeaderId() string {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.leaderId
 }
 
+func (s *RaftState) setLeaderIdUnsafe(x string) {
+	if s.leaderId == "" {
+		s.LeaderElected <- true
+	}
+	s.leaderId = x
+}
+
 func (s *RaftState) SetLeaderId(x string) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
 	if s.leaderId == "" {
 		s.LeaderElected <- true
 	}
@@ -132,20 +166,33 @@ func (s *RaftState) SetLeaderId(x string) {
 }
 
 func (s *RaftState) GetLastApplied() uint64 {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.lastApplied
 }
 
 func (s *RaftState) SetLastApplied(x uint64) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+	s.lastApplied = x
+	s.savePersistentState()
+}
+
+func (s *RaftState) setLastAppliedUnsafe(x uint64) {
 	s.lastApplied = x
 	s.savePersistentState()
 }
 
 func (s *RaftState) SetSpecialNumber(x uint64) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	s.specialNumber = x
 	s.savePersistentState()
 }
 
 func (s *RaftState) GetSpecialNumber() uint64 {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.specialNumber
 }
 
@@ -155,7 +202,7 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 		if demoCommand == nil {
 			Log.Fatal("Error applying Log to state machine")
 		}
-		s.SetSpecialNumber(demoCommand.Number)
+		s.specialNumber = demoCommand.Number
 	} else if logEntry.Entry.Type == pb.Entry_ConfigurationChange {
 		config := logEntry.Entry.GetConfig()
 		if config != nil {
@@ -177,19 +224,18 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 }
 
 func (s *RaftState) ApplyLogEntries() {
-	s.ApplyEntriesLock.Lock()
-	defer s.ApplyEntriesLock.Unlock()
-	lastApplied := s.GetLastApplied()
-	commitIndex := s.GetCommitIndex()
-	if commitIndex > lastApplied {
-		for i := lastApplied + 1; i <= commitIndex; i++ {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
+	if s.commitIndex > s.lastApplied {
+		for i := s.lastApplied + 1; i <= s.commitIndex; i++ {
 			LogEntry, err := s.Log.GetLogEntry(i)
 			if err != nil {
 				Log.Fatal("Unable to get log entry1:", err)
 			}
 			result := s.applyLogEntry(LogEntry)
-			s.SetLastApplied(i)
-			if s.GetWaitingForApplied() {
+			s.setLastAppliedUnsafe(i)
+			if s.waitingForApplied {
 				s.EntryApplied <- &EntryAppliedInfo{
 					Index:  i,
 					Result: result,
@@ -200,15 +246,16 @@ func (s *RaftState) ApplyLogEntries() {
 }
 
 func (s *RaftState) calculateNewCommitIndex() {
-	lastCommitIndex := s.GetCommitIndex()
-	currentTerm := s.GetCurrentTerm()
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
+	lastCommitIndex := s.commitIndex
+	currentTerm := s.currentTerm
 	newCommitIndex := s.Configuration.CalculateNewCommitIndex(lastCommitIndex, currentTerm, s.Log)
 
-	if currentTerm == s.GetCurrentTerm() {
-		if newCommitIndex > s.GetCommitIndex() {
-			s.SetCommitIndex(newCommitIndex)
-			s.ApplyLogEntries()
-		}
+	if newCommitIndex > lastCommitIndex {
+		s.commitIndex = newCommitIndex
+		go s.ApplyLogEntries()
 	}
 }
 
@@ -222,11 +269,12 @@ type persistentState struct {
 func (s *RaftState) savePersistentState() {
 	s.persistentStateLock.Lock()
 	defer s.persistentStateLock.Unlock()
+
 	perState := &persistentState{
-		SpecialNumber: s.GetSpecialNumber(),
-		CurrentTerm:   s.GetCurrentTerm(),
-		VotedFor:      s.GetVotedFor(),
-		LastApplied:   s.GetLastApplied(),
+		SpecialNumber: s.specialNumber,
+		CurrentTerm:   s.currentTerm,
+		VotedFor:      s.votedFor,
+		LastApplied:   s.lastApplied,
 	}
 
 	persistentStateBytes, err := json.Marshal(perState)

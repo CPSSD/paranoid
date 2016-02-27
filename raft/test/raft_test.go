@@ -156,10 +156,12 @@ func TestRaftLogReplication(t *testing.T) {
 	leader := rafttestutil.GetLeader(cluster)
 
 	if err != nil {
-		raft.Log.Info("most recent index :", node1RaftServer.State.Log.GetMostRecentIndex())
-		raft.Log.Info("most recent leader index:", leader.State.Log.GetMostRecentIndex())
-		raft.Log.Info("commit index:", leader.State.GetCommitIndex())
-		raft.Log.Info("leader commit:", leader.State.GetCommitIndex())
+		if leader != nil {
+			raft.Log.Info("most recent index :", node1RaftServer.State.Log.GetMostRecentIndex())
+			raft.Log.Info("most recent leader index:", leader.State.Log.GetMostRecentIndex())
+			raft.Log.Info("commit index:", leader.State.GetCommitIndex())
+			raft.Log.Info("leader commit:", leader.State.GetCommitIndex())
+		}
 		t.Fatal("Failed to replicate entry,", err)
 	}
 	err = verifySpecialNumber(node1RaftServer, 10, 0)
