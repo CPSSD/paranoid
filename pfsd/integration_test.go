@@ -284,7 +284,17 @@ func createTestDir(t *testing.T, name string) {
 	os.RemoveAll(path.Join(os.TempDir(), name))
 	err := os.Mkdir(path.Join(os.TempDir(), name), 0777)
 	if err != nil {
-		t.Fatal("Error creating directory", err)
+		if os.IsExist(err) {
+			cmd := exec.Command("fusermount", "-z", "-u", path.Join(os.TempDir(), name))
+			cmd.Run()
+			os.RemoveAll(path.Join(os.TempDir(), name))
+			err = os.Mkdir(path.Join(os.TempDir(), name), 0777)
+			if err != nil {
+				t.Fatal("Error creating directory", err)
+			}
+		} else {
+			t.Fatal("Error creating directory", err)
+		}
 	}
 }
 
@@ -323,7 +333,7 @@ func TestKillSignal(t *testing.T) {
 	}
 	defer pfsd.Process.Kill()
 	defer func() {
-		cmd := exec.Command("fuserunmount", "-z", "-u", path.Join(os.TempDir(), "testksMountPoint"))
+		cmd := exec.Command("fusermount", "-z", "-u", path.Join(os.TempDir(), "testksMountPoint"))
 		cmd.Run()
 	}()
 
