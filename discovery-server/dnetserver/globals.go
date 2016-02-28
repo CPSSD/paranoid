@@ -25,3 +25,6 @@ var Nodes []Node
 
 // RenewInterval global containing the time after which the nodes will be marked as inactive
 var RenewInterval time.Duration
+
+// StateFilePath is the path to the file in which the discovery server stores its state
+var StateFilePath string

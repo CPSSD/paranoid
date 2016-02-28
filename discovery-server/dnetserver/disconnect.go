@@ -9,6 +9,7 @@ import (
 
 // Disconnect method for Discovery Server
 func (s *DiscoveryServer) Disconnect(ctx context.Context, req *pb.DisconnectRequest) (*pb.EmptyMessage, error) {
+	defer saveState()
 	for i := 0; i < len(Nodes); i++ {
 		if Nodes[i].Data.Uuid == req.Node.Uuid {
 			Nodes = append(Nodes[:i], Nodes[i+1:]...)

@@ -91,6 +91,8 @@ func analyseWorkspace(log *logger.ParanoidLogger) {
 	// checking ~/.pfs/discovery_meta
 	metaDirPath := path.Join(pfsDirPath, "discovery_meta")
 	checkDir(metaDirPath, log)
+
+	dnetserver.StateFilePath = path.Join(metaDirPath, "server_state.json")
 }
 
 // checkDir checks a directory and creates it if needed
