@@ -6,6 +6,7 @@ import (
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/intercom"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pfi"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
@@ -65,6 +66,7 @@ func main() {
 	pnetserver.Log = logger.New("pnetserver", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	upnp.Log = logger.New("upnp", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	keyman.Log = logger.New("keyman", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	intercom.Log = logger.New("intercom", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 
 	log.SetOutput(logger.STDERR | logger.LOGFILE)
 	dnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
@@ -159,6 +161,7 @@ func main() {
 		globals.Wait.Add(1)
 		go UnlockWorker()
 	}
+	intercom.RunServer(path.Join(flag.Arg(0), "meta"))
 	HandleSignals()
 }
 
