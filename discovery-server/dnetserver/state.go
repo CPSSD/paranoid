@@ -2,7 +2,10 @@ package dnetserver
 
 import (
 	"encoding/json"
+	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
+	"io/ioutil"
 	"os"
+	"time"
 )
 
 // a json marshalable structure for a node
@@ -28,8 +31,36 @@ func saveState() {
 	defer file.Close()
 	_, err = file.Write(stateData)
 	if err != nil {
-		Log.Fatal("Failed to write state date to state file:", err)
+		Log.Fatal("Failed to write state data to state file:", err)
 	}
+}
+
+// LoadState loads the Nodes from the stateFile
+func LoadState() {
+	_, err := os.Stat(StateFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			Log.Info("Tried loading state from state file but it's non-existant")
+			return
+		} else {
+			Log.Fatal("Couldn't stat statefile:", err)
+		}
+	}
+
+	fileData, err := ioutil.ReadFile(StateFilePath)
+
+	var jsonNodes []jsonNode
+	err = json.Unmarshal(fileData, &jsonNodes)
+	if err != nil {
+		Log.Fatal("Failed to un-marshal state file:", err)
+	}
+
+	newNodes := make([]Node, len(jsonNodes))
+	for i, val := range jsonNodes {
+		newNodes[i] = regularNodeFromJsonNode(val)
+	}
+
+	Nodes = newNodes
 }
 
 // prepareStateFile prepares the statefile for a state update and returns the file
@@ -39,11 +70,10 @@ func prepareStateFile() *os.File {
 	if err != nil {
 		if os.IsNotExist(err) {
 			Log.Info("Creating state file: ", StateFilePath)
-			file, err1 := os.Create(StateFilePath)
+			_, err1 := os.Create(StateFilePath)
 			if err1 != nil {
 				Log.Fatal("Could not create state file:", err1)
 			}
-			return file
 		} else {
 			Log.Fatal("Couldnt stat stateFile:", err)
 		}
@@ -54,7 +84,7 @@ func prepareStateFile() *os.File {
 		Log.Fatal("Couldnt truncate state file:", err)
 	}
 
-	file, err := os.Open(StateFilePath)
+	file, err := os.OpenFile(StateFilePath, os.O_WRONLY, 0600)
 	if err != nil {
 		Log.Fatal("Couldnt open stateFile:", err)
 	}
@@ -66,13 +96,13 @@ func prepareStateFile() *os.File {
 func getJsonReadyNodeList() []jsonNode {
 	jsonNodes := make([]jsonNode, len(Nodes))
 	for i, val := range Nodes {
-		jsonNodes[i] = JsonNodeFromRegularNode(val)
+		jsonNodes[i] = jsonNodeFromRegularNode(val)
 	}
 	return jsonNodes
 }
 
-// JsonNodeFromRegularNode returns a jsonNode based on the given Node
-func JsonNodeFromRegularNode(n Node) jsonNode {
+// jsonNodeFromRegularNode returns a jsonNode based on the given Node
+func jsonNodeFromRegularNode(n Node) jsonNode {
 	return jsonNode{
 		Pool:        n.Pool,
 		ExpiryTime:  n.ExpiryTime.Unix(),
@@ -80,5 +110,19 @@ func JsonNodeFromRegularNode(n Node) jsonNode {
 		Port:        n.Data.Port,
 		Common_name: n.Data.CommonName,
 		UUID:        n.Data.Uuid,
+	}
+}
+
+// regularNodeFromJsonNode returns a Node based on the given jsonNode
+func regularNodeFromJsonNode(n jsonNode) Node {
+	return Node{
+		Pool:       n.Pool,
+		ExpiryTime: time.Unix(n.ExpiryTime, 0),
+		Data: pb.Node{
+			Ip:         n.IP,
+			Port:       n.Port,
+			CommonName: n.Common_name,
+			Uuid:       n.UUID,
+		},
 	}
 }
