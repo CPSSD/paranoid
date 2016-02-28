@@ -10,6 +10,7 @@ import (
 
 // Join method for Discovery Server
 func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
+	defer saveState()
 	nodes := getNodes(req.Pool, req.Node.Uuid)
 	response := pb.JoinResponse{RenewInterval.Nanoseconds() / 1000 / 1000, nodes}
 
