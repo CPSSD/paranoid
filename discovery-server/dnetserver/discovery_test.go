@@ -3,19 +3,73 @@
 package dnetserver
 
 import (
+	"encoding/json"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
+	"io/ioutil"
 	"os"
+	"path"
 	"testing"
 )
 
 func TestMain(m *testing.M) {
 	Log = logger.New("discoveryTest", "discoveryTest", "/dev/null")
+	StateFilePath = path.Join(os.TempDir(), "server_state.json")
 	os.Exit(m.Run())
+}
+
+func TestStateSave(t *testing.T) {
+	discovery := DiscoveryServer{}
+
+	//Join node1
+	joinRequest := pb.JoinRequest{
+		Node: &pb.Node{CommonName: "TestNode1", Ip: "1.1.1.1", Port: "1001", Uuid: "blahblah1"},
+		Pool: "TestPool",
+	}
+	joinResponse, err := discovery.Join(nil, &joinRequest)
+	if err != nil {
+		t.Error("Error joining network : ", err)
+	}
+	if len(joinResponse.Nodes) != 0 {
+		t.Error("Incorrect nodes returned :", joinResponse.Nodes)
+	}
+
+	stateFileData, err := ioutil.ReadFile(StateFilePath)
+	if err != nil {
+		t.Error("Failed to read state file: ", err)
+	}
+
+	var jsonNodes []jsonNode
+	err = json.Unmarshal(stateFileData, &jsonNodes)
+	if err != nil {
+		Log.Fatal("Failed to un-marshal state file:", err)
+	}
+
+	if len(jsonNodes) != 1 {
+		t.Error("wrong number of nodes in state file:", len(jsonNodes))
+	}
+	if jsonNodes[0].UUID != "blahblah1" || jsonNodes[0].Pool != "TestPool" {
+		t.Error("Node in state file is wrong: ", jsonNodes[0])
+	}
+}
+
+func TestStateLoad(t *testing.T) {
+	LoadState()
+
+	if len(Nodes) != 1 {
+		t.Error("Wrong number of nodes loaded from state file")
+	}
+
+	if Nodes[0].Pool != "TestPool" || Nodes[0].Data.Uuid != "blahblah1" {
+		t.Error("loaded node is wrong:", Nodes[0])
+	}
+
+	Nodes = nil
 }
 
 func TestDiscoveryNetwork(t *testing.T) {
 	discovery := DiscoveryServer{}
+
 	//Join node1
 	joinRequest := pb.JoinRequest{
 		Node: &pb.Node{CommonName: "TestNode1", Ip: "1.1.1.1", Port: "1001", Uuid: "blahblah1"},

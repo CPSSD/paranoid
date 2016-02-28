@@ -22,6 +22,7 @@ var (
 	renewInterval = flag.Int("renew-interval", 5*60*1000, "time after which membership expires, in ms")
 	certFile      = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile       = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+	dontloadState = flag.Bool("nostate", false, "Dont load the Nodes from the statefile")
 )
 
 func createRPCServer() *grpc.Server {
@@ -68,6 +69,10 @@ func main() {
 	}
 	dnetserver.Log.Info("Listening on port", *port)
 
+	if !*dontloadState {
+		dnetserver.LoadState()
+	}
+
 	srv := createRPCServer()
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})
 
@@ -81,7 +86,7 @@ func main() {
 func analyseWorkspace(log *logger.ParanoidLogger) {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal("Couldnt identify user:", err)
+		log.Fatal("Couldn't identify user:", err)
 	}
 
 	// checking ~/.pfs
@@ -101,7 +106,7 @@ func checkDir(dir string, log *logger.ParanoidLogger) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Info("Creating: ", dir)
-			err1 := os.Mkdir(dir, 0777)
+			err1 := os.Mkdir(dir, 0600)
 			if err1 != nil {
 				log.Fatal("Failed to create: ", dir, " err:", err1)
 			}
