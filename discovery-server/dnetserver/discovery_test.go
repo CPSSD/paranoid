@@ -13,7 +13,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	Log = logger.New("discoveryTest", "discoveryTest", "/dev/null")
+	Log = logger.New("discoveryTest", "discoveryTest", os.DevNull)
 	StateFilePath = path.Join(os.TempDir(), "server_state.json")
 	os.Exit(m.Run())
 }
@@ -39,17 +39,17 @@ func TestStateSave(t *testing.T) {
 		t.Error("Failed to read state file: ", err)
 	}
 
-	var jsonNodes []jsonNode
-	err = json.Unmarshal(stateFileData, &jsonNodes)
+	var nodes []Node
+	err = json.Unmarshal(stateFileData, &nodes)
 	if err != nil {
 		Log.Fatal("Failed to un-marshal state file:", err)
 	}
 
-	if len(jsonNodes) != 1 {
-		t.Error("wrong number of nodes in state file:", len(jsonNodes))
+	if len(nodes) != 1 {
+		t.Error("wrong number of nodes in state file:", len(nodes))
 	}
-	if jsonNodes[0].UUID != "blahblah1" || jsonNodes[0].Pool != "TestPool" {
-		t.Error("Node in state file is wrong: ", jsonNodes[0])
+	if nodes[0].Data.Uuid != "blahblah1" || nodes[0].Pool != "TestPool" {
+		t.Error("Node in state file is wrong: ", nodes[0])
 	}
 }
 

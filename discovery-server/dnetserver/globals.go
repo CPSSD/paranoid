@@ -15,9 +15,8 @@ type DiscoveryServer struct{}
 
 // Node struct to hold the node data
 type Node struct {
-	Pool       string
-	ExpiryTime time.Time
-	Data       pb.Node
+	Pool string  `json:"pool"`
+	Data pb.Node `json:"data"`
 }
 
 // Nodes array

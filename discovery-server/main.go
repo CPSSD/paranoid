@@ -22,7 +22,7 @@ var (
 	renewInterval = flag.Int("renew-interval", 5*60*1000, "time after which membership expires, in ms")
 	certFile      = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile       = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
-	dontloadState = flag.Bool("nostate", false, "Dont load the Nodes from the statefile")
+	loadState     = flag.Bool("state", true, "Load the Nodes from the statefile")
 )
 
 func createRPCServer() *grpc.Server {
@@ -69,7 +69,7 @@ func main() {
 	}
 	dnetserver.Log.Info("Listening on port", *port)
 
-	if !*dontloadState {
+	if *loadState {
 		dnetserver.LoadState()
 	}
 

@@ -5,7 +5,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"time"
 )
 
 // Join method for Discovery Server
@@ -31,7 +30,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 		}
 	}
 
-	newNode := Node{req.Pool, time.Now().Add(RenewInterval), *req.Node}
+	newNode := Node{req.Pool, *req.Node}
 	Nodes = append(Nodes, newNode)
 	Log.Infof("Join: Node %s (%s:%s) joined \n", req.Node.Uuid, req.Node.Ip, req.Node.Port)
 

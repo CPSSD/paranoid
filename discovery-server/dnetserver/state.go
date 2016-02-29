@@ -2,29 +2,16 @@ package dnetserver
 
 import (
 	"encoding/json"
-	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"io/ioutil"
 	"os"
-	"time"
 )
-
-// a json marshalable structure for a node
-type jsonNode struct {
-	Pool        string `json:"pool"`
-	ExpiryTime  int64  `json:"expiryTime"`
-	IP          string `json:"ip"`
-	Port        string `json:"port"`
-	Common_name string `json:"common_name"`
-	UUID        string `jsoin:"uuid"`
-}
 
 // saveState saves the current state of the discovery server to a file in it's
 // meta directory. the state includes all pools and nodes
 func saveState() {
-	currentNodes := getJsonReadyNodeList()
-	stateData, err := json.Marshal(currentNodes)
+	stateData, err := json.Marshal(Nodes)
 	if err != nil {
-		Log.Fatal("Couldnt marshal stateData:", err)
+		Log.Fatal("Couldn't marshal stateData:", err)
 	}
 
 	file := prepareStateFile()
@@ -49,18 +36,10 @@ func LoadState() {
 
 	fileData, err := ioutil.ReadFile(StateFilePath)
 
-	var jsonNodes []jsonNode
-	err = json.Unmarshal(fileData, &jsonNodes)
+	err = json.Unmarshal(fileData, &Nodes)
 	if err != nil {
 		Log.Fatal("Failed to un-marshal state file:", err)
 	}
-
-	newNodes := make([]Node, len(jsonNodes))
-	for i, val := range jsonNodes {
-		newNodes[i] = regularNodeFromJsonNode(val)
-	}
-
-	Nodes = newNodes
 }
 
 // prepareStateFile prepares the statefile for a state update and returns the file
@@ -90,39 +69,4 @@ func prepareStateFile() *os.File {
 	}
 
 	return file
-}
-
-// getJsonReadyNodeList returns a list of jsonNodes based on the current Nodes
-func getJsonReadyNodeList() []jsonNode {
-	jsonNodes := make([]jsonNode, len(Nodes))
-	for i, val := range Nodes {
-		jsonNodes[i] = jsonNodeFromRegularNode(val)
-	}
-	return jsonNodes
-}
-
-// jsonNodeFromRegularNode returns a jsonNode based on the given Node
-func jsonNodeFromRegularNode(n Node) jsonNode {
-	return jsonNode{
-		Pool:        n.Pool,
-		ExpiryTime:  n.ExpiryTime.Unix(),
-		IP:          n.Data.Ip,
-		Port:        n.Data.Port,
-		Common_name: n.Data.CommonName,
-		UUID:        n.Data.Uuid,
-	}
-}
-
-// regularNodeFromJsonNode returns a Node based on the given jsonNode
-func regularNodeFromJsonNode(n jsonNode) Node {
-	return Node{
-		Pool:       n.Pool,
-		ExpiryTime: time.Unix(n.ExpiryTime, 0),
-		Data: pb.Node{
-			Ip:         n.IP,
-			Port:       n.Port,
-			CommonName: n.Common_name,
-			Uuid:       n.UUID,
-		},
-	}
 }
