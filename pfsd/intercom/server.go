@@ -22,7 +22,7 @@ func (s *IntercomServer) ConfirmUp(req *EmptyMessage, resp *EmptyMessage) error 
 func RunServer(metaDir string) {
 	socketPath := path.Join(metaDir, "intercom.sock")
 	err := os.Remove(socketPath)
-	if err != nil && os.IsNotExist(err) == false {
+	if err != nil && !os.IsNotExist(err) {
 		Log.Fatalf("Failed to remove %s: %s\n", socketPath, err)
 	}
 	server := new(IntercomServer)
