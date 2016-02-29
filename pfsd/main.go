@@ -117,6 +117,7 @@ func main() {
 	keyman.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	raft.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	commands.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	intercom.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	if *verbose {
 		commands.Log.SetLogLevel(logger.VERBOSE)
