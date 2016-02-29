@@ -68,8 +68,9 @@ func Read(directory string) {
 func LogsToLogfile(logDir, filePath string) {
 	files, err := ioutil.ReadDir(logDir)
 	if err != nil {
-		log.Info("read dir err:", err)
+		Log.Verbose("read dir:", logDir, "err:", err)
 		cli.ShowCommandHelp(cl, "history")
+		os.Exit(1)
 	}
 
 	writeFile, err := os.Create(filePath)
@@ -78,14 +79,14 @@ func LogsToLogfile(logDir, filePath string) {
 	}
 
 	t := len(strconv.Itoa(len(files)))
-	for i, file := range files {
-		i++
+	for i := len(files) - 1; i >= 0; i-- {
+		file := files[i]
 		p, err := fileToProto(file, logDir)
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		writeFile.WriteString(toLine(i, t, p))
+		writeFile.WriteString(toLine(i+1, t, p))
 	}
 	writeFile.Close()
 }
@@ -135,12 +136,12 @@ func bytesString(bytes int) string {
 	if bytes < 1000 {
 		return fmt.Sprint(bytes, "B")
 	} else if bytes < 1000000 {
-		return fmt.Sprint(bytes/1000, "Kb")
+		return fmt.Sprint(bytes/1000, "KB")
 	} else if bytes < 1000000000 {
-		return fmt.Sprint(bytes/1000000, "Mb")
+		return fmt.Sprint(bytes/1000000, "MB")
 	} else if bytes < 1000000000000 {
-		return fmt.Sprint(bytes/1000000000, "Gb")
+		return fmt.Sprint(bytes/1000000000, "GB")
 	} else {
-		return fmt.Sprint(bytes/1000000000000, "Tb")
+		return fmt.Sprint(bytes/1000000000000, "TB")
 	}
 }
