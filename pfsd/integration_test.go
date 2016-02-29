@@ -309,7 +309,7 @@ func TestKillSignal(t *testing.T) {
 	createTestDir(t, "testksDirectory")
 	defer removeTestDir("testksDirectory")
 
-	discovery := exec.Command("discovery-server", "--port=10102")
+	discovery := exec.Command("discovery-server", "--port=10102", "-state=false")
 	err := discovery.Start()
 	if err != nil {
 		t.Fatal(err)
