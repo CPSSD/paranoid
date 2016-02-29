@@ -74,6 +74,7 @@ func main() {
 	pnetserver.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	upnp.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	keyman.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	intercom.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {
