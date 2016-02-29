@@ -10,6 +10,7 @@ paranoid-cli(1) -- interact with a paranoid filesystem
 `paranoid-cli` `list`<br>
 `paranoid-cli` `secure` `<pfs-name>`<br>
 `paranoid-cli` `delete` `<pfs-name>`<br>
+`paranoid-cli` `history` `<pfs-name>||<log-directory>`<br>
 `paranoid-cli` `restart` `<pfs-name>`<br>
 
 ## DESCRIPTION
@@ -20,7 +21,7 @@ mount or unmount a paranoid file system.
 ## COMMANDS
 
 * `init`:
-    Create a new filesystem with the indicated name. 
+    Create a new filesystem with the indicated name.
 
 * `mount`:
 	This is used to mount the indicated filesystem to mountpoint. As part of the cluster servered by the server at the `discovery-server-address`. It will instruct pfsd to run on port `port`
@@ -39,6 +40,9 @@ mount or unmount a paranoid file system.
 
 * `delete`:
     Permanently delete a paranoid filesystem.
+
+* `history`:
+    View the history of a paranoid filesystem or of the specified log-directory
 
 * `restart`:
     Restart the network services of the named paranoid filesystem.

@@ -17,7 +17,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
 	app.HelpName = "paranoid-cli"
-	app.Version = "0.4.0"
+	app.Version = "0.4.1"
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:  "verbose",
@@ -131,6 +131,12 @@ func main() {
 			ArgsUsage: "pfs-name",
 			Usage:     "delete a paranoid file system",
 			Action:    commands.Delete,
+		},
+		{
+			Name:      "history",
+			ArgsUsage: "pfs-name || log-directory",
+			Usage:     "view the history of the filesystem or log directory",
+			Action:    commands.History,
 		},
 	}
 	app.Run(os.Args)

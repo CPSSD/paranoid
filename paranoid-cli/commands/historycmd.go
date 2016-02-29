@@ -16,7 +16,10 @@ import (
 	"strconv"
 )
 
+var cl *cli.Context
+
 func History(c *cli.Context) {
+	cl = c
 	args := c.Args()
 	if len(args) < 1 {
 		cli.ShowCommandHelp(c, "history")
@@ -65,7 +68,8 @@ func Read(directory string) {
 func LogsToLogfile(logDir, filePath string) {
 	files, err := ioutil.ReadDir(logDir)
 	if err != nil {
-		log.Fatalln("read dir err:", err)
+		log.Info("read dir err:", err)
+		cli.ShowCommandHelp(cl, "history")
 	}
 
 	writeFile, err := os.Create(filePath)
