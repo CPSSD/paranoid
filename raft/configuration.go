@@ -484,5 +484,6 @@ func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfigur
 			}
 		}
 	}
+	config.savePersistentConfiguration()
 	return config
 }
