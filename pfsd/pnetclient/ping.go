@@ -36,10 +36,10 @@ func Ping() error {
 			Uuid:       globals.UUID,
 		})
 		if err != nil {
-			Log.Error("Error pinging ", node, ":", err)
+			Log.Error("Error pinging", node, ":", err)
 		} else {
 			return nil
 		}
 	}
-	return errors.New("Unable to join raft network")
+	return errors.New("unable to join raft network, no peer has returned okay")
 }

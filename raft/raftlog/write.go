@@ -15,7 +15,7 @@ func (rl *RaftLog) AppendEntry(en *pb.LogEntry) (index uint64, err error) {
 	rl.indexLock.Lock()
 	defer rl.indexLock.Unlock()
 
-	fileIndex := ci2fi(rl.currentIndex)
+	fileIndex := storageIndexToFileIndex(rl.currentIndex)
 	filePath := path.Join(rl.logDir, strconv.FormatUint(fileIndex, 10))
 
 	protoData, err := proto.Marshal(en)
@@ -41,5 +41,5 @@ func (rl *RaftLog) AppendEntry(en *pb.LogEntry) (index uint64, err error) {
 
 	rl.mostRecentTerm = en.Term
 	rl.currentIndex++
-	return fi2ci(fileIndex), nil
+	return fileIndexToStorageIndex(fileIndex), nil
 }

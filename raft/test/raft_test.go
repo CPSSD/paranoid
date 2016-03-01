@@ -147,7 +147,7 @@ func TestRaftLogReplication(t *testing.T) {
 	defer node3srv.Stop()
 	defer rafttestutil.StopRaftServer(node3RaftServer)
 
-	err, _ := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+	_, err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
 		Type: pb.Entry_Demo,
 		Uuid: rafttestutil.GenerateNewUUID(),
 		Demo: &pb.DemoCommand{10},
@@ -196,7 +196,7 @@ func TestRaftPersistentState(t *testing.T) {
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
 
-	err, _ := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+	_, err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
 		Type: pb.Entry_Demo,
 		Uuid: rafttestutil.GenerateNewUUID(),
 		Demo: &pb.DemoCommand{10},
@@ -295,7 +295,7 @@ func TestRaftConfigurationChange(t *testing.T) {
 	defer node4srv.Stop()
 	defer rafttestutil.StopRaftServer(node4RaftServer)
 
-	err, _ := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+	_, err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
 		Type: pb.Entry_Demo,
 		Uuid: rafttestutil.GenerateNewUUID(),
 		Demo: &pb.DemoCommand{10},
@@ -354,7 +354,7 @@ func TestRaftConfigurationChange(t *testing.T) {
 	time.Sleep(raft.HEARTBEAT_TIMEOUT * 2)
 
 	if node1RaftServer.State.NodeId != leader.State.NodeId {
-		err, _ := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+		_, err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
 			Type: pb.Entry_Demo,
 			Uuid: rafttestutil.GenerateNewUUID(),
 			Demo: &pb.DemoCommand{1337},
@@ -363,7 +363,7 @@ func TestRaftConfigurationChange(t *testing.T) {
 			t.Fatal("Unable to commit new entry:", err)
 		}
 	} else {
-		err, _ := node2RaftServer.RequestAddLogEntry(&pb.Entry{
+		_, err := node2RaftServer.RequestAddLogEntry(&pb.Entry{
 			Type: pb.Entry_Demo,
 			Uuid: rafttestutil.GenerateNewUUID(),
 			Demo: &pb.DemoCommand{1337},
@@ -393,7 +393,7 @@ func TestStartNodeOutOfConfiguration(t *testing.T) {
 	defer node1srv.Stop()
 	defer rafttestutil.StopRaftServer(node1RaftServer)
 
-	err, _ := node1RaftServer.RequestAddLogEntry(&pb.Entry{
+	_, err := node1RaftServer.RequestAddLogEntry(&pb.Entry{
 		Type: pb.Entry_Demo,
 		Uuid: rafttestutil.GenerateNewUUID(),
 		Demo: &pb.DemoCommand{10},

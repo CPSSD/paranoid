@@ -18,7 +18,7 @@ func (s *ParanoidServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.Emp
 	Log.Infof("Got Ping from Node:", node)
 	err := RaftNetworkServer.RequestAddNodeToConfiguration(node)
 	if err != nil {
-		return &pb.EmptyMessage{}, fmt.Errorf("Unable to add node to raft cluster:", err)
+		return &pb.EmptyMessage{}, fmt.Errorf("unable to add node to raft cluster:", err)
 	}
 	return &pb.EmptyMessage{}, nil
 }

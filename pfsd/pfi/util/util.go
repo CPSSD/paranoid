@@ -8,12 +8,14 @@ import (
 	"syscall"
 )
 
-var MountPoint string
-var PfsDirectory string
-var LogOutput bool
-var SendOverNetwork bool
-var Log *logger.ParanoidLogger
-var RaftServer *raft.RaftNetworkServer
+var (
+	MountPoint      string
+	PfsDirectory    string
+	LogOutput       bool
+	SendOverNetwork bool
+	Log             *logger.ParanoidLogger
+	RaftServer      *raft.RaftNetworkServer
+)
 
 func GetFuseReturnCode(retcode int) fuse.Status {
 	switch retcode {

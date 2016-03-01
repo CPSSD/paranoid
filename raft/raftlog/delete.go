@@ -17,7 +17,7 @@ func (rl *RaftLog) DiscardLogEntries(startIndex uint64) error {
 	}
 
 	for i := rl.currentIndex - 1; i >= startIndex; i-- {
-		err := os.Remove(path.Join(rl.logDir, strconv.FormatUint(ci2fi(i), 10)))
+		err := os.Remove(path.Join(rl.logDir, strconv.FormatUint(storageIndexToFileIndex(i), 10)))
 		if err != nil {
 			rl.pLog.Fatal("Activity logger: failed to delete log of index:",
 				i, "with error:", err)

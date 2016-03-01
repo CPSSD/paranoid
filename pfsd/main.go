@@ -154,8 +154,13 @@ func main() {
 		}
 		globals.UUID = string(uuid)
 
+		ip, err := upnp.GetIP()
+		if err != nil {
+			log.Fatal("Could not get IP:", err)
+		}
+
 		//Asking for port 0 requests a random free port from the OS.
-		lis, err := net.Listen("tcp", ":0")
+		lis, err := net.Listen("tcp", ip+":0")
 		if err != nil {
 			log.Fatalf("Failed to start listening : %v.\n", err)
 		}
@@ -171,7 +176,7 @@ func main() {
 		err = upnp.DiscoverDevices()
 		if err == nil {
 			log.Info("UPnP devices available")
-			externalPort, err := upnp.AddPortMapping(port)
+			externalPort, err := upnp.AddPortMapping(ip, port)
 			if err == nil {
 				log.Info("UPnP port mapping enabled")
 				port = externalPort

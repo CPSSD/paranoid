@@ -49,9 +49,11 @@ func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status
 //Write writes to a file
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	util.Log.Info("Write called on file : " + f.Name)
-	var code int
-	var err error
-	var bytesWritten int
+	var (
+		code         int
+		err          error
+		bytesWritten int
+	)
 	if util.SendOverNetwork {
 		code, err, bytesWritten = util.RaftServer.RequestWriteCommand(f.Name, uint64(off), uint64(len(content)), content)
 	} else {

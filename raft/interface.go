@@ -59,7 +59,7 @@ func StartRaft(lis *net.Listener, nodeDetails Node, pfsDirectory, raftInfoDirect
 
 //A request to add a Log entry from a client. If the node is not the leader, it must forward the request to the leader.
 //Only return once the request has been commited to the State machine
-func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (error, *StateMachineResult) {
+func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (*StateMachineResult, error) {
 	s.addEntryLock.Lock()
 	defer s.addEntryLock.Unlock()
 	currentState := s.State.GetCurrentState()
@@ -71,28 +71,28 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (error, *StateMa
 	if currentState == LEADER {
 		err := s.addLogEntryLeader(entry)
 		if err != nil {
-			return err, nil
+			return nil, err
 		}
 	} else if currentState == FOLLOWER {
 		if s.State.GetLeaderId() != "" {
 			err := s.sendLeaderLogEntry(entry)
 			if err != nil {
-				return err, nil
+				return nil, err
 			}
 		} else {
 			select {
 			case <-time.After(20 * time.Second):
-				return errors.New("Could not find a leader"), nil
+				return nil, errors.New("could not find a leader")
 			case <-s.State.LeaderElected:
 				if s.State.GetCurrentState() == LEADER {
 					err := s.addLogEntryLeader(entry)
 					if err != nil {
-						return err, nil
+						return nil, err
 					}
 				} else {
 					err := s.sendLeaderLogEntry(entry)
 					if err != nil {
-						return err, nil
+						return nil, err
 					}
 				}
 			}
@@ -102,7 +102,7 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (error, *StateMa
 		for {
 			count++
 			if count > 40 {
-				return errors.New("Could not find a leader"), nil
+				return nil, errors.New("could not find a leader")
 			}
 			time.Sleep(500 * time.Millisecond)
 			currentState = s.State.GetCurrentState()
@@ -113,12 +113,12 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (error, *StateMa
 		if currentState == LEADER {
 			err := s.addLogEntryLeader(entry)
 			if err != nil {
-				return err, nil
+				return nil, err
 			}
 		} else {
 			err := s.sendLeaderLogEntry(entry)
 			if err != nil {
-				return err, nil
+				return nil, err
 			}
 		}
 	}
@@ -128,18 +128,18 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (error, *StateMa
 	for {
 		select {
 		case <-timer.C:
-			return errors.New("Waited too long to commit Log entry"), nil
+			return nil, errors.New("waited too long to commit Log entry")
 		case appliedEntry := <-s.State.EntryApplied:
 			LogEntry, err := s.State.Log.GetLogEntry(appliedEntry.Index)
 			if err != nil {
-				Log.Fatal("Unable to get log entry:", err)
+				Log.Fatal("unable to get log entry:", err)
 			}
 			if LogEntry.Entry.Uuid == entry.Uuid {
-				return nil, appliedEntry.Result
+				return appliedEntry.Result, nil
 			}
 		}
 	}
-	return errors.New("Waited too long to commit Log entry"), nil
+	return nil, errors.New("waited too long to commit Log entry")
 }
 
 func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length uint64,
@@ -155,7 +155,7 @@ func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length 
 			Length: length,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err, 0
 	}
@@ -172,7 +172,7 @@ func (s *RaftNetworkServer) RequestCreatCommand(filePath string, mode uint32) (r
 			Mode: mode,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -189,7 +189,7 @@ func (s *RaftNetworkServer) RequestChmodCommand(filePath string, mode uint32) (r
 			Mode: mode,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -206,7 +206,7 @@ func (s *RaftNetworkServer) RequestTruncateCommand(filePath string, length uint6
 			Length: length,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -228,7 +228,7 @@ func (s *RaftNetworkServer) RequestUtimesCommand(filePath string, accessSeconds,
 			ModifyNanoseconds: modifyNanoSeconds,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -246,7 +246,7 @@ func (s *RaftNetworkServer) RequestRenameCommand(oldPath, newPath string) (retur
 			NewPath: newPath,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -263,7 +263,7 @@ func (s *RaftNetworkServer) RequestLinkCommand(oldPath, newPath string) (returnC
 			NewPath: newPath,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -280,7 +280,7 @@ func (s *RaftNetworkServer) RequestSymlinkCommand(oldPath, newPath string) (retu
 			NewPath: newPath,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -296,7 +296,7 @@ func (s *RaftNetworkServer) RequestUnlinkCommand(filePath string) (returnCode in
 			Path: filePath,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -313,7 +313,7 @@ func (s *RaftNetworkServer) RequestMkdirCommand(filePath string, mode uint32) (r
 			Mode: mode,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -329,7 +329,7 @@ func (s *RaftNetworkServer) RequestRmdirCommand(filePath string) (returnCode int
 			Path: filePath,
 		},
 	}
-	err, stateMachineResult := s.RequestAddLogEntry(entry)
+	stateMachineResult, err := s.RequestAddLogEntry(entry)
 	if err != nil {
 		return returncodes.EBUSY, err
 	}
@@ -346,7 +346,7 @@ func (s *RaftNetworkServer) RequestChangeConfiguration(nodes []Node) error {
 			Nodes: convertNodesToProto(nodes),
 		},
 	}
-	err, _ := s.RequestAddLogEntry(entry)
+	_, err := s.RequestAddLogEntry(entry)
 	return err
 }
 

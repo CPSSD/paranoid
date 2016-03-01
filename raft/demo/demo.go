@@ -72,7 +72,7 @@ func manageNode(raftServer *raft.RaftNetworkServer) {
 			}
 			randomNumber := rand.Intn(1000)
 			log.Println(raftServer.State.NodeId, "requesting that", randomNumber, "be added to the log")
-			err, _ := raftServer.RequestAddLogEntry(&pb.Entry{
+			_, err := raftServer.RequestAddLogEntry(&pb.Entry{
 				Type: pb.Entry_Demo,
 				Uuid: rafttestutil.GenerateNewUUID(),
 				Demo: &pb.DemoCommand{uint64(randomNumber)},

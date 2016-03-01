@@ -62,12 +62,12 @@ func (rl *RaftLog) GetMostRecentTerm() uint64 {
 	return rl.mostRecentTerm
 }
 
-// f12ci converts a fileIndex to a convenient index
-func fi2ci(i uint64) uint64 {
+// fileIndexToStorageIndex converts a fileIndex to a the index it is stored at
+func fileIndexToStorageIndex(i uint64) uint64 {
 	return i - 1000000
 }
 
-// ci2fi converts a convenient to a fileIndex
-func ci2fi(i uint64) uint64 {
+// storageIndexToFileIndex converts a storage index to a fileIndex
+func storageIndexToFileIndex(i uint64) uint64 {
 	return i + 1000000
 }
