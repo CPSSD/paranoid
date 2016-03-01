@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
@@ -13,6 +14,8 @@ import (
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
+	rpb "github.com/cpssd/paranoid/proto/raft"
+	"github.com/cpssd/paranoid/raft"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"io/ioutil"
@@ -24,8 +27,9 @@ import (
 )
 
 var (
-	srv *grpc.Server
-	log *logger.ParanoidLogger
+	srv               *grpc.Server
+	raftNetworkServer *raft.RaftNetworkServer
+	log               *logger.ParanoidLogger
 
 	certFile   = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
@@ -48,9 +52,44 @@ func startRPCServer(lis *net.Listener) {
 		log.Info("Starting ParanoidNetwork server without TLS.")
 	}
 	srv = grpc.NewServer(opts...)
+
 	pb.RegisterParanoidNetworkServer(srv, &pnetserver.ParanoidServer{})
+	nodeDetails := raft.Node{
+		IP:         globals.ThisNode.IP,
+		Port:       globals.ThisNode.Port,
+		CommonName: globals.ThisNode.CommonName,
+		NodeID:     globals.ThisNode.UUID,
+	}
+	//First node to join a given cluster
+	if len(globals.Nodes.GetAll()) == 0 {
+		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, pnetserver.ParanoidDir, path.Join(pnetserver.ParanoidDir, "meta", "raft"),
+			&raft.StartConfiguration{
+				Peers: []raft.Node{},
+			},
+			globals.TLSEnabled, globals.TLSSkipVerify)
+	} else {
+		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, pnetserver.ParanoidDir, path.Join(pnetserver.ParanoidDir, "meta", "raft"), nil,
+			globals.TLSEnabled, globals.TLSSkipVerify)
+	}
+	rpb.RegisterRaftNetworkServer(srv, raftNetworkServer)
+	pnetserver.RaftNetworkServer = raftNetworkServer
+
 	globals.Wait.Add(1)
-	go srv.Serve(*lis)
+	go func() {
+		err := srv.Serve(*lis)
+		log.Info("Server stopped")
+		if err != nil {
+			log.Fatal("Server stopped because of an error:", err)
+		}
+	}()
+
+	//Do we need to request to join a cluster
+	if raftNetworkServer.State.Configuration.HasConfiguration() == false {
+		err := dnetclient.PingPeers()
+		if err != nil {
+			log.Fatal("Unable to join a raft cluster")
+		}
+	}
 }
 
 func main() {
@@ -66,6 +105,8 @@ func main() {
 	pnetserver.Log = logger.New("pnetserver", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	upnp.Log = logger.New("upnp", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	keyman.Log = logger.New("keyman", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	raft.Log = logger.New("raft", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	commands.Log = logger.New("libpfs", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 	intercom.Log = logger.New("intercom", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
 
 	log.SetOutput(logger.STDERR | logger.LOGFILE)
@@ -74,7 +115,13 @@ func main() {
 	pnetserver.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	upnp.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	keyman.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	raft.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	commands.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	intercom.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+
+	if *verbose {
+		commands.Log.SetLogLevel(logger.VERBOSE)
+	}
 
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {
@@ -111,6 +158,7 @@ func main() {
 		if err != nil {
 			log.Fatal("Could not get IP:", err)
 		}
+
 		//Asking for port 0 requests a random free port from the OS.
 		lis, err := net.Listen("tcp", ip+":0")
 		if err != nil {
@@ -128,7 +176,7 @@ func main() {
 		err = upnp.DiscoverDevices()
 		if err == nil {
 			log.Info("UPnP devices available")
-			externalPort, err := upnp.AddPortMapping(port)
+			externalPort, err := upnp.AddPortMapping(ip, port)
 			if err == nil {
 				log.Info("UPnP port mapping enabled")
 				port = externalPort
@@ -156,7 +204,7 @@ func main() {
 	}
 	createPid("pfsd")
 	globals.Wait.Add(1)
-	go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, !*noNetwork)
+	go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, raftNetworkServer)
 
 	if globals.SystemLocked {
 		globals.Wait.Add(1)

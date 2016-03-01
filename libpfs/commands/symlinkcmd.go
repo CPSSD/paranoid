@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
 )
 
 // SymlinkCommand creates a symbolic link
-func SymlinkCommand(directory, existingFile, targetFile string, sendOverNetwork bool) (returnCode int, returnError error) {
+func SymlinkCommand(directory, existingFile, targetFile string) (returnCode int, returnError error) {
 	Log.Info("symlink command called")
 
 	targetFilePath := getParanoidPath(directory, targetFile)
@@ -73,8 +72,5 @@ func SymlinkCommand(directory, existingFile, targetFile string, sendOverNetwork 
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file:", err)
 	}
 
-	if sendOverNetwork {
-		pnetclient.Symlink(existingFile, targetFile)
-	}
 	return returncodes.OK, nil
 }

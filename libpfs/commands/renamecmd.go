@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,7 +11,7 @@ import (
 )
 
 // RenameCommand is called when renaming a file
-func RenameCommand(directory, oldFileName, newFileName string, sendOverNetwork bool) (returnCode int, returnError error) {
+func RenameCommand(directory, oldFileName, newFileName string) (returnCode int, returnError error) {
 	Log.Info("rename command called")
 
 	oldFilePath := getParanoidPath(directory, oldFileName)
@@ -48,7 +47,7 @@ func RenameCommand(directory, oldFileName, newFileName string, sendOverNetwork b
 	if newFileType != typeENOENT {
 		//Renaming is allowed when a file already exists, unless the existing file is a non empty directory
 		if newFileType == typeFile {
-			_, err := UnlinkCommand(directory, newFileName, false)
+			_, err := UnlinkCommand(directory, newFileName)
 			if err != nil {
 				return returncodes.EEXIST, errors.New(newFileName + " already exists")
 			}
@@ -58,7 +57,7 @@ func RenameCommand(directory, oldFileName, newFileName string, sendOverNetwork b
 			if err != nil || len(files) > 0 {
 				return returncodes.ENOTEMPTY, errors.New(newFileName + " is not empty")
 			}
-			_, err = RmdirCommand(directory, newFileName, false)
+			_, err = RmdirCommand(directory, newFileName)
 			if err != nil {
 				return returncodes.EEXIST, errors.New(newFileName + " already exists")
 			}
@@ -80,8 +79,5 @@ func RenameCommand(directory, oldFileName, newFileName string, sendOverNetwork b
 		return returncodes.EUNEXPECTED, fmt.Errorf("error renaming file:", err)
 	}
 
-	if sendOverNetwork {
-		pnetclient.Rename(oldFileName, newFileName)
-	}
 	return returncodes.OK, nil
 }

@@ -75,18 +75,14 @@ func getUnoccupiedPortsppp(client *internetgateway1.WANPPPConnection1) []int {
 	return openPorts
 }
 
-func AddPortMapping(internalPort int) (int, error) {
-	ip, err := GetInternalIp()
-	if err != nil {
-		return 0, err
-	}
+func AddPortMapping(internalIp string, internalPort int) (int, error) {
 	for _, client := range uPnPClientsIP {
 		openPorts := getUnoccupiedPortsIp(client)
 		if len(openPorts) > 0 {
 			for i := 0; i < attemptedPortAssignments; i++ {
 				port := openPorts[rand.Intn(len(openPorts))]
 				Log.Info("Picked port:", port)
-				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), ip, true, "", 0)
+				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), internalIp, true, "", 0)
 				if err == nil {
 					ipPortMappedClient = client
 					return port, nil
@@ -102,7 +98,7 @@ func AddPortMapping(internalPort int) (int, error) {
 			for i := 0; i < attemptedPortAssignments; i++ {
 				port := openPorts[rand.Intn(len(openPorts))]
 				Log.Info("Picked port:", port)
-				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), ip, true, "", 0)
+				err := client.AddPortMapping("", uint16(port), "tcp", uint16(internalPort), internalIp, true, "", 0)
 				if err == nil {
 					pppPortMappedClient = client
 					return port, nil

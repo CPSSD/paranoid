@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	pb "github.com/cpssd/paranoid/proto/raft"
+	"github.com/cpssd/paranoid/raft/raftlog"
 	"io/ioutil"
 	"os"
+	"path"
 	"sync"
 )
 
@@ -14,6 +16,11 @@ const (
 	CANDIDATE
 	LEADER
 	INACTIVE
+)
+
+const (
+	PersistentStateFileName string = "persistentStateFile"
+	LogDirectory            string = "raft_logs"
 )
 
 type Node struct {
@@ -28,14 +35,16 @@ func (n Node) String() string {
 }
 
 type RaftState struct {
+	//Used for testing purposes
 	specialNumber uint64
 
 	NodeId       string
+	pfsDirectory string
 	currentState int
 
 	currentTerm uint64
 	votedFor    string
-	Log         *RaftLog
+	Log         *raftlog.RaftLog
 	commitIndex uint64
 	lastApplied uint64
 
@@ -49,29 +58,39 @@ type RaftState struct {
 	LeaderElected     chan bool
 
 	waitingForApplied    bool
-	EntryApplied         chan uint64
+	EntryApplied         chan *EntryAppliedInfo
 	ConfigurationApplied chan *pb.Configuration
-	ApplyEntriesLock     sync.Mutex
 
-	persistentStateFile string
+	raftInfoDirectory   string
 	persistentStateLock sync.Mutex
+	stateChangeLock     sync.Mutex
 }
 
 func (s *RaftState) GetCurrentTerm() uint64 {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.currentTerm
 }
 
 func (s *RaftState) SetCurrentTerm(x uint64) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
 	s.votedFor = ""
 	s.currentTerm = x
 	s.savePersistentState()
 }
 
 func (s *RaftState) GetCurrentState() int {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.currentState
 }
 
 func (s *RaftState) SetCurrentState(x int) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
 	if s.currentState == LEADER {
 		s.StopLeading <- true
 	}
@@ -80,41 +99,66 @@ func (s *RaftState) SetCurrentState(x int) {
 		s.StartElection <- true
 	}
 	if x == LEADER {
-		s.SetLeaderId(s.NodeId)
+		s.setLeaderIdUnsafe(s.NodeId)
 		s.StartLeading <- true
 	}
 }
 
 func (s *RaftState) GetCommitIndex() uint64 {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.commitIndex
 }
 
 func (s *RaftState) SetCommitIndex(x uint64) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	s.commitIndex = x
+	s.SendAppendEntries <- true
 }
 
 func (s *RaftState) SetWaitingForApplied(x bool) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	s.waitingForApplied = x
 }
 
 func (s *RaftState) GetWaitingForApplied() bool {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.waitingForApplied
 }
 
 func (s *RaftState) GetVotedFor() string {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.votedFor
 }
 
 func (s *RaftState) SetVotedFor(x string) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	s.votedFor = x
 	s.savePersistentState()
 }
 
 func (s *RaftState) GetLeaderId() string {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.leaderId
 }
 
+func (s *RaftState) setLeaderIdUnsafe(x string) {
+	if s.leaderId == "" {
+		s.LeaderElected <- true
+	}
+	s.leaderId = x
+}
+
 func (s *RaftState) SetLeaderId(x string) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
 	if s.leaderId == "" {
 		s.LeaderElected <- true
 	}
@@ -122,67 +166,96 @@ func (s *RaftState) SetLeaderId(x string) {
 }
 
 func (s *RaftState) GetLastApplied() uint64 {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.lastApplied
 }
 
 func (s *RaftState) SetLastApplied(x uint64) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+	s.lastApplied = x
+	s.savePersistentState()
+}
+
+func (s *RaftState) setLastAppliedUnsafe(x uint64) {
 	s.lastApplied = x
 	s.savePersistentState()
 }
 
 func (s *RaftState) SetSpecialNumber(x uint64) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	s.specialNumber = x
 	s.savePersistentState()
 }
 
 func (s *RaftState) GetSpecialNumber() uint64 {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
 	return s.specialNumber
 }
 
-func (s *RaftState) applyLogEntry(LogEntry *LogEntry) {
-	if LogEntry.Entry.Type == pb.Entry_StateMachineCommand {
-		stateMachineCommand := LogEntry.Entry.GetCommand()
-		if stateMachineCommand == nil {
+func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
+	if logEntry.Entry.Type == pb.Entry_Demo {
+		demoCommand := logEntry.Entry.GetDemo()
+		if demoCommand == nil {
 			Log.Fatal("Error applying Log to state machine")
 		}
-		s.SetSpecialNumber(stateMachineCommand.Number)
-	} else if LogEntry.Entry.Type == pb.Entry_ConfigurationChange {
-		config := LogEntry.Entry.GetConfig()
+		s.specialNumber = demoCommand.Number
+	} else if logEntry.Entry.Type == pb.Entry_ConfigurationChange {
+		config := logEntry.Entry.GetConfig()
 		if config != nil {
 			s.ConfigurationApplied <- config
 		} else {
 			Log.Fatal("Error applying configuration update")
 		}
+	} else if logEntry.Entry.Type == pb.Entry_StateMachineCommand {
+		libpfsCommand := logEntry.Entry.GetCommand()
+		if libpfsCommand == nil {
+			Log.Fatal("Error applying Log to state machine")
+		}
+		if s.pfsDirectory == "" {
+			Log.Fatal("PfsDirectory is not set")
+		}
+		return performLibPfsCommand(s.pfsDirectory, libpfsCommand)
 	}
+	return nil
 }
 
 func (s *RaftState) ApplyLogEntries() {
-	s.ApplyEntriesLock.Lock()
-	defer s.ApplyEntriesLock.Unlock()
-	lastApplied := s.GetLastApplied()
-	commitIndex := s.GetCommitIndex()
-	if commitIndex > lastApplied {
-		for i := lastApplied + 1; i <= commitIndex; i++ {
-			LogEntry := s.Log.GetLogEntry(i)
-			s.applyLogEntry(LogEntry)
-			s.SetLastApplied(i)
-			if s.GetWaitingForApplied() {
-				s.EntryApplied <- i
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
+	if s.commitIndex > s.lastApplied {
+		for i := s.lastApplied + 1; i <= s.commitIndex; i++ {
+			LogEntry, err := s.Log.GetLogEntry(i)
+			if err != nil {
+				Log.Fatal("Unable to get log entry1:", err)
+			}
+			result := s.applyLogEntry(LogEntry)
+			s.setLastAppliedUnsafe(i)
+			if s.waitingForApplied {
+				s.EntryApplied <- &EntryAppliedInfo{
+					Index:  i,
+					Result: result,
+				}
 			}
 		}
 	}
 }
 
 func (s *RaftState) calculateNewCommitIndex() {
-	lastCommitIndex := s.GetCommitIndex()
-	currentTerm := s.GetCurrentTerm()
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+
+	lastCommitIndex := s.commitIndex
+	currentTerm := s.currentTerm
 	newCommitIndex := s.Configuration.CalculateNewCommitIndex(lastCommitIndex, currentTerm, s.Log)
 
-	if currentTerm == s.GetCurrentTerm() {
-		if newCommitIndex > s.GetCommitIndex() {
-			s.SetCommitIndex(newCommitIndex)
-			s.ApplyLogEntries()
-		}
+	if newCommitIndex > lastCommitIndex {
+		s.commitIndex = newCommitIndex
+		go s.ApplyLogEntries()
 	}
 }
 
@@ -196,11 +269,12 @@ type persistentState struct {
 func (s *RaftState) savePersistentState() {
 	s.persistentStateLock.Lock()
 	defer s.persistentStateLock.Unlock()
+
 	perState := &persistentState{
-		SpecialNumber: s.GetSpecialNumber(),
-		CurrentTerm:   s.GetCurrentTerm(),
-		VotedFor:      s.GetVotedFor(),
-		LastApplied:   s.GetLastApplied(),
+		SpecialNumber: s.specialNumber,
+		CurrentTerm:   s.currentTerm,
+		VotedFor:      s.votedFor,
+		LastApplied:   s.lastApplied,
 	}
 
 	persistentStateBytes, err := json.Marshal(perState)
@@ -208,7 +282,17 @@ func (s *RaftState) savePersistentState() {
 		Log.Fatal("Error saving persistent state to disk:", err)
 	}
 
-	err = ioutil.WriteFile(s.persistentStateFile, persistentStateBytes, 0600)
+	if _, err := os.Stat(s.raftInfoDirectory); os.IsNotExist(err) {
+		Log.Fatal("Raft Info Directory does not exist:", err)
+	}
+
+	newPeristentFile := path.Join(s.raftInfoDirectory, PersistentStateFileName+"-new")
+	err = ioutil.WriteFile(newPeristentFile, persistentStateBytes, 0600)
+	if err != nil {
+		Log.Fatal("Error writing new persistent state to disk:", err)
+	}
+
+	err = os.Rename(newPeristentFile, path.Join(s.raftInfoDirectory, PersistentStateFileName))
 	if err != nil {
 		Log.Fatal("Error saving persistent state to disk:", err)
 	}
@@ -231,35 +315,36 @@ func getPersistentState(persistentStateFile string) *persistentState {
 	return perState
 }
 
-func newRaftState(myNodeDetails Node, persistentStateFile string, peers []Node) *RaftState {
-	persistentState := getPersistentState(persistentStateFile)
-	nodes := append(peers, myNodeDetails)
+func newRaftState(myNodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration) *RaftState {
+	persistentState := getPersistentState(path.Join(raftInfoDirectory, PersistentStateFileName))
 	var raftState *RaftState
 	if persistentState == nil {
 		raftState = &RaftState{
-			specialNumber:       0,
-			NodeId:              myNodeDetails.NodeID,
-			currentTerm:         0,
-			votedFor:            "",
-			Log:                 newRaftLog(),
-			commitIndex:         0,
-			lastApplied:         0,
-			leaderId:            "",
-			Configuration:       newConfiguration(nodes, myNodeDetails.NodeID, 0),
-			persistentStateFile: persistentStateFile,
+			specialNumber:     0,
+			pfsDirectory:      pfsDirectory,
+			NodeId:            myNodeDetails.NodeID,
+			currentTerm:       0,
+			votedFor:          "",
+			Log:               raftlog.New(path.Join(raftInfoDirectory, LogDirectory)),
+			commitIndex:       0,
+			lastApplied:       0,
+			leaderId:          "",
+			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails),
+			raftInfoDirectory: raftInfoDirectory,
 		}
 	} else {
 		raftState = &RaftState{
-			specialNumber:       persistentState.SpecialNumber,
-			NodeId:              myNodeDetails.NodeID,
-			currentTerm:         persistentState.CurrentTerm,
-			votedFor:            persistentState.VotedFor,
-			Log:                 newRaftLog(),
-			commitIndex:         0,
-			lastApplied:         persistentState.LastApplied,
-			leaderId:            "",
-			Configuration:       newConfiguration(nodes, myNodeDetails.NodeID, 0),
-			persistentStateFile: persistentStateFile,
+			specialNumber:     persistentState.SpecialNumber,
+			pfsDirectory:      pfsDirectory,
+			NodeId:            myNodeDetails.NodeID,
+			currentTerm:       persistentState.CurrentTerm,
+			votedFor:          persistentState.VotedFor,
+			Log:               raftlog.New(path.Join(raftInfoDirectory, LogDirectory)),
+			commitIndex:       0,
+			lastApplied:       persistentState.LastApplied,
+			leaderId:          "",
+			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails),
+			raftInfoDirectory: raftInfoDirectory,
 		}
 	}
 
@@ -268,7 +353,7 @@ func newRaftState(myNodeDetails Node, persistentStateFile string, peers []Node) 
 	raftState.StopLeading = make(chan bool, 100)
 	raftState.SendAppendEntries = make(chan bool, 100)
 	raftState.LeaderElected = make(chan bool, 1)
-	raftState.EntryApplied = make(chan uint64, 100)
+	raftState.EntryApplied = make(chan *EntryAppliedInfo, 100)
 	raftState.ConfigurationApplied = make(chan *pb.Configuration, 100)
 	return raftState
 }

@@ -1,4 +1,4 @@
-// ParanoidNetwork API v0.2.0
+// ParanoidNetwork API v0.3.0
 
 syntax = "proto3";
 
@@ -7,22 +7,8 @@ package paranoid;
 service ParanoidNetwork {
     // Utility calls
 
-    // Used for health checking and discovery. Sends the IP and port of the
-    // PFSD instance running on the client.
+    // Used by a new node to let other nodes it is available to join the cluster.
     rpc Ping (PingRequest) returns (EmptyMessage) {}
-
-    // Filesystem calls
-    rpc Creat (CreatRequest) returns (EmptyMessage) {}
-    rpc Write (WriteRequest) returns (WriteResponse) {}
-    rpc Link (LinkRequest) returns (EmptyMessage) {}
-    rpc Symlink (LinkRequest) returns (EmptyMessage) {}
-    rpc Unlink (UnlinkRequest) returns (EmptyMessage) {}
-    rpc Rename (RenameRequest) returns (EmptyMessage) {}
-    rpc Truncate (TruncateRequest) returns (EmptyMessage) {}
-    rpc Utimes (UtimesRequest) returns (EmptyMessage) {}
-    rpc Chmod (ChmodRequest) returns (EmptyMessage) {}
-    rpc Mkdir (MkdirRequest) returns (EmptyMessage) {}
-    rpc Rmdir (RmdirRequest) returns (EmptyMessage) {}
 
     // Cryptography calls
     rpc SendKeyPiece (KeyPiece) returns (EmptyMessage) {}
@@ -35,66 +21,7 @@ message PingRequest {
     string ip = 1;  // required
     string port = 2;  // required
     string common_name = 3; // required
-}
-
-message CreatRequest {
-    string path = 1;  // required
-    uint32 permissions = 2;  // required
-}
-
-message WriteRequest {
-    string path = 1;  // required
-    bytes data = 2;  // required
-
-    uint64 offset = 3;  // optional
-    uint64 length = 4;  // optional
-}
-
-message WriteResponse {
-    uint64 bytes_written = 1;  // required
-}
-
-message LinkRequest {
-    string old_path = 1;  // required
-    string new_path = 2;  // required
-}
-
-message UnlinkRequest {
-    string path = 1;  // required
-}
-
-message RenameRequest {
-    string old_path = 1;  // required
-    string new_path = 2;  // required
-}
-
-message TruncateRequest {
-    string path = 1;  // required
-    uint64 length = 2;  // required
-}
-
-message UtimesRequest {
-    string path = 1; //required
-
-    int64 access_seconds = 2;  // required
-    int64 access_nanoseconds = 3;  // required
- 
-    int64 modify_seconds = 4;  // required
-    int64 modify_nanoseconds = 5;  // required
-}
-
-message ChmodRequest {
-    string path = 1;  // required
-    uint32 mode = 2;  // required
-}
-
-message MkdirRequest {
-    string directory = 1; // required
-    uint32 mode = 2; // required
-}
-
-message RmdirRequest {
-    string directory = 1; // required
+    string uuid = 4; // required
 }
 
 message KeyPiece {

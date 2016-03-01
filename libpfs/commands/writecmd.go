@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 	"syscall"
@@ -12,7 +11,7 @@ import (
 
 //WriteCommand writes data to the given file
 //offset and length can be given as -1 if the defaults are to be used
-func WriteCommand(directory, fileName string, offset, length int64, data []byte, sendOverNetwork bool) (returnCode int, returnError error, bytesWrote int) {
+func WriteCommand(directory, fileName string, offset, length int64, data []byte) (returnCode int, returnError error, bytesWrote int) {
 	Log.Info("write command given")
 	Log.Verbose("write : given directory = " + directory)
 
@@ -103,8 +102,5 @@ func WriteCommand(directory, fileName string, offset, length int64, data []byte,
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file:", err), wroteLen
 	}
 
-	if sendOverNetwork {
-		pnetclient.Write(fileName, data, uint64(offset), uint64(length))
-	}
 	return returncodes.OK, nil, wroteLen
 }

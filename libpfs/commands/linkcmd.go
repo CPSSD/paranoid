@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
 )
 
 // LinkCommand creates a link of a file.
-func LinkCommand(directory, existingFileName, targetFileName string, sendOverNetwork bool) (returnCode int, returnError error) {
+func LinkCommand(directory, existingFileName, targetFileName string) (returnCode int, returnError error) {
 	Log.Info("link command called")
 
 	existingFilePath := getParanoidPath(directory, existingFileName)
@@ -124,8 +123,5 @@ func LinkCommand(directory, existingFileName, targetFileName string, sendOverNet
 		return returncodes.EUNEXPECTED, fmt.Errorf("error closing file:", err)
 	}
 
-	if sendOverNetwork {
-		pnetclient.Link(existingFilePath, targetFilePath)
-	}
 	return returncodes.OK, nil
 }

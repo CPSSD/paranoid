@@ -1,10 +1,10 @@
 // +build !integration
 
-package activitylogger
+package raftlog
 
 import (
 	"github.com/cpssd/paranoid/logger"
-	pb "github.com/cpssd/paranoid/proto/activitylogger"
+	pb "github.com/cpssd/paranoid/proto/raft"
 	"io/ioutil"
 	"os"
 	"path"
@@ -43,22 +43,36 @@ func TestWriteReadDelete(t *testing.T) {
 	removeTestDir()
 	createTestDir()
 
-	al := New(testDir)
 	logDir := path.Join(testDir, "meta", "activity_logs")
+	rl := New(logDir)
 
 	// Testing Write functionality
-	i, err := al.WriteEntry(&pb.Entry{
-		Type: 0,
-		Path: "ThisIsAPath",
-	})
+	i, err := rl.AppendEntry(
+		&pb.LogEntry{
+			Term: 0,
+			Entry: &pb.Entry{
+				Type: pb.Entry_StateMachineCommand,
+				Command: &pb.StateMachineCommand{
+					Type: 0,
+					Path: "ThisIsAPath",
+				},
+			},
+		})
 	if err != nil || i != 1 {
 		t.Error("received error writing log, err:", err)
 	}
 
-	i, err = al.WriteEntry(&pb.Entry{
-		Type: 0,
-		Path: "ThisIsAPath2",
-	})
+	i, err = rl.AppendEntry(
+		&pb.LogEntry{
+			Term: 0,
+			Entry: &pb.Entry{
+				Type: pb.Entry_StateMachineCommand,
+				Command: &pb.StateMachineCommand{
+					Type: 0,
+					Path: "ThisIsAPath2",
+				},
+			},
+		})
 	if err != nil || i != 2 {
 		t.Error("received error writing log, err:", err)
 	}
@@ -76,22 +90,35 @@ func TestWriteReadDelete(t *testing.T) {
 	}
 
 	// Testing Read functionality
-	li := al.LastEntryIndex()
+	li := rl.GetMostRecentIndex()
 	if li != 2 {
-		t.Error("LastEntryIndex not what it should be: ", li)
+		t.Error("Most recent index not what it should be: ", li)
 	}
 
-	e, err := al.GetEntry(al.LastEntryIndex())
+	e, err := rl.GetLogEntry(rl.GetMostRecentIndex())
 	if err != nil {
 		t.Error("Error received when reading log: ", err)
 	}
 
-	if e.Type != 0 || e.Path != "ThisIsAPath2" {
+	if e.GetEntry().GetCommand().Type != 0 || e.GetEntry().GetCommand().Path != "ThisIsAPath2" {
 		t.Error("Bad protobuf received from read: ", e)
 	}
 
+	entries, err := rl.GetEntriesSince(1)
+	if len(entries) != 2 {
+		t.Fatal("Incorrect entries returned")
+	}
+
+	if entries[0].GetCommand().Path != "ThisIsAPath" {
+		t.Error("Bad protobuf received from getEntiresSince: ", entries[0])
+	}
+
+	if entries[1].GetCommand().Path != "ThisIsAPath2" {
+		t.Error("Bad protobuf received from getEntiresSince: ", entries[1])
+	}
+
 	// Testing Delete functionality
-	err = al.DeleteEntry(1)
+	err = rl.DiscardLogEntries(1)
 	if err != nil {
 		t.Error("Error received when deleting log: ", err)
 	}
@@ -102,6 +129,6 @@ func TestWriteReadDelete(t *testing.T) {
 	}
 
 	if len(files) != 0 {
-		t.Error("number of files in directory is not what it shoudl be, delete error.")
+		t.Error("number of files in directory is not what it should be, delete error.")
 	}
 }

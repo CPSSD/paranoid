@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"path"
 	"strings"
 	"time"
 )
@@ -52,24 +51,22 @@ func StopRaftServer(raftServer *raft.RaftNetworkServer) {
 	}
 }
 
-func CreatePersistentFile(persistentFile string) string {
-	os.Remove(persistentFile)
-	dir, _ := path.Split(persistentFile)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.MkdirAll(dir, 0700)
-		if err != nil {
-			log.Fatal("Error creating persistent file:", err)
-		}
+func CreateRaftDirectory(raftDirectory string) string {
+	os.RemoveAll(raftDirectory)
+	err := os.MkdirAll(raftDirectory, 0700)
+	if err != nil {
+		log.Fatal("Error creating raft directory:", err)
 	}
-	return persistentFile
+	return raftDirectory
 }
 
-func RemovePersistentFile(persistentFile string, raftServer *raft.RaftNetworkServer) {
+func RemoveRaftDirectory(raftDirectory string, raftServer *raft.RaftNetworkServer) {
 	if raftServer != nil {
 		//Need to wait for server to shut down or the file could be removed while in use
 		raftServer.Wait.Wait()
 	}
-	os.Remove(persistentFile)
+	time.Sleep(time.Second)
+	os.RemoveAll(raftDirectory)
 }
 
 func IsLeader(server *raft.RaftNetworkServer) bool {
