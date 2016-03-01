@@ -46,7 +46,7 @@ func TestKillSignal(t *testing.T) {
 
 	commands.Log = logger.New("pfsdintegration", "pfsdintegration", os.DevNull)
 
-	discovery := exec.Command("discovery-server", "--port=10102")
+	discovery := exec.Command("discovery-server", "--port=10102", "-state=false")
 	err := discovery.Start()
 	if err != nil {
 		t.Fatal(err)

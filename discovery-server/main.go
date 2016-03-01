@@ -8,7 +8,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
+	"os"
+	"os/user"
+	"path"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -18,6 +22,7 @@ var (
 	renewInterval = flag.Int("renew-interval", 5*60*1000, "time after which membership expires, in ms")
 	certFile      = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile       = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+	loadState     = flag.Bool("state", true, "Load the Nodes from the statefile")
 )
 
 func createRPCServer() *grpc.Server {
@@ -43,6 +48,8 @@ func main() {
 		dnetserver.Log.Error("Failed to set logger output:", err)
 	}
 
+	analyseWorkspace(dnetserver.Log)
+
 	renewDuration, err := time.ParseDuration(strconv.Itoa(*renewInterval) + "ms")
 	if err != nil {
 		dnetserver.Log.Error("Failed parsing renew interval", err)
@@ -62,9 +69,54 @@ func main() {
 	}
 	dnetserver.Log.Info("Listening on port", *port)
 
+	if *loadState {
+		dnetserver.LoadState()
+	}
+
 	srv := createRPCServer()
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})
 
 	dnetserver.Log.Info("gRPC server created")
 	srv.Serve(lis)
+}
+
+// analyseWorkspace analyses the state of the workspace directory for the server,
+// if the workspace directory doesnt exist it will be recreated along with needed
+// sub-directories.
+func analyseWorkspace(log *logger.ParanoidLogger) {
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal("Couldn't identify user:", err)
+	}
+
+	// checking ~/.pfs
+	pfsDirPath := path.Join(usr.HomeDir, ".pfs")
+	checkDir(pfsDirPath, log)
+
+	// checking ~/.pfs/discovery_meta
+	metaDirPath := path.Join(pfsDirPath, "discovery_meta")
+	checkDir(metaDirPath, log)
+
+	dnetserver.StateFilePath = path.Join(metaDirPath, "server_state.json")
+}
+
+// checkDir checks a directory and creates it if needed
+func checkDir(dir string, log *logger.ParanoidLogger) {
+	_, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Info("Creating: ", dir)
+			err1 := os.Mkdir(dir, 0600)
+			if err1 != nil {
+				log.Fatal("Failed to create: ", dir, " err:", err1)
+			}
+		} else {
+			log.Fatal("Couldn't stat:", dir, "err:", err)
+		}
+	} else {
+		err = syscall.Access(dir, syscall.O_RDWR)
+		if err != nil {
+			log.Fatal("Don't have read & write access to:", dir)
+		}
+	}
 }
