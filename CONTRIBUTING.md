@@ -17,13 +17,13 @@ to writing Go.
 
 ## Commenting ##
 
-Commenting will be done in accordance with the standard Go style used for generating Godocs.
+Commenting will be done in accordance with the standard Go style used for generating Godocs. 
 You should write comments to explain any code you write that does something in a way that may not be obvious.
 An explaination of standard Go commenting practice and Godoc can be found [here](https://blog.golang.org/godoc-documenting-go-code).
 
 ## Automated Testing ##
 
-Automated Testing will be done using the [testing](https://golang.org/pkg/testing/) Go package.
+Automated Testing will be done using the [testing](https://golang.org/pkg/testing/) Go package. 
 Unit tests and integration tests should be kept in separate files that are run in separate Jenkins projects.
 Files containing integration tests should be marked by starting with the comment `// +build integration`
 Files containing unit tests should be marked by starting with the comment `// +build !integration`
@@ -52,6 +52,6 @@ All code must be submitted via pull requests, *not* checked straight into the re
 A pull request will be from a single feature branch, which will not be used for any other
 features after merging. Ideally, it will be deleted after a merge.
 
-Non-trivial pull requests must be reviewed by at least two people who are not the submitter. You can
+All pull requests must be reviewed by at least one person who is not the submitter. You can
 ask in Hipchat for a review, or use Github's assign feature to assign the pull request to a
 specific person.
