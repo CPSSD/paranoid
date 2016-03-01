@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,7 +11,7 @@ import (
 )
 
 // RmdirCommand removes a directory
-func RmdirCommand(directory, dirName string, sendOverNetwork bool) (returnCode int, returnError error) {
+func RmdirCommand(directory, dirName string) (returnCode int, returnError error) {
 	Log.Info("rmdir command called")
 
 	err := getFileSystemLock(directory, exclusiveLock)
@@ -88,8 +87,5 @@ func RmdirCommand(directory, dirName string, sendOverNetwork bool) (returnCode i
 		return code, err
 	}
 
-	if sendOverNetwork {
-		pnetclient.Rmdir(dirName)
-	}
 	return returncodes.OK, nil
 }

@@ -4,14 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 	"syscall"
 )
 
 //ChmodCommand is used to change the permissions of a file.
-func ChmodCommand(directory, fileName string, perms os.FileMode, sendOverNetwork bool) (returnCode int, returnError error) {
+func ChmodCommand(directory, fileName string, perms os.FileMode) (returnCode int, returnError error) {
 	Log.Info("chmod command given")
 	Log.Verbose("chmod : given directory = " + directory)
 
@@ -67,8 +66,5 @@ func ChmodCommand(directory, fileName string, perms os.FileMode, sendOverNetwork
 		return returncodes.EUNEXPECTED, fmt.Errorf("unexpected error attempting to change file permissions:", err)
 	}
 
-	if sendOverNetwork {
-		pnetclient.Chmod(fileName, uint32(perms))
-	}
 	return returncodes.OK, nil
 }

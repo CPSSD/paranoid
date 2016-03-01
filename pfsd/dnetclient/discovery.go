@@ -1,6 +1,7 @@
 package dnetclient
 
 import (
+	"errors"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"github.com/cpssd/paranoid/pfsd/upnp"
@@ -46,28 +47,25 @@ func JoinDiscovery(pool string) {
 			Log.Fatal("Failure dialing discovery server after multiple attempts, Giving up", err)
 		}
 	}
-	globals.Wait.Add(1)
-	go pingPeers()
 }
 
-// Periodically pings all known nodes on the network. Lives here and not
-// in pnetclient since pnetclient is stateless and this function is more
-// relevant to discovery.
-func pingPeers() {
-	// Ping as soon as this node joins
-	pnetclient.Ping()
-	timer := time.NewTimer(peerPingInterval)
+//Ping peers to request to be added to the cluster
+func PingPeers() error {
+	timer := time.NewTimer(peerPingTimeOut)
 	defer timer.Stop()
-	defer globals.Wait.Done()
 	for {
 		select {
 		case _, ok := <-globals.Quit:
 			if !ok {
-				return
+				return nil
 			}
 		case <-timer.C:
-			pnetclient.Ping()
-			timer.Reset(peerPingInterval)
+			return errors.New("Failed to join raft cluster")
+		default:
+			err := pnetclient.Ping()
+			if err == nil {
+				return nil
+			}
 		}
 	}
 }

@@ -28,9 +28,29 @@ message AppendEntriesRequest {
     uint64 leader_commit = 6; // required
 }
 
-//Will be replaced with pfs commands
 message StateMachineCommand {
-    uint64 number = 1; // required 
+    uint32 type = 1; // required
+    string path = 2; // required
+
+    //Used for Write command
+    bytes data = 3;  // optional
+    uint64 offset = 4;  // optional
+
+   	//Used for Write and Truncate commands
+    uint64 length = 5;  // optional
+
+    //Used for Link and Rename commands
+    string old_path = 6;  // optional
+    string new_path = 7;  // optional
+
+    //Used for Create, Chmod and Mkdir commands
+    uint32 mode = 8;  // optional
+
+    //Used for Utimes command
+    int64 access_seconds = 9;  // optional
+    int64 access_nanoseconds = 10;  // optional
+    int64 modify_seconds = 11;  // optional
+    int64 modify_nanoseconds = 12;  // optional
 }
 
 message Node {
@@ -49,20 +69,32 @@ message Configuration {
     repeated Node nodes = 2; // required
 }
 
+message DemoCommand {
+    uint64 number = 1; // required
+}
+
 message Entry {
     enum EntryType {
       StateMachineCommand = 0;
       ConfigurationChange = 1;
+      Demo = 2;
     }
     EntryType type = 1; // required 
     string uuid = 2; // required
     StateMachineCommand command = 3; // optional 
     Configuration config = 4; // optional 
+    DemoCommand demo = 5; // optional
+}
+
+message LogEntry {
+    uint64 term = 1; // required 
+    Entry entry = 2; // required
 }
 
 message AppendEntriesResponse {
     uint64 term = 1; // required
-    bool success = 2; // required
+    uint64 next_index = 2; // required
+    bool success = 3; // required
 }
 
 message RequestVoteRequest {

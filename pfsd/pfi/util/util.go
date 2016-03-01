@@ -3,15 +3,19 @@ package util
 import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
+	"github.com/cpssd/paranoid/raft"
 	"github.com/hanwen/go-fuse/fuse"
 	"syscall"
 )
 
-var MountPoint string
-var PfsDirectory string
-var LogOutput bool
-var SendOverNetwork bool
-var Log *logger.ParanoidLogger
+var (
+	MountPoint      string
+	PfsDirectory    string
+	LogOutput       bool
+	SendOverNetwork bool
+	Log             *logger.ParanoidLogger
+	RaftServer      *raft.RaftNetworkServer
+)
 
 func GetFuseReturnCode(retcode int) fuse.Status {
 	switch retcode {
@@ -29,6 +33,8 @@ func GetFuseReturnCode(retcode int) fuse.Status {
 		return fuse.Status(syscall.EISDIR)
 	case returncodes.EIO:
 		return fuse.EIO
+	case returncodes.EBUSY:
+		return fuse.EBUSY
 	default:
 		return fuse.OK
 	}

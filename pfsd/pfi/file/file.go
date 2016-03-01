@@ -49,7 +49,17 @@ func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status
 //Write writes to a file
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	util.Log.Info("Write called on file : " + f.Name)
-	code, err, bytesWritten := commands.WriteCommand(util.PfsDirectory, f.Name, off, int64(len(content)), content, util.SendOverNetwork)
+	var (
+		code         int
+		err          error
+		bytesWritten int
+	)
+	if util.SendOverNetwork {
+		code, err, bytesWritten = util.RaftServer.RequestWriteCommand(f.Name, uint64(off), uint64(len(content)), content)
+	} else {
+		code, err, bytesWritten = commands.WriteCommand(util.PfsDirectory, f.Name, off, int64(len(content)), content)
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running write command :", err)
 	}
@@ -68,7 +78,14 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 //Truncate is called when a file is to be reduced in length to size.
 func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	util.Log.Info("Truncate called on file : " + f.Name)
-	code, err := commands.TruncateCommand(util.PfsDirectory, f.Name, int64(size), util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestTruncateCommand(f.Name, size)
+	} else {
+		code, err = commands.TruncateCommand(util.PfsDirectory, f.Name, int64(size))
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running truncate command :", err)
 	}
@@ -83,7 +100,23 @@ func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 //Utimens updates the access and mofication time of the file.
 func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 	util.Log.Info("Utimens called on file : " + f.Name)
-	code, err := commands.UtimesCommand(util.PfsDirectory, f.Name, atime, mtime, util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		if atime != nil {
+			if mtime != nil {
+				code, err = util.RaftServer.RequestUtimesCommand(f.Name, int64(atime.Second()), int64(atime.Nanosecond()),
+					int64(mtime.Second()), int64(mtime.Nanosecond()))
+			} else {
+				code, err = util.RaftServer.RequestUtimesCommand(f.Name, int64(atime.Second()), int64(atime.Nanosecond()), 0, 0)
+			}
+		} else {
+			code, err = util.RaftServer.RequestUtimesCommand(f.Name, 0, 0, int64(mtime.Second()), int64(mtime.Nanosecond()))
+		}
+	} else {
+		code, err = commands.UtimesCommand(util.PfsDirectory, f.Name, atime, mtime)
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running utimes command :", err)
 	}
@@ -97,7 +130,14 @@ func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 //Chmod changes the permission flags of the file
 func (f *ParanoidFile) Chmod(perms uint32) fuse.Status {
 	util.Log.Info("Chmod called on file : " + f.Name)
-	code, err := commands.ChmodCommand(util.PfsDirectory, f.Name, os.FileMode(perms), util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestChmodCommand(f.Name, perms)
+	} else {
+		code, err = commands.ChmodCommand(util.PfsDirectory, f.Name, os.FileMode(perms))
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running chmod command :", err)
 	}

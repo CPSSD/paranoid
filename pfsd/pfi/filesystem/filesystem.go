@@ -91,7 +91,14 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (nodefs.File, fuse.Status) {
 	util.Log.Info("Create called on : " + name)
-	code, err := commands.CreatCommand(util.PfsDirectory, name, os.FileMode(mode), util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestCreatCommand(name, mode)
+	} else {
+		code, err = commands.CreatCommand(util.PfsDirectory, name, os.FileMode(mode))
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running creat command :", err)
 	}
@@ -126,7 +133,14 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 //Rename is called when renaming a file
 func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fuse.Context) fuse.Status {
 	util.Log.Info("Rename called on : " + oldName + " to be renamed to " + newName)
-	code, err := commands.RenameCommand(util.PfsDirectory, oldName, newName, util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestRenameCommand(oldName, newName)
+	} else {
+		code, err = commands.RenameCommand(util.PfsDirectory, oldName, newName)
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running rename command :", err)
 	}
@@ -140,7 +154,14 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 //Link creates a hard link from newName to oldName
 func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse.Context) fuse.Status {
 	util.Log.Info("Link called")
-	code, err := commands.LinkCommand(util.PfsDirectory, oldName, newName, util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestLinkCommand(oldName, newName)
+	} else {
+		code, err = commands.LinkCommand(util.PfsDirectory, oldName, newName)
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running link command :", err)
 	}
@@ -154,7 +175,14 @@ func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse
 //Symlink creates a symbolic link from newName to oldName
 func (fs *ParanoidFileSystem) Symlink(oldName string, newName string, context *fuse.Context) fuse.Status {
 	util.Log.Info("Symbolic link called from", oldName, "to", newName)
-	code, err := commands.SymlinkCommand(util.PfsDirectory, oldName, newName, util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestSymlinkCommand(oldName, newName)
+	} else {
+		code, err = commands.SymlinkCommand(util.PfsDirectory, oldName, newName)
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running symlink command :", err)
 	}
@@ -181,7 +209,14 @@ func (fs *ParanoidFileSystem) Readlink(name string, context *fuse.Context) (stri
 //Unlink is called when deleting a file
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) fuse.Status {
 	util.Log.Info("Unlink callde on : " + name)
-	code, err := commands.UnlinkCommand(util.PfsDirectory, name, util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestUnlinkCommand(name)
+	} else {
+		code, err = commands.UnlinkCommand(util.PfsDirectory, name)
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running unlink command :", err)
 	}
@@ -195,7 +230,14 @@ func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) fuse.St
 //Mkdir is called when creating a directory
 func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Context) fuse.Status {
 	util.Log.Info("Mkdir called on : " + name)
-	code, err := commands.MkdirCommand(util.PfsDirectory, name, os.FileMode(mode), util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestMkdirCommand(name, mode)
+	} else {
+		code, err = commands.MkdirCommand(util.PfsDirectory, name, os.FileMode(mode))
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running mkdir command :", err)
 	}
@@ -209,7 +251,14 @@ func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Cont
 //Rmdir is called when deleting a directory
 func (fs *ParanoidFileSystem) Rmdir(name string, context *fuse.Context) fuse.Status {
 	util.Log.Info("Rmdir called on : " + name)
-	code, err := commands.RmdirCommand(util.PfsDirectory, name, util.SendOverNetwork)
+	var code int
+	var err error
+	if util.SendOverNetwork {
+		code, err = util.RaftServer.RequestRmdirCommand(name)
+	} else {
+		code, err = commands.RmdirCommand(util.PfsDirectory, name)
+	}
+
 	if code == returncodes.EUNEXPECTED {
 		util.Log.Fatal("Error running rmdir command :", err)
 	}

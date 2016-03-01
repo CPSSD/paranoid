@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/intercom"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
@@ -23,8 +22,9 @@ func stopAllServices() {
 	}
 	close(globals.Quit) // Sends stop signal to all goroutines
 	if !*noNetwork {
-		dnetclient.Disconnect() // Disconnect from the discovery server
+		close(raftNetworkServer.Quit)
 		srv.Stop()
+		raftNetworkServer.Wait.Wait()
 	}
 	err := intercom.ShutdownServer()
 	if err != nil {

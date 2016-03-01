@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const peerPingInterval time.Duration = time.Minute
+const peerPingTimeOut time.Duration = time.Minute * 3
 
 var (
 	discoveryCommonName string

@@ -62,6 +62,11 @@ func InitCommand(directory string) (returnCode int, returnError error) {
 		return returncodes.EUNEXPECTED, err
 	}
 
+	_, err = makeDir(metaDir, "raft")
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
 	_, err = makeDir(directory, "contents")
 	if err != nil {
 		return returncodes.EUNEXPECTED, err

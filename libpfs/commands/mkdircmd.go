@@ -5,13 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"os"
 	"path"
 )
 
 // MkdirCommand is called when making a directory
-func MkdirCommand(directory, dirName string, mode os.FileMode, sendOverNetwork bool) (returnCode int, returnError error) {
+func MkdirCommand(directory, dirName string, mode os.FileMode) (returnCode int, returnError error) {
 	Log.Info("mkdir command called")
 
 	err := getFileSystemLock(directory, exclusiveLock)
@@ -94,8 +93,5 @@ func MkdirCommand(directory, dirName string, mode os.FileMode, sendOverNetwork b
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file:", err)
 	}
 
-	if sendOverNetwork {
-		pnetclient.Mkdir(dirName, uint32(mode))
-	}
 	return returncodes.OK, nil
 }

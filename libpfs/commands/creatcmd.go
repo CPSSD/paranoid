@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/pnetclient"
 	"io/ioutil"
 	"os"
 	"path"
 )
 
 //CreatCommand creates a new file with the name fileName in the pfs directory
-func CreatCommand(directory, fileName string, perms os.FileMode, sendOverNetwork bool) (returnCode int, returnError error) {
+func CreatCommand(directory, fileName string, perms os.FileMode) (returnCode int, returnError error) {
 	Log.Info("creat command called")
 	Log.Verbose("creat : directory = " + directory)
 
@@ -78,8 +77,5 @@ func CreatCommand(directory, fileName string, perms os.FileMode, sendOverNetwork
 		return returncodes.EUNEXPECTED, fmt.Errorf("error changing file permissions:", err)
 	}
 
-	if sendOverNetwork {
-		pnetclient.Creat(fileName, uint32(perms))
-	}
 	return returncodes.OK, nil
 }

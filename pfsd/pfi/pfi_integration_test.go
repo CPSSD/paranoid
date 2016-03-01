@@ -47,7 +47,7 @@ func TestFuseFilePerms(t *testing.T) {
 	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
 
-	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777), false)
+	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777))
 	if err != nil {
 		t.Error("pfsm setup failed :", err)
 	}
@@ -190,7 +190,7 @@ func TestFuseLink(t *testing.T) {
 	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
 
-	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777), false)
+	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777))
 	if err != nil {
 		t.Error("pfsm setup failed :", err)
 	}

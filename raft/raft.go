@@ -1,14 +1,15 @@
 package raft
 
 import (
+	"crypto/tls"
 	"errors"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"math/rand"
-	"net"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +24,10 @@ const (
 	ENTRY_APPLIED_TIMEOUT time.Duration = 20000 * time.Millisecond
 )
 
+const (
+	MAX_APPEND_ENTRIES uint64 = 100 //How many entries can be sent in one append entries request
+)
+
 var (
 	Log *logger.ParanoidLogger
 )
@@ -31,23 +36,31 @@ type RaftNetworkServer struct {
 	State *RaftState
 	Wait  sync.WaitGroup
 
+	nodeDetails   Node
+	TLSEnabled    bool
+	TLSSkipVerify bool
+
 	QuitChannelClosed    bool
 	Quit                 chan bool
 	ElectionTimeoutReset chan bool
 
-	addEntryLock  sync.Mutex
-	clientRequest *pb.Entry
+	appendEntriesLock sync.Mutex
+	addEntryLock      sync.Mutex
+	clientRequest     *pb.Entry
 }
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
+	s.appendEntriesLock.Lock()
+	defer s.appendEntriesLock.Unlock()
+
 	if s.State.Configuration.InConfiguration(req.LeaderId) == false {
 		if s.State.Configuration.MyConfigurationGood() {
-			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
 		}
 	}
 
 	if req.Term < s.State.GetCurrentTerm() {
-		return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+		return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
 	}
 
 	s.ElectionTimeoutReset <- true
@@ -59,18 +72,28 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 	}
 
 	if req.PrevLogIndex != 0 {
-		preLogEntry := s.State.Log.GetLogEntry(req.PrevLogIndex)
-		if preLogEntry == nil || preLogEntry.Term != req.PrevLogTerm {
-			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), false}, nil
+		if s.State.Log.GetMostRecentIndex() < req.PrevLogIndex {
+			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), s.State.Log.GetMostRecentIndex() + 1, false}, nil
+		}
+		preLogEntry, err := s.State.Log.GetLogEntry(req.PrevLogIndex)
+		if err != nil {
+			Log.Fatal("Unable to get log entry:", err)
+		}
+		if preLogEntry.Term != req.PrevLogTerm {
+			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
 		}
 	}
 
 	for i := uint64(0); i < uint64(len(req.Entries)); i++ {
-		LogIndex := req.PrevLogIndex + 1 + i
-		LogEntryAtIndex := s.State.Log.GetLogEntry(LogIndex)
-		if LogEntryAtIndex != nil {
-			if LogEntryAtIndex.Term != req.Term {
-				s.State.Log.DiscardLogEntries(LogIndex)
+		logIndex := req.PrevLogIndex + 1 + i
+
+		if s.State.Log.GetMostRecentIndex() >= logIndex {
+			logEntryAtIndex, err := s.State.Log.GetLogEntry(logIndex)
+			if err != nil {
+				Log.Fatal("Unable to get log entry:", err)
+			}
+			if logEntryAtIndex.Term != req.Term {
+				s.State.Log.DiscardLogEntries(logIndex)
 				s.appendLogEntry(req.Entries[i])
 			}
 		} else {
@@ -88,7 +111,7 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 		s.State.ApplyLogEntries()
 	}
 
-	return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), true}, nil
+	return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, true}, nil
 }
 
 func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVoteRequest) (*pb.RequestVoteResponse, error) {
@@ -167,7 +190,7 @@ func (s *RaftNetworkServer) appendLogEntry(entry *pb.Entry) {
 			s.State.Configuration.NewFutureConfiguration(protoNodesToNodes(config.Nodes), s.State.Log.GetMostRecentIndex())
 		}
 	}
-	s.State.Log.AppendEntry(entry, s.State.GetCurrentTerm())
+	s.State.Log.AppendEntry(&pb.LogEntry{s.State.GetCurrentTerm(), entry})
 }
 
 func (s *RaftNetworkServer) addLogEntryLeader(entry *pb.Entry) error {
@@ -207,7 +230,7 @@ func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
 		return errors.New("Unable to find leader")
 	}
 
-	conn, err := Dial(leaderNode, SEND_ENTRY_TIMEOUT)
+	conn, err := s.Dial(leaderNode, SEND_ENTRY_TIMEOUT)
 	defer conn.Close()
 	if err == nil {
 		client := pb.NewRaftNetworkClient(conn)
@@ -215,88 +238,6 @@ func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
 		return err
 	}
 	return err
-}
-
-//A request to add a Log entry from a client. If the node is not the leader, it must forward the request to the leader.
-//Only return once the request has been commited to the State machine
-func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) error {
-	s.addEntryLock.Lock()
-	defer s.addEntryLock.Unlock()
-	currentState := s.State.GetCurrentState()
-
-	s.State.SetWaitingForApplied(true)
-	defer s.State.SetWaitingForApplied(false)
-
-	//Add entry to leaders Log
-	if currentState == LEADER {
-		err := s.addLogEntryLeader(entry)
-		if err != nil {
-			return err
-		}
-	} else if currentState == FOLLOWER {
-		if s.State.GetLeaderId() != "" {
-			err := s.sendLeaderLogEntry(entry)
-			if err != nil {
-				return err
-			}
-		} else {
-			select {
-			case <-time.After(20 * time.Second):
-				return errors.New("Could not find a leader")
-			case <-s.State.LeaderElected:
-				if s.State.GetCurrentState() == LEADER {
-					err := s.addLogEntryLeader(entry)
-					if err != nil {
-						return err
-					}
-				} else {
-					err := s.sendLeaderLogEntry(entry)
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-	} else {
-		count := 0
-		for {
-			count++
-			if count > 40 {
-				return errors.New("Could not find a leader")
-			}
-			time.Sleep(500 * time.Millisecond)
-			currentState = s.State.GetCurrentState()
-			if currentState != CANDIDATE {
-				break
-			}
-		}
-		if currentState == LEADER {
-			err := s.addLogEntryLeader(entry)
-			if err != nil {
-				return err
-			}
-		} else {
-			err := s.sendLeaderLogEntry(entry)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	//Wait for the Log entry to be applied
-	timer := time.NewTimer(ENTRY_APPLIED_TIMEOUT)
-	for {
-		select {
-		case <-timer.C:
-			return errors.New("Waited too long to commit Log entry")
-		case entryIndex := <-s.State.EntryApplied:
-			LogEntry := s.State.Log.GetLogEntry(entryIndex)
-			if LogEntry.Entry.Uuid == entry.Uuid {
-				return nil
-			}
-		}
-	}
-	return nil
 }
 
 func generateNewUUID() string {
@@ -318,20 +259,6 @@ func convertNodesToProto(nodes []Node) []*pb.Node {
 		}
 	}
 	return protoNodes
-}
-
-func (s *RaftNetworkServer) RequestChangeConfiguration(nodes []Node) error {
-	Log.Info("Configuration change requested")
-	entry := &pb.Entry{
-		Type:    pb.Entry_ConfigurationChange,
-		Uuid:    generateNewUUID(),
-		Command: nil,
-		Config: &pb.Configuration{
-			Type:  pb.Configuration_FutureConfiguration,
-			Nodes: convertNodesToProto(nodes),
-		},
-	}
-	return s.RequestAddLogEntry(entry)
 }
 
 func getRandomElectionTimeout() time.Duration {
@@ -362,11 +289,18 @@ func (s *RaftNetworkServer) electionTimeOut() {
 	}
 }
 
-func Dial(node *Node, timeoutMiliseconds time.Duration) (*grpc.ClientConn, error) {
+func (s *RaftNetworkServer) Dial(node *Node, timeoutMiliseconds time.Duration) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTimeout(timeoutMiliseconds))
-	//TODO: tls support
-	opts = append(opts, grpc.WithInsecure())
+	if s.TLSEnabled {
+		creds := credentials.NewTLS(&tls.Config{
+			ServerName:         s.nodeDetails.CommonName,
+			InsecureSkipVerify: s.TLSSkipVerify,
+		})
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
 
 	conn, err := grpc.Dial(node.String(), opts...)
 	return conn, err
@@ -380,7 +314,7 @@ func (s *RaftNetworkServer) requestPeerVote(node *Node, term uint64, voteChannel
 			return
 		}
 		Log.Info("Dialing ", node)
-		conn, err := Dial(node, REQUEST_VOTE_TIMEOUT)
+		conn, err := s.Dial(node, REQUEST_VOTE_TIMEOUT)
 		defer conn.Close()
 		if err == nil {
 			client := pb.NewRaftNetworkClient(conn)
@@ -428,6 +362,9 @@ func (s *RaftNetworkServer) runElection() {
 
 	votesReturned := 0
 	votesRequested := len(peers)
+	if votesRequested == 0 {
+		return
+	}
 	for {
 		select {
 		case _, ok := <-s.Quit:
@@ -486,23 +423,32 @@ func (s *RaftNetworkServer) manageElections() {
 func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 	defer s.Wait.Done()
 	nextIndex := s.State.Configuration.GetNextIndex(node.NodeID)
-	conn, err := Dial(node, HEARTBEAT_TIMEOUT)
+	conn, err := s.Dial(node, HEARTBEAT_TIMEOUT)
 	defer conn.Close()
 	if err == nil {
 		client := pb.NewRaftNetworkClient(conn)
 		if s.State.Log.GetMostRecentIndex() >= nextIndex {
-			prevLogEntry := s.State.Log.GetLogEntry(nextIndex - 1)
 			prevLogTerm := uint64(0)
-			if prevLogEntry != nil {
+			if nextIndex-1 > 0 {
+				prevLogEntry, err := s.State.Log.GetLogEntry(nextIndex - 1)
+				if err != nil {
+					Log.Fatal("Unable to get log entry at", nextIndex-1, ":", err)
+				}
 				prevLogTerm = prevLogEntry.Term
 			}
+
+			nextLogEntries, err := s.State.Log.GetLogEntries(nextIndex, MAX_APPEND_ENTRIES)
+			if err != nil {
+				Log.Fatal("Unable to get log entry:", err)
+			}
+			numLogEntries := uint64(len(nextLogEntries))
 
 			response, err := client.AppendEntries(context.Background(), &pb.AppendEntriesRequest{
 				Term:         s.State.GetCurrentTerm(),
 				LeaderId:     s.State.NodeId,
 				PrevLogIndex: nextIndex - 1,
 				PrevLogTerm:  prevLogTerm,
-				Entries:      []*pb.Entry{&s.State.Log.GetLogEntry(nextIndex).Entry},
+				Entries:      nextLogEntries,
 				LeaderCommit: s.State.GetCommitIndex(),
 			})
 			if err == nil {
@@ -510,12 +456,16 @@ func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 					s.State.StopLeading <- true
 				} else if response.Success == false {
 					if s.State.GetCurrentState() == LEADER {
-						s.State.Configuration.SetNextIndex(node.NodeID, nextIndex-1)
+						if response.NextIndex == 0 {
+							s.State.Configuration.SetNextIndex(node.NodeID, nextIndex-1)
+						} else {
+							s.State.Configuration.SetNextIndex(node.NodeID, response.NextIndex)
+						}
 					}
 				} else if response.Success {
 					if s.State.GetCurrentState() == LEADER {
-						s.State.Configuration.SetNextIndex(node.NodeID, nextIndex+1)
-						s.State.Configuration.SetMatchIndex(node.NodeID, nextIndex)
+						s.State.Configuration.SetNextIndex(node.NodeID, nextIndex+numLogEntries)
+						s.State.Configuration.SetMatchIndex(node.NodeID, nextIndex+numLogEntries-1)
 						s.State.calculateNewCommitIndex()
 					}
 				}
@@ -604,6 +554,7 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 				return
 			}
 		case config := <-s.State.ConfigurationApplied:
+			Log.Info("New configuration applied:", config)
 			if config.Type == pb.Configuration_CurrentConfiguration {
 				inConfig := false
 				for i := 0; i < len(config.Nodes); i++ {
@@ -634,31 +585,20 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 	}
 }
 
-func newRaftNetworkServer(nodeDetails Node, persistentStateFile string, peers []Node) *RaftNetworkServer {
-	raftServer := &RaftNetworkServer{State: newRaftState(nodeDetails, persistentStateFile, peers)}
+func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration,
+	TLSEnabled, TLSSkipVerify bool) *RaftNetworkServer {
+
+	raftServer := &RaftNetworkServer{State: newRaftState(nodeDetails, pfsDirectory, raftInfoDirectory, testConfiguration)}
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
 	raftServer.QuitChannelClosed = false
 	raftServer.Wait.Add(4)
+	raftServer.nodeDetails = nodeDetails
+	raftServer.TLSEnabled = TLSEnabled
+	raftServer.TLSSkipVerify = TLSSkipVerify
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()
 	go raftServer.manageConfigurationChanges()
 	return raftServer
-}
-
-func StartRaft(lis *net.Listener, nodeDetails Node, persistentStateFile string, peers []Node) (*RaftNetworkServer, *grpc.Server) {
-	var opts []grpc.ServerOption
-	srv := grpc.NewServer(opts...)
-	raftServer := newRaftNetworkServer(nodeDetails, persistentStateFile, peers)
-	pb.RegisterRaftNetworkServer(srv, raftServer)
-	raftServer.Wait.Add(1)
-	go func() {
-		Log.Info("RaftNetworkServer started")
-		err := srv.Serve(*lis)
-		if err != nil {
-			Log.Error("Error running RaftNetworkServer", err)
-		}
-	}()
-	return raftServer, srv
 }
