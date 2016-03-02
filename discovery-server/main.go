@@ -106,7 +106,7 @@ func checkDir(dir string, log *logger.ParanoidLogger) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Info("Creating: ", dir)
-			err1 := os.Mkdir(dir, 0600)
+			err1 := os.Mkdir(dir, 0700)
 			if err1 != nil {
 				log.Fatal("Failed to create: ", dir, " err:", err1)
 			}

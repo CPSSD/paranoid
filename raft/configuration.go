@@ -64,6 +64,25 @@ func (c *Configuration) GetNode(nodeID string) (Node, error) {
 	return Node{}, errors.New("Node not found in configuration")
 }
 
+func (c *Configuration) ChangeNodeLocation(nodeID, IP, Port string) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	for i := 0; i < len(c.currentConfiguration); i++ {
+		if c.currentConfiguration[i].NodeID == nodeID {
+			c.currentConfiguration[i].IP = IP
+			c.currentConfiguration[i].Port = Port
+		}
+	}
+
+	for i := 0; i < len(c.futureConfiguration); i++ {
+		if c.futureConfiguration[i].NodeID == nodeID {
+			c.futureConfiguration[i].IP = IP
+			c.futureConfiguration[i].Port = Port
+		}
+	}
+}
+
 func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64) {
 	c.configLock.Lock()
 	defer c.configLock.Unlock()

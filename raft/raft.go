@@ -596,6 +596,7 @@ func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory stri
 	raftServer.nodeDetails = nodeDetails
 	raftServer.TLSEnabled = TLSEnabled
 	raftServer.TLSSkipVerify = TLSSkipVerify
+	raftServer.ChangeNodeLocation(nodeDetails.NodeID, nodeDetails.IP, nodeDetails.Port)
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()

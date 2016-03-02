@@ -79,13 +79,13 @@ func startRPCServer(lis *net.Listener) {
 		err := srv.Serve(*lis)
 		log.Info("Server stopped")
 		if err != nil {
-			log.Fatal("Server stopped because of an error:", err)
+			log.Warn("Server stopped because of an error:", err)
 		}
 	}()
 
 	//Do we need to request to join a cluster
 	if raftNetworkServer.State.Configuration.HasConfiguration() == false {
-		err := dnetclient.PingPeers()
+		err := dnetclient.JoinCluster()
 		if err != nil {
 			log.Fatal("Unable to join a raft cluster")
 		}
