@@ -78,8 +78,8 @@ func startRPCServer(lis *net.Listener) {
 	go func() {
 		err := srv.Serve(*lis)
 		log.Info("Server stopped")
-		if err != nil {
-			log.Warn("Server stopped because of an error:", err)
+		if err != nil && globals.ShuttingDown == false {
+			log.Fatal("Server stopped because of an error:", err)
 		}
 	}()
 

@@ -52,6 +52,7 @@ var TLSSkipVerify bool
 // Global waitgroup for all goroutines in PFSD
 var Wait sync.WaitGroup
 var Quit = make(chan bool) // Doesn't matter what the channel holds
+var ShuttingDown bool
 
 // --------------------------------------------
 // ---- nodes ---- //

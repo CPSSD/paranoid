@@ -14,6 +14,7 @@ import (
 )
 
 func stopAllServices() {
+	globals.ShuttingDown = true
 	if globals.UPnPEnabled {
 		err := upnp.ClearPortMapping(globals.Port)
 		if err != nil {

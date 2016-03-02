@@ -33,7 +33,7 @@ func Ping() {
 			Uuid:       globals.UUID,
 		})
 		if err != nil {
-			Log.Error("Can't ping ", node)
+			Log.Error("Can't ping", node)
 		}
 	}
 }
