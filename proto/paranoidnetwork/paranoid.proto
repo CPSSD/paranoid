@@ -7,8 +7,11 @@ package paranoid;
 service ParanoidNetwork {
     // Utility calls
 
-    // Used by a new node to let other nodes it is available to join the cluster.
+   	// Used for health checking and discovery. Sends the IP and port of the
+    // PFSD instance running on the client.
     rpc Ping (PingRequest) returns (EmptyMessage) {}
+    // Used by a new node to let other nodes it is available to join the cluster.
+    rpc JoinCluster (PingRequest) returns (EmptyMessage) {}
 
     // Cryptography calls
     rpc SendKeyPiece (KeyPiece) returns (EmptyMessage) {}

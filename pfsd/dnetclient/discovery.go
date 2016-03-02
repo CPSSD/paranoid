@@ -47,10 +47,34 @@ func JoinDiscovery(pool string) {
 			Log.Fatal("Failure dialing discovery server after multiple attempts, Giving up", err)
 		}
 	}
+	globals.Wait.Add(1)
+	go pingPeers()
 }
 
-//Ping peers to request to be added to the cluster
-func PingPeers() error {
+// Periodically pings all known nodes on the network. Lives here and not
+// in pnetclient since pnetclient is stateless and this function is more
+// relevant to discovery.
+func pingPeers() {
+	// Ping as soon as this node joins
+	pnetclient.Ping()
+	timer := time.NewTimer(peerPingInterval)
+	defer timer.Stop()
+	defer globals.Wait.Done()
+	for {
+		select {
+		case _, ok := <-globals.Quit:
+			if !ok {
+				return
+			}
+		case <-timer.C:
+			pnetclient.Ping()
+			timer.Reset(peerPingInterval)
+		}
+	}
+}
+
+//JoinCluster sends a request to all peers to request to be added to the cluster
+func JoinCluster() error {
 	timer := time.NewTimer(peerPingTimeOut)
 	defer timer.Stop()
 	for {
@@ -62,7 +86,7 @@ func PingPeers() error {
 		case <-timer.C:
 			return errors.New("Failed to join raft cluster")
 		default:
-			err := pnetclient.Ping()
+			err := pnetclient.JoinCluster()
 			if err == nil {
 				return nil
 			}

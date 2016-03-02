@@ -358,6 +358,10 @@ func (s *RaftNetworkServer) RequestAddNodeToConfiguration(node Node) error {
 	return s.RequestChangeConfiguration(nodes)
 }
 
+func (s *RaftNetworkServer) ChangeNodeLocation(UUID, IP, Port string) {
+	s.State.Configuration.ChangeNodeLocation(UUID, IP, Port)
+}
+
 func performLibPfsCommand(directory string, command *pb.StateMachineCommand) *StateMachineResult {
 	switch command.Type {
 	case TYPE_WRITE:

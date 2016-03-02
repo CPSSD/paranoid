@@ -117,6 +117,11 @@ func (s *RaftState) SetCommitIndex(x uint64) {
 	s.SendAppendEntries <- true
 }
 
+func (s *RaftState) SetCommitIndexUnsafe(x uint64) {
+	s.commitIndex = x
+	s.SendAppendEntries <- true
+}
+
 func (s *RaftState) SetWaitingForApplied(x bool) {
 	s.stateChangeLock.Lock()
 	defer s.stateChangeLock.Unlock()
@@ -254,7 +259,7 @@ func (s *RaftState) calculateNewCommitIndex() {
 	newCommitIndex := s.Configuration.CalculateNewCommitIndex(lastCommitIndex, currentTerm, s.Log)
 
 	if newCommitIndex > lastCommitIndex {
-		s.commitIndex = newCommitIndex
+		s.SetCommitIndexUnsafe(newCommitIndex)
 		go s.ApplyLogEntries()
 	}
 }
