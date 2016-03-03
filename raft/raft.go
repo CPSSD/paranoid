@@ -224,6 +224,7 @@ func (s *RaftNetworkServer) ClientToLeaderRequest(ctx context.Context, req *pb.E
 	return &pb.EmptyMessage{}, err
 }
 
+//sendLeaderLogEntry forwards a client request to the leader
 func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
 	leaderNode := s.getLeader()
 	if leaderNode == nil {
@@ -261,6 +262,7 @@ func convertNodesToProto(nodes []Node) []*pb.Node {
 	return protoNodes
 }
 
+//getRandomElectionTimeout returns a time between ELECTION_TIMEOUT and ELECTION_TIMEOUT*2
 func getRandomElectionTimeout() time.Duration {
 	rand.Seed(time.Now().UnixNano())
 	return ELECTION_TIMEOUT + time.Duration(rand.Intn(int(ELECTION_TIMEOUT)))
@@ -336,6 +338,7 @@ type voteResponse struct {
 	NodeId   string
 }
 
+//runElection attempts to get elected as leader for the current term
 func (s *RaftNetworkServer) runElection() {
 	defer s.Wait.Done()
 	term := s.State.GetCurrentTerm()
@@ -420,6 +423,7 @@ func (s *RaftNetworkServer) manageElections() {
 	}
 }
 
+//sendHeartBeat is used when we are the leader to both replicate log entries and prevent other nodes from timing out
 func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 	defer s.Wait.Done()
 	nextIndex := s.State.Configuration.GetNextIndex(node.NodeID)
@@ -492,6 +496,7 @@ func (s *RaftNetworkServer) manageLeading() {
 	defer s.Wait.Done()
 	for {
 		select {
+		//We want to keep these channels clear for when we first become leader
 		case <-s.State.StopLeading:
 		case <-s.State.SendAppendEntries:
 		case _, ok := <-s.Quit:
@@ -543,6 +548,8 @@ func (s *RaftNetworkServer) manageLeading() {
 	}
 }
 
+//manageConfigurationChanges performs necessary actions when a configuration has been applied.
+//Such as stepping down or creating a new configuration change request
 func (s *RaftNetworkServer) manageConfigurationChanges() {
 	defer s.Wait.Done()
 	for {

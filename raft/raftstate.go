@@ -117,7 +117,8 @@ func (s *RaftState) SetCommitIndex(x uint64) {
 	s.SendAppendEntries <- true
 }
 
-func (s *RaftState) SetCommitIndexUnsafe(x uint64) {
+//setCommitIndexUnsafe must only be used when the stateChangeLock has already been locked
+func (s *RaftState) setCommitIndexUnsafe(x uint64) {
 	s.commitIndex = x
 	s.SendAppendEntries <- true
 }
@@ -153,6 +154,7 @@ func (s *RaftState) GetLeaderId() string {
 	return s.leaderId
 }
 
+//setLeaderIdUnsafe must only be used when the stateChangeLock has already been locked
 func (s *RaftState) setLeaderIdUnsafe(x string) {
 	if s.leaderId == "" {
 		s.LeaderElected <- true
@@ -183,6 +185,7 @@ func (s *RaftState) SetLastApplied(x uint64) {
 	s.savePersistentState()
 }
 
+//setLastAppliedUnsafe must only be used when the stateChangeLock has already been locked
 func (s *RaftState) setLastAppliedUnsafe(x uint64) {
 	s.lastApplied = x
 	s.savePersistentState()
@@ -228,6 +231,7 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 	return nil
 }
 
+//ApplyLogEntries applys all log entries that have been commited but not yet applied
 func (s *RaftState) ApplyLogEntries() {
 	s.stateChangeLock.Lock()
 	defer s.stateChangeLock.Unlock()
@@ -254,12 +258,9 @@ func (s *RaftState) calculateNewCommitIndex() {
 	s.stateChangeLock.Lock()
 	defer s.stateChangeLock.Unlock()
 
-	lastCommitIndex := s.commitIndex
-	currentTerm := s.currentTerm
-	newCommitIndex := s.Configuration.CalculateNewCommitIndex(lastCommitIndex, currentTerm, s.Log)
-
-	if newCommitIndex > lastCommitIndex {
-		s.SetCommitIndexUnsafe(newCommitIndex)
+	newCommitIndex := s.Configuration.CalculateNewCommitIndex(s.commitIndex, s.currentTerm, s.Log)
+	if newCommitIndex > s.commitIndex {
+		s.setCommitIndexUnsafe(newCommitIndex)
 		go s.ApplyLogEntries()
 	}
 }
