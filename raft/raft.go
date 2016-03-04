@@ -508,7 +508,7 @@ func (s *RaftNetworkServer) manageLeading() {
 			}
 		case <-s.State.StartLeading:
 			Log.Info("Started leading for term ", s.State.GetCurrentTerm())
-			s.State.Configuration.ResetNodeIndexs(s.State.Log.GetMostRecentIndex())
+			s.State.Configuration.ResetNodeIndices(s.State.Log.GetMostRecentIndex())
 			peers := s.State.Configuration.GetPeersList()
 			for i := 0; i < len(peers); i++ {
 				s.Wait.Add(1)

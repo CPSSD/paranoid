@@ -295,8 +295,8 @@ func (c *Configuration) HasMajority(votesRecieved []string) bool {
 	return true
 }
 
-//ResetNodeIndexs is used to reset the currentIndex and matchindex of each peer when elected as a leader.
-func (c *Configuration) ResetNodeIndexs(lastLogIndex uint64) {
+//ResetNodeIndices is used to reset the currentIndex and matchindex of each peer when elected as a leader.
+func (c *Configuration) ResetNodeIndices(lastLogIndex uint64) {
 	c.configLock.Lock()
 	defer c.configLock.Unlock()
 
