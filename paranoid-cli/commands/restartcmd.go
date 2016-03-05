@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
 	"io/ioutil"
 	"os"
@@ -19,22 +20,26 @@ func Restart(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		Log.Fatal("Could not get current user:", err)
+		fmt.Println("Could not get current user:", err)
+		os.Exit(1)
 	}
 
 	pidPath := path.Join(usr.HomeDir, ".pfs", args[0], "meta", "pfsd.pid")
 	_, err = os.Stat(pidPath)
 	if err != nil {
-		Log.Fatal("Could not access PID file:", err)
+		fmt.Println("Could not access PID file:", err)
+		os.Exit(1)
 	}
 
 	pidByte, err := ioutil.ReadFile(pidPath)
 	if err != nil {
-		Log.Fatal("Can't read PID file:", err)
+		fmt.Println("Can't read PID file:", err)
+		os.Exit(1)
 	}
 	pid, err := strconv.Atoi(string(pidByte))
 	err = syscall.Kill(pid, syscall.SIGHUP)
 	if err != nil {
-		Log.Fatal("Can not restart PFSD:", err)
+		fmt.Println("Can not restart PFSD:", err)
+		os.Exit(1)
 	}
 }

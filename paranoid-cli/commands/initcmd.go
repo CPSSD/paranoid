@@ -32,37 +32,44 @@ func Init(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		Log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	homeDir := usr.HomeDir
 
 	if _, err := os.Stat(path.Join(homeDir, ".pfs")); os.IsNotExist(err) {
 		err = os.Mkdir(path.Join(homeDir, ".pfs"), 0700)
 		if err != nil {
-			Log.Fatal("Error making pfs directory")
+			fmt.Println("Error making pfs directory")
+			os.Exit(1)
 		}
 	}
 
 	directory, err := filepath.Abs(path.Join(homeDir, ".pfs", pfsname))
 	if err != nil {
-		Log.Fatal("Given pfs-name is in incorrect format. Error : ", err)
+		fmt.Println("Given pfs-name is in incorrect format. Error : ", err)
+		os.Exit(1)
 	}
 	if path.Base(directory) != args[0] {
-		Log.Fatal("Given pfs-name is in incorrect format.")
+		fmt.Println("Given pfs-name is in incorrect format.")
+		os.Exit(1)
 	}
 
 	if _, err := os.Stat(directory); !os.IsNotExist(err) {
-		Log.Fatal("A paranoid file system with that name already exists")
+		fmt.Println("A paranoid file system with that name already exists")
+		os.Exit(1)
 	}
 	err = os.Mkdir(directory, 0700)
 	if err != nil {
-		Log.Fatal("Error making pfs directory : ", err)
+		fmt.Println("Error making pfs directory : ", err)
+		os.Exit(1)
 	}
 
 	returncode, err := commands.InitCommand(directory)
 	if returncode != returncodes.OK {
 		cleanupPFS(directory)
-		Log.Fatal("Error running pfs init : ", err)
+		fmt.Println("Error running pfs init : ", err)
+		os.Exit(1)
 	}
 
 	// Either create a new pool name or use the one for a flag and save to meta/pool
@@ -72,26 +79,27 @@ func Init(c *cli.Context) {
 	}
 	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool), 0600)
 	if err != nil {
-		Log.Fatal("cannot save pool information:", err)
+		fmt.Println("cannot save pool information:", err)
+		os.Exit(1)
 	}
 	Log.Infof("Using pool name %s", pool)
 
 	if c.Bool("unsecure") {
-		Log.Info("--unsecure specified. PFSD will not use TLS for its communication.")
+		fmt.Println("--unsecure specified. PFSD will not use TLS for its communication.")
 		return
 	}
 
 	if (c.String("cert") != "") && (c.String("key") != "") {
-		Log.Info("Using existing certificate.")
+		fmt.Println("Using existing certificate.")
 		err = os.Link(c.String("cert"), path.Join(directory, "meta", "cert.pem"))
 		if err != nil {
 			cleanupPFS(directory)
-			Log.Fatal("Failed to copy cert file:", err)
+			fmt.Println("Failed to copy cert file:", err)
 		}
 		err = os.Link(c.String("key"), path.Join(directory, "meta", "key.pem"))
 		if err != nil {
 			cleanupPFS(directory)
-			Log.Fatal("Failed to copy key file:", err)
+			fmt.Println("Failed to copy key file:", err)
 		}
 	} else {
 		Log.Info("Generating certificate.")
@@ -99,7 +107,8 @@ func Init(c *cli.Context) {
 		err = tls.GenCertificate(directory)
 		if err != nil {
 			cleanupPFS(directory)
-			Log.Fatal("Failed to generate certificate:", err)
+			fmt.Println("Failed to generate certificate:", err)
+			os.Exit(1)
 		}
 	}
 }

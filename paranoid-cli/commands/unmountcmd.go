@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
 	"io/ioutil"
 	"os"
@@ -20,21 +21,25 @@ func Unmount(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		Log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	pidPath := path.Join(usr.HomeDir, ".pfs", args[0], "meta", "pfsd.pid")
 	if _, err := os.Stat(pidPath); err == nil {
 		pidByte, err := ioutil.ReadFile(pidPath)
 		if err != nil {
-			Log.Fatal("Can't read pid file", err)
+			fmt.Println("Can't read pid file", err)
+			os.Exit(1)
 		}
 		pid, err := strconv.Atoi(string(pidByte))
 		err = syscall.Kill(pid, syscall.SIGTERM)
 		if err != nil {
-			Log.Fatal("Can not kill PFSD,", err)
+			fmt.Println("Can not kill PFSD,", err)
+			os.Exit(1)
 		}
 	} else {
-		Log.Fatal("Could not read pid file:", err)
+		fmt.Println("Could not read pid file:", err)
+		os.Exit(1)
 	}
 }

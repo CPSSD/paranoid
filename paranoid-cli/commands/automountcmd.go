@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
 	"io/ioutil"
 	"os"
@@ -18,23 +19,27 @@ func AutoMount(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		Log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	pfsMeta := path.Join(usr.HomeDir, ".pfs", args[0], "meta")
 
 	ip, err := ioutil.ReadFile(path.Join(pfsMeta, "ip"))
 	if err != nil {
-		Log.Fatal("Could not get ip", err)
+		fmt.Println("Could not get ip", err)
+		os.Exit(1)
 	}
 
 	port, err := ioutil.ReadFile(path.Join(pfsMeta, "port"))
 	if err != nil {
-		Log.Fatal("Could not get port", err)
+		fmt.Println("Could not get port", err)
+		os.Exit(1)
 	}
 
 	mountpoint, err := ioutil.ReadFile(path.Join(pfsMeta, "mountpoint"))
 	if err != nil {
-		Log.Fatal("Could not get mountpoint", err)
+		fmt.Println("Could not get mountpoint", err)
+		os.Exit(1)
 	}
 
 	mountArgs := []string{string(ip) + ":" + string(port), args[0], string(mountpoint)}

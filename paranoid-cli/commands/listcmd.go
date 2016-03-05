@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	"io/ioutil"
+	"os"
 	"os/user"
 	"path"
 )
@@ -12,12 +13,14 @@ import (
 func List(c *cli.Context) {
 	usr, err := user.Current()
 	if err != nil {
-		Log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	files, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs"))
 	if err != nil {
-		Log.Fatal("Could not get list of paranoid file systems. Error :", err)
+		fmt.Println("Could not get list of paranoid file systems. Error :", err)
+		os.Exit(1)
 	}
 	for _, file := range files {
 		fmt.Println(file.Name())

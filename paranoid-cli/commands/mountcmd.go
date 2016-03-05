@@ -41,53 +41,64 @@ func doMount(c *cli.Context, args []string) {
 	if c.GlobalBool("networkoff") == false {
 		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
 		if err != nil {
-			Log.Fatal("Unable to reach server", err)
+			fmt.Println("Unable to reach server", err)
+			os.Exit(1)
 		}
 	}
 
 	usr, err := user.Current()
 	if err != nil {
-		Log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	pfsDir := path.Join(usr.HomeDir, ".pfs", pfsName)
 
 	if _, err := os.Stat(pfsDir); os.IsNotExist(err) {
-		Log.Fatal("PFS directory does not exist")
+		fmt.Println("PFS directory does not exist")
+		os.Exit(1)
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "contents")); os.IsNotExist(err) {
-		Log.Fatal("PFS directory does not include contents directory")
+		fmt.Println("PFS directory does not include contents directory")
+		os.Exit(1)
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "meta")); os.IsNotExist(err) {
-		Log.Fatal("PFS directory does not include meta directory")
+		fmt.Println("PFS directory does not include meta directory")
+		os.Exit(1)
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "names")); os.IsNotExist(err) {
-		Log.Fatal("PFS directory does not include names directory")
+		fmt.Println("PFS directory does not include names directory")
+		os.Exit(1)
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "inodes")); os.IsNotExist(err) {
-		Log.Fatal("PFS directory does not include inodes directory")
+		fmt.Println("PFS directory does not include inodes directory")
+		os.Exit(1)
 	}
 
 	if pathExists(path.Join(pfsDir, "meta/", "pfsd.pid")) {
 		err = os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
 		if err != nil {
-			Log.Fatal("Could not remove old pfsd.pid")
+			fmt.Println("Could not remove old pfsd.pid")
+			os.Exit(1)
 		}
 	}
 
 	poolBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "pool"))
 	if err != nil {
-		Log.Fatal("unable to read pool information:", err)
+		fmt.Println("unable to read pool information:", err)
+		os.Exit(1)
 	}
 	pool := string(poolBytes)
 
 	splitAddress := strings.Split(serverAddress, ":")
 	if len(splitAddress) != 2 {
-		Log.Fatal("discovery address in wrong format. Should be HOST:PORT")
+		fmt.Println("discovery address in wrong format. Should be HOST:PORT")
+		os.Exit(1)
 	}
 
 	returncode, err := commands.MountCommand(pfsDir, splitAddress[0], splitAddress[1], mountPoint)
 	if returncode != returncodes.OK {
-		Log.Fatal("Error running pfs mount command : ", err)
+		fmt.Println("Error running pfs mount command : ", err)
+		os.Exit(1)
 	}
 
 	if !c.GlobalBool("networkoff") {
@@ -111,7 +122,8 @@ func doMount(c *cli.Context, args []string) {
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 			err = cmd.Start()
 			if err != nil {
-				Log.Fatal("Error running pfsd command :", err)
+				fmt.Println("Error running pfsd command :", err)
+				os.Exit(1)
 			}
 		} else {
 			// Start in unsecure mode
@@ -139,7 +151,8 @@ func doMount(c *cli.Context, args []string) {
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 			err = cmd.Start()
 			if err != nil {
-				Log.Fatal("Error running pfsd :", err)
+				fmt.Println("Error running pfsd :", err)
+				os.Exit(1)
 			}
 		}
 	} else {
@@ -153,7 +166,8 @@ func doMount(c *cli.Context, args []string) {
 		cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 		err = cmd.Start()
 		if err != nil {
-			Log.Fatal("Error running pfsd :", err)
+			fmt.Println("Error running pfsd :", err)
+			os.Exit(1)
 		}
 	}
 	// Now that we've successfully told PFSD to start, ping it until we can confirm it is up
