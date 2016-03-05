@@ -4,19 +4,11 @@ import (
 	"errors"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
-	"github.com/cpssd/paranoid/pfsd/upnp"
 	"net"
 	"time"
 )
 
-func SetDiscovery(host, port, serverPort string) {
-	ipClient, _ := upnp.GetIP()
-	globals.ThisNode = globals.Node{
-		IP:         ipClient,
-		Port:       serverPort,
-		CommonName: globals.CommonName,
-		UUID:       globals.UUID,
-	}
+func SetDiscovery(host, port string) {
 	globals.DiscoveryAddr = host + ":" + port
 
 	if globals.TLSEnabled && !globals.TLSSkipVerify {

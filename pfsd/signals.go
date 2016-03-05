@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/intercom"
-	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	"github.com/kardianos/osext"
 	"os"
@@ -16,7 +15,7 @@ import (
 func stopAllServices() {
 	globals.ShuttingDown = true
 	if globals.UPnPEnabled {
-		err := upnp.ClearPortMapping(globals.Port)
+		err := upnp.ClearPortMapping(globals.ThisNode.Port)
 		if err != nil {
 			log.Info("Could not clear port mapping. Error : ", err)
 		}
@@ -78,7 +77,7 @@ func handleSIGHUP() {
 func handleSIGTERM() {
 	log.Info("SIGTERM received. Exiting.")
 	stopAllServices()
-	err := os.Remove(path.Join(pnetserver.ParanoidDir, "meta", "pfsd.pid"))
+	err := os.Remove(path.Join(globals.ParanoidDir, "meta", "pfsd.pid"))
 	if err != nil {
 		log.Info("Can't remove PID file ", err)
 	}
