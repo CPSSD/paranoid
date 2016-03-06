@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/cpssd/paranoid/pfsd/activitylogger"
-	pb "github.com/cpssd/paranoid/proto/activitylogger"
+	pb "github.com/cpssd/paranoid/proto/raft"
+	"github.com/cpssd/paranoid/raft"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
 	"log"
@@ -16,29 +16,25 @@ import (
 	"strconv"
 )
 
-var cl *cli.Context
-
+// History is the top level function when paranoid-cli is called
 func History(c *cli.Context) {
-	cl = c
 	args := c.Args()
 	if len(args) < 1 {
 		cli.ShowCommandHelp(c, "history")
 		os.Exit(1)
 	}
-
 	usr, err := user.Current()
 	if err != nil {
 		Log.Fatal(err)
 	}
 	givenString := args[0]
-	target := ""
+	var target string
 	if fileSystemExists(givenString) {
 		target = path.Join(usr.HomeDir, ".pfs", givenString, "meta", "activity_logs")
 	} else {
 		target = givenString
 	}
-
-	Read(target)
+	read(target, c)
 }
 
 func fileSystemExists(fsname string) bool {
@@ -46,18 +42,17 @@ func fileSystemExists(fsname string) bool {
 	if err != nil {
 		Log.Fatal(err)
 	}
-
 	dirpath := path.Join(usr.HomeDir, ".pfs", fsname)
 	_, err = ioutil.ReadDir(dirpath)
 	return err == nil
 }
 
-func Read(directory string) {
+// read shows the history of a log in the given directory
+func read(directory string, c *cli.Context) {
 	tempDir := os.TempDir()
 	filePath := path.Join(tempDir, "log.pfslog")
-	LogsToLogfile(directory, filePath)
+	logsToLogfile(directory, filePath, c)
 	defer os.Remove(filePath)
-
 	less := exec.Command("less", filePath)
 	less.Stdout = os.Stdout
 	less.Stdin = os.Stdin
@@ -65,19 +60,19 @@ func Read(directory string) {
 	less.Run()
 }
 
-func LogsToLogfile(logDir, filePath string) {
+// logsToLogFile converts the binary logs in the logDir paramenter
+// to a human readable file in the given filePath paramenter.
+func logsToLogfile(logDir, filePath string, c *cli.Context) {
 	files, err := ioutil.ReadDir(logDir)
 	if err != nil {
 		Log.Verbose("read dir:", logDir, "err:", err)
-		cli.ShowCommandHelp(cl, "history")
+		cli.ShowCommandHelp(c, "history")
 		os.Exit(1)
 	}
-
 	writeFile, err := os.Create(filePath)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	t := len(strconv.Itoa(len(files)))
 	for i := len(files) - 1; i >= 0; i-- {
 		file := files[i]
@@ -91,39 +86,39 @@ func LogsToLogfile(logDir, filePath string) {
 	writeFile.Close()
 }
 
-func fileToProto(file os.FileInfo, directory string) (entry *pb.Entry, err error) {
+// fileToProto converts a given file with a protobuf to a protobuf object
+func fileToProto(file os.FileInfo, directory string) (entry *pb.LogEntry, err error) {
 	filePath := path.Join(directory, file.Name())
 	fileData, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, errors.New("Failed to read logfile: " + file.Name())
 	}
-
-	entry = &pb.Entry{}
+	entry = &pb.LogEntry{}
 	err = proto.Unmarshal(fileData, entry)
 	if err != nil {
 		return nil, errors.New("Failed to Unmarshal file data")
 	}
-
 	return entry, nil
 }
 
-func toLine(i, t int, p *pb.Entry) string {
+// toLine converts a protobuf object to a human readable string representation
+// the i parameter is the number of the logfile and t is the lenght of the
+// string representation of the largest number of a logfile in the logs.
+func toLine(i, t int, p *pb.LogEntry) string {
 	iStr := strconv.Itoa(i)
 	pad := padding(t + 1 - len(iStr))
-
-	typeStr := activitylogger.TypeString(p.Type)
-	p.Type = 0
+	typeStr := typeString(p.Entry.Command.Type)
+	p.Entry.Command.Type = 0
 	pad2 := padding(10 - len(typeStr))
-
-	size := len(p.Data)
+	size := len(p.Entry.Command.Data)
 	if size > 0 {
-		p.Data = nil
-		return fmt.Sprint(iStr, pad, ": ", typeStr, pad2, p, "Data: ", bytesString(size), "\n")
+		p.Entry.Command.Data = nil
+		return fmt.Sprint(iStr, pad, ": ", typeStr, pad2, p.Entry.Command, "Data: ", bytesString(size), "\n")
 	}
-
-	return fmt.Sprint(iStr, pad, ": ", typeStr, pad2, p, "\n")
+	return fmt.Sprint(iStr, pad, ": ", typeStr, pad2, p.Entry.Command, "\n")
 }
 
+// padding returns a string composed of i number of spaces
 func padding(i int) string {
 	str := ""
 	for j := 0; j < i; j++ {
@@ -132,6 +127,7 @@ func padding(i int) string {
 	return str
 }
 
+// bytesString returns the human readable representation of a data size
 func bytesString(bytes int) string {
 	if bytes < 1000 {
 		return fmt.Sprint(bytes, "B")
@@ -143,5 +139,35 @@ func bytesString(bytes int) string {
 		return fmt.Sprint(bytes/1000000000, "GB")
 	} else {
 		return fmt.Sprint(bytes/1000000000000, "TB")
+	}
+}
+
+// typeString returns the string representation of a log type.
+func typeString(ty uint32) string {
+	switch ty {
+	case raft.TYPE_WRITE:
+		return "Write"
+	case raft.TYPE_CREAT:
+		return "Creat"
+	case raft.TYPE_CHMOD:
+		return "Chmod"
+	case raft.TYPE_TRUNCATE:
+		return "Truncate"
+	case raft.TYPE_UTIMES:
+		return "Utimes"
+	case raft.TYPE_RENAME:
+		return "Rename"
+	case raft.TYPE_LINK:
+		return "Link"
+	case raft.TYPE_SYMLINK:
+		return "Symlink"
+	case raft.TYPE_UNLINK:
+		return "Unlink"
+	case raft.TYPE_MKDIR:
+		return "Mkdir"
+	case raft.TYPE_RMDIR:
+		return "Rmdir"
+	default:
+		return "Unknown"
 	}
 }
