@@ -23,6 +23,7 @@ func History(c *cli.Context) {
 		cli.ShowCommandHelp(c, "history")
 		os.Exit(1)
 	}
+
 	usr, err := user.Current()
 	if err != nil {
 		Log.Fatal(err)
@@ -42,6 +43,7 @@ func fileSystemExists(fsname string) bool {
 	if err != nil {
 		Log.Fatal(err)
 	}
+
 	dirpath := path.Join(usr.HomeDir, ".pfs", fsname)
 	_, err = ioutil.ReadDir(dirpath)
 	return err == nil
@@ -127,7 +129,7 @@ func padding(i int) string {
 	return str
 }
 
-// bytesString returns the human readable representation of a data size
+// bytesString returns the human readable representation of a data size=
 func bytesString(bytes int) string {
 	if bytes < 1000 {
 		return fmt.Sprint(bytes, "B")
