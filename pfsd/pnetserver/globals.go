@@ -9,10 +9,6 @@ import (
 
 type ParanoidServer struct{}
 
-// Path to the PFS root directory
-var ParanoidDir string
-
 var Log *logger.ParanoidLogger
 
-//Raft network server
 var RaftNetworkServer *raft.RaftNetworkServer

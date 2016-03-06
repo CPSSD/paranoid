@@ -5,7 +5,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"strconv"
 )
 
 func Ping() {
@@ -16,8 +15,6 @@ func Ping() {
 
 	nodes := globals.Nodes.GetAll()
 	for _, node := range nodes {
-		port := strconv.Itoa(globals.Port)
-
 		conn, err := Dial(node)
 		if err != nil {
 			Log.Error("Ping: failed to dial ", node)
@@ -28,9 +25,9 @@ func Ping() {
 
 		_, err = client.Ping(context.Background(), &pb.PingRequest{
 			Ip:         ip,
-			Port:       port,
-			CommonName: globals.CommonName,
-			Uuid:       globals.UUID,
+			Port:       globals.ThisNode.Port,
+			CommonName: globals.ThisNode.CommonName,
+			Uuid:       globals.ThisNode.UUID,
 		})
 		if err != nil {
 			Log.Error("Can't ping", node)

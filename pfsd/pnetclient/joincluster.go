@@ -6,7 +6,6 @@ import (
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
-	"strconv"
 )
 
 //JoinCluster is used to request to join a raft cluster
@@ -19,7 +18,6 @@ func JoinCluster() error {
 	nodes := globals.Nodes.GetAll()
 	for _, node := range nodes {
 		Log.Info("Sending join cluster request to node:", node)
-		port := strconv.Itoa(globals.Port)
 
 		conn, err := Dial(node)
 		if err != nil {
@@ -31,9 +29,9 @@ func JoinCluster() error {
 
 		_, err = client.JoinCluster(context.Background(), &pb.PingRequest{
 			Ip:         ip,
-			Port:       port,
-			CommonName: globals.CommonName,
-			Uuid:       globals.UUID,
+			Port:       globals.ThisNode.Port,
+			CommonName: globals.ThisNode.CommonName,
+			Uuid:       globals.ThisNode.UUID,
 		})
 		if err != nil {
 			Log.Error("Error requesting to join cluster", node, ":", err)

@@ -8,6 +8,7 @@ import (
 	"github.com/huin/goupnp/dcps/internetgateway1"
 	"math/rand"
 	"net"
+	"strconv"
 )
 
 var (
@@ -111,7 +112,11 @@ func AddPortMapping(internalIp string, internalPort int) (int, error) {
 	return 0, errors.New("Unable to map port")
 }
 
-func ClearPortMapping(externalPort int) error {
+func ClearPortMapping(externalPortString string) error {
+	externalPort, err := strconv.Atoi(externalPortString)
+	if err != nil {
+		return err
+	}
 	if ipPortMappedClient != nil {
 		return ipPortMappedClient.DeletePortMapping("", uint16(externalPort), "TCP")
 	}

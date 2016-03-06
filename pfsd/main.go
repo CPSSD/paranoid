@@ -62,13 +62,13 @@ func startRPCServer(lis *net.Listener) {
 	}
 	//First node to join a given cluster
 	if len(globals.Nodes.GetAll()) == 0 {
-		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, pnetserver.ParanoidDir, path.Join(pnetserver.ParanoidDir, "meta", "raft"),
+		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, globals.ParanoidDir, path.Join(globals.ParanoidDir, "meta", "raft"),
 			&raft.StartConfiguration{
 				Peers: []raft.Node{},
 			},
 			globals.TLSEnabled, globals.TLSSkipVerify)
 	} else {
-		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, pnetserver.ParanoidDir, path.Join(pnetserver.ParanoidDir, "meta", "raft"), nil,
+		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, globals.ParanoidDir, path.Join(globals.ParanoidDir, "meta", "raft"), nil,
 			globals.TLSEnabled, globals.TLSSkipVerify)
 	}
 	rpb.RegisterRaftNetworkServer(srv, raftNetworkServer)
@@ -92,22 +92,18 @@ func startRPCServer(lis *net.Listener) {
 	}
 }
 
-func main() {
-	flag.Parse()
+func setupLogging() {
+	logDir := path.Join(globals.ParanoidDir, "meta", "logs")
 
-	if len(flag.Args()) < 5 {
-		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <mount_point> <Discovery Server> <Discovery Port>\n")
-		os.Exit(1)
-	}
-	log = logger.New("main", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
-	dnetclient.Log = logger.New("dnetclient", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
-	pnetclient.Log = logger.New("pnetclient", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
-	pnetserver.Log = logger.New("pnetserver", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
-	upnp.Log = logger.New("upnp", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
-	keyman.Log = logger.New("keyman", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
-	raft.Log = logger.New("raft", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
-	commands.Log = logger.New("libpfs", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
-	intercom.Log = logger.New("intercom", "pfsd", path.Join(flag.Arg(0), "meta", "logs"))
+	log = logger.New("main", "pfsd", logDir)
+	dnetclient.Log = logger.New("dnetclient", "pfsd", logDir)
+	pnetclient.Log = logger.New("pnetclient", "pfsd", logDir)
+	pnetserver.Log = logger.New("pnetserver", "pfsd", logDir)
+	upnp.Log = logger.New("upnp", "pfsd", logDir)
+	keyman.Log = logger.New("keyman", "pfsd", logDir)
+	raft.Log = logger.New("raft", "pfsd", logDir)
+	commands.Log = logger.New("libpfs", "pfsd", logDir)
+	intercom.Log = logger.New("intercom", "pfsd", logDir)
 
 	log.SetOutput(logger.STDERR | logger.LOGFILE)
 	dnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
@@ -122,6 +118,19 @@ func main() {
 	if *verbose {
 		commands.Log.SetLogLevel(logger.VERBOSE)
 	}
+}
+
+func main() {
+	flag.Parse()
+
+	if len(flag.Args()) < 5 {
+		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <mount_point> <Discovery Server> <Discovery Port> <Discovery Pool>\n")
+		os.Exit(1)
+	}
+
+	globals.ParanoidDir = flag.Arg(0)
+	globals.MountPoint = flag.Arg(1)
+	setupLogging()
 
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {
@@ -131,7 +140,7 @@ func main() {
 			if err != nil {
 				log.Fatal("Could not get CN from provided TLS cert:", err)
 			}
-			globals.CommonName = cn
+			globals.ThisNode.CommonName = cn
 		}
 	} else {
 		globals.TLSEnabled = false
@@ -142,17 +151,12 @@ func main() {
 		if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
 			log.Fatal("Discovery port must be a number between 1 and 65535, inclusive.")
 		}
-	}
 
-	pnetserver.ParanoidDir = flag.Arg(0)
-
-	if !*noNetwork {
-
-		uuid, err := ioutil.ReadFile(path.Join(pnetserver.ParanoidDir, "meta", "uuid"))
+		uuid, err := ioutil.ReadFile(path.Join(globals.ParanoidDir, "meta", "uuid"))
 		if err != nil {
 			log.Fatal("Could not get node UUID:", err)
 		}
-		globals.UUID = string(uuid)
+		globals.ThisNode.UUID = string(uuid)
 
 		ip, err := upnp.GetIP()
 		if err != nil {
@@ -165,59 +169,60 @@ func main() {
 			log.Fatalf("Failed to start listening : %v.\n", err)
 		}
 		splits := strings.Split(lis.Addr().String(), ":")
-		port, err := strconv.Atoi(splits[len(splits)-1])
+		port := splits[len(splits)-1]
+		portInt, err := strconv.Atoi(port)
 		if err != nil {
 			log.Fatal("Could not parse port", splits[len(splits)-1], " Error :", err)
 		}
-		globals.Port = port
+		globals.ThisNode.Port = port
 
 		//Try and set up uPnP. Otherwise use internal IP.
 		globals.UPnPEnabled = false
 		err = upnp.DiscoverDevices()
 		if err == nil {
 			log.Info("UPnP devices available")
-			externalPort, err := upnp.AddPortMapping(ip, port)
+			externalPort, err := upnp.AddPortMapping(ip, portInt)
 			if err == nil {
 				log.Info("UPnP port mapping enabled")
-				port = externalPort
-				globals.Port = externalPort
+				port = strconv.Itoa(externalPort)
+				globals.ThisNode.Port = port
 				globals.UPnPEnabled = true
 			}
 		}
 
-		globals.Server, err = upnp.GetIP()
+		globals.ThisNode.IP, err = upnp.GetIP()
 		if err != nil {
 			log.Fatal("Can't get IP. Error : ", err)
 		}
-		log.Info("Peer address:", globals.Server+":"+strconv.Itoa(globals.Port))
+		log.Info("Peer address:", globals.ThisNode.IP+":"+globals.ThisNode.Port)
 
-		if _, err := os.Stat(pnetserver.ParanoidDir); os.IsNotExist(err) {
-			log.Fatal("Path", pnetserver.ParanoidDir, "does not exist.")
+		if _, err := os.Stat(globals.ParanoidDir); os.IsNotExist(err) {
+			log.Fatal("Path", globals.ParanoidDir, "does not exist.")
 		}
-		if _, err := os.Stat(path.Join(pnetserver.ParanoidDir, "meta")); os.IsNotExist(err) {
-			log.Fatal("Path", pnetserver.ParanoidDir, "is not valid PFS root.")
+		if _, err := os.Stat(path.Join(globals.ParanoidDir, "meta")); os.IsNotExist(err) {
+			log.Fatal("Path", globals.ParanoidDir, "is not valid PFS root.")
 		}
 
-		dnetclient.SetDiscovery(flag.Arg(2), flag.Arg(3), strconv.Itoa(port))
+		dnetclient.SetDiscovery(flag.Arg(2), flag.Arg(3))
 		dnetclient.JoinDiscovery(flag.Arg(4))
 		startRPCServer(&lis)
 	}
 	createPid("pfsd")
 	globals.Wait.Add(1)
-	go pfi.StartPfi(flag.Arg(0), flag.Arg(1), *verbose, raftNetworkServer)
+	go pfi.StartPfi(globals.ParanoidDir, globals.MountPoint, *verbose, raftNetworkServer)
 
 	if globals.SystemLocked {
 		globals.Wait.Add(1)
 		go UnlockWorker()
 	}
-	intercom.RunServer(path.Join(flag.Arg(0), "meta"))
+	intercom.RunServer(path.Join(globals.ParanoidDir, "meta"))
 	HandleSignals()
 }
 
 func createPid(processName string) {
 	processID := os.Getpid()
 	pid := []byte(strconv.Itoa(processID))
-	err := ioutil.WriteFile(path.Join(pnetserver.ParanoidDir, "meta", processName+".pid"), pid, 0600)
+	err := ioutil.WriteFile(path.Join(globals.ParanoidDir, "meta", processName+".pid"), pid, 0600)
 	if err != nil {
 		log.Fatal("Failed to create PID file", err)
 	}
