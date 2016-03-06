@@ -15,6 +15,6 @@ func (s *ParanoidServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.Emp
 	}
 	Log.Infof("Got Ping from Node:", node)
 	globals.Nodes.Add(node)
-	RaftNetworkServer.ChangeNodeLocation(req.Uuid, req.Ip, req.Port)
+	globals.RaftNetworkServer.ChangeNodeLocation(req.Uuid, req.Ip, req.Port)
 	return &pb.EmptyMessage{}, nil
 }

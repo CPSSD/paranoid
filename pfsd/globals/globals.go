@@ -3,6 +3,7 @@ package globals
 import (
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/keyman"
+	"github.com/cpssd/paranoid/raft"
 	"sync"
 	"time"
 )
@@ -18,6 +19,8 @@ type Node struct {
 func (n Node) String() string {
 	return fmt.Sprintf("%s:%s", n.IP, n.Port)
 }
+
+var RaftNetworkServer *raft.RaftNetworkServer
 
 var ParanoidDir string
 var MountPoint string

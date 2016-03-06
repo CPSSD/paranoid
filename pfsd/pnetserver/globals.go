@@ -4,11 +4,8 @@ package pnetserver
 
 import (
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/raft"
 )
 
 type ParanoidServer struct{}
 
 var Log *logger.ParanoidLogger
-
-var RaftNetworkServer *raft.RaftNetworkServer

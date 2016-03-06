@@ -2,6 +2,7 @@ package pnetserver
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"github.com/cpssd/paranoid/raft"
 	"golang.org/x/net/context"
@@ -16,7 +17,7 @@ func (s *ParanoidServer) JoinCluster(ctx context.Context, req *pb.PingRequest) (
 		NodeID:     req.Uuid,
 	}
 	Log.Infof("Got Ping from Node:", node)
-	err := RaftNetworkServer.RequestAddNodeToConfiguration(node)
+	err := globals.RaftNetworkServer.RequestAddNodeToConfiguration(node)
 	if err != nil {
 		return &pb.EmptyMessage{}, fmt.Errorf("unable to add node to raft cluster:", err)
 	}

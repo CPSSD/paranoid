@@ -5,8 +5,7 @@ package pfi
 import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/pfsd/pfi/filesystem"
-	"github.com/cpssd/paranoid/pfsd/pfi/util"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
 	"os"
@@ -28,8 +27,8 @@ func removeTestDir(name string) {
 }
 
 func TestMain(m *testing.M) {
-	util.Log = logger.New("testPackage", "testComponent", os.DevNull)
-	util.PfsDirectory = path.Join(os.TempDir(), "pfiTestPfsDir")
+	Log = logger.New("testPackage", "testComponent", os.DevNull)
+	globals.ParanoidDir = path.Join(os.TempDir(), "pfiTestPfsDir")
 	commands.Log = logger.New("testPackage", "testComponent", os.DevNull)
 	os.Exit(m.Run())
 }
@@ -39,7 +38,7 @@ func setuptesting(t *testing.T) {
 	createTestDir(t, "pfiTestPfsDir")
 	_, err := commands.InitCommand(path.Join(os.TempDir(), "pfiTestPfsDir"))
 	if err != nil {
-		util.Log.Fatal("Error initing paranoid file system:", err)
+		Log.Fatal("Error initing paranoid file system:", err)
 	}
 }
 
@@ -52,7 +51,7 @@ func TestFuseFilePerms(t *testing.T) {
 		t.Error("pfsm setup failed :", err)
 	}
 
-	pfs := &filesystem.ParanoidFileSystem{
+	pfs := &ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
 	}
 
@@ -84,7 +83,7 @@ func TestFuseFileOperations(t *testing.T) {
 	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
 
-	pfs := &filesystem.ParanoidFileSystem{
+	pfs := &ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
 	}
 
@@ -136,7 +135,7 @@ func TestFuseFileSystemOperations(t *testing.T) {
 	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
 
-	pfs := &filesystem.ParanoidFileSystem{
+	pfs := &ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
 	}
 
@@ -195,7 +194,7 @@ func TestFuseLink(t *testing.T) {
 		t.Error("pfsm setup failed :", err)
 	}
 
-	pfs := &filesystem.ParanoidFileSystem{
+	pfs := &ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
 	}
 
@@ -234,7 +233,7 @@ func TestFuseUtimes(t *testing.T) {
 	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
 
-	pfs := &filesystem.ParanoidFileSystem{
+	pfs := &ParanoidFileSystem{
 		FileSystem: pathfs.NewDefaultFileSystem(),
 	}
 

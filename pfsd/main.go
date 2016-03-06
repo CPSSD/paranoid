@@ -22,14 +22,14 @@ import (
 	"net"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 var (
-	srv               *grpc.Server
-	raftNetworkServer *raft.RaftNetworkServer
-	log               *logger.ParanoidLogger
+	srv *grpc.Server
+	log *logger.ParanoidLogger
 
 	certFile   = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
@@ -62,17 +62,16 @@ func startRPCServer(lis *net.Listener) {
 	}
 	//First node to join a given cluster
 	if len(globals.Nodes.GetAll()) == 0 {
-		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, globals.ParanoidDir, path.Join(globals.ParanoidDir, "meta", "raft"),
+		globals.RaftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, globals.ParanoidDir, path.Join(globals.ParanoidDir, "meta", "raft"),
 			&raft.StartConfiguration{
 				Peers: []raft.Node{},
 			},
 			globals.TLSEnabled, globals.TLSSkipVerify)
 	} else {
-		raftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, globals.ParanoidDir, path.Join(globals.ParanoidDir, "meta", "raft"), nil,
+		globals.RaftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, globals.ParanoidDir, path.Join(globals.ParanoidDir, "meta", "raft"), nil,
 			globals.TLSEnabled, globals.TLSSkipVerify)
 	}
-	rpb.RegisterRaftNetworkServer(srv, raftNetworkServer)
-	pnetserver.RaftNetworkServer = raftNetworkServer
+	rpb.RegisterRaftNetworkServer(srv, globals.RaftNetworkServer)
 
 	globals.Wait.Add(1)
 	go func() {
@@ -84,7 +83,7 @@ func startRPCServer(lis *net.Listener) {
 	}()
 
 	//Do we need to request to join a cluster
-	if raftNetworkServer.State.Configuration.HasConfiguration() == false {
+	if globals.RaftNetworkServer.State.Configuration.HasConfiguration() == false {
 		err := dnetclient.JoinCluster()
 		if err != nil {
 			log.Fatal("Unable to join a raft cluster")
@@ -128,8 +127,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	globals.ParanoidDir = flag.Arg(0)
-	globals.MountPoint = flag.Arg(1)
+	paranoidDirAbs, err := filepath.Abs(flag.Arg(0))
+	if err != nil {
+		fmt.Println("FATAL: Could not get absolute paranoid dir:", err)
+		os.Exit(1)
+	}
+
+	mountPointAbs, err := filepath.Abs(flag.Arg(1))
+	if err != nil {
+		fmt.Println("FATAL: Could not get absolute mount point:", err)
+		os.Exit(1)
+	}
+
+	globals.ParanoidDir = paranoidDirAbs
+	globals.MountPoint = mountPointAbs
 	setupLogging()
 
 	globals.TLSSkipVerify = *skipVerify
@@ -209,7 +220,7 @@ func main() {
 	}
 	createPid("pfsd")
 	globals.Wait.Add(1)
-	go pfi.StartPfi(globals.ParanoidDir, globals.MountPoint, *verbose, raftNetworkServer)
+	go pfi.StartPfi(*verbose)
 
 	if globals.SystemLocked {
 		globals.Wait.Add(1)
