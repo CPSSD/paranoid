@@ -38,6 +38,7 @@ func History(c *cli.Context) {
 	read(target, c)
 }
 
+// fileSystemExists checks if there is a folder in ~/.pfs with the given name
 func fileSystemExists(fsname string) bool {
 	usr, err := user.Current()
 	if err != nil {
