@@ -25,17 +25,17 @@ func Delete(c *cli.Context) {
 
 	pfspath, err := filepath.Abs(path.Join(usr.HomeDir, ".pfs", args[0]))
 	if err != nil {
-		fmt.Println("Given pfs-name is in incorrect format. Error : ", err)
-		os.Exit(1)
+		fmt.Println("Paranoid file system name is incorrectly formatted")
+		Log.Fatal("Given pfs-name is in incorrect format. Error : ", err)
 	}
 	if path.Base(pfspath) != args[0] {
-		fmt.Println("Given pfs-name is in incorrect format")
-		os.Exit(1)
+		fmt.Println("Paranoid file system name is incorrectly formatted")
+		Log.Fatal("Given pfs-name is in incorrect format")
 	}
 
 	err = os.RemoveAll(path.Join(usr.HomeDir, ".pfs", args[0]))
 	if err != nil {
-		fmt.Println("Could not delete given paranoid file system. Error :", err)
-		os.Exit(1)
+		fmt.Println("Could not delete given paranoid file system.")
+		Log.Fatal("Could not delete given paranoid file system. Error :", err)
 	}
 }

@@ -19,8 +19,8 @@ func List(c *cli.Context) {
 
 	files, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs"))
 	if err != nil {
-		fmt.Println("Could not get list of paranoid file systems. Error :", err)
-		os.Exit(1)
+		fmt.Println("Could not read the list of paranoid file systems.")
+		Log.Fatal("Could not get list of paranoid file systems. Error :", err)
 	}
 	for _, file := range files {
 		fmt.Println(file.Name())

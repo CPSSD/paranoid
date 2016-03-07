@@ -21,15 +21,18 @@ func Secure(c *cli.Context) {
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println(err)
+		Log.Fatal("Couldnt get current user")
 	}
 
 	homeDir := usr.HomeDir
 	pfsDir, err := filepath.Abs(path.Join(homeDir, ".pfs", pfsname))
 	if err != nil {
 		fmt.Println("Could not get absolute path to paranoid filesystem.")
+		Log.Fatal("Could not get absolute path to paranoid filesystem.")
 	}
 	if !pathExists(pfsDir) {
 		fmt.Println("Paranoid filesystem does not exist:", pfsname)
+		Log.Fatal("Paranoid filesystem does not exist:", pfsname)
 	}
 
 	certPath := path.Join(pfsDir, "meta", "cert.pem")
@@ -41,6 +44,7 @@ func Secure(c *cli.Context) {
 		if pathExists(certPath) || pathExists(keyPath) {
 			fmt.Println("Paranoid filesystem already secured.",
 				"Run with --force to overwrite existing security files.")
+			os.Exit(1)
 		}
 	}
 
@@ -49,19 +53,19 @@ func Secure(c *cli.Context) {
 		err = os.Link(c.String("cert"), certPath)
 		if err != nil {
 			fmt.Println("Failed to copy cert file:", err)
-			os.Exit(1)
+			Log.Fatal("Failed to copy cert file")
 		}
 		err = os.Link(c.String("key"), keyPath)
 		if err != nil {
 			fmt.Println("Failed to copy key file:", err)
-			os.Exit(1)
+			Log.Fatal("Failed to copy key file")
 		}
 	} else {
 		fmt.Println("Generating TLS certificate. Please follow the given instructions.")
 		err = tls.GenCertificate(pfsDir)
 		if err != nil {
 			fmt.Println("Failed to generate certificate:", err)
-			os.Exit(1)
+			Log.Fatal("Failed to generate certificate:", err)
 		}
 	}
 }

@@ -55,23 +55,23 @@ func doMount(c *cli.Context, args []string) {
 
 	if _, err := os.Stat(pfsDir); os.IsNotExist(err) {
 		fmt.Println("PFS directory does not exist")
-		os.Exit(1)
+		Log.Fatal("PFS directory does not exist")
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "contents")); os.IsNotExist(err) {
 		fmt.Println("PFS directory does not include contents directory")
-		os.Exit(1)
+		Log.Fatal("PFS directory does not include contents directory")
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "meta")); os.IsNotExist(err) {
 		fmt.Println("PFS directory does not include meta directory")
-		os.Exit(1)
+		Log.Fatal("PFS directory does not include meta directory")
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "names")); os.IsNotExist(err) {
 		fmt.Println("PFS directory does not include names directory")
-		os.Exit(1)
+		Log.Fatal("PFS directory does not include names directory")
 	}
 	if _, err := os.Stat(path.Join(pfsDir, "inodes")); os.IsNotExist(err) {
 		fmt.Println("PFS directory does not include inodes directory")
-		os.Exit(1)
+		Log.Fatal("PFS directory does not include inodes directory")
 	}
 
 	if pathExists(path.Join(pfsDir, "meta/", "pfsd.pid")) {
@@ -85,20 +85,20 @@ func doMount(c *cli.Context, args []string) {
 	poolBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "pool"))
 	if err != nil {
 		fmt.Println("unable to read pool information:", err)
-		os.Exit(1)
+		fmt.Println("unable to read pool information:", err)
 	}
 	pool := string(poolBytes)
 
 	splitAddress := strings.Split(serverAddress, ":")
 	if len(splitAddress) != 2 {
 		fmt.Println("discovery address in wrong format. Should be HOST:PORT")
-		os.Exit(1)
+		fmt.Println("discovery address in wrong format. Should be HOST:PORT")
 	}
 
 	returncode, err := commands.MountCommand(pfsDir, splitAddress[0], splitAddress[1], mountPoint)
 	if returncode != returncodes.OK {
 		fmt.Println("Error running pfs mount command : ", err)
-		os.Exit(1)
+		fmt.Println("Error running pfs mount command : ", err)
 	}
 
 	if !c.GlobalBool("networkoff") {
