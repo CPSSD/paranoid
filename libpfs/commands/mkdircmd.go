@@ -9,25 +9,25 @@ import (
 	"path"
 )
 
-// MkdirCommand is called when making a directory
-func MkdirCommand(directory, dirName string, mode os.FileMode) (returnCode int, returnError error) {
+// MkdirCommand is called when making a paranoidDirectory
+func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCode int, returnError error) {
 	Log.Info("mkdir command called")
 
-	err := getFileSystemLock(directory, exclusiveLock)
+	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	dirPath := getParanoidPath(directory, dirName)
-	dirInfoPath := path.Join(dirPath, "info")
+	dirParanoidPath := getParanoidPath(paranoidDirectory, dirPath)
+	dirInfoPath := path.Join(dirParanoidPath, "info")
 
 	inodeBytes, err := generateNewInode()
 	if err != nil {
@@ -35,21 +35,21 @@ func MkdirCommand(directory, dirName string, mode os.FileMode) (returnCode int, 
 	}
 
 	inodeString := string(inodeBytes)
-	inodePath := path.Join(directory, "inodes", inodeString)
-	contentsPath := path.Join(directory, "contents", inodeString)
+	inodePath := path.Join(paranoidDirectory, "inodes", inodeString)
+	contentsPath := path.Join(paranoidDirectory, "contents", inodeString)
 
-	fileType, err := getFileType(directory, dirPath)
+	fileType, err := getFileType(paranoidDirectory, dirParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	if fileType != typeENOENT {
-		return returncodes.EEXIST, errors.New(dirName + " already exists")
+		return returncodes.EEXIST, errors.New(dirPath + " already exists")
 	}
 
-	err = os.Mkdir(dirPath, mode)
+	err = os.Mkdir(dirParanoidPath, mode)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error making directory "+dirPath+" :", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error making paranoidDirectory "+dirParanoidPath+" :", err)
 	}
 
 	contentsFile, err := os.Create(contentsPath)

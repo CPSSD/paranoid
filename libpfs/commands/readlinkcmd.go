@@ -10,16 +10,16 @@ import (
 )
 
 // ReadlinkCommand reads the value of the symbolic link
-func ReadlinkCommand(directory, fileName string) (returnCode int, returnError error, linkContents string) {
+func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode int, returnError error, linkContents string) {
 	Log.Info("readlink called")
 
-	err := getFileSystemLock(directory, sharedLock)
+	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, ""
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -27,38 +27,38 @@ func ReadlinkCommand(directory, fileName string) (returnCode int, returnError er
 		}
 	}()
 
-	link := getParanoidPath(directory, fileName)
-	fileType, err := getFileType(directory, link)
+	link := getParanoidPath(paranoidDirectory, filePath)
+	fileType, err := getFileType(paranoidDirectory, link)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, ""
 	}
 
 	if fileType == typeENOENT {
-		return returncodes.ENOENT, errors.New(fileName + " does not exist"), ""
+		return returncodes.ENOENT, errors.New(filePath + " does not exist"), ""
 	}
 
 	if fileType == typeDir {
-		return returncodes.EISDIR, errors.New(fileName + " is a directory"), ""
+		return returncodes.EISDIR, errors.New(filePath + " is a paranoidDirectory"), ""
 	}
 
 	if fileType == typeFile {
-		return returncodes.EIO, errors.New(fileName + " is a file"), ""
+		return returncodes.EIO, errors.New(filePath + " is a file"), ""
 	}
 
-	Log.Verbose("readlink: given directory", directory)
+	Log.Verbose("readlink: given paranoidDirectory", paranoidDirectory)
 
 	linkInode, code, err := getFileInode(link)
 	if code != returncodes.OK || err != nil {
 		return code, err, ""
 	}
 
-	err = getFileLock(directory, string(linkInode), sharedLock)
+	err = getFileLock(paranoidDirectory, string(linkInode), sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, ""
 	}
 
 	defer func() {
-		err := unLockFile(directory, string(linkInode))
+		err := unLockFile(paranoidDirectory, string(linkInode))
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -66,7 +66,7 @@ func ReadlinkCommand(directory, fileName string) (returnCode int, returnError er
 		}
 	}()
 
-	inodePath := path.Join(directory, "inodes", string(linkInode))
+	inodePath := path.Join(paranoidDirectory, "inodes", string(linkInode))
 
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	if err != nil {

@@ -11,73 +11,73 @@ import (
 )
 
 // LinkCommand creates a link of a file.
-func LinkCommand(directory, existingFileName, targetFileName string) (returnCode int, returnError error) {
+func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode int, returnError error) {
 	Log.Info("link command called")
 
-	existingFilePath := getParanoidPath(directory, existingFileName)
-	targetFilePath := getParanoidPath(directory, targetFileName)
+	existingParanoidPath := getParanoidPath(paranoidDirectory, existingFilePath)
+	targetParanoidPath := getParanoidPath(paranoidDirectory, targetFilePath)
 
-	Log.Verbose("link : given directory = " + directory)
+	Log.Verbose("link : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(directory, exclusiveLock)
+	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	existingFileType, err := getFileType(directory, existingFilePath)
+	existingFileType, err := getFileType(paranoidDirectory, existingParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	if existingFileType == typeENOENT {
-		return returncodes.ENOENT, errors.New("existing file " + existingFileName + " does not exist")
+		return returncodes.ENOENT, errors.New("existing file " + existingFilePath + " does not exist")
 	}
 
 	if existingFileType == typeDir {
-		return returncodes.EISDIR, errors.New("existing file " + existingFileName + " is a directory")
+		return returncodes.EISDIR, errors.New("existing file " + existingFilePath + " is a paranoidDirectory")
 	}
 
 	if existingFileType == typeSymlink {
-		return returncodes.EIO, errors.New("existing file " + existingFileName + " is a symlink")
+		return returncodes.EIO, errors.New("existing file " + existingFilePath + " is a symlink")
 	}
 
-	targetFileType, err := getFileType(directory, targetFilePath)
+	targetFileType, err := getFileType(paranoidDirectory, targetParanoidPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting target file "+targetFileName+" file type:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting target file "+targetFilePath+" file type:", err)
 	}
 
 	if targetFileType != typeENOENT {
-		return returncodes.EEXIST, errors.New("target file " + targetFileName + " already exists")
+		return returncodes.EEXIST, errors.New("target file " + targetFilePath + " already exists")
 	}
 
 	// getting inode and fileMode of existing file
-	inodeBytes, code, err := getFileInode(existingFilePath)
+	inodeBytes, code, err := getFileInode(existingParanoidPath)
 	if code != returncodes.OK {
 		return code, err
 	}
 
-	fileInfo, err := os.Stat(existingFilePath)
+	fileInfo, err := os.Stat(existingParanoidPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error stating existing file "+existingFileName+":", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error stating existing file "+existingFilePath+":", err)
 	}
 	fileMode := fileInfo.Mode()
 
 	// creating target file pointing to same inode
-	err = ioutil.WriteFile(targetFilePath, inodeBytes, fileMode)
+	err = ioutil.WriteFile(targetParanoidPath, inodeBytes, fileMode)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to names file:", err)
 	}
 
 	// getting contents of inode
-	inodePath := path.Join(directory, "inodes", string(inodeBytes))
+	inodePath := path.Join(paranoidDirectory, "inodes", string(inodeBytes))
 	Log.Verbose("link : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	if err != nil {

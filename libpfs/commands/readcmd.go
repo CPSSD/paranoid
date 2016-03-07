@@ -14,19 +14,19 @@ import (
 
 //ReadCommand reads data from a file
 //Offset and length can be given as -1 to note that the defaults should be used.
-func ReadCommand(directory, fileName string, offset, length int64) (returnCode int, returnError error, fileContents []byte) {
+func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode int, returnError error, fileContents []byte) {
 	Log.Info("read command called")
-	Log.Verbose("read : given directory = " + directory)
+	Log.Verbose("read : given paranoidDirectory = " + paranoidDirectory)
 
-	namepath := getParanoidPath(directory, fileName)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 
-	err := getFileSystemLock(directory, sharedLock)
+	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, nil
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -34,21 +34,21 @@ func ReadCommand(directory, fileName string, offset, length int64) (returnCode i
 		}
 	}()
 
-	fileType, err := getFileType(directory, namepath)
+	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, nil
 	}
 
 	if fileType == typeENOENT {
-		return returncodes.ENOENT, errors.New(fileName + " does not exist"), nil
+		return returncodes.ENOENT, errors.New(filePath + " does not exist"), nil
 	}
 
 	if fileType == typeDir {
-		return returncodes.EISDIR, errors.New(fileName + " is a directory"), nil
+		return returncodes.EISDIR, errors.New(filePath + " is a paranoidDirectory"), nil
 	}
 
 	if fileType == typeSymlink {
-		return returncodes.EIO, errors.New(fileName + " is a symlink"), nil
+		return returncodes.EIO, errors.New(filePath + " is a symlink"), nil
 	}
 
 	inodeBytes, code, err := getFileInode(namepath)
@@ -57,18 +57,18 @@ func ReadCommand(directory, fileName string, offset, length int64) (returnCode i
 	}
 	inodeFileName := string(inodeBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", inodeFileName), getAccessMode(syscall.O_RDONLY))
+	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeFileName), getAccessMode(syscall.O_RDONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access file " + fileName), nil
+		return returncodes.EACCES, errors.New("could not access file " + filePath), nil
 	}
 
-	err = getFileLock(directory, inodeFileName, sharedLock)
+	err = getFileLock(paranoidDirectory, inodeFileName, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, nil
 	}
 
 	defer func() {
-		err := unLockFile(directory, inodeFileName)
+		err := unLockFile(paranoidDirectory, inodeFileName)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -76,7 +76,7 @@ func ReadCommand(directory, fileName string, offset, length int64) (returnCode i
 		}
 	}()
 
-	file, err := os.OpenFile(path.Join(directory, "contents", inodeFileName), os.O_RDONLY, 0777)
+	file, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeFileName), os.O_RDONLY, 0777)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file", err), nil
 	}
@@ -120,7 +120,7 @@ func ReadCommand(directory, fileName string, offset, length int64) (returnCode i
 		}
 
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error reading from "+fileName+":", err), nil
+			return returncodes.EUNEXPECTED, fmt.Errorf("error reading from "+filePath+":", err), nil
 		}
 
 		bytesRead = bytesRead[:n]

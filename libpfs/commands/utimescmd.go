@@ -11,32 +11,32 @@ import (
 )
 
 //UtimesCommand updates the acess time and modified time of a file
-func UtimesCommand(directory, fileName string, atime, mtime *time.Time) (returnCode int, returnError error) {
+func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) (returnCode int, returnError error) {
 	Log.Info("utimes command called")
-	Log.Verbose("utimes : given directory = " + directory)
+	Log.Verbose("utimes : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(directory, sharedLock)
+	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	namepath := getParanoidPath(directory, fileName)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 
-	fileType, err := getFileType(directory, namepath)
+	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	if fileType == typeENOENT {
-		return returncodes.ENOENT, errors.New(fileName + " does not exist")
+		return returncodes.ENOENT, errors.New(filePath + " does not exist")
 	}
 
 	fileInodeBytes, code, err := getFileInode(namepath)
@@ -45,25 +45,25 @@ func UtimesCommand(directory, fileName string, atime, mtime *time.Time) (returnC
 	}
 	inodeName := string(fileInodeBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + fileName)
+		return returncodes.EACCES, errors.New("could not access " + filePath)
 	}
 
-	err = getFileLock(directory, inodeName, exclusiveLock)
+	err = getFileLock(paranoidDirectory, inodeName, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFile(directory, inodeName)
+		err := unLockFile(paranoidDirectory, inodeName)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	file, err := os.Open(path.Join(directory, "contents", inodeName))
+	file, err := os.Open(path.Join(paranoidDirectory, "contents", inodeName))
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
 	}
@@ -82,17 +82,17 @@ func UtimesCommand(directory, fileName string, atime, mtime *time.Time) (returnC
 	}
 
 	if atime == nil {
-		err = os.Chtimes(path.Join(directory, "contents", inodeName), oldatime, *mtime)
+		err = os.Chtimes(path.Join(paranoidDirectory, "contents", inodeName), oldatime, *mtime)
 		if err != nil {
 			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
 		}
 	} else if mtime == nil {
-		err = os.Chtimes(path.Join(directory, "contents", inodeName), *atime, oldmtime)
+		err = os.Chtimes(path.Join(paranoidDirectory, "contents", inodeName), *atime, oldmtime)
 		if err != nil {
 			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
 		}
 	} else {
-		err = os.Chtimes(path.Join(directory, "contents", inodeName), *atime, *mtime)
+		err = os.Chtimes(path.Join(paranoidDirectory, "contents", inodeName), *atime, *mtime)
 		if err != nil {
 			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
 		}

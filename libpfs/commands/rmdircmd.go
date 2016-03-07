@@ -10,45 +10,45 @@ import (
 	"syscall"
 )
 
-// RmdirCommand removes a directory
-func RmdirCommand(directory, dirName string) (returnCode int, returnError error) {
+// RmdirCommand removes a paranoidDirectory
+func RmdirCommand(paranoidDirectory, dirPath string) (returnCode int, returnError error) {
 	Log.Info("rmdir command called")
 
-	err := getFileSystemLock(directory, exclusiveLock)
+	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	dirToDelete := getParanoidPath(directory, dirName)
-	dirType, err := getFileType(directory, dirToDelete)
+	dirToDelete := getParanoidPath(paranoidDirectory, dirPath)
+	dirType, err := getFileType(paranoidDirectory, dirToDelete)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	if dirType == typeENOENT {
-		return returncodes.ENOENT, errors.New(dirName + " does not exist")
+		return returncodes.ENOENT, errors.New(dirPath + " does not exist")
 	} else if dirType != typeDir {
-		return returncodes.ENOTDIR, errors.New(dirName + " is not a directory")
+		return returncodes.ENOTDIR, errors.New(dirPath + " is not a paranoidDirectory")
 	}
 
 	files, err := ioutil.ReadDir(dirToDelete)
 	if err != nil {
 		if os.IsPermission(err) {
-			return returncodes.EACCES, errors.New("could not access " + dirName)
+			return returncodes.EACCES, errors.New("could not access " + dirPath)
 		}
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading directory:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading paranoidDirectory:", err)
 	}
 
 	if len(files) > 1 {
-		return returncodes.ENOTEMPTY, errors.New(dirName + " is not empty")
+		return returncodes.ENOTEMPTY, errors.New(dirPath + " is not empty")
 	}
 
 	infoFileToDelete := path.Join(dirToDelete, "info")
@@ -59,13 +59,13 @@ func RmdirCommand(directory, dirName string) (returnCode int, returnError error)
 
 	inodeString := string(inodeBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + dirName)
+		return returncodes.EACCES, errors.New("could not access " + dirPath)
 	}
 
-	inodeFileToDelete := path.Join(directory, "inodes", inodeString)
-	contentsFileToDelete := path.Join(directory, "contents", inodeString)
+	inodeFileToDelete := path.Join(paranoidDirectory, "inodes", inodeString)
+	contentsFileToDelete := path.Join(paranoidDirectory, "contents", inodeString)
 
 	code, err = deleteFile(contentsFileToDelete)
 	if code != returncodes.OK {
