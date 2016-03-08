@@ -22,6 +22,9 @@ func (n Node) String() string {
 var ParanoidDir string
 var MountPoint string
 
+// Time at which PFSD started. Used for calculating uptime.
+var BootTime time.Time
+
 // Node information for the current node
 var ThisNode Node
 
