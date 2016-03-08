@@ -28,8 +28,8 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode int, returnEr
 		}
 	}()
 
-	filePathPath := getParanoidPath(paranoidDirectory, filePath)
-	filePathPathType, err := getFileType(paranoidDirectory, filePathPath)
+	fileParanoidPath := getParanoidPath(paranoidDirectory, filePath)
+	fileType, err := getFileType(paranoidDirectory, fileParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
@@ -37,16 +37,16 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode int, returnEr
 	Log.Verbose("unlink : paranoidDirectory given = " + paranoidDirectory)
 
 	// checking if file exists
-	if filePathPathType == typeENOENT {
+	if fileType == typeENOENT {
 		return returncodes.ENOENT, errors.New(filePath + " does not exist")
 	}
 
-	if filePathPathType == typeDir {
+	if fileType == typeDir {
 		return returncodes.EISDIR, errors.New(filePath + " is a paranoidDirectory")
 	}
 
 	// getting file inode
-	inodeBytes, code, err := getFileInode(filePathPath)
+	inodeBytes, code, err := getFileInode(fileParanoidPath)
 	if code != returncodes.OK {
 		return code, err
 	}
@@ -58,8 +58,8 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode int, returnEr
 	}
 
 	// removing filename
-	Log.Verbose("unlink : deleting file " + filePathPath)
-	err = os.Remove(filePathPath)
+	Log.Verbose("unlink : deleting file " + fileParanoidPath)
+	err = os.Remove(fileParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error removing file in names:", err)
 	}
