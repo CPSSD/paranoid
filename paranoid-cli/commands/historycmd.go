@@ -114,15 +114,21 @@ func toLine(logNum int, pad string, p *pb.LogEntry) string {
 	if p.Entry.Type == pb.Entry_StateMachineCommand {
 		return fmt.Sprintln(marker, "Command:", commandString(p.Entry.Command))
 	} else if p.Entry.Type == pb.Entry_ConfigurationChange {
-		return fmt.Sprintln(marker, "ConfigChange:", p.Entry.Config)
+		return fmt.Sprintln(marker, "ConfigChange:", configurationString(p.Entry.Config))
 	} else {
 		return fmt.Sprintln(marker, "Demo:", p.Entry.Demo)
 	}
 }
 
+func configurationString(conf *pb.Configuration) string {
+	typ := fmt.Sprintf("%-21s", configTypeString(conf.Type))
+	conf.Type = 0
+	return typ + fmt.Sprint(conf)
+}
+
 // commandString returns the string representation of a StateMachineCommand
 func commandString(cmd *pb.StateMachineCommand) string {
-	typeStr := typeString(cmd.Type)
+	typeStr := commandTypeString(cmd.Type)
 	cmd.Type = 0
 	size := len(cmd.Data)
 	if size > 0 {
@@ -147,8 +153,8 @@ func bytesString(bytes int) string {
 	}
 }
 
-// typeString returns the string representation of a log type.
-func typeString(ty uint32) string {
+// commandTypeString returns the string representation of a command log type.
+func commandTypeString(ty uint32) string {
 	switch ty {
 	case raft.TYPE_WRITE:
 		return "Write"
@@ -172,6 +178,18 @@ func typeString(ty uint32) string {
 		return "Mkdir"
 	case raft.TYPE_RMDIR:
 		return "Rmdir"
+	default:
+		return "Unknown"
+	}
+}
+
+// configTypeString returns the string representation of a configuration change log type.
+func configTypeString(ty pb.Configuration_ConfigurationType) string {
+	switch ty {
+	case pb.Configuration_CurrentConfiguration:
+		return "Current Configuration"
+	case pb.Configuration_FutureConfiguration:
+		return "Future Configuration"
 	default:
 		return "Unknown"
 	}
