@@ -10,36 +10,36 @@ import (
 )
 
 //ChmodCommand is used to change the permissions of a file.
-func ChmodCommand(directory, fileName string, perms os.FileMode) (returnCode int, returnError error) {
+func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode int, returnError error) {
 	Log.Info("chmod command given")
-	Log.Verbose("chmod : given directory = " + directory)
+	Log.Verbose("chmod : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(directory, exclusiveLock)
+	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	namepath := getParanoidPath(directory, fileName)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 
-	fileType, err := getFileType(directory, namepath)
+	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	if fileType == typeENOENT {
-		return returncodes.ENOENT, errors.New(fileName + " does not exist")
+		return returncodes.ENOENT, errors.New(filePath + " does not exist")
 	}
 
 	if fileType == typeSymlink {
-		return returncodes.EIO, errors.New(fileName + " is of type symlink")
+		return returncodes.EIO, errors.New(filePath + " is of type symlink")
 	}
 
 	inodeNameBytes, code, err := getFileInode(namepath)
@@ -48,14 +48,14 @@ func ChmodCommand(directory, fileName string, perms os.FileMode) (returnCode int
 	}
 	inodeName := string(inodeNameBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("unable to access " + fileName)
+		return returncodes.EACCES, errors.New("unable to access " + filePath)
 	}
 
 	Log.Verbosef("chmod : changing permissions of "+inodeName+" to", perms)
 
-	contentsFile, err := os.OpenFile(path.Join(directory, "contents", inodeName), os.O_WRONLY, 0777)
+	contentsFile, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeName), os.O_WRONLY, 0777)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("unexpected error attempting to open file:", err)
 	}

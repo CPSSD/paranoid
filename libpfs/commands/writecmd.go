@@ -11,17 +11,17 @@ import (
 
 //WriteCommand writes data to the given file
 //offset and length can be given as -1 if the defaults are to be used
-func WriteCommand(directory, fileName string, offset, length int64, data []byte) (returnCode int, returnError error, bytesWrote int) {
+func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data []byte) (returnCode int, returnError error, bytesWrote int) {
 	Log.Info("write command given")
-	Log.Verbose("write : given directory = " + directory)
+	Log.Verbose("write : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(directory, sharedLock)
+	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, 0
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -29,22 +29,22 @@ func WriteCommand(directory, fileName string, offset, length int64, data []byte)
 		}
 	}()
 
-	namepath := getParanoidPath(directory, fileName)
-	namepathType, err := getFileType(directory, namepath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namepathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, 0
 	}
 
 	if namepathType == typeENOENT {
-		return returncodes.ENOENT, errors.New(fileName + " does not exist"), 0
+		return returncodes.ENOENT, errors.New(filePath + " does not exist"), 0
 	}
 
 	if namepathType == typeDir {
-		return returncodes.EISDIR, errors.New(fileName + " is a directory"), 0
+		return returncodes.EISDIR, errors.New(filePath + " is a paranoidDirectory"), 0
 	}
 
 	if namepathType == typeSymlink {
-		return returncodes.EIO, errors.New(fileName + " is a symlink"), 0
+		return returncodes.EIO, errors.New(filePath + " is a symlink"), 0
 	}
 
 	fileInodeBytes, code, err := getFileInode(namepath)
@@ -53,18 +53,18 @@ func WriteCommand(directory, fileName string, offset, length int64, data []byte)
 	}
 	inodeName := string(fileInodeBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + fileName), 0
+		return returncodes.EACCES, errors.New("could not access " + filePath), 0
 	}
 
-	err = getFileLock(directory, inodeName, exclusiveLock)
+	err = getFileLock(paranoidDirectory, inodeName, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, 0
 	}
 
 	defer func() {
-		err := unLockFile(directory, inodeName)
+		err := unLockFile(paranoidDirectory, inodeName)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -73,7 +73,7 @@ func WriteCommand(directory, fileName string, offset, length int64, data []byte)
 	}()
 
 	Log.Verbose("write : wrting to " + inodeName)
-	contentsFile, err := os.OpenFile(path.Join(directory, "contents", inodeName), os.O_WRONLY, 0777)
+	contentsFile, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeName), os.O_WRONLY, 0777)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err), 0
 	}

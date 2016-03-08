@@ -9,18 +9,18 @@ import (
 	"strings"
 )
 
-//ReadDirCommand returns a list of all the files in the given directory
-func ReadDirCommand(directory, dirName string) (returnCode int, returnError error, fileNames []string) {
+//ReadDirCommand returns a list of all the files in the given paranoidDirectory
+func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode int, returnError error, fileNames []string) {
 	Log.Info("readdir command called")
-	Log.Verbose("readdir : given directory = " + directory)
+	Log.Verbose("readdir : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(directory, sharedLock)
+	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, nil
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -28,33 +28,33 @@ func ReadDirCommand(directory, dirName string) (returnCode int, returnError erro
 		}
 	}()
 
-	dirpath := ""
+	dirParanoidPath := ""
 
-	if dirName == "" {
-		dirpath = path.Join(directory, "names")
+	if dirPath == "" {
+		dirParanoidPath = path.Join(paranoidDirectory, "names")
 	} else {
-		dirpath = getParanoidPath(directory, dirName)
-		pathFileType, err := getFileType(directory, dirpath)
+		dirParanoidPath = getParanoidPath(paranoidDirectory, dirPath)
+		pathFileType, err := getFileType(paranoidDirectory, dirParanoidPath)
 		if err != nil {
 			return returncodes.EUNEXPECTED, err, nil
 		}
 
 		if pathFileType == typeENOENT {
-			return returncodes.ENOENT, errors.New(dirName + " does not exist"), nil
+			return returncodes.ENOENT, errors.New(dirPath + " does not exist"), nil
 		}
 
 		if pathFileType == typeFile {
-			return returncodes.ENOTDIR, errors.New(dirName + " is of type file"), nil
+			return returncodes.ENOTDIR, errors.New(dirPath + " is of type file"), nil
 		}
 
 		if pathFileType == typeSymlink {
-			return returncodes.ENOTDIR, errors.New(dirName + " is of type symlink"), nil
+			return returncodes.ENOTDIR, errors.New(dirPath + " is of type symlink"), nil
 		}
 	}
 
-	files, err := ioutil.ReadDir(dirpath)
+	files, err := ioutil.ReadDir(dirParanoidPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading directory "+dirName+":", err), nil
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading paranoidDirectory "+dirPath+":", err), nil
 	}
 
 	var names []string

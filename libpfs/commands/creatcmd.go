@@ -10,35 +10,35 @@ import (
 	"path"
 )
 
-//CreatCommand creates a new file with the name fileName in the pfs directory
-func CreatCommand(directory, fileName string, perms os.FileMode) (returnCode int, returnError error) {
+//CreatCommand creates a new file with the name filePath in the pfs paranoidDirectory
+func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode int, returnError error) {
 	Log.Info("creat command called")
-	Log.Verbose("creat : directory = " + directory)
+	Log.Verbose("creat : paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(directory, exclusiveLock)
+	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	namepath := getParanoidPath(directory, fileName)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 
-	fileType, err := getFileType(directory, namepath)
+	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	if fileType != typeENOENT {
-		return returncodes.EEXIST, errors.New(fileName + " already exists")
+		return returncodes.EEXIST, errors.New(filePath + " already exists")
 	}
-	Log.Verbose("creat : creating file " + fileName)
+	Log.Verbose("creat : creating file " + filePath)
 
 	uuidbytes, err := generateNewInode()
 	if err != nil {
@@ -61,12 +61,12 @@ func CreatCommand(directory, fileName string, perms os.FileMode) (returnCode int
 		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(directory, "inodes", uuidstring), jsonData, 0600)
+	err = ioutil.WriteFile(path.Join(paranoidDirectory, "inodes", uuidstring), jsonData, 0600)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file:", err)
 	}
 
-	contentsFile, err := os.Create(path.Join(directory, "contents", uuidstring))
+	contentsFile, err := os.Create(path.Join(paranoidDirectory, "contents", uuidstring))
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
 	}

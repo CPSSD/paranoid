@@ -12,60 +12,60 @@ import (
 )
 
 // UnlinkCommand removes a filename link from an inode.
-func UnlinkCommand(directory, fileName string) (returnCode int, returnError error) {
+func UnlinkCommand(paranoidDirectory, filePath string) (returnCode int, returnError error) {
 	Log.Info("unlink command called")
 
-	err := getFileSystemLock(directory, exclusiveLock)
+	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	fileNamePath := getParanoidPath(directory, fileName)
-	fileNamePathType, err := getFileType(directory, fileNamePath)
+	fileParanoidPath := getParanoidPath(paranoidDirectory, filePath)
+	fileType, err := getFileType(paranoidDirectory, fileParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
-	Log.Verbose("unlink : directory given = " + directory)
+	Log.Verbose("unlink : paranoidDirectory given = " + paranoidDirectory)
 
 	// checking if file exists
-	if fileNamePathType == typeENOENT {
-		return returncodes.ENOENT, errors.New(fileName + " does not exist")
+	if fileType == typeENOENT {
+		return returncodes.ENOENT, errors.New(filePath + " does not exist")
 	}
 
-	if fileNamePathType == typeDir {
-		return returncodes.EISDIR, errors.New(fileName + " is a directory")
+	if fileType == typeDir {
+		return returncodes.EISDIR, errors.New(filePath + " is a paranoidDirectory")
 	}
 
 	// getting file inode
-	inodeBytes, code, err := getFileInode(fileNamePath)
+	inodeBytes, code, err := getFileInode(fileParanoidPath)
 	if code != returncodes.OK {
 		return code, err
 	}
 
 	//checking if we have access to the file.
-	err = syscall.Access(path.Join(directory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(paranoidDirectory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + fileName)
+		return returncodes.EACCES, errors.New("could not access " + filePath)
 	}
 
 	// removing filename
-	Log.Verbose("unlink : deleting file " + fileNamePath)
-	err = os.Remove(fileNamePath)
+	Log.Verbose("unlink : deleting file " + fileParanoidPath)
+	err = os.Remove(fileParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error removing file in names:", err)
 	}
 
 	// getting inode contents
-	inodePath := path.Join(directory, "inodes", string(inodeBytes))
+	inodePath := path.Join(paranoidDirectory, "inodes", string(inodeBytes))
 	Log.Verbose("unlink : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	if err != nil {
@@ -81,7 +81,7 @@ func UnlinkCommand(directory, fileName string) (returnCode int, returnError erro
 
 	if inodeData.Count == 1 {
 		// remove inode and contents
-		contentsPath := path.Join(directory, "contents", string(inodeBytes))
+		contentsPath := path.Join(paranoidDirectory, "contents", string(inodeBytes))
 		Log.Verbose("unlink : removing file " + contentsPath)
 		err = os.Remove(contentsPath)
 		if err != nil {

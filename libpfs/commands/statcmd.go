@@ -19,17 +19,17 @@ type statInfo struct {
 }
 
 //StatCommand returns information about a file
-func StatCommand(directory, fileName string) (returnCode int, returnError error, info statInfo) {
+func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnError error, info statInfo) {
 	Log.Info("Stat command called")
-	Log.Verbose("stat : given directory", directory)
+	Log.Verbose("stat : given paranoidDirectory", paranoidDirectory)
 
-	err := getFileSystemLock(directory, sharedLock)
+	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, statInfo{}
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -37,14 +37,14 @@ func StatCommand(directory, fileName string) (returnCode int, returnError error,
 		}
 	}()
 
-	namepath := getParanoidPath(directory, fileName)
-	namePathType, err := getFileType(directory, namepath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namePathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, statInfo{}
 	}
 
 	if namePathType == typeENOENT {
-		return returncodes.ENOENT, errors.New(fileName + " does not exist"), statInfo{}
+		return returncodes.ENOENT, errors.New(filePath + " does not exist"), statInfo{}
 	}
 
 	inodeBytes, code, err := getFileInode(namepath)
@@ -53,7 +53,7 @@ func StatCommand(directory, fileName string) (returnCode int, returnError error,
 	}
 
 	inodeName := string(inodeBytes)
-	contentsFile := path.Join(directory, "contents", inodeName)
+	contentsFile := path.Join(paranoidDirectory, "contents", inodeName)
 
 	fi, err := os.Lstat(contentsFile)
 	if err != nil {

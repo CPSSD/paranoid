@@ -8,18 +8,17 @@ import (
 	"path/filepath"
 )
 
-//MountCommand is used to notify a pfs directory it has been mounted.
-//Stores the ip given as args[1] and the port given as args[2] in files in the meta directory.
-func MountCommand(directory, ip, port, mountPoint string) (returnCode int, returnError error) {
+//MountCommand is used to notify a pfs paranoidDirectory it has been mounted.
+func MountCommand(paranoidDirectory, ip, port, mountPoint string) (returnCode int, returnError error) {
 	Log.Info("mount command called")
-	Log.Verbose("mount : given directory = " + directory)
+	Log.Verbose("mount : given paranoidDirectory = " + paranoidDirectory)
 
-	err := ioutil.WriteFile(path.Join(directory, "meta", "ip"), []byte(ip), 0600)
+	err := ioutil.WriteFile(path.Join(paranoidDirectory, "meta", "ip"), []byte(ip), 0600)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing ip:", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(directory, "meta", "port"), []byte(port), 0600)
+	err = ioutil.WriteFile(path.Join(paranoidDirectory, "meta", "port"), []byte(port), 0600)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing port:", err)
 	}
@@ -29,7 +28,7 @@ func MountCommand(directory, ip, port, mountPoint string) (returnCode int, retur
 		return returncodes.EUNEXPECTED, fmt.Errorf("error getting absolute path of mountpoint:", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(directory, "meta", "mountpoint"), []byte(mountPoint), 0600)
+	err = ioutil.WriteFile(path.Join(paranoidDirectory, "meta", "mountpoint"), []byte(mountPoint), 0600)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing mountpoint:", err)
 	}

@@ -10,39 +10,39 @@ import (
 )
 
 //TruncateCommand reduces the file given to the new length
-func TruncateCommand(directory, fileName string, length int64) (returnCode int, returnError error) {
+func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCode int, returnError error) {
 	Log.Info("truncate command given")
-	Log.Verbose("truncate : given directory = " + directory)
+	Log.Verbose("truncate : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(directory, sharedLock)
+	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(directory)
+		err := unLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	namepath := getParanoidPath(directory, fileName)
-	namepathType, err := getFileType(directory, namepath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namepathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	if namepathType == typeENOENT {
-		return returncodes.ENOENT, errors.New(fileName + " does not exist")
+		return returncodes.ENOENT, errors.New(filePath + " does not exist")
 	}
 
 	if namepathType == typeDir {
-		return returncodes.EISDIR, errors.New(fileName + " is a directory")
+		return returncodes.EISDIR, errors.New(filePath + " is a paranoidDirectory")
 	}
 
 	if namepathType == typeSymlink {
-		return returncodes.EIO, errors.New(fileName + " is a symlink")
+		return returncodes.EIO, errors.New(filePath + " is a symlink")
 	}
 
 	fileInodeBytes, code, err := getFileInode(namepath)
@@ -51,27 +51,27 @@ func TruncateCommand(directory, fileName string, length int64) (returnCode int, 
 	}
 	inodeName := string(fileInodeBytes)
 
-	err = syscall.Access(path.Join(directory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
+	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + fileName)
+		return returncodes.EACCES, errors.New("could not access " + filePath)
 	}
 
-	err = getFileLock(directory, inodeName, exclusiveLock)
+	err = getFileLock(paranoidDirectory, inodeName, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFile(directory, inodeName)
+		err := unLockFile(paranoidDirectory, inodeName)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
 		}
 	}()
 
-	Log.Verbose("truncate : truncating " + fileName)
+	Log.Verbose("truncate : truncating " + filePath)
 
-	contentsFile, err := os.OpenFile(path.Join(directory, "contents", inodeName), os.O_WRONLY, 0777)
+	contentsFile, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeName), os.O_WRONLY, 0777)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
 	}
