@@ -26,13 +26,13 @@ func AutoMount(c *cli.Context) {
 
 	ip, err := ioutil.ReadFile(path.Join(pfsMeta, "ip"))
 	if err != nil {
-		fmt.Println("PFSD couldnt find server IP")
+		fmt.Println("Unable to automount: missing discovery server IP Address")
 		Log.Fatal("Could not get ip", err)
 	}
 
 	port, err := ioutil.ReadFile(path.Join(pfsMeta, "port"))
 	if err != nil {
-		fmt.Println("PFSD Couldnt find server port")
+		fmt.Println("Unable to automount: missing discovery server port")
 		Log.Fatal("Could not get port", err)
 	}
 

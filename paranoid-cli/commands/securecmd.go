@@ -20,8 +20,8 @@ func Secure(c *cli.Context) {
 	pfsname := args[0]
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println(err)
-		Log.Fatal("Couldnt get current user")
+		fmt.Println("Couldn't get current user")
+		Log.Fatal("Couldn't get current user:", err)
 	}
 
 	homeDir := usr.HomeDir

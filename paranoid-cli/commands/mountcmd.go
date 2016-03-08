@@ -48,8 +48,8 @@ func doMount(c *cli.Context, args []string) {
 
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Println("Error Getting Current User")
+		Log.Fatal("Error Getting Current User:", err)
 	}
 	pfsDir := path.Join(usr.HomeDir, ".pfs", pfsName)
 
@@ -85,20 +85,20 @@ func doMount(c *cli.Context, args []string) {
 	poolBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "pool"))
 	if err != nil {
 		fmt.Println("unable to read pool information:", err)
-		fmt.Println("unable to read pool information:", err)
+		Log.Fatal("unable to read pool information:", err)
 	}
 	pool := string(poolBytes)
 
 	splitAddress := strings.Split(serverAddress, ":")
 	if len(splitAddress) != 2 {
 		fmt.Println("discovery address in wrong format. Should be HOST:PORT")
-		fmt.Println("discovery address in wrong format. Should be HOST:PORT")
+		Log.Fatal("discovery address in wrong format. Should be HOST:PORT")
 	}
 
 	returncode, err := commands.MountCommand(pfsDir, splitAddress[0], splitAddress[1], mountPoint)
 	if returncode != returncodes.OK {
 		fmt.Println("Error running pfs mount command : ", err)
-		fmt.Println("Error running pfs mount command : ", err)
+		Log.Fatal("Error running pfs mount command : ", err)
 	}
 
 	if !c.GlobalBool("networkoff") {

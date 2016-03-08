@@ -32,8 +32,8 @@ func Init(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Println("Error Getting Current User")
+		Log.Fatal("Error Getting Current User", err)
 	}
 	homeDir := usr.HomeDir
 
@@ -47,7 +47,7 @@ func Init(c *cli.Context) {
 
 	directory, err := filepath.Abs(path.Join(homeDir, ".pfs", pfsname))
 	if err != nil {
-		fmt.Println("Given pfs-name is in incorrect format. Error : ", err)
+		fmt.Println("Given pfs-name is in incorrect format.")
 		Log.Fatal("Given pfs-name is in incorrect format. Error : ", err)
 	}
 	if path.Base(directory) != args[0] {
@@ -61,14 +61,14 @@ func Init(c *cli.Context) {
 	}
 	err = os.Mkdir(directory, 0700)
 	if err != nil {
-		fmt.Println("Error making pfs directory : ", err)
+		fmt.Println("Unable to make pfs Directory")
 		Log.Fatal("Error making pfs directory : ", err)
 	}
 
 	returncode, err := commands.InitCommand(directory)
 	if returncode != returncodes.OK {
 		cleanupPFS(directory)
-		fmt.Println("Error running pfs init : ", err)
+		fmt.Println("Error running pfs init")
 		Log.Fatal("Error running pfs init : ", err)
 	}
 
@@ -79,7 +79,7 @@ func Init(c *cli.Context) {
 	}
 	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool), 0600)
 	if err != nil {
-		fmt.Println("cannot save pool information:", err)
+		fmt.Println("Cannot save pool information:")
 		Log.Fatal("cannot save pool information:", err)
 	}
 	Log.Infof("Using pool name %s", pool)
@@ -94,12 +94,12 @@ func Init(c *cli.Context) {
 		err = os.Link(c.String("cert"), path.Join(directory, "meta", "cert.pem"))
 		if err != nil {
 			cleanupPFS(directory)
-			fmt.Println("Failed to copy cert file:", err)
+			fmt.Println("Failed to copy cert file:")
 		}
 		err = os.Link(c.String("key"), path.Join(directory, "meta", "key.pem"))
 		if err != nil {
 			cleanupPFS(directory)
-			fmt.Println("Failed to copy key file:", err)
+			fmt.Println("Failed to copy key file:")
 		}
 	} else {
 		Log.Info("Generating certificate.")
