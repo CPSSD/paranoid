@@ -76,7 +76,9 @@ func logsToLogfile(logDir, filePath string, c *cli.Context) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	t := len(strconv.Itoa(len(files)))
+
+	numRunes := len(strconv.Itoa(len(files)))
+	numRunesString := strconv.Itoa(numRunes)
 	for i := len(files) - 1; i >= 0; i-- {
 		file := files[i]
 		p, err := fileToProto(file, logDir)
@@ -84,7 +86,7 @@ func logsToLogfile(logDir, filePath string, c *cli.Context) {
 			log.Fatalln(err)
 		}
 
-		writeFile.WriteString(toLine(i+1, t, p))
+		writeFile.WriteString(toLine(i+1, numRunesString, p))
 	}
 	writeFile.Close()
 }
@@ -105,29 +107,30 @@ func fileToProto(file os.FileInfo, directory string) (entry *pb.LogEntry, err er
 }
 
 // toLine converts a protobuf object to a human readable string representation
-// the i parameter is the number of the logfile and t is the lenght of the
-// string representation of the largest number of a logfile in the logs.
-func toLine(i, t int, p *pb.LogEntry) string {
-	iStr := strconv.Itoa(i)
-	pad := padding(t + 1 - len(iStr))
-	typeStr := typeString(p.Entry.Command.Type)
-	p.Entry.Command.Type = 0
-	pad2 := padding(10 - len(typeStr))
-	size := len(p.Entry.Command.Data)
-	if size > 0 {
-		p.Entry.Command.Data = nil
-		return fmt.Sprint(iStr, pad, ": ", typeStr, pad2, p.Entry.Command, "Data: ", bytesString(size), "\n")
+// the logNum parameter is the number of the logfile and the pad parameter is
+// the number of runes to be used for writing the logNum and Term in string form.
+func toLine(logNum int, pad string, p *pb.LogEntry) string {
+	marker := fmt.Sprintf("file: %-"+pad+"d, term: %-"+pad+"d ", logNum, p.Term)
+
+	if p.Entry.Type == 0 { // command
+		return fmt.Sprintln(marker, "Command: ", commandString(p.Entry.Command))
+	} else if p.Entry.Type == 1 { // config
+		return fmt.Sprintln(marker, "ConfigChange: ", p.Entry.Config)
+	} else { // demo
+		return fmt.Sprintln(marker, "Demo: ", p.Entry.Demo)
 	}
-	return fmt.Sprint(iStr, pad, ": ", typeStr, pad2, p.Entry.Command, "\n")
 }
 
-// padding returns a string composed of i number of spaces
-func padding(i int) string {
-	str := ""
-	for j := 0; j < i; j++ {
-		str += " "
+// commandString returns the string representation of a StateMachineCommand
+func commandString(cmd *pb.StateMachineCommand) string {
+	typeStr := typeString(cmd.Type)
+	cmd.Type = 0
+	size := len(cmd.Data)
+	if size > 0 {
+		cmd.Data = nil
+		return fmt.Sprint(fmt.Sprintf("%-10s", typeStr), cmd, "Data: ", bytesString(size), "\n")
 	}
-	return str
+	return fmt.Sprint(fmt.Sprintf("%-10s", typeStr), cmd, "\n")
 }
 
 // bytesString returns the human readable representation of a data size=
