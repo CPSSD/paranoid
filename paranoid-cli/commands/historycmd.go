@@ -16,7 +16,6 @@ import (
 	"strconv"
 )
 
-// History is the top level function when paranoid-cli is called
 func History(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 1 {
