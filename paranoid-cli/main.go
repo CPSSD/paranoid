@@ -94,6 +94,12 @@ func main() {
 			},
 		},
 		{
+			Name:      "status",
+			Usage:     "check the status of local PFSD instances",
+			ArgsUsage: "[pfs-name ...]",
+			Action:    commands.Status,
+		},
+		{
 			Name:      "restart",
 			Usage:     "restarts the networking services",
 			ArgsUsage: "pfs-name",
