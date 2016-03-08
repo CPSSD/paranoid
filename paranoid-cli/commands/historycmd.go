@@ -52,8 +52,7 @@ func fileSystemExists(fsname string) bool {
 
 // read shows the history of a log in the given directory
 func read(directory string, c *cli.Context) {
-	tempDir := os.TempDir()
-	filePath := path.Join(tempDir, "log.pfslog")
+	filePath := path.Join(os.TempDir(), "log.pfslog")
 	logsToLogfile(directory, filePath, c)
 	defer os.Remove(filePath)
 	less := exec.Command("less", filePath)
@@ -76,6 +75,7 @@ func logsToLogfile(logDir, filePath string, c *cli.Context) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	defer writeFile.Close()
 
 	numRunes := len(strconv.Itoa(len(files)))
 	numRunesString := strconv.Itoa(numRunes)
@@ -88,7 +88,6 @@ func logsToLogfile(logDir, filePath string, c *cli.Context) {
 
 		writeFile.WriteString(toLine(i+1, numRunesString, p))
 	}
-	writeFile.Close()
 }
 
 // fileToProto converts a given file with a protobuf to a protobuf object
@@ -107,17 +106,17 @@ func fileToProto(file os.FileInfo, directory string) (entry *pb.LogEntry, err er
 }
 
 // toLine converts a protobuf object to a human readable string representation
-// the logNum parameter is the number of the logfile and the pad parameter is
-// the number of runes to be used for writing the logNum and Term in string form.
+// the pad parameter is the number of runes to be used for writing the logNum
+// and Term in string form.
 func toLine(logNum int, pad string, p *pb.LogEntry) string {
-	marker := fmt.Sprintf("file: %-"+pad+"d, term: %-"+pad+"d ", logNum, p.Term)
+	marker := fmt.Sprintf("%-"+pad+"d Term: %-"+pad+"d", logNum, p.Term)
 
-	if p.Entry.Type == 0 { // command
-		return fmt.Sprintln(marker, "Command: ", commandString(p.Entry.Command))
-	} else if p.Entry.Type == 1 { // config
-		return fmt.Sprintln(marker, "ConfigChange: ", p.Entry.Config)
-	} else { // demo
-		return fmt.Sprintln(marker, "Demo: ", p.Entry.Demo)
+	if p.Entry.Type == pb.Entry_StateMachineCommand {
+		return fmt.Sprintln(marker, "Command:", commandString(p.Entry.Command))
+	} else if p.Entry.Type == pb.Entry_ConfigurationChange {
+		return fmt.Sprintln(marker, "ConfigChange:", p.Entry.Config)
+	} else {
+		return fmt.Sprintln(marker, "Demo:", p.Entry.Demo)
 	}
 }
 
@@ -128,9 +127,9 @@ func commandString(cmd *pb.StateMachineCommand) string {
 	size := len(cmd.Data)
 	if size > 0 {
 		cmd.Data = nil
-		return fmt.Sprint(fmt.Sprintf("%-10s", typeStr), cmd, "Data: ", bytesString(size), "\n")
+		return fmt.Sprint(fmt.Sprintf("%-9s", typeStr), cmd, "Data: ", bytesString(size))
 	}
-	return fmt.Sprint(fmt.Sprintf("%-10s", typeStr), cmd, "\n")
+	return fmt.Sprint(fmt.Sprintf("%-9s", typeStr), cmd)
 }
 
 // bytesString returns the human readable representation of a data size=
