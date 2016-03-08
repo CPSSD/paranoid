@@ -3,7 +3,6 @@ package intercom
 import (
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
-	"github.com/cpssd/paranoid/pfsd/pnetserver"
 	"github.com/cpssd/paranoid/raft"
 	"net"
 	"net/rpc"
@@ -39,8 +38,8 @@ func (s *IntercomServer) Status(req *EmptyMessage, resp *StatusResponse) error {
 	}
 
 	resp.Uptime = time.Since(globals.BootTime)
-	if pnetserver.RaftNetworkServer != nil {
-		switch pnetserver.RaftNetworkServer.State.GetCurrentState() {
+	if globals.RaftNetworkServer != nil {
+		switch globals.RaftNetworkServer.State.GetCurrentState() {
 		case raft.FOLLOWER:
 			resp.Status = "Follower"
 		case raft.CANDIDATE:

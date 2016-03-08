@@ -53,7 +53,7 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 		bytesWritten int
 	)
 	if SendOverNetwork {
-		code, err, bytesWritten = globals.RaftNetworkServer.RequestWriteCommand(f.Name, uint64(off), uint64(len(content)), content)
+		code, err, bytesWritten = globals.RaftNetworkServer.RequestWriteCommand(f.Name, off, int64(len(content)), content)
 	} else {
 		code, err, bytesWritten = commands.WriteCommand(globals.ParanoidDir, f.Name, off, int64(len(content)), content)
 	}
@@ -79,7 +79,7 @@ func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	var code int
 	var err error
 	if SendOverNetwork {
-		code, err = globals.RaftNetworkServer.RequestTruncateCommand(f.Name, size)
+		code, err = globals.RaftNetworkServer.RequestTruncateCommand(f.Name, int64(size))
 	} else {
 		code, err = commands.TruncateCommand(globals.ParanoidDir, f.Name, int64(size))
 	}
@@ -95,22 +95,22 @@ func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	return GetFuseReturnCode(code)
 }
 
+func splitTime(t *time.Time) (int64, int64) {
+	if t != nil {
+		return int64(t.Second()), int64(t.Nanosecond())
+	}
+	return 0, 0
+}
+
 //Utimens updates the access and mofication time of the file.
 func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 	Log.Info("Utimens called on file : " + f.Name)
 	var code int
 	var err error
 	if SendOverNetwork {
-		if atime != nil {
-			if mtime != nil {
-				code, err = globals.RaftNetworkServer.RequestUtimesCommand(f.Name, int64(atime.Second()), int64(atime.Nanosecond()),
-					int64(mtime.Second()), int64(mtime.Nanosecond()))
-			} else {
-				code, err = globals.RaftNetworkServer.RequestUtimesCommand(f.Name, int64(atime.Second()), int64(atime.Nanosecond()), 0, 0)
-			}
-		} else {
-			code, err = globals.RaftNetworkServer.RequestUtimesCommand(f.Name, 0, 0, int64(mtime.Second()), int64(mtime.Nanosecond()))
-		}
+		atimeSeconds, atimeNanoseconds := splitTime(atime)
+		mtimeSeconds, mtimeNanoseconds := splitTime(mtime)
+		code, err = globals.RaftNetworkServer.RequestUtimesCommand(f.Name, atimeSeconds, atimeNanoseconds, mtimeSeconds, mtimeNanoseconds)
 	} else {
 		code, err = commands.UtimesCommand(globals.ParanoidDir, f.Name, atime, mtime)
 	}

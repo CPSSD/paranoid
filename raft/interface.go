@@ -142,7 +142,7 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (*StateMachineRe
 	return nil, errors.New("waited too long to commit Log entry")
 }
 
-func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length uint64,
+func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length int64,
 	data []byte) (returnCode int, returnError error, bytesWrote int) {
 	entry := &pb.Entry{
 		Type: pb.Entry_StateMachineCommand,
@@ -196,7 +196,7 @@ func (s *RaftNetworkServer) RequestChmodCommand(filePath string, mode uint32) (r
 	return stateMachineResult.Code, stateMachineResult.Err
 }
 
-func (s *RaftNetworkServer) RequestTruncateCommand(filePath string, length uint64) (returnCode int, returnError error) {
+func (s *RaftNetworkServer) RequestTruncateCommand(filePath string, length int64) (returnCode int, returnError error) {
 	entry := &pb.Entry{
 		Type: pb.Entry_StateMachineCommand,
 		Uuid: generateNewUUID(),
