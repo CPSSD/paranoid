@@ -39,15 +39,19 @@ func (s *IntercomServer) Status(req *EmptyMessage, resp *StatusResponse) error {
 	}
 
 	resp.Uptime = time.Since(globals.BootTime)
-	switch pnetserver.RaftNetworkServer.State.GetCurrentState() {
-	case raft.FOLLOWER:
-		resp.Status = "Follower"
-	case raft.CANDIDATE:
-		resp.Status = "Candidate"
-	case raft.LEADER:
-		resp.Status = "Leader"
-	case raft.INACTIVE:
-		resp.Status = "Raft Inactive"
+	if pnetserver.RaftNetworkServer != nil {
+		switch pnetserver.RaftNetworkServer.State.GetCurrentState() {
+		case raft.FOLLOWER:
+			resp.Status = "Follower"
+		case raft.CANDIDATE:
+			resp.Status = "Candidate"
+		case raft.LEADER:
+			resp.Status = "Leader"
+		case raft.INACTIVE:
+			resp.Status = "Raft Inactive"
+		}
+	} else {
+		resp.Status = "Networking Disabled"
 	}
 	resp.TLSActive = globals.TLSEnabled
 	resp.Port = thisport

@@ -62,8 +62,8 @@ func getStatus(pfsDir string) {
 }
 
 func printStatusInfo(info intercom.StatusResponse) {
-	fmt.Printf("Uptime:\t\t%s\n", info.Uptime.String())
-	fmt.Printf("Raft Status:\t%s\n", info.Status)
-	fmt.Printf("TLS Enabled:\t%t\n", info.TLSActive)
-	fmt.Printf("Port:\t\t%d\n", info.Port)
+	fmt.Printf("Uptime:\t\t\t%s\n", info.Uptime.String())
+	fmt.Printf("Raft Status:\t\t%s\n", info.Status)
+	fmt.Printf("TLS Enabled:\t\t%t\n", info.TLSActive)
+	fmt.Printf("Port:\t\t\t%d\n", info.Port)
 }
