@@ -63,18 +63,7 @@ func getStatus(pfsDir string) {
 
 func printStatusInfo(info intercom.StatusResponse) {
 	fmt.Printf("Uptime:\t\t%s\n", info.Uptime.String())
-	var statusString string
-	switch info.Status {
-	case intercom.FOLLOWER:
-		statusString = "Follower"
-	case intercom.CANDIDATE:
-		statusString = "Candidate"
-	case intercom.LEADER:
-		statusString = "Leader"
-	case intercom.RAFT_INACTIVE:
-		statusString = "Raft Inactive"
-	}
-	fmt.Printf("Raft Status:\t%s\n", statusString)
+	fmt.Printf("Raft Status:\t%s\n", info.Status)
 	fmt.Printf("TLS Enabled:\t%t\n", info.TLSActive)
 	fmt.Printf("Port:\t\t%d\n", info.Port)
 }

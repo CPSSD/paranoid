@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/pnetserver"
+	"github.com/cpssd/paranoid/raft"
 	"net"
 	"net/rpc"
 	"os"
@@ -14,21 +15,12 @@ import (
 
 var lis net.Listener
 
-type PFSDStatus int
-
-const (
-	FOLLOWER PFSDStatus = iota
-	CANDIDATE
-	LEADER
-	RAFT_INACTIVE
-)
-
 type IntercomServer struct{}
 type EmptyMessage struct{}
 
 type StatusResponse struct {
 	Uptime    time.Duration
-	Status    PFSDStatus
+	Status    string
 	TLSActive bool
 	Port      int
 }
@@ -47,7 +39,16 @@ func (s *IntercomServer) Status(req *EmptyMessage, resp *StatusResponse) error {
 	}
 
 	resp.Uptime = time.Since(globals.BootTime)
-	resp.Status = PFSDStatus(pnetserver.RaftNetworkServer.State.GetCurrentState())
+	switch pnetserver.RaftNetworkServer.State.GetCurrentState() {
+	case raft.FOLLOWER:
+		resp.Status = "Follower"
+	case raft.CANDIDATE:
+		resp.Status = "Candidate"
+	case raft.LEADER:
+		resp.Status = "Leader"
+	case raft.INACTIVE:
+		resp.Status = "Raft Inactive"
+	}
 	resp.TLSActive = globals.TLSEnabled
 	resp.Port = thisport
 	return nil
