@@ -31,7 +31,7 @@ func Status(c *cli.Context) {
 		}
 		for _, dir := range dirs {
 			dirPath := path.Join(usr.HomeDir, ".pfs", dir.Name())
-			if _, err := os.Stat(path.Join(dirPath, "meta", "pfsd.pid")); err != nil {
+			if _, err := os.Stat(path.Join(dirPath, "meta", "pfsd.pid")); err == nil {
 				getStatus(dirPath)
 			}
 		}
