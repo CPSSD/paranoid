@@ -219,8 +219,7 @@ func main() {
 		startRPCServer(&lis)
 	}
 	createPid("pfsd")
-	globals.Wait.Add(1)
-	go pfi.StartPfi(*verbose)
+	pfi.StartPfi(*verbose)
 
 	if globals.SystemLocked {
 		globals.Wait.Add(1)
