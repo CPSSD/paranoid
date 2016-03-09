@@ -19,8 +19,8 @@ func AutoMount(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		fmt.Println("FATAL: Error Getting Current User")
+		Log.Fatal("FATAL: Cannot get curent User:", err)
 	}
 	pfsMeta := path.Join(usr.HomeDir, ".pfs", args[0], "meta")
 

@@ -20,9 +20,12 @@ func main() {
 	}
 	homeDir := usr.HomeDir
 
-	pfscommands.Log = logger.New("libpfs", "paranoidcli", path.Join(homeDir, ".pfs", "log"))
-	commands.Log = logger.New("command", "paranoidcli", path.Join(homeDir, ".pfs", "log"))
-	tls.Log = logger.New("tls", "paranoidcli", path.Join(homeDir, ".pfs", "log"))
+	pfscommands.Log = logger.New("libpfs", "paranoidcli", path.Join(homeDir, ".pfs"))
+	commands.Log = logger.New("command", "paranoidcli", path.Join(homeDir, ".pfs"))
+	tls.Log = logger.New("tls", "paranoidcli", path.Join(homeDir, ".pfs"))
+	pfscommands.Log.SetOutput(logger.LOGFILE)
+	commands.Log.SetOutput(logger.LOGFILE)
+	tls.Log.SetOutput(logger.LOGFILE)
 
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"

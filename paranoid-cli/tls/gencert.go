@@ -107,7 +107,7 @@ func GenCertificate(pfsDir string) error {
 		Type:  "CERTIFICATE",
 		Bytes: certBytes,
 	})
-	Log.Info("Wrote certificate to", certPath)
+	fmt.Println("Wrote certificate to", certPath)
 
 	keyPath := path.Join(pfsDir, "meta", "key.pem")
 	keyFile, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
@@ -119,7 +119,7 @@ func GenCertificate(pfsDir string) error {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
-	Log.Info("INFO: Wrote key to", keyPath)
+	fmt.Println("INFO: Wrote key to", keyPath)
 
 	return nil
 }
