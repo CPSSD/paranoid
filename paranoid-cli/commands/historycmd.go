@@ -30,7 +30,7 @@ func History(c *cli.Context) {
 	givenString := args[0]
 	var target string
 	if fileSystemExists(givenString) {
-		target = path.Join(usr.HomeDir, ".pfs", givenString, "meta", "activity_logs")
+		target = path.Join(usr.HomeDir, ".pfs", givenString, "meta", "raft", "raft_logs")
 	} else {
 		target = givenString
 	}
