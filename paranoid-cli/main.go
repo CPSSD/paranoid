@@ -19,10 +19,14 @@ func main() {
 		fmt.Println("FATAL: Error Getting Current User")
 	}
 	homeDir := usr.HomeDir
+	if _, err := os.Stat(path.Join(homeDir, ".pfs")); os.IsNotExist(err) {
+		err = os.Mkdir(path.Join(homeDir, ".pfs"), 0700)
+		err = os.Mkdir(path.Join(homeDir, ".pfs", "meta"), 0700)
+	}
 
-	pfscommands.Log = logger.New("libpfs", "paranoidcli", path.Join(homeDir, ".pfs"))
-	commands.Log = logger.New("command", "paranoidcli", path.Join(homeDir, ".pfs"))
-	tls.Log = logger.New("tls", "paranoidcli", path.Join(homeDir, ".pfs"))
+	pfscommands.Log = logger.New("libpfs", "paranoidcli", path.Join(homeDir, ".pfs", "meta"))
+	commands.Log = logger.New("command", "paranoidcli", path.Join(homeDir, ".pfs", "meta"))
+	tls.Log = logger.New("tls", "paranoidcli", path.Join(homeDir, ".pfs", "meta"))
 	pfscommands.Log.SetOutput(logger.LOGFILE)
 	commands.Log.SetOutput(logger.LOGFILE)
 	tls.Log.SetOutput(logger.LOGFILE)
