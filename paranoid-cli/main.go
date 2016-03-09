@@ -1,18 +1,44 @@
 package main
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
 	pfscommands "github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/paranoid-cli/commands"
 	"github.com/cpssd/paranoid/paranoid-cli/tls"
 	"os"
+	"os/user"
+	"path"
 )
 
 func main() {
-	pfscommands.Log = logger.New("libpfs", "paranoidcli", os.DevNull)
-	commands.Log = logger.New("command", "paranoidcli", os.DevNull)
-	tls.Log = logger.New("tls", "paranoidcli", os.DevNull)
+
+	usr, err := user.Current()
+	if err != nil {
+		fmt.Println("FATAL: Error Getting Current User")
+		os.Exit(1)
+	}
+	homeDir := usr.HomeDir
+	if _, err := os.Stat(path.Join(homeDir, ".pfs")); os.IsNotExist(err) {
+		err = os.Mkdir(path.Join(homeDir, ".pfs"), 0700)
+		if err != nil {
+			fmt.Println("FATAL: Error Making Pfs directory")
+			os.Exit(1)
+		}
+		err = os.Mkdir(path.Join(homeDir, ".pfs", "meta"), 0700)
+		if err != nil {
+			fmt.Println("FATAL: Error Making pfs meta directory")
+			os.Exit(1)
+		}
+	}
+
+	pfscommands.Log = logger.New("libpfs", "paranoidcli", path.Join(homeDir, ".pfs", "meta"))
+	commands.Log = logger.New("command", "paranoidcli", path.Join(homeDir, ".pfs", "meta"))
+	tls.Log = logger.New("tls", "paranoidcli", path.Join(homeDir, ".pfs", "meta"))
+	pfscommands.Log.SetOutput(logger.LOGFILE)
+	commands.Log.SetOutput(logger.LOGFILE)
+	tls.Log.SetOutput(logger.LOGFILE)
 
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
