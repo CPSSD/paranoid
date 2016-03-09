@@ -16,21 +16,21 @@ type RaftLog struct {
 	pLog           *logger.ParanoidLogger
 }
 
-// New returns an initiated instance of ActivityLogger
+// New returns an initiated instance of RaftLog
 func New(logDirectory string) *RaftLog {
 	rl := &RaftLog{
 		logDir: logDirectory,
-		pLog:   logger.New("Activity Logger", "pfsd", logDirectory),
+		pLog:   logger.New("Raft Logger", "pfsd", logDirectory),
 	}
 	fileDescriptors, err := ioutil.ReadDir(rl.logDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			err := os.Mkdir(rl.logDir, 0777)
+			err := os.Mkdir(rl.logDir, 0700)
 			if err != nil {
-				rl.pLog.Fatal("failed to create log directory")
+				rl.pLog.Fatal("failed to create log directory:", err)
 			}
 		} else if os.IsPermission(err) {
-			rl.pLog.Fatal("Activity logger does not have permissions for: ", rl.logDir)
+			rl.pLog.Fatal("Raft logger does not have permissions for:", rl.logDir)
 		} else {
 			rl.pLog.Fatal(err)
 		}
@@ -39,7 +39,7 @@ func New(logDirectory string) *RaftLog {
 	if rl.currentIndex > 1 {
 		logEntry, err := rl.GetLogEntry(rl.currentIndex - 1)
 		if err != nil {
-			rl.pLog.Fatal("Failed to set up activity logger, could not get most recent term:", err)
+			rl.pLog.Fatal("Failed to set up raft logger, could not get most recent term:", err)
 		}
 		rl.mostRecentTerm = logEntry.Term
 	} else {
