@@ -10,7 +10,6 @@ import (
 )
 
 func StartPfi(logVerbose bool) {
-	defer globals.Wait.Done()
 	// Create a logger
 	var err error
 	Log = logger.New("pfi", "pfsd", path.Join(globals.ParanoidDir, "meta", "logs"))
@@ -36,15 +35,20 @@ func StartPfi(logVerbose bool) {
 	if err != nil {
 		Log.Fatalf("Mount fail: %v\n", err)
 	}
-	go server.Serve()
 
-	select {
-	case _, ok := <-globals.Quit:
-		if !ok {
-			err = server.Unmount()
-			if err != nil {
-				Log.Fatal("Error unmounting : ", err)
+	globals.Wait.Add(1)
+	go func() {
+		defer globals.Wait.Done()
+		go server.Serve()
+
+		select {
+		case _, ok := <-globals.Quit:
+			if !ok {
+				err = server.Unmount()
+				if err != nil {
+					Log.Fatal("Error unmounting : ", err)
+				}
 			}
 		}
-	}
+	}()
 }
