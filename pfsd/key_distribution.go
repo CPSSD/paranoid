@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
+	"os"
+	"path"
 	"time"
 )
 
@@ -79,5 +82,29 @@ func UnlockWorker() {
 				return
 			}
 		}
+	}
+}
+
+func LoadPieces() {
+	if _, err := os.Stat(path.Join(globals.ParanoidDir, "meta", "pieces")); os.IsNotExist(err) {
+		log.Info("Filesystem not locked. Will not attepmt to load KeyPieces.")
+		return
+	}
+	globals.SystemLocked = true
+	piecePath := path.Join(globals.ParanoidDir, "meta", "pieces")
+	file, err := os.Open(piecePath)
+	if err != nil {
+		// If the file doesn't exist, ignore it, because it could just be the first run.
+		if os.IsNotExist(err) {
+			log.Debugf("KeyPiece GOB file %s does not exist.", piecePath)
+			return
+		}
+		log.Fatalf("Unable to open %s for reading pieces: %s", piecePath, file)
+	}
+	defer file.Close()
+	dec := gob.NewDecoder(file)
+	err = dec.Decode(&globals.HeldKeyPieces)
+	if err != nil {
+		log.Fatal("Failed decoding GOB KeyPiece data:", err)
 	}
 }

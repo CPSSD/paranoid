@@ -162,7 +162,7 @@ func doMount(c *cli.Context, args []string) {
 	go func() {
 		defer ws.Done()
 		socketPath := path.Join(pfsDir, "meta", "intercom.sock")
-		after := time.After(time.Second * 10)
+		after := time.After(time.Second * 20)
 		for {
 			select {
 			case <-after:

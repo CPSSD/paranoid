@@ -103,6 +103,7 @@ func setupLogging() {
 	raft.Log = logger.New("raft", "pfsd", logDir)
 	commands.Log = logger.New("libpfs", "pfsd", logDir)
 	intercom.Log = logger.New("intercom", "pfsd", logDir)
+	globals.Log = logger.New("globals", "pfsd", logDir)
 
 	log.SetOutput(logger.STDERR | logger.LOGFILE)
 	dnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
@@ -113,6 +114,7 @@ func setupLogging() {
 	raft.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	commands.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	intercom.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	globals.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	if *verbose {
 		commands.Log.SetLogLevel(logger.VERBOSE)
@@ -226,6 +228,7 @@ func main() {
 		go UnlockWorker()
 	}
 	intercom.RunServer(path.Join(globals.ParanoidDir, "meta"))
+
 	HandleSignals()
 }
 
