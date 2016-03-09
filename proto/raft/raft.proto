@@ -34,10 +34,10 @@ message StateMachineCommand {
 
     //Used for Write command
     bytes data = 3;  // optional
-    uint64 offset = 4;  // optional
+    int64 offset = 4;  // optional
 
    	//Used for Write and Truncate commands
-    uint64 length = 5;  // optional
+    int64 length = 5;  // optional
 
     //Used for Link and Rename commands
     string old_path = 6;  // optional

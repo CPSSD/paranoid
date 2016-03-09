@@ -22,9 +22,9 @@ func stopAllServices() {
 	}
 	close(globals.Quit) // Sends stop signal to all goroutines
 	if !*noNetwork {
-		close(raftNetworkServer.Quit)
+		close(globals.RaftNetworkServer.Quit)
 		srv.Stop()
-		raftNetworkServer.Wait.Wait()
+		globals.RaftNetworkServer.Wait.Wait()
 	}
 	err := intercom.ShutdownServer()
 	if err != nil {
