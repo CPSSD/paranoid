@@ -97,6 +97,7 @@ func LoadPieces() {
 		// If the file doesn't exist, ignore it, because it could just be the first run.
 		if os.IsNotExist(err) {
 			log.Debugf("KeyPiece GOB file %s does not exist.", piecePath)
+			return
 		}
 		log.Fatalf("Unable to open %s for reading pieces: %s", piecePath, file)
 	}
@@ -104,6 +105,6 @@ func LoadPieces() {
 	dec := gob.NewDecoder(file)
 	err = dec.Decode(&globals.HeldKeyPieces)
 	if err != nil {
-		log.Error("Failed decoding GOB KeyPiece data:", err)
+		log.Fatal("Failed decoding GOB KeyPiece data:", err)
 	}
 }
