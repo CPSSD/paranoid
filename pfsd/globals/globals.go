@@ -1,12 +1,18 @@
 package globals
 
 import (
+	"encoding/gob"
 	"fmt"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/raft"
+	"os"
+	"path"
 	"sync"
 	"time"
 )
+
+var Log *logger.ParanoidLogger
 
 // Node struct
 type Node struct {
@@ -93,10 +99,43 @@ func (ns *nodes) GetAll() []Node {
 // Global key used by this instance of PFSD
 var EncryptionKey *keyman.Key
 
-// TODO(terry): Make SystemLocked and HeldKeyPieces persist on disk between reloads.
-
 // Indicates when the system has been locked and keys have been distributed
 var SystemLocked bool = false
 
-// Map of Nodes to their KeyPiece held by this node
-var HeldKeyPieces = make(map[Node]*keyman.KeyPiece)
+var keyPieceStoreLock sync.Mutex
+
+type KeyPieceStore map[Node]*keyman.KeyPiece
+
+// Returns nil if the piece is not found
+func (ks KeyPieceStore) GetPiece(node Node) *keyman.KeyPiece {
+	keyPieceStoreLock.Lock()
+	defer keyPieceStoreLock.Unlock()
+	piece, ok := ks[node]
+	if !ok {
+		return nil
+	}
+	return piece
+}
+
+func (ks KeyPieceStore) AddPiece(node Node, piece *keyman.KeyPiece) {
+	keyPieceStoreLock.Lock()
+	defer keyPieceStoreLock.Unlock()
+	ks[node] = piece
+	piecePath := path.Join(ParanoidDir, "meta", "pieces")
+	file, err := os.Create(piecePath)
+	if err != nil {
+		Log.Errorf("Unable to open %s for storing pieces: %s", piecePath, file)
+		return
+	}
+	defer file.Close()
+	enc := gob.NewEncoder(file)
+	enc.Encode(ks)
+}
+
+func (ks KeyPieceStore) DeletePiece(node Node) {
+	keyPieceStoreLock.Lock()
+	defer keyPieceStoreLock.Unlock()
+	delete(ks, node)
+}
+
+var HeldKeyPieces = make(KeyPieceStore)

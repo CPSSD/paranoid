@@ -85,33 +85,22 @@ func UnlockWorker() {
 	}
 }
 
-func SavePieces() {
-	if !globals.SystemLocked {
-		return
-	}
-	piecePath := path.Join(globals.ParanoidDir, "meta", "pieces")
-	file, err := os.Create(piecePath)
-	defer file.Close()
-	if err != nil {
-		log.Errorf("Unable to open %s for storing pieces: %s", piecePath, file)
-		return
-	}
-	enc := gob.NewEncoder(file)
-	enc.Encode(globals.HeldKeyPieces)
-}
-
 func LoadPieces() {
+	if _, err := os.Stat(path.Join(globals.ParanoidDir, "meta", "pieces")); os.IsNotExist(err) {
+		log.Info("Filesystem not locked. Will not attepmt to load KeyPieces.")
+		return
+	}
+	globals.SystemLocked = true
 	piecePath := path.Join(globals.ParanoidDir, "meta", "pieces")
 	file, err := os.Open(piecePath)
-	defer file.Close()
 	if err != nil {
 		// If the file doesn't exist, ignore it, because it could just be the first run.
 		if os.IsNotExist(err) {
 			log.Debugf("KeyPiece GOB file %s does not exist.", piecePath)
 		}
-		log.Errorf("Unable to open %s for reading pieces: %s", piecePath, file)
-		return
+		log.Fatalf("Unable to open %s for reading pieces: %s", piecePath, file)
 	}
+	defer file.Close()
 	dec := gob.NewDecoder(file)
 	err = dec.Decode(&globals.HeldKeyPieces)
 	if err != nil {
