@@ -26,6 +26,9 @@ func main() {
 			fmt.Println("FATAL: Error Making Pfs directory")
 			os.Exit(1)
 		}
+	}
+
+	if _, err := os.Stat(path.Join(homeDir, ".pfs", "meta")); os.IsNotExist(err) {
 		err = os.Mkdir(path.Join(homeDir, ".pfs", "meta"), 0700)
 		if err != nil {
 			fmt.Println("FATAL: Error Making pfs meta directory")
