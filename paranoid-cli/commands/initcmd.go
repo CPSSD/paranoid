@@ -33,7 +33,7 @@ func Init(c *cli.Context) {
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println("FATAL: Error Getting Current User")
-		Log.Fatal("Error Getting Current User", err)
+		Log.Fatal("FATAL: Cannot get curent User:", err)
 	}
 	homeDir := usr.HomeDir
 
@@ -94,12 +94,14 @@ func Init(c *cli.Context) {
 		err = os.Link(c.String("cert"), path.Join(directory, "meta", "cert.pem"))
 		if err != nil {
 			cleanupPFS(directory)
-			fmt.Println("Failed to copy cert file:")
+			fmt.Println("Failed to copy cert file")
+			Log.Fatal("Failed to copy cert file", err)
 		}
 		err = os.Link(c.String("key"), path.Join(directory, "meta", "key.pem"))
 		if err != nil {
 			cleanupPFS(directory)
-			fmt.Println("Failed to copy key file:")
+			fmt.Println("Failed to copy key file")
+			Log.Fatal("Failed to copy key file:", err)
 		}
 	} else {
 		Log.Info("Generating certificate.")
@@ -107,8 +109,8 @@ func Init(c *cli.Context) {
 		err = tls.GenCertificate(directory)
 		if err != nil {
 			cleanupPFS(directory)
-			fmt.Println("FATAL: Failed to generate certificate:", err)
-			Log.Fatal("Failed to generate TLS certificate")
+			fmt.Println("FATAL: Failed to generate certificate")
+			Log.Fatal("Failed to generate TLS certificate:", err)
 		}
 	}
 }

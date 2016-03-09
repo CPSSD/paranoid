@@ -1,18 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"github.com/codegangsta/cli"
 	pfscommands "github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/paranoid-cli/commands"
 	"github.com/cpssd/paranoid/paranoid-cli/tls"
 	"os"
+	"os/user"
+	"path"
 )
 
 func main() {
-	pfscommands.Log = logger.New("libpfs", "paranoidcli", os.DevNull)
-	commands.Log = logger.New("command", "paranoidcli", os.DevNull)
-	tls.Log = logger.New("tls", "paranoidcli", os.DevNull)
+
+	usr, err := user.Current()
+	if err != nil {
+		fmt.Println("FATAL: Error Getting Current User")
+	}
+	homeDir := usr.HomeDir
+
+	pfscommands.Log = logger.New("libpfs", "paranoidcli", path.Join(homeDir, ".pfs", "log"))
+	commands.Log = logger.New("command", "paranoidcli", path.Join(homeDir, ".pfs", "log"))
+	tls.Log = logger.New("tls", "paranoidcli", path.Join(homeDir, ".pfs", "log"))
 
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"

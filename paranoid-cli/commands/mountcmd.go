@@ -42,14 +42,14 @@ func doMount(c *cli.Context, args []string) {
 		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
 		if err != nil {
 			fmt.Println("FATAL: Unable to reach server", err)
-			os.Exit(1)
+			Log.Fatal("Unable to reach server")
 		}
 	}
 
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println("FATAL: Error Getting Current User")
-		Log.Fatal("Error Getting Current User:", err)
+		Log.Fatal("FATAL: Cannot get curent User::", err)
 	}
 	pfsDir := path.Join(usr.HomeDir, ".pfs", pfsName)
 
@@ -77,8 +77,8 @@ func doMount(c *cli.Context, args []string) {
 	if pathExists(path.Join(pfsDir, "meta/", "pfsd.pid")) {
 		err = os.Remove(path.Join(pfsDir, "meta/", "pfsd.pid"))
 		if err != nil {
-			fmt.Println("FATAL: Could not remove old pfsd.pid")
-			os.Exit(1)
+			fmt.Println("FATAL: unable to remove daemon PID file")
+			Log.Fatal("Could not remove old pfsd.pid:", err)
 		}
 	}
 
@@ -123,7 +123,7 @@ func doMount(c *cli.Context, args []string) {
 			err = cmd.Start()
 			if err != nil {
 				fmt.Println("FATAL: Error running pfsd command :", err)
-				os.Exit(1)
+				Log.Fatal("Error running pfsd command:", err)
 			}
 		} else {
 			// Start in unsecure mode
@@ -151,8 +151,8 @@ func doMount(c *cli.Context, args []string) {
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 			err = cmd.Start()
 			if err != nil {
-				fmt.Println("FATAL: Error running pfsd :", err)
-				os.Exit(1)
+				fmt.Println("FATAL: Error running pfsd")
+				Log.Fatal("Error Running pfsd:", err)
 			}
 		}
 	} else {
@@ -166,8 +166,8 @@ func doMount(c *cli.Context, args []string) {
 		cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 		err = cmd.Start()
 		if err != nil {
-			fmt.Println("FATAL: Error running pfsd :", err)
-			os.Exit(1)
+			fmt.Println("FATAL: Error running pfsd")
+			Log.Fatal("Error running pfsd:", err)
 		}
 	}
 	// Now that we've successfully told PFSD to start, ping it until we can confirm it is up

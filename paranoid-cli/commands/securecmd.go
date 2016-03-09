@@ -61,7 +61,7 @@ func Secure(c *cli.Context) {
 			Log.Fatal("Failed to copy key file")
 		}
 	} else {
-		fmt.Println("FATAL: Generating TLS certificate. Please follow the given instructions.")
+		fmt.Println("Generating TLS certificate. Please follow the given instructions.")
 		err = tls.GenCertificate(pfsDir)
 		if err != nil {
 			fmt.Println("FATAL: Failed to generate certificate:", err)
