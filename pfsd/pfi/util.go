@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	LogOutput       bool
 	SendOverNetwork bool
 	Log             *logger.ParanoidLogger
 )

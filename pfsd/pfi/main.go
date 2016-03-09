@@ -9,21 +9,20 @@ import (
 	"github.com/hanwen/go-fuse/fuse/pathfs"
 )
 
-func StartPfi(logOutput bool) {
+func StartPfi(logVerbose bool) {
 	defer globals.Wait.Done()
 	// Create a logger
 	var err error
 	Log = logger.New("pfi", "pfsd", path.Join(globals.ParanoidDir, "meta", "logs"))
 	Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
-	LogOutput = logOutput
 	if globals.RaftNetworkServer == nil {
 		SendOverNetwork = false
 	} else {
 		SendOverNetwork = true
 	}
 
-	if logOutput {
+	if logVerbose {
 		Log.SetLogLevel(logger.VERBOSE)
 	}
 
