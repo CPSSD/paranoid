@@ -32,7 +32,7 @@ func New(logDirectory string) *RaftLog {
 		} else if os.IsPermission(err) {
 			rl.pLog.Fatal("Raft logger does not have permissions for:", rl.logDir)
 		} else {
-			rl.pLog.Fatal(err)
+			rl.pLog.Fatal("Unable to read log directory:", err)
 		}
 	}
 	rl.currentIndex = uint64(len(fileDescriptors) + 1)
