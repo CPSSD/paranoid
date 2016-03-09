@@ -213,8 +213,16 @@ func (s *RaftNetworkServer) RequestTruncateCommand(filePath string, length int64
 	return stateMachineResult.Code, stateMachineResult.Err
 }
 
-func (s *RaftNetworkServer) RequestUtimesCommand(filePath string, accessSeconds, accessNanoSeconds, modifySeconds,
-	modifyNanoSeconds int64) (returnCode int, returnError error) {
+func splitTime(t *time.Time) (int64, int64) {
+	if t != nil {
+		return int64(t.Second()), int64(t.Nanosecond())
+	}
+	return 0, 0
+}
+
+func (s *RaftNetworkServer) RequestUtimesCommand(filePath string, atime, mtime *time.Time) (returnCode int, returnError error) {
+	accessSeconds, accessNanoSeconds := splitTime(atime)
+	modifySeconds, modifyNanoSeconds := splitTime(mtime)
 
 	entry := &pb.Entry{
 		Type: pb.Entry_StateMachineCommand,

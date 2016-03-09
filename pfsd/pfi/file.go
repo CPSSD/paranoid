@@ -95,22 +95,13 @@ func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	return GetFuseReturnCode(code)
 }
 
-func splitTime(t *time.Time) (int64, int64) {
-	if t != nil {
-		return int64(t.Second()), int64(t.Nanosecond())
-	}
-	return 0, 0
-}
-
 //Utimens updates the access and mofication time of the file.
 func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 	Log.Info("Utimens called on file : " + f.Name)
 	var code int
 	var err error
 	if SendOverNetwork {
-		atimeSeconds, atimeNanoseconds := splitTime(atime)
-		mtimeSeconds, mtimeNanoseconds := splitTime(mtime)
-		code, err = globals.RaftNetworkServer.RequestUtimesCommand(f.Name, atimeSeconds, atimeNanoseconds, mtimeSeconds, mtimeNanoseconds)
+		code, err = globals.RaftNetworkServer.RequestUtimesCommand(f.Name, atime, mtime)
 	} else {
 		code, err = commands.UtimesCommand(globals.ParanoidDir, f.Name, atime, mtime)
 	}
