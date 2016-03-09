@@ -22,6 +22,9 @@ func stopAllServices() {
 	}
 	close(globals.Quit) // Sends stop signal to all goroutines
 
+	// Save all KeyPieces to disk, to ensure we haven't missed any so far.
+	globals.HeldKeyPieces.SaveToDisk()
+
 	if !*noNetwork {
 		close(globals.RaftNetworkServer.Quit)
 		srv.Stop()

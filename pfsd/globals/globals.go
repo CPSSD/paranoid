@@ -121,6 +121,17 @@ func (ks KeyPieceStore) AddPiece(node Node, piece *keyman.KeyPiece) {
 	keyPieceStoreLock.Lock()
 	defer keyPieceStoreLock.Unlock()
 	ks[node] = piece
+	ks.SaveToDisk()
+}
+
+func (ks KeyPieceStore) DeletePiece(node Node) {
+	keyPieceStoreLock.Lock()
+	defer keyPieceStoreLock.Unlock()
+	delete(ks, node)
+	ks.SaveToDisk()
+}
+
+func (ks KeyPieceStore) SaveToDisk() {
 	piecePath := path.Join(ParanoidDir, "meta", "pieces")
 	file, err := os.Create(piecePath)
 	if err != nil {
@@ -129,13 +140,10 @@ func (ks KeyPieceStore) AddPiece(node Node, piece *keyman.KeyPiece) {
 	}
 	defer file.Close()
 	enc := gob.NewEncoder(file)
-	enc.Encode(ks)
-}
-
-func (ks KeyPieceStore) DeletePiece(node Node) {
-	keyPieceStoreLock.Lock()
-	defer keyPieceStoreLock.Unlock()
-	delete(ks, node)
+	err = enc.Encode(ks)
+	if err != nil {
+		Log.Error("Failed encoding KeyPieceStore to GOB:", err)
+	}
 }
 
 var HeldKeyPieces = make(KeyPieceStore)
