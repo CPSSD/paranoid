@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 )
 
 // Status displays statistics for the specified PFSD instances.
@@ -48,20 +49,21 @@ func getStatus(pfsDir string) {
 	var resp intercom.StatusResponse
 	client, err := rpc.Dial("unix", socketPath)
 	if err != nil {
-		fmt.Printf("Could not connect to PFSD. Is it running? See %s for more information.\n", logPath)
-		Log.Warn("Could not connect to PFSD at", socketPath)
-		os.Exit(1)
+		fmt.Printf("Could not connect to PFSD %s. Is it running? See %s for more information.\n", filepath.Base(pfsDir), logPath)
+		Log.Warn("Could not connect to PFSD %s at %s: %s", filepath.Base(pfsDir), socketPath, err)
+		return
 	}
 	err = client.Call("IntercomServer.Status", new(intercom.EmptyMessage), &resp)
 	if err != nil {
-		fmt.Printf("Error getting status for %s. See %s for more information.\n", pfsDir, logPath)
-		Log.Warn("PFSD at %s returned error: %s", pfsDir, err)
-		os.Exit(1)
+		fmt.Printf("Error getting status for %s. See %s for more information.\n", filepath.Base(pfsDir), logPath)
+		Log.Warn("PFSD at %s returned error: %s", filepath.Base(pfsDir), err)
+		return
 	}
-	printStatusInfo(resp)
+	printStatusInfo(filepath.Base(pfsDir), resp)
 }
 
-func printStatusInfo(info intercom.StatusResponse) {
+func printStatusInfo(pfsName string, info intercom.StatusResponse) {
+	fmt.Printf("\nFilesystem Name:\t%s\n", pfsName)
 	fmt.Printf("Uptime:\t\t\t%s\n", info.Uptime.String())
 	fmt.Printf("Raft Status:\t\t%s\n", info.Status)
 	fmt.Printf("TLS Enabled:\t\t%t\n", info.TLSActive)

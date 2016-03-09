@@ -227,6 +227,7 @@ func main() {
 		go UnlockWorker()
 	}
 	intercom.RunServer(path.Join(globals.ParanoidDir, "meta"))
+
 	HandleSignals()
 }
 
