@@ -44,7 +44,7 @@ func Secure(c *cli.Context) {
 		if pathExists(certPath) || pathExists(keyPath) {
 			fmt.Println("FATAL: Paranoid filesystem already secured.",
 				"Run with --force to overwrite existing security files.")
-			Log.Fatal("FATAL: Paranoid filesystem already secured.",
+			Log.Fatal("Paranoid filesystem already secured.",
 				"Run with --force to overwrite existing security files.")
 		}
 	}

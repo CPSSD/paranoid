@@ -20,7 +20,7 @@ func Delete(c *cli.Context) {
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println("FATAL: Error Getting Current User")
-		Log.Fatal("FATAL: Cannot get curent User:", err)
+		Log.Fatal("Cannot get curent User:", err)
 	}
 
 	pfspath, err := filepath.Abs(path.Join(usr.HomeDir, ".pfs", args[0]))

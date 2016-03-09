@@ -17,11 +17,20 @@ func main() {
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println("FATAL: Error Getting Current User")
+		os.Exit(1)
 	}
 	homeDir := usr.HomeDir
 	if _, err := os.Stat(path.Join(homeDir, ".pfs")); os.IsNotExist(err) {
 		err = os.Mkdir(path.Join(homeDir, ".pfs"), 0700)
+		if err != nil {
+			fmt.Println("FATAL: Error Making Pfs directory")
+			os.Exit(1)
+		}
 		err = os.Mkdir(path.Join(homeDir, ".pfs", "meta"), 0700)
+		if err != nil {
+			fmt.Println("FATAL: Error Making pfs meta directory")
+			os.Exit(1)
+		}
 	}
 
 	pfscommands.Log = logger.New("libpfs", "paranoidcli", path.Join(homeDir, ".pfs", "meta"))
