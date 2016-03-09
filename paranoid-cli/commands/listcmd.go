@@ -12,13 +12,13 @@ import (
 func List(c *cli.Context) {
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println("Error Getting Current User")
+		fmt.Println("FATAL: Error Getting Current User")
 		Log.Fatal("Error Getting Current User", err)
 	}
 
 	files, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs"))
 	if err != nil {
-		fmt.Println("Could not read the list of paranoid file systems.")
+		fmt.Println("FATAL: Could not read the list of paranoid file systems.")
 		Log.Fatal("Could not get list of paranoid file systems. Error :", err)
 	}
 	for _, file := range files {

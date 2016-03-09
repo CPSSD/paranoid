@@ -32,7 +32,7 @@ func Init(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println("Error Getting Current User")
+		fmt.Println("FATAL: Error Getting Current User")
 		Log.Fatal("Error Getting Current User", err)
 	}
 	homeDir := usr.HomeDir
@@ -40,35 +40,35 @@ func Init(c *cli.Context) {
 	if _, err := os.Stat(path.Join(homeDir, ".pfs")); os.IsNotExist(err) {
 		err = os.Mkdir(path.Join(homeDir, ".pfs"), 0700)
 		if err != nil {
-			fmt.Println("Error making pfs directory")
+			fmt.Println("FATAL: Error making pfs directory")
 			Log.Fatal("Error making pfs directory")
 		}
 	}
 
 	directory, err := filepath.Abs(path.Join(homeDir, ".pfs", pfsname))
 	if err != nil {
-		fmt.Println("Given pfs-name is in incorrect format.")
+		fmt.Println("FATAL: Given pfs-name is in incorrect format.")
 		Log.Fatal("Given pfs-name is in incorrect format. Error : ", err)
 	}
 	if path.Base(directory) != args[0] {
-		fmt.Println("Given pfs-name is in incorrect format.")
+		fmt.Println("FATAL: Given pfs-name is in incorrect format.")
 		Log.Fatal("Given pfs-name is in incorrect format.")
 	}
 
 	if _, err := os.Stat(directory); !os.IsNotExist(err) {
-		fmt.Println("A paranoid file system with that name already exists")
+		fmt.Println("FATAL: A paranoid file system with that name already exists")
 		Log.Fatal("A paranoid file system with that name already exists")
 	}
 	err = os.Mkdir(directory, 0700)
 	if err != nil {
-		fmt.Println("Unable to make pfs Directory")
+		fmt.Println("FATAL: Unable to make pfs Directory")
 		Log.Fatal("Error making pfs directory : ", err)
 	}
 
 	returncode, err := commands.InitCommand(directory)
 	if returncode != returncodes.OK {
 		cleanupPFS(directory)
-		fmt.Println("Error running pfs init")
+		fmt.Println("FATAL: Error running pfs init")
 		Log.Fatal("Error running pfs init : ", err)
 	}
 
@@ -79,7 +79,7 @@ func Init(c *cli.Context) {
 	}
 	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool), 0600)
 	if err != nil {
-		fmt.Println("Cannot save pool information:")
+		fmt.Println("FATAL: Cannot save pool information:")
 		Log.Fatal("cannot save pool information:", err)
 	}
 	Log.Infof("Using pool name %s", pool)
@@ -107,7 +107,7 @@ func Init(c *cli.Context) {
 		err = tls.GenCertificate(directory)
 		if err != nil {
 			cleanupPFS(directory)
-			fmt.Println("Failed to generate certificate:", err)
+			fmt.Println("FATAL: Failed to generate certificate:", err)
 			Log.Fatal("Failed to generate TLS certificate")
 		}
 	}

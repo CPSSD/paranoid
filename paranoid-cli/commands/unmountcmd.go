@@ -21,7 +21,7 @@ func Unmount(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println("Error Getting Current User")
+		fmt.Println("FATAL: Error Getting Current User")
 		Log.Fatal("Error Getting Current User", err)
 	}
 
@@ -29,17 +29,17 @@ func Unmount(c *cli.Context) {
 	if _, err := os.Stat(pidPath); err == nil {
 		pidByte, err := ioutil.ReadFile(pidPath)
 		if err != nil {
-			fmt.Println("Can't read pid file")
+			fmt.Println("FATAL: Can't read pid file")
 			Log.Fatal("Can't read pid file", err)
 		}
 		pid, err := strconv.Atoi(string(pidByte))
 		err = syscall.Kill(pid, syscall.SIGTERM)
 		if err != nil {
-			fmt.Println("Can not kill PFSD")
+			fmt.Println("FATAL: Can not kill PFSD")
 			Log.Fatal("Can not kill PFSD,", err)
 		}
 	} else {
-		fmt.Println("Could not read pid file")
+		fmt.Println("FATAL: Could not read pid file")
 		Log.Fatal("Could not read pid file:", err)
 	}
 }
