@@ -177,9 +177,13 @@ func doMount(c *cli.Context, args []string) {
 		defer ws.Done()
 		socketPath := path.Join(pfsDir, "meta", "intercom.sock")
 		after := time.After(time.Second * 20)
+		var lastConnectionError error
 		for {
 			select {
 			case <-after:
+				if lastConnectionError != nil {
+					Log.Error(lastConnectionError)
+				}
 				fmt.Printf("PFSD failed to start: received no response from PFSD. See %s for more information.\n",
 					path.Join(pfsDir, "meta", "logs", "pfsd.log"))
 				return
@@ -188,14 +192,14 @@ func doMount(c *cli.Context, args []string) {
 				client, err := rpc.Dial("unix", socketPath)
 				if err != nil {
 					time.Sleep(time.Second)
-					Log.Error("Could not dial pfsd unix socket:", err)
+					lastConnectionError = fmt.Errorf("Could not dial pfsd unix socket:", err)
 					continue
 				}
 				err = client.Call("IntercomServer.ConfirmUp", new(intercom.EmptyMessage), &resp)
 				if err == nil {
 					return
 				}
-				Log.Error("Could not call pfsd confirm up over unix socket:", err)
+				lastConnectionError = fmt.Errorf("Could not call pfsd confirm up over unix socket:", err)
 				time.Sleep(time.Second)
 			}
 		}
