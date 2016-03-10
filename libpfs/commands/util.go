@@ -156,7 +156,7 @@ func generateNewInode() (inodeBytes []byte, err error) {
 	return []byte(strings.TrimSpace(string(inodeBytes))), nil
 }
 
-func getFileInode(filePath string) (inodeBytes []byte, errorCode int, err error) {
+func getFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Code, err error) {
 	f, err := os.Lstat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -179,7 +179,7 @@ func getFileInode(filePath string) (inodeBytes []byte, errorCode int, err error)
 	return bytes, returncodes.OK, nil
 }
 
-func deleteFile(filePath string) (returncode int, returnerror error) {
+func deleteFile(filePath string) (returncode returncodes.Code, returnerror error) {
 	err := os.Remove(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {

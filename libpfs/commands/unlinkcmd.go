@@ -12,7 +12,7 @@ import (
 )
 
 // UnlinkCommand removes a filename link from an inode.
-func UnlinkCommand(paranoidDirectory, filePath string) (returnCode int, returnError error) {
+func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("unlink command called")
 	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 )
 
 // SymlinkCommand creates a symbolic link
-func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode int, returnError error) {
+func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("symlink command called")
 	targetParanoidPath := getParanoidPath(paranoidDirectory, targetFilePath)
 

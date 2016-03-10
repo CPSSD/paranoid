@@ -90,7 +90,7 @@ func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Cont
 //Create is called when a new file is to be created.
 func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, context *fuse.Context) (nodefs.File, fuse.Status) {
 	Log.Info("Create called on : " + name)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestCreatCommand(name, mode)
@@ -132,7 +132,7 @@ func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Con
 //Rename is called when renaming a file
 func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fuse.Context) fuse.Status {
 	Log.Info("Rename called on : " + oldName + " to be renamed to " + newName)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestRenameCommand(oldName, newName)
@@ -153,7 +153,7 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 //Link creates a hard link from newName to oldName
 func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse.Context) fuse.Status {
 	Log.Info("Link called")
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestLinkCommand(oldName, newName)
@@ -174,7 +174,7 @@ func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse
 //Symlink creates a symbolic link from newName to oldName
 func (fs *ParanoidFileSystem) Symlink(oldName string, newName string, context *fuse.Context) fuse.Status {
 	Log.Info("Symbolic link called from", oldName, "to", newName)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestSymlinkCommand(oldName, newName)
@@ -208,7 +208,7 @@ func (fs *ParanoidFileSystem) Readlink(name string, context *fuse.Context) (stri
 //Unlink is called when deleting a file
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) fuse.Status {
 	Log.Info("Unlink callde on : " + name)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestUnlinkCommand(name)
@@ -229,7 +229,7 @@ func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) fuse.St
 //Mkdir is called when creating a directory
 func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Context) fuse.Status {
 	Log.Info("Mkdir called on : " + name)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestMkdirCommand(name, mode)
@@ -250,7 +250,7 @@ func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Cont
 //Rmdir is called when deleting a directory
 func (fs *ParanoidFileSystem) Rmdir(name string, context *fuse.Context) fuse.Status {
 	Log.Info("Rmdir called on : " + name)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestRmdirCommand(name)

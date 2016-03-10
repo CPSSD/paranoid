@@ -9,7 +9,7 @@ import (
 )
 
 //MountCommand is used to notify a pfs paranoidDirectory it has been mounted.
-func MountCommand(paranoidDirectory, ip, port, mountPoint string) (returnCode int, returnError error) {
+func MountCommand(paranoidDirectory, ip, port, mountPoint string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("mount command called")
 	Log.Verbose("mount : given paranoidDirectory = " + paranoidDirectory)
 

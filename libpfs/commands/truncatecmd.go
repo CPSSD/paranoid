@@ -11,7 +11,7 @@ import (
 )
 
 //TruncateCommand reduces the file given to the new length
-func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCode int, returnError error) {
+func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCode returncodes.Code, returnError error) {
 	Log.Info("truncate command called")
 	Log.Verbose("truncate : given paranoidDirectory = " + paranoidDirectory)
 

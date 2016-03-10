@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"github.com/cpssd/paranoid/pfsd/globals"
+	// "github.com/cpssd/paranoid/pfsd/globals"
 	"io"
 	"os"
 	"path"
@@ -15,14 +15,12 @@ import (
 
 // ReadCommand reads data from a file
 // Offset and length can be given as -1 to note that the defaults should be used.
-func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode int, returnError error, fileContents []byte) {
-	libpfs.CipherBlock, err = libpfs.GenerateAESCipherBlock(globals.EncryptionKey.GetBytes())
-	if err != nil {
-		Log.Fatalf("failed to initialize cipher block: %s", err)
-	}
-	if !libpfs.CheckIsCipher() {
-		Log.Fatal("cipherBlock did not initialize correctly")
-	}
+func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode returncodes.Code, returnError error, fileContents []byte) {
+
+	// TODO: REMOVE THIS
+	encryptionKey := []byte("86F7E437FAA5A7FCE15D1DDCB9EAEAEA")
+	libpfs.CipherBlock, _ = libpfs.GenerateAESCipherBlock(encryptionKey)
+	// ENDTODO
 
 	Log.Info("read command called")
 	Log.Verbose("read : given paranoidDirectory = " + paranoidDirectory)
@@ -141,8 +139,10 @@ func read(file *os.File, offset int64, length int64) (decBuf *bytes.Buffer, err 
 
 	// Decrypt the file
 	dec := libpfs.Decrypt(buf, lastBlockSize)
-	dec.Next(int(offset - blockOffset))
-	dec.Truncate(int(length))
+	fmt.Printf("dec: %v (%s)\n", dec.Bytes(), string(dec.Bytes()))
+	fmt.Println("next:", offset-blockOffset+1)
+	// dec.Next(int(offset - blockOffset + 1))
+	// dec.Truncate(int(length))
 
-	return decBuf, nil
+	return &dec, nil
 }

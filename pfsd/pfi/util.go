@@ -12,7 +12,7 @@ var (
 	Log             *logger.ParanoidLogger
 )
 
-func GetFuseReturnCode(retcode int) fuse.Status {
+func GetFuseReturnCode(retcode returncodes.Code) fuse.Status {
 	switch retcode {
 	case returncodes.ENOENT:
 		return fuse.ENOENT

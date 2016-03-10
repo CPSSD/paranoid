@@ -24,7 +24,7 @@ func makeDir(parentDir, newDir string) (string, error) {
 func checkEmpty(directory string) error {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
-		return fmt.Errorf("error reading directory", err)
+		return fmt.Errorf("error reading directory: %s", err)
 	}
 	if len(files) > 0 {
 		return errors.New("init : directory must be empty")
@@ -34,7 +34,7 @@ func checkEmpty(directory string) error {
 
 //InitCommand creates the pvd directory sturucture
 //It also gets a UUID and stores it in the meta directory.
-func InitCommand(directory string) (returnCode int, returnError error) {
+func InitCommand(directory string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("init command called")
 	err := checkEmpty(directory)
 	if err != nil {
@@ -74,7 +74,7 @@ func InitCommand(directory string) (returnCode int, returnError error) {
 
 	uuid, err := ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading uuid:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading uuid: %s", err)
 	}
 
 	uuidString := strings.TrimSpace(string(uuid))
@@ -82,12 +82,12 @@ func InitCommand(directory string) (returnCode int, returnError error) {
 
 	err = ioutil.WriteFile(path.Join(metaDir, "uuid"), []byte(uuidString), 0600)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error writing uuid file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing uuid file: %s", err)
 	}
 
 	_, err = os.Create(path.Join(metaDir, "lock"))
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error creating lock file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating lock file: %s", err)
 	}
 	return returncodes.OK, nil
 }

@@ -14,7 +14,7 @@ import (
 const PERM_MASK = 0777
 
 //ChmodCommand is used to change the permissions of a file.
-func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode int, returnError error) {
+func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode returncodes.Code, returnError error) {
 	Log.Info("chmod command called")
 	Log.Verbose("chmod : given paranoidDirectory = " + paranoidDirectory)
 

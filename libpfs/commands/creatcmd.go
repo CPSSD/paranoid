@@ -11,7 +11,7 @@ import (
 )
 
 //CreatCommand creates a new file with the name filePath in the pfs paranoidDirectory
-func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode int, returnError error) {
+func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode returncodes.Code, returnError error) {
 	Log.Info("creat command called")
 	Log.Verbose("creat : paranoidDirectory = " + paranoidDirectory)
 
