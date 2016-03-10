@@ -59,17 +59,17 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)
 	}
 
 	err = ioutil.WriteFile(path.Join(paranoidDirectory, "inodes", uuidstring), jsonData, 0600)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file: %s", err)
 	}
 
 	contentsFile, err := os.Create(path.Join(paranoidDirectory, "contents", uuidstring))
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file: %s", err)
 	}
 	defer contentsFile.Close()
 
