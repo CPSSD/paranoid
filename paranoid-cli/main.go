@@ -126,6 +126,12 @@ func main() {
 			Action:    commands.Status,
 		},
 		{
+			Name:      "list-nodes",
+			Usage:     "list the nodes connected to local PFSD instances",
+			ArgsUsage: "[pfs-name ...]",
+			Action:    commands.ListNodes,
+		},
+		{
 			Name:      "restart",
 			Usage:     "restarts the networking services",
 			ArgsUsage: "pfs-name",

@@ -24,6 +24,10 @@ type StatusResponse struct {
 	Port      int
 }
 
+type ListNodesResponse struct {
+	Nodes []raft.Node
+}
+
 // Literally just a method for paranoid-cli to ping PFSD
 func (s *IntercomServer) ConfirmUp(req *EmptyMessage, resp *EmptyMessage) error {
 	return nil
@@ -54,6 +58,11 @@ func (s *IntercomServer) Status(req *EmptyMessage, resp *StatusResponse) error {
 	}
 	resp.TLSActive = globals.TLSEnabled
 	resp.Port = thisport
+	return nil
+}
+
+func (s *IntercomServer) ListNodes(req *EmptyMessage, resp *ListNodesResponse) error {
+	resp.Nodes = globals.RaftNetworkServer.State.Configuration.GetPeersList()
 	return nil
 }
 
