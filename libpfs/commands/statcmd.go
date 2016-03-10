@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"os"
 	"path"
@@ -10,7 +10,8 @@ import (
 	"time"
 )
 
-type statInfo struct {
+// StatInfo contains the stat information of the file
+type StatInfo struct {
 	Length int64
 	Ctime  time.Time
 	Mtime  time.Time
@@ -25,7 +26,7 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnErro
 
 	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
-		return returncodes.EUNEXPECTED, err, statInfo{}
+		return returncodes.EUNEXPECTED, err, StatInfo{}
 	}
 
 	defer func() {
@@ -33,23 +34,23 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnErro
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
-			info = statInfo{}
+			info = StatInfo{}
 		}
 	}()
 
 	namepath := getParanoidPath(paranoidDirectory, filePath)
 	namePathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, err, statInfo{}
+		return returncodes.EUNEXPECTED, err, StatInfo{}
 	}
 
 	if namePathType == typeENOENT {
-		return returncodes.ENOENT, errors.New(filePath + " does not exist"), statInfo{}
+		return returncodes.ENOENT, fmt.Errorf("%s does not exist", filePath), StatInfo{}
 	}
 
 	inodeBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
-		return code, err, statInfo{}
+		return code, err, StatInfo{}
 	}
 
 	inodeName := string(inodeBytes)
@@ -57,7 +58,7 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnErro
 
 	fi, err := os.Lstat(contentsFile)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error Lstating file:", err), statInfo{}
+		return returncodes.EUNEXPECTED, fmt.Errorf("error Lstating file: %s", err), StatInfo{}
 	}
 
 	stat := fi.Sys().(*syscall.Stat_t)
@@ -68,13 +69,23 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnErro
 		return returncodes.EUNEXPECTED, fmt.Errorf("error getting filemode:", err), statInfo{}
 	}
 
-	statData := &statInfo{
-		Length: fi.Size(),
+	// Get the size of the last last block
+	file, err := os.OpenFile(contentsFile, 0700, mode)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening file: %s", err), StatInfo{}
+	}
+	defer file.Close()
+	finalBlockSize, err := libpfs.LastBlockSize(file)
+
+	// Return the file with correction for the size
+	statData := StatInfo{
+		Length: fi.Size() - int64(libpfs.CipherBlock.BlockSize()-finalBlockSize),
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
 		Atime:  atime,
-		Mode:   mode}
+		Mode:   mode,
+	}
 
-	Log.Verbose("stat : returning", statData)
-	return returncodes.OK, nil, *statData
+	Log.Verbose("stat: returning", statData)
+	return returncodes.OK, nil, statData
 }
