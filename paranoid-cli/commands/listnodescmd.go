@@ -18,18 +18,16 @@ func ListNodes(c *cli.Context) {
 	args := c.Args()
 	usr, err := user.Current()
 	if err != nil {
-		Log.Error("Could not get user information:", err)
-		fmt.Println("Unable to get information on current user:", err)
-		os.Exit(1)
+		fmt.Println("FATAL: Unable to get information on current user:", err)
+		Log.Fatal("Could not get user information:", err)
 	}
 
 	// By default, list the nodes connected to each running instance.
 	if !args.Present() {
 		dirs, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs"))
 		if err != nil {
-			Log.Error("Could not get list of paranoid file systems:", err)
-			fmt.Printf("Unable to get list of paranoid file systems. Does %s exist?", path.Join(usr.HomeDir, ".pfs"))
-			os.Exit(1)
+			fmt.Printf("FATAL: Unable to get list of paranoid file systems. Does %s exist?", path.Join(usr.HomeDir, ".pfs"))
+			Log.Fatal("Could not get list of paranoid file systems:", err)
 		}
 		for _, dir := range dirs {
 			dirPath := path.Join(usr.HomeDir, ".pfs", dir.Name())
@@ -56,8 +54,12 @@ func getNodes(pfsDir string) {
 	}
 	err = client.Call("IntercomServer.ListNodes", new(intercom.EmptyMessage), &resp)
 	if err != nil {
-		fmt.Printf("Error listing nodes connected to %s. See %s for more information.\n", filepath.Base(pfsDir), logPath)
-		Log.Warn("PFSD at %s returned error: %s", filepath.Base(pfsDir), err)
+		if err.Error() == "Networking Disabled" {
+			fmt.Println("\n%s does not have networking enabled.")
+		} else {
+			fmt.Printf("Error listing nodes connected to %s. See %s for more information.\n", filepath.Base(pfsDir), logPath)
+			Log.Warn("PFSD at %s returned error: %s", filepath.Base(pfsDir), err)
+		}
 		return
 	}
 	printAllNodes(filepath.Base(pfsDir), resp)

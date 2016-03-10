@@ -62,6 +62,9 @@ func (s *IntercomServer) Status(req *EmptyMessage, resp *StatusResponse) error {
 }
 
 func (s *IntercomServer) ListNodes(req *EmptyMessage, resp *ListNodesResponse) error {
+	if globals.RaftNetworkServer == nil {
+		return fmt.Errorf("Networking Disabled")
+	}
 	resp.Nodes = globals.RaftNetworkServer.State.Configuration.GetPeersList()
 	return nil
 }
