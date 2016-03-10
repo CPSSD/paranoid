@@ -35,7 +35,6 @@ func checkEmpty(directory string) error {
 //InitCommand creates the pvd directory sturucture
 //It also gets a UUID and stores it in the meta directory.
 func InitCommand(directory string) (returnCode int, returnError error) {
-	Log.Info("init command called")
 	err := checkEmpty(directory)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err

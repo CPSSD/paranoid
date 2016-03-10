@@ -11,7 +11,6 @@ import (
 
 //TruncateCommand reduces the file given to the new length
 func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCode int, returnError error) {
-	Log.Info("truncate command given")
 	Log.Verbose("truncate : given paranoidDirectory = " + paranoidDirectory)
 
 	err := getFileSystemLock(paranoidDirectory, sharedLock)

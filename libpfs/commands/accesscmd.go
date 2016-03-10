@@ -9,7 +9,6 @@ import (
 
 //AccessCommand is used by fuse to check if it has access to a given file.
 func AccessCommand(paranoidDirectory, filePath string, mode uint32) (returnCode int, returnError error) {
-	Log.Info("access command given")
 	Log.Verbose("access : given paranoidDirectory = " + paranoidDirectory)
 
 	err := getFileSystemLock(paranoidDirectory, sharedLock)
