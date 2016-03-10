@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"os"
 	"path"
@@ -71,16 +72,61 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 
 	Log.Verbose("truncate : truncating " + filePath)
 
-	contentsFile, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeName), os.O_WRONLY, 0777)
+	contentsFile, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeName), os.O_RDWR, 0777)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file: %s", err)
 	}
 	defer contentsFile.Close()
 
-	err = contentsFile.Truncate(length)
+	err = truncate(contentsFile, length)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("unable to trucate: %s", err)
 	}
 
 	return returncodes.OK, nil
+}
+
+func truncate(file *os.File, len int64) (err error) {
+	blockSize := int64(libpfs.CipherBlock.BlockSize())
+
+	// Create a temp buffer to store the last block
+	finalBlock := make([]byte, blockSize)
+
+	// offset of the last block
+	blockOffset := len - len%blockSize + 1
+
+	_, err = file.ReadAt(finalBlock, blockOffset)
+	if err != nil {
+		return fmt.Errorf("cannot read last block: %s", err)
+	}
+
+	// truncate to the size blockOffset
+	err = file.Truncate(blockOffset)
+	if err != nil {
+		return fmt.Errorf("unable to truncate at block offset: %s", err)
+	}
+
+	// Get the size of the last block
+	l, err := libpfs.LastBlockSize(file)
+	if err != nil {
+		return fmt.Errorf("unable to get the last block size: %s", err)
+	}
+
+	// Decode the block and cut it to size
+	dec := libpfs.Decrypt(finalBlock, l)
+	finalBlock = dec.Bytes()[:len%blockSize]
+
+	// Encrypt the last file again and save at the end
+	enc, l := libpfs.Encrypt(finalBlock)
+
+	_, err = file.WriteAt([]byte{byte(l)}, 0)
+	if err != nil {
+		return fmt.Errorf("nable to write the last block size: %s", err)
+	}
+	_, err = file.WriteAt(enc.Bytes(), blockOffset)
+	if err != nil {
+		return fmt.Errorf("unable to write re-encrypted data: %s", err)
+	}
+
+	return nil
 }
