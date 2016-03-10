@@ -20,7 +20,6 @@ func cleanupPFS(pfsDir string) {
 	}
 }
 
-//Init inits a new paranoid file system
 func Init(c *cli.Context) {
 	args := c.Args()
 	if len(args) < 1 {
@@ -28,8 +27,12 @@ func Init(c *cli.Context) {
 		os.Exit(0)
 	}
 
-	pfsname := args[0]
+	doInit(args[0], c.String("pool"), c.String("cert"),
+		c.String("key"), c.Bool("unsecure"))
+}
 
+//doInit inits a new paranoid file system
+func doInit(pfsname, pool, cert, key string, unsecure bool) {
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println("FATAL: Error Getting Current User")
@@ -50,7 +53,7 @@ func Init(c *cli.Context) {
 		fmt.Println("FATAL: Given pfs-name is in incorrect format.")
 		Log.Fatal("Given pfs-name is in incorrect format. Error : ", err)
 	}
-	if path.Base(directory) != args[0] {
+	if path.Base(directory) != pfsname {
 		fmt.Println("FATAL: Given pfs-name is in incorrect format.")
 		Log.Fatal("Given pfs-name is in incorrect format.")
 	}
@@ -73,8 +76,7 @@ func Init(c *cli.Context) {
 	}
 
 	// Either create a new pool name or use the one for a flag and save to meta/pool
-	var pool string
-	if pool = c.String("pool"); len(pool) == 0 {
+	if len(pool) == 0 {
 		pool = getRandomName()
 	}
 	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool), 0600)
@@ -84,20 +86,20 @@ func Init(c *cli.Context) {
 	}
 	Log.Infof("Using pool name %s", pool)
 
-	if c.Bool("unsecure") {
+	if unsecure {
 		fmt.Println("--unsecure specified. PFSD will not use TLS for its communication.")
 		return
 	}
 
-	if (c.String("cert") != "") && (c.String("key") != "") {
+	if (cert != "") && (key != "") {
 		fmt.Println("Using existing certificate.")
-		err = os.Link(c.String("cert"), path.Join(directory, "meta", "cert.pem"))
+		err = os.Link(cert, path.Join(directory, "meta", "cert.pem"))
 		if err != nil {
 			cleanupPFS(directory)
 			fmt.Println("Failed to copy cert file")
 			Log.Fatal("Failed to copy cert file", err)
 		}
-		err = os.Link(c.String("key"), path.Join(directory, "meta", "key.pem"))
+		err = os.Link(key, path.Join(directory, "meta", "key.pem"))
 		if err != nil {
 			cleanupPFS(directory)
 			fmt.Println("Failed to copy key file")
