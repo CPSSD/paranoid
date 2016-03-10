@@ -110,32 +110,31 @@ func write(file *os.File, data []byte, offset int64, length int64) (n int, err e
 		return 0, fmt.Errorf("unable to read last block size: %s", err)
 	}
 
-	// Check the length size. Truncate if length == -1
 	if length == -1 {
-		err = truncate(file, offset)
+		length = int64(len(data))
+	}
+
+	// Append empty bytes if length > len(data)
+	if length > int64(len(data)) {
+		data = append(data, make([]byte, len(data)-int(length))...)
+		length = int64(len(data))
 	} else {
-		// Append empty bytes if length > len(data)
-		if length > int64(len(data)) {
-			data = append(data, make([]byte, len(data)-int(length))...)
-			length = int64(len(data))
-		} else {
-			data = data[:length]
-		}
+		data = data[:length]
 	}
 
 	// Define the block length (end of full block after wanted length)
 	// blockLength := length - length%blockSize + 1 + blockSize
 
 	// Read the last block and add it on if the last block is not full
-	if lastBlockSize != 0 {
-		lastBlock, err := libpfs.GetLastBlock(file, fileSize)
-		if err != nil {
-			return 0, fmt.Errorf("error getting last block: %s", err)
-		}
-
-		dec := libpfs.Decrypt(lastBlock, lastBlockSize)
-		data = append(dec.Bytes(), data...)
+	//if lastBlockSize != 0 {
+	lastBlock, err := libpfs.GetLastBlock(file, fileSize)
+	if err != nil {
+		return 0, fmt.Errorf("error getting last block: %s", err)
 	}
+
+	dec := libpfs.Decrypt(lastBlock, lastBlockSize)
+	data = append(dec.Bytes(), data...)
+	//}
 
 	// Encrypt the data
 	enc, l := libpfs.Encrypt(data)
