@@ -5,7 +5,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
-	"io"
 	"os"
 )
 
@@ -92,7 +91,7 @@ func Decrypt(data []byte, length int) (dec bytes.Buffer) {
 }
 
 // LastBlockSize reads the size of the last block from the beginning of the file
-func LastBlockSize(r io.Reader) (size int, err error) {
+func LastBlockSize(r *os.File) (size int, err error) {
 	buf := []byte{byte(0)}
 	_, err = r.Read(buf)
 	if err != nil {
