@@ -138,31 +138,43 @@ func read(file *os.File, offset int64, length int64) (decBuf *bytes.Buffer, err 
 		n, err := file.ReadAt(buf, blockOffset)
 		if err != nil {
 			if err == io.EOF {
-				Log.Infof("read: reached end of file. Bytes left: %d", n)
+				Log.Infof("read: reached end of file. Bytes read: %d", n)
 				buf = buf[:n]
+				_, err = fullRead.Write(buf)
+				if err != nil {
+					return nil, err
+				}
 				break
 			} else {
 				return nil, err
 			}
 		}
 
+		if int64(n) > blockLength {
+			buf = buf[:blockLength]
+			_, err = fullRead.Write(buf)
+			if err != nil {
+				return nil, err
+			}
+			break
+		}
+
 		blockOffset += int64(n)
 
-		_, err = fullRead.Write(buf)
+		_, err = fullRead.Write(buf[:n])
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Decrypt the file
-	dec := libpfs.Decrypt(buf, lastBlockSize)
-	Log.Info("read: dec size:", dec.Len())
+	dec := libpfs.Decrypt(fullRead.Bytes(), lastBlockSize)
 	dec.Next(int(offset - originalBlockOffset + 1))
-	Log.Info("read: filesize:", fileSize)
-	Log.Info("read: reading from", offset)
-	Log.Info("read: truncating to", length)
 
-	dec.Truncate(dec.Len())
+	if dec.Len() < int(length) {
+		length = int64(dec.Len())
+	}
+	dec.Truncate(int(length))
 
 	return &dec, nil
 }

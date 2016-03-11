@@ -89,15 +89,12 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 func truncate(file *os.File, len int64) (err error) {
 	blockSize := int64(libpfs.CipherBlock.BlockSize())
 
-	// Create a temp buffer to store the last block
-	finalBlock := make([]byte, blockSize)
-
 	// offset of the last block
 	blockOffset := len - len%blockSize + 1
 
-	_, err = file.ReadAt(finalBlock, blockOffset)
+	finalBlock, err := libpfs.GetLastBlock(file)
 	if err != nil {
-		return fmt.Errorf("cannot read last block: %s", err)
+		return fmt.Errorf("can't read last block: %s", err)
 	}
 
 	// truncate to the size blockOffset

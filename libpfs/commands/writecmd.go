@@ -97,13 +97,6 @@ func write(file *os.File, data []byte, offset int64, length int64) (n int, err e
 	// Define block offset to read from
 	blockOffset := offset - offset%blockSize + 1
 
-	// Get the total size of the file
-	stats, err := file.Stat()
-	if err != nil {
-		return
-	}
-	fileSize := stats.Size() - 1 // Take the correction for the offset
-
 	// Check the size of the last block
 	lastBlockSize, err := libpfs.LastBlockSize(file)
 	if err != nil {
@@ -123,13 +116,13 @@ func write(file *os.File, data []byte, offset int64, length int64) (n int, err e
 	}
 
 	// Read the last block and add it on if the last block is not full
-	lastBlock, err := libpfs.GetLastBlock(file, fileSize)
+	lastBlock, err := libpfs.GetLastBlock(file)
 	if err != nil {
 		return 0, fmt.Errorf("error getting last block: %s", err)
 	}
 
 	dec := libpfs.Decrypt(lastBlock, lastBlockSize)
-	lastBlock = dec.Bytes()[:offset%blockSize]
+	lastBlock = dec.Bytes() //[:offset%blockSize]
 	data = append(lastBlock, data...)
 
 	// Encrypt the data
