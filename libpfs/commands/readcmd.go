@@ -22,8 +22,8 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 	libpfs.CipherBlock, _ = libpfs.GenerateAESCipherBlock(encryptionKey)
 	// ENDTODO
 
-	Log.Info("read command called")
-	Log.Verbose("read : given paranoidDirectory = " + paranoidDirectory)
+	Log.Info("read: command called")
+	Log.Verbose("read: given paranoidDirectory = " + paranoidDirectory)
 
 	namepath := getParanoidPath(paranoidDirectory, filePath)
 
@@ -108,6 +108,7 @@ func read(file *os.File, offset int64, length int64) (decBuf *bytes.Buffer, err 
 
 	// Define block offset to read from
 	blockOffset := offset - offset%blockSize + 1
+	originalBlockOffset := blockOffset
 
 	// Get the total size of the file
 	stats, err := file.Stat()
@@ -131,18 +132,37 @@ func read(file *os.File, offset int64, length int64) (decBuf *bytes.Buffer, err 
 	blockLength := length - length%blockSize + 1 + blockSize
 
 	// Read the file
-	buf := make([]byte, blockLength-blockOffset)
-	_, err = file.ReadAt(buf, blockOffset)
-	if err != nil && err != io.EOF {
-		return nil, err
+	fullRead := bytes.NewBuffer(nil)
+	buf := make([]byte, blockLength)
+	for {
+		n, err := file.ReadAt(buf, blockOffset)
+		if err != nil {
+			if err == io.EOF {
+				Log.Infof("read: reached end of file. Bytes left: %d", n)
+				buf = buf[:n]
+				break
+			} else {
+				return nil, err
+			}
+		}
+
+		blockOffset += int64(n)
+
+		_, err = fullRead.Write(buf)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Decrypt the file
 	dec := libpfs.Decrypt(buf, lastBlockSize)
-	fmt.Printf("dec: %v (%s)\n", dec.Bytes(), string(dec.Bytes()))
-	fmt.Println("next:", offset-blockOffset+1)
-	// dec.Next(int(offset - blockOffset + 1))
-	// dec.Truncate(int(length))
+	Log.Info("read: dec size:", dec.Len())
+	dec.Next(int(offset - originalBlockOffset + 1))
+	Log.Info("read: filesize:", fileSize)
+	Log.Info("read: reading from", offset)
+	Log.Info("read: truncating to", length)
+
+	dec.Truncate(dec.Len())
 
 	return &dec, nil
 }
