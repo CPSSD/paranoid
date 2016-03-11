@@ -12,6 +12,7 @@ import (
 
 //UtimesCommand updates the acess time and modified time of a file
 func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) (returnCode int, returnError error) {
+	Log.Verbose("utimes command called")
 	Log.Verbose("utimes : given paranoidDirectory = " + paranoidDirectory)
 
 	err := getFileSystemLock(paranoidDirectory, sharedLock)

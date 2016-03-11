@@ -15,6 +15,7 @@ import (
 //ReadCommand reads data from a file
 //Offset and length can be given as -1 to note that the defaults should be used.
 func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode int, returnError error, fileContents []byte) {
+	Log.Verbose("read command called")
 	Log.Verbose("read : given paranoidDirectory = " + paranoidDirectory)
 
 	namepath := getParanoidPath(paranoidDirectory, filePath)
