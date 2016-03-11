@@ -43,6 +43,17 @@ func ListNodes(c *cli.Context) {
 }
 
 func getNodes(pfsDir string) {
+	// We check this on the off chance they haven't initialised a single PFS yet.
+	if _, err := os.Stat(pfsDir); err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("%s does not exist. Please call 'paranoid-cli init' before running this command.", pfsDir)
+			Log.Fatal("PFS directory does not exist.")
+		} else {
+			fmt.Printf("Could not stat %s. Error returned: %s.", pfsDir, err)
+			Log.Fatal("Could not stat PFS directory:", err)
+		}
+	}
+
 	socketPath := path.Join(pfsDir, "meta", "intercom.sock")
 	logPath := path.Join(pfsDir, "meta", "logs", "pfsd.log")
 	var resp intercom.ListNodesResponse
