@@ -68,9 +68,8 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Cod
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error getting filemode:", err), statInfo{}
 	}
-
 	// Get the size of the last last block
-	file, err := os.OpenFile(contentsFile, 0700, mode)
+	file, err := os.OpenFile(contentsFile, os.O_RDONLY, fi.Mode().Perm())
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening file: %s", err), StatInfo{}
 	}
@@ -79,7 +78,7 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Cod
 
 	// Return the file with correction for the size
 	statData := StatInfo{
-		Length: fi.Size() - int64(libpfs.CipherBlock.BlockSize()-finalBlockSize),
+		Length: fi.Size() - int64(libpfs.CipherBlock.BlockSize()-finalBlockSize) - 2,
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
 		Atime:  atime,
