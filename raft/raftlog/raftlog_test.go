@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	Log     *logger.ParanoidLogger
 	testDir string
 )
 
