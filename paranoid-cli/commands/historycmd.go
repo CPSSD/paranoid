@@ -30,7 +30,7 @@ func History(c *cli.Context) {
 	givenString := args[0]
 	var target string
 	if fileSystemExists(givenString) {
-		target = path.Join(usr.HomeDir, ".pfs", givenString, "meta", "raft", "raft_logs")
+		target = path.Join(usr.HomeDir, ".pfs", "filesystems", givenString, "meta", "raft", "raft_logs")
 	} else {
 		target = givenString
 	}
@@ -44,7 +44,7 @@ func fileSystemExists(fsname string) bool {
 		Log.Fatal(err)
 	}
 
-	dirpath := path.Join(usr.HomeDir, ".pfs", fsname)
+	dirpath := path.Join(usr.HomeDir, ".pfs", "filesystems", fsname)
 	_, err = ioutil.ReadDir(dirpath)
 	return err == nil
 }

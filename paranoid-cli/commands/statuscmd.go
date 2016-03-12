@@ -24,21 +24,21 @@ func Status(c *cli.Context) {
 
 	// By default, print the status of each running instance.
 	if !args.Present() {
-		dirs, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs"))
+		dirs, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs", "filesystems"))
 		if err != nil {
 			Log.Error("Could not get list of paranoid file systems:", err)
 			fmt.Printf("Unable to get list of paranoid file systems. Does %s exist?", path.Join(usr.HomeDir, ".pfs"))
 			os.Exit(1)
 		}
 		for _, dir := range dirs {
-			dirPath := path.Join(usr.HomeDir, ".pfs", dir.Name())
+			dirPath := path.Join(usr.HomeDir, ".pfs", "filesystems", dir.Name())
 			if _, err := os.Stat(path.Join(dirPath, "meta", "pfsd.pid")); err == nil {
 				getStatus(dirPath)
 			}
 		}
 	} else {
 		for _, dir := range args {
-			getStatus(path.Join(usr.HomeDir, ".pfs", dir))
+			getStatus(path.Join(usr.HomeDir, ".pfs", "filesystems", dir))
 		}
 	}
 }

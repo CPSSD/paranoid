@@ -37,15 +37,15 @@ func Init(c *cli.Context) {
 	}
 	homeDir := usr.HomeDir
 
-	if _, err := os.Stat(path.Join(homeDir, ".pfs")); os.IsNotExist(err) {
-		err = os.Mkdir(path.Join(homeDir, ".pfs"), 0700)
+	if _, err := os.Stat(path.Join(homeDir, ".pfs", "filesystems")); os.IsNotExist(err) {
+		err = os.MkdirAll(path.Join(homeDir, ".pfs", "filesystems"), 0700)
 		if err != nil {
 			fmt.Println("FATAL: Error making pfs directory")
 			Log.Fatal("Error making pfs directory")
 		}
 	}
 
-	directory, err := filepath.Abs(path.Join(homeDir, ".pfs", pfsname))
+	directory, err := filepath.Abs(path.Join(homeDir, ".pfs", "filesystems", pfsname))
 	if err != nil {
 		fmt.Println("FATAL: Given pfs-name is in incorrect format.")
 		Log.Fatal("Given pfs-name is in incorrect format. Error : ", err)

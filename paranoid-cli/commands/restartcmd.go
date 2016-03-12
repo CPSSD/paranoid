@@ -24,7 +24,7 @@ func Restart(c *cli.Context) {
 		Log.Fatal("Could not get current user:", err)
 	}
 
-	pidPath := path.Join(usr.HomeDir, ".pfs", args[0], "meta", "pfsd.pid")
+	pidPath := path.Join(usr.HomeDir, ".pfs", "filesystems", args[0], "meta", "pfsd.pid")
 	_, err = os.Stat(pidPath)
 	if err != nil {
 		fmt.Println("FATAL: Could not access PID file")
