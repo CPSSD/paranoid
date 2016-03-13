@@ -44,10 +44,13 @@ func StartPfi(logVerbose bool) {
 		select {
 		case _, ok := <-globals.Quit:
 			if !ok {
+				Log.Info("Attempting to unmount pfi")
 				err = server.Unmount()
 				if err != nil {
 					Log.Fatal("Error unmounting : ", err)
 				}
+				Log.Info("pfi unmounted sucessfully")
+				return
 			}
 		}
 	}()
