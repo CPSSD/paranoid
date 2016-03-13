@@ -29,9 +29,7 @@ func stopAllServices() {
 		globals.RaftNetworkServer.Wait.Wait()
 	}
 
-	log.Info("Waiting for globals.Wait")
 	globals.Wait.Wait()
-	log.Info("Finished waiting on globals.Wait")
 }
 
 // HandleSignals listens for SIGTERM and SIGHUP, and dispatches to handler
