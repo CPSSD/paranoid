@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-var listener *net.UnixListener
-
 type IntercomServer struct{}
 type EmptyMessage struct{}
 
@@ -78,7 +76,6 @@ func RunServer(metaDir string) {
 	server := new(IntercomServer)
 	rpc.Register(server)
 	lis, err := net.Listen("unix", socketPath)
-	listener = lis.(*net.UnixListener)
 	if err != nil {
 		Log.Fatalf("Failed to listen on %s: %s\n", socketPath, err)
 	}
@@ -86,16 +83,21 @@ func RunServer(metaDir string) {
 	go func() {
 		defer globals.Wait.Done()
 		Log.Info("Internal communication server listening on", socketPath)
-		rpc.Accept(lis)
+		go rpc.Accept(lis)
+
+		select {
+		case _, ok := <-globals.Quit:
+			if !ok {
+				Log.Info("Stopping internal communication server")
+				err := lis.Close()
+				if err != nil {
+					Log.Warn("Could not shut down internal communication server:", err)
+				} else {
+					Log.Info("Internal communication server stopped.")
+				}
+			}
+		}
 	}()
 	globals.BootTime = time.Now()
 	Log.Info(globals.BootTime)
-}
-
-func ShutdownServer() error {
-	err := listener.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close listener: %s", err)
-	}
-	return nil
 }

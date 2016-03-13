@@ -40,15 +40,20 @@ func StartPfi(logVerbose bool) {
 	go func() {
 		defer globals.Wait.Done()
 		go server.Serve()
+		Log.Info("Hello world 1")
 
 		select {
 		case _, ok := <-globals.Quit:
 			if !ok {
+				Log.Info("Attempting to unmount pfi")
 				err = server.Unmount()
 				if err != nil {
 					Log.Fatal("Error unmounting : ", err)
 				}
+				Log.Info("pfi unmounted sucessfully")
+				return
 			}
 		}
+		Log.Info("Hello world 2")
 	}()
 }

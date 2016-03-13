@@ -47,11 +47,11 @@ func JoinDiscovery(pool string) {
 // in pnetclient since pnetclient is stateless and this function is more
 // relevant to discovery.
 func pingPeers() {
+	defer globals.Wait.Done()
 	// Ping as soon as this node joins
 	pnetclient.Ping()
 	timer := time.NewTimer(peerPingInterval)
 	defer timer.Stop()
-	defer globals.Wait.Done()
 	for {
 		select {
 		case _, ok := <-globals.Quit:

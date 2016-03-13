@@ -2,14 +2,12 @@ package main
 
 import (
 	"github.com/cpssd/paranoid/pfsd/globals"
-	"github.com/cpssd/paranoid/pfsd/intercom"
 	"github.com/cpssd/paranoid/pfsd/upnp"
 	"github.com/kardianos/osext"
 	"os"
 	"os/signal"
 	"path"
 	"syscall"
-	"time"
 )
 
 func stopAllServices() {
@@ -30,18 +28,10 @@ func stopAllServices() {
 		srv.Stop()
 		globals.RaftNetworkServer.Wait.Wait()
 	}
-	err := intercom.ShutdownServer()
-	if err != nil {
-		log.Warn("Could not shut down internal communication server:", err)
-	} else {
-		log.Info("Internal communication server stopped.")
-	}
-	// Since srv can't talk to the waitgroup itself, we do on its behalf
-	// We also wait to give it some time to stop itself.
-	time.Sleep(time.Millisecond * 10)
-	globals.Wait.Done()
-	log.Info("ParanoidNetwork server stopped.")
+
+	log.Info("Waiting for globals.Wait")
 	globals.Wait.Wait()
+	log.Info("Finished waiting on globals.Wait")
 }
 
 // HandleSignals listens for SIGTERM and SIGHUP, and dispatches to handler
