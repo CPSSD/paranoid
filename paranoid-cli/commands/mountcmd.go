@@ -51,7 +51,7 @@ func doMount(c *cli.Context, args []string) {
 		fmt.Println("FATAL: Error Getting Current User")
 		Log.Fatal("Cannot get curent User: ", err)
 	}
-	pfsDir := path.Join(usr.HomeDir, ".pfs", pfsName)
+	pfsDir := path.Join(usr.HomeDir, ".pfs", "filesystems", pfsName)
 
 	if _, err := os.Stat(pfsDir); os.IsNotExist(err) {
 		fmt.Println("FATAL: PFS directory does not exist")

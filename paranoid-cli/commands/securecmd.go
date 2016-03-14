@@ -25,7 +25,7 @@ func Secure(c *cli.Context) {
 	}
 
 	homeDir := usr.HomeDir
-	pfsDir, err := filepath.Abs(path.Join(homeDir, ".pfs", pfsname))
+	pfsDir, err := filepath.Abs(path.Join(homeDir, ".pfs", "filesystems", pfsname))
 	if err != nil {
 		fmt.Println("FATAL: Could not get absolute path to paranoid filesystem.")
 		Log.Fatal("Could not get absolute path to paranoid filesystem.")

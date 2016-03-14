@@ -16,7 +16,7 @@ func List(c *cli.Context) {
 		Log.Fatal("Cannot get curent User:", err)
 	}
 
-	files, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs"))
+	files, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs", "filesystems"))
 	if err != nil {
 		fmt.Println("FATAL: Could not read the list of paranoid file systems.")
 		Log.Fatal("Could not get list of paranoid file systems. Error :", err)

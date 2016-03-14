@@ -24,20 +24,20 @@ func ListNodes(c *cli.Context) {
 
 	// By default, list the nodes connected to each running instance.
 	if !args.Present() {
-		dirs, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs"))
+		dirs, err := ioutil.ReadDir(path.Join(usr.HomeDir, ".pfs", "filesystems"))
 		if err != nil {
 			fmt.Printf("FATAL: Unable to get list of paranoid file systems. Does %s exist?", path.Join(usr.HomeDir, ".pfs"))
 			Log.Fatal("Could not get list of paranoid file systems:", err)
 		}
 		for _, dir := range dirs {
-			dirPath := path.Join(usr.HomeDir, ".pfs", dir.Name())
+			dirPath := path.Join(usr.HomeDir, ".pfs", "filesystems", dir.Name())
 			if _, err := os.Stat(path.Join(dirPath, "meta", "pfsd.pid")); err == nil {
 				getNodes(dirPath)
 			}
 		}
 	} else {
 		for _, dir := range args {
-			getNodes(path.Join(usr.HomeDir, ".pfs", dir))
+			getNodes(path.Join(usr.HomeDir, ".pfs", "filesystems", dir))
 		}
 	}
 }

@@ -22,7 +22,7 @@ func AutoMount(c *cli.Context) {
 		fmt.Println("FATAL: Error Getting Current User")
 		Log.Fatal("Cannot get curent User:", err)
 	}
-	pfsMeta := path.Join(usr.HomeDir, ".pfs", args[0], "meta")
+	pfsMeta := path.Join(usr.HomeDir, ".pfs", "filesystems", args[0], "meta")
 
 	ip, err := ioutil.ReadFile(path.Join(pfsMeta, "ip"))
 	if err != nil {

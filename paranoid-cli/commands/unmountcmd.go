@@ -25,7 +25,7 @@ func Unmount(c *cli.Context) {
 		Log.Fatal("Cannot get curent User:", err)
 	}
 
-	pidPath := path.Join(usr.HomeDir, ".pfs", args[0], "meta", "pfsd.pid")
+	pidPath := path.Join(usr.HomeDir, ".pfs", "filesystems", args[0], "meta", "pfsd.pid")
 	if _, err := os.Stat(pidPath); err == nil {
 		pidByte, err := ioutil.ReadFile(pidPath)
 		if err != nil {
