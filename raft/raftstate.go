@@ -226,7 +226,7 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 		if s.pfsDirectory == "" {
 			Log.Fatal("PfsDirectory is not set")
 		}
-		return performLibPfsCommand(s.pfsDirectory, libpfsCommand)
+		return PerformLibPfsCommand(s.pfsDirectory, libpfsCommand)
 	}
 	return nil
 }

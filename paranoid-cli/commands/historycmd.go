@@ -1,12 +1,10 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft"
-	"github.com/golang/protobuf/proto"
 	"io/ioutil"
 	"log"
 	"os"
@@ -32,18 +30,6 @@ func History(c *cli.Context) {
 		target = path.Join(usr.HomeDir, ".pfs", "filesystems", target, "meta", "raft", "raft_logs")
 	}
 	read(target, c)
-}
-
-// fileSystemExists checks if there is a folder in ~/.pfs with the given name
-func fileSystemExists(fsname string) bool {
-	usr, err := user.Current()
-	if err != nil {
-		Log.Fatal(err)
-	}
-
-	dirpath := path.Join(usr.HomeDir, ".pfs", "filesystems", fsname)
-	_, err = ioutil.ReadDir(dirpath)
-	return err == nil
 }
 
 // read shows the history of a log in the given directory
@@ -84,21 +70,6 @@ func logsToLogfile(logDir, filePath string, c *cli.Context) {
 
 		writeFile.WriteString(toLine(i+1, numRunesString, p))
 	}
-}
-
-// fileToProto converts a given file with a protobuf to a protobuf object
-func fileToProto(file os.FileInfo, directory string) (entry *pb.LogEntry, err error) {
-	filePath := path.Join(directory, file.Name())
-	fileData, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, errors.New("Failed to read logfile: " + file.Name())
-	}
-	entry = &pb.LogEntry{}
-	err = proto.Unmarshal(fileData, entry)
-	if err != nil {
-		return nil, errors.New("Failed to Unmarshal file data")
-	}
-	return entry, nil
 }
 
 // toLine converts a protobuf object to a human readable string representation

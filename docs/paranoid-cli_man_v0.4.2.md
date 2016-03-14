@@ -11,6 +11,7 @@ paranoid-cli(1) -- interact with a paranoid filesystem
 `paranoid-cli` `secure` `<pfs-name>`<br>
 `paranoid-cli` `delete` `<pfs-name>`<br>
 `paranoid-cli` `history` `<pfs-name>||<log-directory>`<br>
+`paranoid-cli` `buildfs` `<pfs-name>` `<log-directory>`<br>
 `paranoid-cli` `restart` `<pfs-name>`<br>
 
 ## DESCRIPTION
@@ -43,6 +44,9 @@ mount or unmount a paranoid file system.
 
 * `history`:
     View the history of a paranoid filesystem or of the specified log-directory
+
+* `buildfs`:
+    builds a filesystem with the given <pfs-name> from the logfiles whos location is specified by <log-directory>
 
 * `restart`:
     Restart the network services of the named paranoid filesystem.

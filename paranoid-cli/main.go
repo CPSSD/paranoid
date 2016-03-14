@@ -176,6 +176,30 @@ func main() {
 			Usage:     "view the history of the filesystem or log directory",
 			Action:    commands.History,
 		},
+		{
+			Name:      "buildfs",
+			ArgsUsage: "pfs-name log-directory",
+			Usage:     "builds a filesystem with the given <pfs-name> from the logfiles whos location is specified by <log-directory>",
+			Action:    commands.Buildfs,
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "u, unsecure",
+					Usage: "disable TLS/SSL for this filesystem's network services",
+				},
+				cli.StringFlag{
+					Name:  "cert",
+					Usage: "path to existing certificate file",
+				},
+				cli.StringFlag{
+					Name:  "key",
+					Usage: "path to existing key file",
+				},
+				cli.StringFlag{
+					Name:  "p, pool",
+					Usage: "name of the pool, defaults to random",
+				},
+			},
+		},
 	}
 	app.Run(os.Args)
 }

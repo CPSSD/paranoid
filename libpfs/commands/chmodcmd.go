@@ -11,7 +11,7 @@ import (
 
 //ChmodCommand is used to change the permissions of a file.
 func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode int, returnError error) {
-	Log.Info("chmod command given")
+	Log.Info("chmod command called")
 	Log.Verbose("chmod : given paranoidDirectory = " + paranoidDirectory)
 
 	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
