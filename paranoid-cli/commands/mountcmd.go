@@ -192,14 +192,14 @@ func doMount(c *cli.Context, args []string) {
 				client, err := rpc.Dial("unix", socketPath)
 				if err != nil {
 					time.Sleep(time.Second)
-					lastConnectionError = fmt.Errorf("Could not dial pfsd unix socket:", err)
+					lastConnectionError = fmt.Errorf("Could not dial pfsd unix socket: %s", err)
 					continue
 				}
 				err = client.Call("IntercomServer.ConfirmUp", new(intercom.EmptyMessage), &resp)
 				if err == nil {
 					return
 				}
-				lastConnectionError = fmt.Errorf("Could not call pfsd confirm up over unix socket:", err)
+				lastConnectionError = fmt.Errorf("Could not call pfsd confirm up over unix socket: %s", err)
 				time.Sleep(time.Second)
 			}
 		}
