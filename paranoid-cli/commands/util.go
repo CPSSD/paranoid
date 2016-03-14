@@ -52,7 +52,7 @@ func fileSystemExists(fsname string) bool {
 		Log.Fatal(err)
 	}
 
-	dirpath := path.Join(usr.HomeDir, ".pfs", fsname)
+	dirpath := path.Join(usr.HomeDir, ".pfs", "filesystems", fsname)
 	_, err = ioutil.ReadDir(dirpath)
 	return err == nil
 }

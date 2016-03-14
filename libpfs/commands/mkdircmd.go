@@ -11,7 +11,7 @@ import (
 
 // MkdirCommand is called when making a paranoidDirectory
 func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCode int, returnError error) {
-	Log.Verbose("mkdir command called")
+	Log.Info("mkdir command called")
 	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err

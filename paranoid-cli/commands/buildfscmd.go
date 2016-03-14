@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"fmt"
 	progress "github.com/cheggaaa/pb"
 	"github.com/codegangsta/cli"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft"
 	"io/ioutil"
@@ -24,16 +26,19 @@ func Buildfs(c *cli.Context) {
 	logDir := args[1]
 
 	if fileSystemExists(pfsName) {
-		showErrAndExit(nil, pfsName, "already exists. please chose a different name")
+		fmt.Println(pfsName, "already exists. please chose a different name")
+		os.Exit(1)
 	}
 
 	logs, err := ioutil.ReadDir(logDir)
 	if err != nil {
-		showErrAndExit(err, "Couldn't read log-directory, err: ", err)
+		fmt.Println("Couldn't read log-directory")
+		log.Fatal(err)
 	}
 
 	if len(logs) < 1 {
-		showErrAndExit(nil, "log-directory empty")
+		fmt.Println("log-directory empty")
+		os.Exit(1)
 	}
 
 	doInit(pfsName, c.String("pool"), c.String("cert"),
@@ -41,39 +46,35 @@ func Buildfs(c *cli.Context) {
 
 	u, err := user.Current()
 	if err != nil {
-		showErrAndExit(err, "Couldn't get current user err:", err)
+		fmt.Println("Couldn't get current user home directory")
+		log.Fatal(err)
 	}
 
-	pfsPath := path.Join(u.HomeDir, ".pfs", pfsName)
-
-	os.MkdirAll(path.Join(pfsPath, "meta", "raft", "raft_logs"), 0777)
+	pfsPath := path.Join(u.HomeDir, ".pfs", "filesystems", pfsName)
+	err = os.MkdirAll(path.Join(pfsPath, "meta", "raft", "raft_logs"), 0700)
+	if err != nil {
+		cleanupPFS(pfsPath)
+		log.Fatalln(err)
+	}
 
 	bar := progress.StartNew(len(logs))
 	for _, lg := range logs {
 		logEntry, err := fileToProto(lg, logDir)
 		if err != nil {
 			cleanupPFS(pfsPath)
-			showErrAndExit(err, "broken file in log-dir: ", lg)
+			fmt.Println("broken file in log directory: ", lg)
+			log.Fatal(err)
 		}
 
 		if logEntry.Entry.Type == pb.Entry_StateMachineCommand {
 			er := raft.PerformLibPfsCommand(pfsPath, logEntry.Entry.Command)
-			if er.Err != nil {
-				showErrAndExit(er.Err, "pfsLib failed on command: ", logEntry.Entry.Command, "With ")
+			if er.Code == returncodes.EUNEXPECTED {
+				fmt.Println("pfsLib failed on command: ", logEntry.Entry.Command)
+				log.Fatal(er.Err)
 			}
 		}
 		bar.Increment()
 	}
 
 	bar.FinishPrint("Done.\nYou may now mount your new filesystem: " + pfsName)
-}
-
-// showErrAndExit prints the error, show command help and exit.
-func showErrAndExit(err error, v ...interface{}) {
-	log.Println(v)
-	if err == nil {
-		os.Exit(1)
-	} else {
-		log.Fatal(err)
-	}
 }
