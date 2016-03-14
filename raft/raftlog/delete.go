@@ -13,14 +13,13 @@ func (rl *RaftLog) DiscardLogEntries(startIndex uint64) error {
 	defer rl.indexLock.Unlock()
 
 	if startIndex < 1 || startIndex >= rl.currentIndex {
-		return errors.New("Index out of bounds")
+		return errors.New("index out of bounds")
 	}
 
 	for i := rl.currentIndex - 1; i >= startIndex; i-- {
 		err := os.Remove(path.Join(rl.logDir, strconv.FormatUint(storageIndexToFileIndex(i), 10)))
 		if err != nil {
-			Log.Fatal("Activity logger: failed to delete log of index:",
-				i, "with error:", err)
+			Log.Fatalf("unable to delete log of index %d with error: %s", i, err)
 		}
 		rl.currentIndex--
 	}
@@ -28,7 +27,7 @@ func (rl *RaftLog) DiscardLogEntries(startIndex uint64) error {
 	if rl.currentIndex > 1 {
 		logEntry, err := rl.GetLogEntry(rl.currentIndex - 1)
 		if err != nil {
-			Log.Fatal("Error deleting log entries:", err)
+			Log.Fatal("error deleting log entries:", err)
 		}
 		rl.mostRecentTerm = logEntry.Term
 	} else {
