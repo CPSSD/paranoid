@@ -27,12 +27,9 @@ func History(c *cli.Context) {
 	if err != nil {
 		Log.Fatal(err)
 	}
-	givenString := args[0]
-	var target string
-	if fileSystemExists(givenString) {
-		target = path.Join(usr.HomeDir, ".pfs", "filesystems", givenString, "meta", "raft", "raft_logs")
-	} else {
-		target = givenString
+	target := args[0]
+	if fileSystemExists(target) {
+		target = path.Join(usr.HomeDir, ".pfs", "filesystems", target, "meta", "raft", "raft_logs")
 	}
 	read(target, c)
 }
