@@ -30,16 +30,16 @@ func New(logDirectory string) *RaftLog {
 				Log.Fatal("failed to create log directory:", err)
 			}
 		} else if os.IsPermission(err) {
-			Log.Fatal("Raft logger does not have permissions for:", rl.logDir)
+			Log.Fatal("raft logger does not have permissions for:", rl.logDir)
 		} else {
-			Log.Fatal("Unable to read log directory:", err)
+			Log.Fatal("unable to read log directory:", err)
 		}
 	}
 	rl.currentIndex = uint64(len(fileDescriptors) + 1)
 	if rl.currentIndex > 1 {
 		logEntry, err := rl.GetLogEntry(rl.currentIndex - 1)
 		if err != nil {
-			Log.Fatal("Failed to set up raft logger, could not get most recent term:", err)
+			Log.Fatal("Failed setting up raft logger, could not get most recent term:", err)
 		}
 		rl.mostRecentTerm = logEntry.Term
 	} else {

@@ -49,6 +49,8 @@ func min(a, b uint64) uint64 {
 	return b
 }
 
+// GetLogEntries gets maxCount log entries starting from index. If there are less
+// entries than maxCount it gets all of them until the end.
 func (rl *RaftLog) GetLogEntries(index, maxCount uint64) (entries []*pb.Entry, err error) {
 	rl.indexLock.Lock()
 	defer rl.indexLock.Unlock()
