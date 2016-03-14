@@ -33,8 +33,8 @@ func (rl *RaftLog) AppendEntry(en *pb.LogEntry) (index uint64, err error) {
 	if err != nil {
 		err1 := os.Remove(filePath)
 		if err1 != nil {
-			Log.Fatal("Failed to write proto to file at index: ", fileIndex,
-				" and received an error when trying to remove the created logfile, err: ", err1)
+			Log.Fatal("Failed to write proto to file at index:", fileIndex,
+				" and received an error when trying to remove the created logfile, err:", err1)
 		}
 		return 0, errors.New("Failed to write proto to file")
 	}
