@@ -51,9 +51,9 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode int, returnEr
 	}
 
 	//checking if we have access to the file.
-	err = syscall.Access(path.Join(paranoidDirectory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
+	code, err = canAccessFile(paranoidDirectory, string(inodeBytes), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + filePath)
+		return code, fmt.Errorf("unable to access %s: %s", filePath, err)
 	}
 
 	// removing filename

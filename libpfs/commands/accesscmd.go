@@ -2,9 +2,8 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	"path"
-	"syscall"
 )
 
 //AccessCommand is used by fuse to check if it has access to a given file.
@@ -43,9 +42,9 @@ func AccessCommand(paranoidDirectory, filePath string, mode uint32) (returnCode 
 
 	inodeName := string(inodeNameBytes)
 
-	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeName), mode)
+	code, err = canAccessFile(paranoidDirectory, inodeName, mode)
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + filePath)
+		return code, fmt.Errorf("unable to access %s: %s", filePath, err)
 	}
 	return returncodes.OK, nil
 }

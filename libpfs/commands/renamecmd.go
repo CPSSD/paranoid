@@ -6,7 +6,6 @@ import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"io/ioutil"
 	"os"
-	"path"
 	"syscall"
 )
 
@@ -68,9 +67,9 @@ func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCo
 		return code, err
 	}
 
-	err = syscall.Access(path.Join(paranoidDirectory, "contents", string(inodeBytes)), getAccessMode(syscall.O_WRONLY))
+	code, err = canAccessFile(paranoidDirectory, string(inodeBytes), getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("can not access " + oldFilePath)
+		return code, fmt.Errorf("unable to access %s: %s", oldFilePath, err)
 	}
 
 	err = os.Rename(oldFileParanoidPath, newFileParanoidPath)

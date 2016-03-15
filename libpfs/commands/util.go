@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
@@ -15,9 +16,10 @@ import (
 var Log *logger.ParanoidLogger
 
 type inode struct {
-	Count int    `json:"count"`
-	Inode string `json:"inode"`
-	Link  string `json:"link,omitempty"`
+	Count int         `json:"count"`
+	Inode string      `json:"inode"`
+	Mode  os.FileMode `json:"mode"`
+	Link  string      `json:"link,omitempty"`
 }
 
 func getAccessMode(flags uint32) uint32 {
@@ -31,6 +33,34 @@ func getAccessMode(flags uint32) uint32 {
 	default:
 		return 7
 	}
+}
+
+func getFileMode(paranoidDir, inodeName string) (os.FileMode, error) {
+	inodePath := path.Join(paranoidDir, "inodes", inodeName)
+	inodeContents, err := ioutil.ReadFile(inodePath)
+	if err != nil {
+		return os.FileMode(0), fmt.Errorf("error reading inode: %s", err)
+	}
+
+	nodeData := &inode{}
+	err = json.Unmarshal(inodeContents, &nodeData)
+	if err != nil {
+		return os.FileMode(0), fmt.Errorf("error unmarshaling inode data: %s", err)
+	}
+	return nodeData.Mode, nil
+}
+
+func canAccessFile(paranoidDir, inodeName string, mode uint32) (int, error) {
+	fileMode, err := getFileMode(paranoidDir, inodeName)
+	if err != nil {
+		return returncodes.EUNEXPECTED, err
+	}
+
+	userPerms := (uint32(fileMode) >> 6) & 7
+	if userPerms&mode != mode {
+		return returncodes.EACCES, errors.New("invalid permissions")
+	}
+	return returncodes.OK, nil
 }
 
 //Types of locks

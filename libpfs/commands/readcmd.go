@@ -57,9 +57,9 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 	}
 	inodeFileName := string(inodeBytes)
 
-	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeFileName), getAccessMode(syscall.O_RDONLY))
+	code, err = canAccessFile(paranoidDirectory, inodeFileName, getAccessMode(syscall.O_RDONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access file " + filePath), nil
+		return code, fmt.Errorf("unable to access %s: %s", filePath, err), nil
 	}
 
 	err = getFileLock(paranoidDirectory, inodeFileName, sharedLock)
