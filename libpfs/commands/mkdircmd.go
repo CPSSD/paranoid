@@ -7,6 +7,7 @@ import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"os"
 	"path"
+	"syscall"
 )
 
 // MkdirCommand is called when making a paranoidDirectory
@@ -80,6 +81,7 @@ func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCo
 	defer inodeFile.Close()
 
 	nodeData := &inode{
+		Mode:  mode | syscall.S_IFDIR,
 		Inode: inodeString,
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)

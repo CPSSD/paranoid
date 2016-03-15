@@ -58,9 +58,9 @@ func RmdirCommand(paranoidDirectory, dirPath string) (returnCode int, returnErro
 
 	inodeString := string(inodeBytes)
 
-	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeString), getAccessMode(syscall.O_WRONLY))
+	code, err = canAccessFile(paranoidDirectory, inodeString, getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + dirPath)
+		return code, fmt.Errorf("unable to access %s: %s", dirPath, err)
 	}
 
 	inodeFileToDelete := path.Join(paranoidDirectory, "inodes", inodeString)

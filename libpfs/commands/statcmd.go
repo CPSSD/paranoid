@@ -63,13 +63,9 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnErro
 	stat := fi.Sys().(*syscall.Stat_t)
 	atime := time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
-
-	var mode os.FileMode
-	switch namePathType {
-	case typeDir:
-		mode = os.FileMode(syscall.S_IFDIR | fi.Mode().Perm())
-	default:
-		mode = os.FileMode(stat.Mode)
+	mode, err := getFileMode(paranoidDirectory, inodeName)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting filemode:", err), statInfo{}
 	}
 
 	statData := &statInfo{

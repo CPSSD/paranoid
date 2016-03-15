@@ -51,9 +51,9 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 	}
 	inodeName := string(fileInodeBytes)
 
-	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
+	code, err = canAccessFile(paranoidDirectory, inodeName, getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + filePath)
+		return code, fmt.Errorf("unable to access %s: %s", filePath, err)
 	}
 
 	err = getFileLock(paranoidDirectory, inodeName, exclusiveLock)

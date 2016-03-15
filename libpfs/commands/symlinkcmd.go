@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"syscall"
 )
 
 // SymlinkCommand creates a symbolic link
@@ -50,12 +51,21 @@ func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) 
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing file:", err)
 	}
 
-	err = os.Symlink(os.DevNull, path.Join(paranoidDirectory, "contents", uuidString))
+	contentsFile := path.Join(paranoidDirectory, "contents", uuidString)
+	err = os.Symlink(os.DevNull, contentsFile)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error creating symlinks:", err)
 	}
 
+	fi, err := os.Lstat(contentsFile)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error Lstating file:", err)
+	}
+
+	stat := fi.Sys().(*syscall.Stat_t)
+
 	nodeData := &inode{
+		Mode:  os.FileMode(stat.Mode),
 		Inode: uuidString,
 		Count: 1,
 		Link:  existingFilePath,

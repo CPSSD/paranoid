@@ -54,6 +54,7 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 	}
 
 	nodeData := &inode{
+		Mode:  perms,
 		Inode: uuidstring,
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
@@ -71,11 +72,6 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
 	}
 	defer contentsFile.Close()
-
-	err = contentsFile.Chmod(perms)
-	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error changing file permissions:", err)
-	}
 
 	return returncodes.OK, nil
 }

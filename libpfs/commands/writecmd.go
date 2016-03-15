@@ -53,9 +53,9 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 	}
 	inodeName := string(fileInodeBytes)
 
-	err = syscall.Access(path.Join(paranoidDirectory, "contents", inodeName), getAccessMode(syscall.O_WRONLY))
+	code, err = canAccessFile(paranoidDirectory, inodeName, getAccessMode(syscall.O_WRONLY))
 	if err != nil {
-		return returncodes.EACCES, errors.New("could not access " + filePath), 0
+		return code, fmt.Errorf("unable to access %s: %s", filePath, err), 0
 	}
 
 	err = getFileLock(paranoidDirectory, inodeName, exclusiveLock)
