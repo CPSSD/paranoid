@@ -81,9 +81,10 @@ func doInit(pfsname, pool, cert, key string, unsecure bool) {
 	}
 	err = ioutil.WriteFile(path.Join(directory, "meta", "pool"), []byte(pool), 0600)
 	if err != nil {
-		fmt.Println("FATAL: Cannot save pool information:")
+		fmt.Println("FATAL: Cannot save pool information")
 		Log.Fatal("cannot save pool information:", err)
 	}
+	fmt.Println("Using pool name", pool)
 	Log.Infof("Using pool name %s", pool)
 
 	if unsecure {
