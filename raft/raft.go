@@ -16,12 +16,13 @@ import (
 )
 
 const (
-	ELECTION_TIMEOUT      time.Duration = 3000 * time.Millisecond
-	HEARTBEAT             time.Duration = 1000 * time.Millisecond
-	REQUEST_VOTE_TIMEOUT  time.Duration = 5500 * time.Millisecond
-	HEARTBEAT_TIMEOUT     time.Duration = 3000 * time.Millisecond
-	SEND_ENTRY_TIMEOUT    time.Duration = 7500 * time.Millisecond
-	ENTRY_APPLIED_TIMEOUT time.Duration = 20000 * time.Millisecond
+	ELECTION_TIMEOUT       time.Duration = 3000 * time.Millisecond
+	HEARTBEAT              time.Duration = 1000 * time.Millisecond
+	REQUEST_VOTE_TIMEOUT   time.Duration = 5500 * time.Millisecond
+	HEARTBEAT_TIMEOUT      time.Duration = 3000 * time.Millisecond
+	SEND_ENTRY_TIMEOUT     time.Duration = 7500 * time.Millisecond
+	ENTRY_APPLIED_TIMEOUT  time.Duration = 20000 * time.Millisecond
+	LEADER_REQUEST_TIMEOUT time.Duration = 10000 * time.Millisecond
 )
 
 const (
@@ -226,19 +227,35 @@ func (s *RaftNetworkServer) ClientToLeaderRequest(ctx context.Context, req *pb.E
 
 //sendLeaderLogEntry forwards a client request to the leader
 func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
-	leaderNode := s.getLeader()
-	if leaderNode == nil {
-		return errors.New("Unable to find leader")
-	}
+	sendLogTimeout := time.Now().Add(LEADER_REQUEST_TIMEOUT)
+	for {
+		leaderNode := s.getLeader()
+		if leaderNode == nil {
+			if time.Now().After(sendLogTimeout) {
+				return errors.New("Unable to find leader")
+			} else {
+				continue
+			}
+		}
 
-	conn, err := s.Dial(leaderNode, SEND_ENTRY_TIMEOUT)
-	defer conn.Close()
-	if err == nil {
-		client := pb.NewRaftNetworkClient(conn)
-		_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{s.State.NodeId, entry})
-		return err
+		conn, err := s.Dial(leaderNode, SEND_ENTRY_TIMEOUT)
+		if err != nil {
+			if time.Now().After(sendLogTimeout) {
+				return err
+			} else {
+				continue
+			}
+		}
+		defer conn.Close()
+
+		if err == nil {
+			client := pb.NewRaftNetworkClient(conn)
+			_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{s.State.NodeId, entry})
+			if err == nil || time.Now().After(sendLogTimeout) {
+				return err
+			}
+		}
 	}
-	return err
 }
 
 func generateNewUUID() string {
