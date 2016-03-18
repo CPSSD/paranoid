@@ -1,7 +1,7 @@
 package dnetclient
 
 import (
-	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/net/context"
@@ -14,7 +14,7 @@ import (
 func Join(pool string) error {
 	conn, err := dialDiscovery()
 	if err != nil {
-		return errors.New("Failed to dial discovery server")
+		return fmt.Errorf("failed to dial discovery server: %s", err)
 	}
 	defer conn.Close()
 
@@ -31,7 +31,7 @@ func Join(pool string) error {
 			},
 		})
 	if err != nil {
-		return errors.New("Could not join the pool")
+		return fmt.Errorf("could not join the pool: %s", err)
 	}
 
 	interval := response.ResetInterval / 10 * 9
