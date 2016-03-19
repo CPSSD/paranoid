@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"io/ioutil"
 	"os"
@@ -72,6 +73,16 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file: %s", err)
 	}
 	defer contentsFile.Close()
+
+	if encryption.Encrypted {
+		n, err := contentsFile.WriteAt([]byte{1}, 0)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file: %s", err)
+		}
+		if n != 1 {
+			return returncodes.EUNEXPECTED, errors.New("error writing first byte to contents file")
+		}
+	}
 
 	return returncodes.OK, nil
 }

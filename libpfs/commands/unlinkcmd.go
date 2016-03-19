@@ -60,7 +60,7 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.C
 	Log.Verbose("unlink : deleting file " + fileParanoidPath)
 	err = os.Remove(fileParanoidPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error removing file in names:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error removing file in names: %s", err)
 	}
 
 	// getting inode contents
@@ -68,14 +68,14 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.C
 	Log.Verbose("unlink : reading file " + inodePath)
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading inodes contents:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading inodes contents: %s", err)
 	}
 
 	inodeData := &inode{}
 	Log.Verbose("unlink unmarshaling ", string(inodeContents))
 	err = json.Unmarshal(inodeContents, &inodeData)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshaling json:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshaling json: %s", err)
 	}
 
 	if inodeData.Count == 1 {
@@ -84,13 +84,13 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.C
 		Log.Verbose("unlink : removing file " + contentsPath)
 		err = os.Remove(contentsPath)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error removing contents:", err)
+			return returncodes.EUNEXPECTED, fmt.Errorf("error removing contents: %s", err)
 		}
 
 		Log.Verbose("unlink : removing file " + inodePath)
 		err = os.Remove(inodePath)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error removing inode:", err)
+			return returncodes.EUNEXPECTED, fmt.Errorf("error removing inode: %s", err)
 		}
 	} else {
 		// subtracting one from inode count and saving
@@ -98,18 +98,18 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.C
 		Log.Verbose("unlink : truncating file " + inodePath)
 		err = os.Truncate(inodePath, 0)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error truncating inode path:", err)
+			return returncodes.EUNEXPECTED, fmt.Errorf("error truncating inode path: %s", err)
 		}
 
 		dataToWrite, err := json.Marshal(inodeData)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
+			return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)
 		}
 
 		Log.Verbose("unlink : writing to file " + inodePath)
 		err = ioutil.WriteFile(inodePath, dataToWrite, 0777)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file:", err)
+			return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file: %s", err)
 		}
 	}
 

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/cpssd/paranoid/libpfs/commands"
@@ -37,14 +38,6 @@ func doMount(c *cli.Context, args []string) {
 	}
 	pfsName := args[0]
 	mountPoint := args[1]
-
-	if c.GlobalBool("networkoff") == false {
-		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
-		if err != nil {
-			fmt.Println("FATAL: Unable to reach server", err)
-			Log.Fatal("Unable to reach server")
-		}
-	}
 
 	usr, err := user.Current()
 	if err != nil {
@@ -82,6 +75,27 @@ func doMount(c *cli.Context, args []string) {
 		}
 	}
 
+	attributesJson, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "attributes"))
+	if err != nil {
+		fmt.Println("FATAL: unable to read file system attributes")
+		Log.Fatal("unable to read file system attributes:", err)
+	}
+
+	attributes := &fileSystemAttributes{}
+	err = json.Unmarshal(attributesJson, attributes)
+	if err != nil {
+		fmt.Println("FATAL: unable to read file system attributes")
+		Log.Fatal("unable to read file system attributes:", err)
+	}
+
+	if !attributes.NetworkOff {
+		_, err := net.DialTimeout("tcp", serverAddress, time.Duration(5*time.Second))
+		if err != nil {
+			fmt.Println("FATAL: Unable to reach server", err)
+			Log.Fatal("Unable to reach server")
+		}
+	}
+
 	poolBytes, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "pool"))
 	if err != nil {
 		fmt.Println("FATAL: unable to read pool information:", err)
@@ -101,7 +115,7 @@ func doMount(c *cli.Context, args []string) {
 		Log.Fatal("Error running pfs mount command : ", err)
 	}
 
-	if !c.GlobalBool("networkoff") {
+	if !attributes.NetworkOff {
 		// Check if the cert and key files are present.
 		certPath := path.Join(pfsDir, "meta", "cert.pem")
 		keyPath := path.Join(pfsDir, "meta", "key.pem")

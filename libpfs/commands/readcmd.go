@@ -4,26 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/cpssd/paranoid/libpfs"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	// "github.com/cpssd/paranoid/pfsd/globals"
 	"io"
 	"os"
 	"path"
+	"strconv"
 	"syscall"
 )
 
-// ReadCommand reads data from a file
-// Offset and length can be given as -1 to note that the defaults should be used.
+//ReadCommand reads data from a file
 func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode returncodes.Code, returnError error, fileContents []byte) {
-
-	// TODO: REMOVE THIS
-	encryptionKey := []byte("86F7E437FAA5A7FCE15D1DDCB9EAEAEA")
-	libpfs.CipherBlock, _ = libpfs.GenerateAESCipherBlock(encryptionKey)
-	// ENDTODO
-
-	Log.Info("read: command called")
-	Log.Verbose("read: given paranoidDirectory = " + paranoidDirectory)
+	Log.Info("read command called")
+	Log.Verbose("read : given paranoidDirectory = " + paranoidDirectory)
 
 	namepath := getParanoidPath(paranoidDirectory, filePath)
 
@@ -89,92 +82,97 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 	}
 	defer file.Close()
 
-	// Read the file and return if successful
-	data, err := read(file, offset, length)
-	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading: %s", err), nil
-	}
-	return returncodes.OK, nil, data.Bytes()
-}
+	var fileBuffer bytes.Buffer
+	bytesRead := make([]byte, 1024)
 
-// read is a function only for reading the encrypted file
-func read(file *os.File, offset int64, length int64) (decBuf *bytes.Buffer, err error) {
-	blockSize := int64(libpfs.CipherBlock.BlockSize())
+	maxRead := 100000000
 
-	// Check the offset
-	if offset <= 0 {
+	if offset == -1 {
 		offset = 0
 	}
 
-	// Define block offset to read from
-	blockOffset := offset - offset%blockSize + 1
-	originalBlockOffset := blockOffset
-
-	// Get the total size of the file
-	stats, err := file.Stat()
-	if err != nil {
-		return nil, err
-	}
-	fileSize := stats.Size() - 1 // Take the correction for the offset
-
-	// Check the size of the last block
-	lastBlockSize, err := libpfs.LastBlockSize(file)
-	if err != nil {
-		return nil, err
+	if length != -1 {
+		Log.Verbose("read : " + strconv.FormatInt(length, 10) + " bytes starting at " + strconv.FormatInt(offset, 10))
+		maxRead = int(length)
+	} else {
+		Log.Verbose("read : from " + strconv.FormatInt(offset, 10) + " to end of file")
 	}
 
-	// Check the length size
-	if length == -1 {
-		length = fileSize - (blockSize - int64(lastBlockSize))
-	}
-
-	// Define the block length
-	blockLength := length - length%blockSize + 1 + blockSize
-
-	// Read the file
-	fullRead := bytes.NewBuffer(nil)
-	buf := make([]byte, blockLength)
 	for {
-		n, err := file.ReadAt(buf, blockOffset)
+		n, readerror, err := readAt(file, bytesRead, offset)
 		if err != nil {
-			if err == io.EOF {
-				Log.Infof("read: reached end of file. Bytes read: %d", n)
-				buf = buf[:n]
-				_, err = fullRead.Write(buf)
-				if err != nil {
-					return nil, err
-				}
-				break
-			} else {
-				return nil, err
-			}
+			return returncodes.EUNEXPECTED, fmt.Errorf("error reading file %s", err), nil
 		}
 
-		if int64(n) > blockLength {
-			buf = buf[:blockLength]
-			_, err = fullRead.Write(buf)
+		if n > maxRead {
+			bytesRead = bytesRead[0:maxRead]
+			_, err := fileBuffer.Write(bytesRead)
 			if err != nil {
-				return nil, err
+				return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer: %s", err), nil
 			}
 			break
 		}
 
-		blockOffset += int64(n)
+		offset = offset + int64(n)
+		maxRead = maxRead - n
+		if readerror == io.EOF {
+			bytesRead = bytesRead[:n]
+			_, err := fileBuffer.Write(bytesRead)
+			if err != nil {
+				return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer: %s", err), nil
+			}
+			break
+		}
 
-		_, err = fullRead.Write(buf[:n])
+		if readerror != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error reading from %s: %s", filePath, err), nil
+		}
+
+		bytesRead = bytesRead[:n]
+		_, err = fileBuffer.Write(bytesRead)
 		if err != nil {
-			return nil, err
+			return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer: %s", err), nil
 		}
 	}
+	return returncodes.OK, nil, fileBuffer.Bytes()
+}
 
-	// Decrypt the file
-	dec := libpfs.Decrypt(fullRead.Bytes(), lastBlockSize)
-	dec.Next(int(offset - originalBlockOffset + 1))
-
-	if dec.Len() < int(length) {
-		length = int64(dec.Len())
+func readAt(file *os.File, bytesRead []byte, offset int64) (n int, readerror error, err error) {
+	if !encryption.Encrypted {
+		n, readerror := file.ReadAt(bytesRead, offset)
+		return n, readerror, nil
 	}
-	dec.Truncate(int(length))
 
-	return &dec, nil
+	if len(bytesRead) == 0 {
+		return 0, nil, nil
+	}
+
+	cipherSizeInt64 := int64(encryption.GetCipherSize())
+	extraStartBytes := offset % cipherSizeInt64
+	extraEndBytes := cipherSizeInt64 - ((offset + int64(len(bytesRead))) % cipherSizeInt64)
+	readStart := 1 + offset - extraStartBytes
+	newBytesRead := make([]byte, int64(len(bytesRead))+extraStartBytes+extraEndBytes)
+
+	fileLength, err := getFileLength(file)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	n, readerror = file.ReadAt(newBytesRead, readStart)
+	n = n - int(extraStartBytes)
+	if n > len(bytesRead) {
+		n = len(bytesRead)
+	}
+	if offset+int64(n) > fileLength {
+		n = int(fileLength - offset)
+	}
+
+	decBuf, err := encryption.Decrypt(newBytesRead)
+	if err != nil {
+		return 0, nil, err
+	}
+	decBytes := decBuf.Bytes()
+	decBytes = decBytes[extraStartBytes:]
+	copy(bytesRead, decBytes)
+	return n, readerror, nil
 }

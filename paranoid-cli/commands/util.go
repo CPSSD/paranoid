@@ -15,6 +15,12 @@ import (
 
 var Log *logger.ParanoidLogger
 
+type fileSystemAttributes struct {
+	Encrypted    bool `json:"encrypted"`
+	KeyGenerated bool `json:"keygenerated"`
+	NetworkOff   bool `json:"networkoff"`
+}
+
 func pathExists(path string) bool {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false

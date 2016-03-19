@@ -54,7 +54,7 @@ func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.C
 
 	files, err := ioutil.ReadDir(dirParanoidPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading paranoidDirectory "+dirPath+":", err), nil
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading paranoidDirectory %s: %s", dirPath, err), nil
 	}
 
 	var names []string

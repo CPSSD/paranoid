@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
 	"io/ioutil"
@@ -50,7 +51,7 @@ func getFileMode(paranoidDir, inodeName string) (os.FileMode, error) {
 	return nodeData.Mode, nil
 }
 
-func canAccessFile(paranoidDir, inodeName string, mode uint32) (int, error) {
+func canAccessFile(paranoidDir, inodeName string, mode uint32) (returncodes.Code, error) {
 	fileMode, err := getFileMode(paranoidDir, inodeName)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
@@ -63,6 +64,28 @@ func canAccessFile(paranoidDir, inodeName string, mode uint32) (int, error) {
 	return returncodes.OK, nil
 }
 
+func getFileLength(file *os.File) (int64, error) {
+	fi, err := file.Stat()
+	if err != nil {
+		return 0, fmt.Errorf("unable to get file length: %s", err)
+	}
+	if !encryption.Encrypted {
+		return fi.Size(), nil
+	}
+	if fi.Size() == 0 {
+		return 0, nil
+	}
+	lastBlockSize, err := encryption.LastBlockSize(file)
+	if err != nil {
+		return 0, fmt.Errorf("unable to get file length: %s", err)
+	}
+	fileLength := fi.Size() - 1
+	if fileLength > 0 {
+		fileLength = fileLength - int64(encryption.GetCipherSize()-lastBlockSize)
+	}
+	return fileLength, nil
+}
+
 //Types of locks
 const (
 	sharedLock = iota
@@ -73,18 +96,18 @@ func getFileSystemLock(paranoidDir string, lockType int) error {
 	lockPath := path.Join(paranoidDir, "meta", "lock")
 	file, err := os.Open(lockPath)
 	if err != nil {
-		return fmt.Errorf("could not get meta/lock file descriptor:", err)
+		return fmt.Errorf("could not get meta/lock file descriptor: %s", err)
 	}
 	defer file.Close()
 	if lockType == sharedLock {
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_SH)
 		if err != nil {
-			return fmt.Errorf("error getting shared lock on meta/lock:", err)
+			return fmt.Errorf("error getting shared lock on meta/lock: %s", err)
 		}
 	} else if lockType == exclusiveLock {
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX)
 		if err != nil {
-			return fmt.Errorf("error getting exclusive lock on meta/lock:", err)
+			return fmt.Errorf("error getting exclusive lock on meta/lock: %s", err)
 		}
 	}
 	return nil
@@ -94,18 +117,18 @@ func getFileLock(paranoidDir, fileName string, lockType int) error {
 	lockPath := path.Join(paranoidDir, "contents", fileName)
 	file, err := os.Open(lockPath)
 	if err != nil {
-		return fmt.Errorf("could not get file descriptor for lock file "+fileName+" :", err)
+		return fmt.Errorf("could not get file descriptor for lock file %s: %s", fileName, err)
 	}
 	defer file.Close()
 	if lockType == sharedLock {
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_SH)
 		if err != nil {
-			return fmt.Errorf("could not get shared lock on lock file "+fileName+" :", err)
+			return fmt.Errorf("could not get shared lock on lock file %s: %s", fileName, err)
 		}
 	} else if lockType == exclusiveLock {
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX)
 		if err != nil {
-			return fmt.Errorf("could not get exclusive lock on lock file "+fileName+" :", err)
+			return fmt.Errorf("could not get exclusive lock on lock file %s: %s", fileName, err)
 		}
 	}
 	return nil
@@ -129,7 +152,7 @@ func unLockFile(paranoidDir, fileName string) error {
 	lockPath := path.Join(paranoidDir, "contents", fileName)
 	file, err := os.Open(lockPath)
 	if err != nil {
-		return fmt.Errorf("could not get file descriptor for unlock file "+fileName+" :", err)
+		return fmt.Errorf("could not get file descriptor for unlock file %s: %s", fileName, err)
 	}
 	defer file.Close()
 	err = syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
@@ -151,7 +174,7 @@ func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
 func generateNewInode() (inodeBytes []byte, err error) {
 	inodeBytes, err = ioutil.ReadFile("/proc/sys/kernel/random/uuid")
 	if err != nil {
-		return nil, fmt.Errorf("error generating new inode:", err)
+		return nil, fmt.Errorf("error generating new inode: %s", err)
 	}
 	return []byte(strings.TrimSpace(string(inodeBytes))), nil
 }
@@ -162,7 +185,7 @@ func getFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Cod
 		if os.IsNotExist(err) {
 			return nil, returncodes.ENOENT, errors.New("error getting inode, " + filePath + " does not exist")
 		}
-		return nil, returncodes.EUNEXPECTED, fmt.Errorf("unexpected error getting inode of file "+filePath+" :", err)
+		return nil, returncodes.EUNEXPECTED, fmt.Errorf("unexpected error getting inode of file %s: %s", filePath, err)
 	}
 	if f.Mode().IsDir() {
 		filePath = path.Join(filePath, "info")
@@ -174,7 +197,7 @@ func getFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Cod
 		} else if os.IsPermission(err) {
 			return nil, returncodes.EACCES, errors.New("error getting inode, could not access " + filePath)
 		}
-		return nil, returncodes.EUNEXPECTED, fmt.Errorf("unexpected error getting inode of file "+filePath+" :", err)
+		return nil, returncodes.EUNEXPECTED, fmt.Errorf("unexpected error getting inode of file %s: %s", filePath, err)
 	}
 	return bytes, returncodes.OK, nil
 }
@@ -187,7 +210,7 @@ func deleteFile(filePath string) (returncode returncodes.Code, returnerror error
 		} else if os.IsPermission(err) {
 			return returncodes.EACCES, errors.New("error deleting file: could not access " + filePath)
 		}
-		return returncodes.EUNEXPECTED, fmt.Errorf("unexpected error deleting file: ", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("unexpected error deleting file: %s", err)
 	}
 	return returncodes.OK, nil
 }
@@ -199,13 +222,13 @@ const (
 	typeENOENT
 )
 
-func getFileType(directory, filePath string) (int, error) {
+func getFileType(directory, filePath string) (returncodes.Code, error) {
 	f, err := os.Lstat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return typeENOENT, nil
 		}
-		return 0, fmt.Errorf("error getting file type of "+filePath+", error stating file:", err)
+		return 0, fmt.Errorf("error getting file type of %s, error stating file: %s", filePath, err)
 	}
 
 	if f.Mode().IsDir() {
@@ -214,19 +237,19 @@ func getFileType(directory, filePath string) (int, error) {
 
 	inode, code, err := getFileInode(filePath)
 	if err != nil {
-		return 0, fmt.Errorf("error getting file type of "+filePath+", error getting inode:", err)
+		return 0, fmt.Errorf("error getting file type of %s, error getting inode: %s", filePath, err)
 	}
 
 	if code != returncodes.OK {
 		if code == returncodes.ENOENT {
 			return typeENOENT, nil
 		}
-		return 0, fmt.Errorf("error getting file type of "+filePath+", unexpected result from getFileInode:", code)
+		return 0, fmt.Errorf("error getting file type of %s, unexpected result from getFileInode: %s", filePath, code)
 	}
 
 	f, err = os.Lstat(path.Join(directory, "contents", string(inode)))
 	if err != nil {
-		return 0, fmt.Errorf("error getting file type of "+filePath+", symlink check error occured:", err)
+		return 0, fmt.Errorf("error getting file type of %s, symlink check error occured: %s", filePath, err)
 	}
 
 	if f.Mode()&os.ModeSymlink > 0 {

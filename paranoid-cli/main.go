@@ -52,10 +52,6 @@ func main() {
 			Name:  "verbose",
 			Usage: "enable verbose loging",
 		},
-		cli.BoolFlag{
-			Name:  "networkoff",
-			Usage: "turn off networking",
-		},
 	}
 	app.Commands = []cli.Command{
 		{
@@ -64,6 +60,14 @@ func main() {
 			Usage:     "init a new paranoid file system",
 			Action:    commands.Init,
 			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "networkoff",
+					Usage: "turn off networking for this filesystem",
+				},
+				cli.BoolFlag{
+					Name:  "unencrypted",
+					Usage: "disable file encryption for this filesystem",
+				},
 				cli.BoolFlag{
 					Name:  "u, unsecure",
 					Usage: "disable TLS/SSL for this filesystem's network services",
@@ -185,6 +189,14 @@ func main() {
 			Usage:     "builds a filesystem with the given <pfs-name> from the logfiles whos location is specified by <log-directory>",
 			Action:    commands.Buildfs,
 			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "networkoff",
+					Usage: "turn off networking for this filesystem",
+				},
+				cli.BoolFlag{
+					Name:  "unencrypted",
+					Usage: "disable file encryption for this filesystem",
+				},
 				cli.BoolFlag{
 					Name:  "u, unsecure",
 					Usage: "disable TLS/SSL for this filesystem's network services",

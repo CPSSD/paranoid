@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/cpssd/paranoid/libpfs/commands"
@@ -28,11 +29,11 @@ func Init(c *cli.Context) {
 	}
 
 	doInit(args[0], c.String("pool"), c.String("cert"),
-		c.String("key"), c.Bool("unsecure"))
+		c.String("key"), c.Bool("unsecure"), c.Bool("unencrypted"), c.Bool("networkoff"))
 }
 
 //doInit inits a new paranoid file system
-func doInit(pfsname, pool, cert, key string, unsecure bool) {
+func doInit(pfsname, pool, cert, key string, unsecure, unencrypted, networkoff bool) {
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println("FATAL: Error Getting Current User")
@@ -86,6 +87,24 @@ func doInit(pfsname, pool, cert, key string, unsecure bool) {
 	}
 	fmt.Println("Using pool name", pool)
 	Log.Infof("Using pool name %s", pool)
+
+	fileAttributes := &fileSystemAttributes{
+		Encrypted:    !unencrypted,
+		KeyGenerated: false,
+		NetworkOff:   networkoff,
+	}
+
+	attributesJson, err := json.Marshal(fileAttributes)
+	if err != nil {
+		fmt.Println("FATAL: Cannot save file system information")
+		Log.Fatal("cannot save file system information:", err)
+	}
+
+	err = ioutil.WriteFile(path.Join(directory, "meta", "attributes"), attributesJson, 0600)
+	if err != nil {
+		fmt.Println("FATAL: Cannot save file system information")
+		Log.Fatal("cannot save file system information:", err)
+	}
 
 	if unsecure {
 		fmt.Println("--unsecure specified. PFSD will not use TLS for its communication.")

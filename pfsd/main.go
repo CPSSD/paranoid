@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
 	"github.com/cpssd/paranoid/pfsd/globals"
@@ -125,6 +127,62 @@ func setupLogging() {
 	}
 }
 
+func getFileSystemAttributes() {
+	attributesJson, err := ioutil.ReadFile(path.Join(globals.ParanoidDir, "meta", "attributes"))
+	if err != nil {
+		log.Fatal("unable to read file system attributes:", err)
+	}
+
+	attributes := &globals.FileSystemAttributes{}
+	err = json.Unmarshal(attributesJson, attributes)
+	if err != nil {
+		log.Fatal("unable to read file system attributes:", err)
+	}
+
+	globals.Encrypted = attributes.Encrypted
+	encryption.Encrypted = attributes.Encrypted
+
+	if attributes.Encrypted {
+		if !attributes.KeyGenerated {
+			//If a key has not yet been generated for this file system, one must be generated
+			globals.EncryptionKey, err = keyman.GenerateKey(32)
+			if err != nil {
+				log.Fatal("unable to generate encryption key:", err)
+			}
+			attributes.KeyGenerated = true
+
+			cipherB, err := encryption.GenerateAESCipherBlock(globals.EncryptionKey.GetBytes())
+			if err != nil {
+				log.Fatal("unable to generate cipher block:", err)
+			}
+			encryption.SetCipher(cipherB)
+
+			if attributes.NetworkOff {
+				//If networking is turned off, save the key to a file
+				attributes.EncryptionKey = *globals.EncryptionKey
+			}
+		} else if attributes.NetworkOff {
+			//If networking is off, load the key from the file
+			globals.EncryptionKey = &attributes.EncryptionKey
+			cipherB, err := encryption.GenerateAESCipherBlock(globals.EncryptionKey.GetBytes())
+			if err != nil {
+				log.Fatal("unable to generate cipher block:", err)
+			}
+			encryption.SetCipher(cipherB)
+		}
+	}
+
+	attributesJson, err = json.Marshal(attributes)
+	if err != nil {
+		log.Fatal("unable to save new file system attributes to file:", err)
+	}
+
+	err = ioutil.WriteFile(path.Join(globals.ParanoidDir, "meta", "attributes"), attributesJson, 0600)
+	if err != nil {
+		log.Fatal("unable to save new file system attributes to file:", err)
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -148,6 +206,8 @@ func main() {
 	globals.ParanoidDir = paranoidDirAbs
 	globals.MountPoint = mountPointAbs
 	setupLogging()
+
+	getFileSystemAttributes()
 
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {

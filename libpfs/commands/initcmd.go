@@ -24,7 +24,7 @@ func makeDir(parentDir, newDir string) (string, error) {
 func checkEmpty(directory string) error {
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
-		return fmt.Errorf("error reading directory: %s", err)
+		return fmt.Errorf("error reading directory %s", err)
 	}
 	if len(files) > 0 {
 		return errors.New("init : directory must be empty")

@@ -75,12 +75,12 @@ func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)
 	}
 
 	err = ioutil.WriteFile(inodePath, jsonData, 0600)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file: %s", err)
 	}
 
 	return returncodes.OK, nil

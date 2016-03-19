@@ -74,7 +74,7 @@ func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCo
 
 	err = os.Rename(oldFileParanoidPath, newFileParanoidPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error renaming file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error renaming file: %s", err)
 	}
 
 	return returncodes.OK, nil

@@ -3,16 +3,15 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/cpssd/paranoid/libpfs"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
-	// "io"
+	"io"
 	"os"
 	"path"
 	"syscall"
 )
 
 //WriteCommand writes data to the given file
-//offset and length can be given as -1 if the defaults are to be used
 func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data []byte) (returnCode returncodes.Code, returnError error, bytesWrote int) {
 	Log.Info("write command called")
 	Log.Verbose("write : given paranoidDirectory =", paranoidDirectory)
@@ -37,13 +36,16 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 		return returncodes.EUNEXPECTED, err, 0
 	}
 
-	switch namepathType {
-	case typeENOENT:
-		return returncodes.ENOENT, fmt.Errorf("%s does not exist", filePath), 0
-	case typeDir:
-		return returncodes.EISDIR, fmt.Errorf("%s is a paranoidDirectory", filePath), 0
-	case typeSymlink:
-		return returncodes.EIO, fmt.Errorf("%s is a symlink", filePath), 0
+	if namepathType == typeENOENT {
+		return returncodes.ENOENT, errors.New(filePath + " does not exist"), 0
+	}
+
+	if namepathType == typeDir {
+		return returncodes.EISDIR, errors.New(filePath + " is a paranoidDirectory"), 0
+	}
+
+	if namepathType == typeSymlink {
+		return returncodes.EIO, errors.New(filePath + " is a symlink"), 0
 	}
 
 	fileInodeBytes, code, err := getFileInode(namepath)
@@ -71,74 +73,100 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 		}
 	}()
 
-	Log.Verbose("write : writing to", inodeName)
+	Log.Verbose("write : wrting to " + inodeName)
 	contentsFile, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeName), os.O_RDWR, 0777)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file: %s", err), 0
 	}
 	defer contentsFile.Close()
 
-	// write the data to file
-	wroteLen, err := write(contentsFile, data, offset, length)
-	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error writing data to file: %s", err), 0
-	}
-	return returncodes.OK, nil, wroteLen
-}
-
-func write(file *os.File, data []byte, offset int64, length int64) (n int, err error) {
-	blockSize := int64(libpfs.CipherBlock.BlockSize())
-
-	// Check the offset
-	if offset <= 0 {
+	if offset == -1 {
 		offset = 0
 	}
 
-	// Define block offset to read from
-	blockOffset := offset - offset%blockSize + 1
-
-	// Check the size of the last block
-	lastBlockSize, err := libpfs.LastBlockSize(file)
-	if err != nil {
-		return 0, fmt.Errorf("unable to read last block size: %s", err)
-	}
-
 	if length == -1 {
-		length = int64(len(data))
-	}
-
-	// Append empty bytes if length > len(data)
-	if length > int64(len(data)) {
-		data = append(data, make([]byte, len(data)-int(length))...)
-		length = int64(len(data))
-	} else {
+		err = truncate(contentsFile, offset)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file: %s", err), 0
+		}
+	} else if len(data) > int(length) {
 		data = data[:length]
+	} else if len(data) < int(length) {
+		emptyBytes := make([]byte, int(length)-len(data))
+		data = append(data, emptyBytes...)
 	}
 
-	// Read the last block and add it on if the last block is not full
-	lastBlock, err := libpfs.GetLastBlock(file)
+	wroteLen, err := writeAt(contentsFile, data, offset)
 	if err != nil {
-		return 0, fmt.Errorf("error getting last block: %s", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file: %s", err), wroteLen
 	}
 
-	dec := libpfs.Decrypt(lastBlock, lastBlockSize)
-	lastBlock = dec.Bytes() //[:offset%blockSize]
-	data = append(lastBlock, data...)
+	return returncodes.OK, nil, wroteLen
+}
 
-	// Encrypt the data
-	enc, l := libpfs.Encrypt(data)
+func writeAt(file *os.File, data []byte, offset int64) (wroteLen int, err error) {
+	if !encryption.Encrypted {
+		return file.WriteAt(data, offset)
+	}
 
-	// Write the encrypted block size at the beginning of the file
-	_, err = file.WriteAt([]byte{byte(l)}, 0)
+	cipherSizeInt64 := int64(encryption.GetCipherSize())
+	extraStartBytes := offset % cipherSizeInt64
+	writeStart := offset - extraStartBytes
+	startBytes := make([]byte, extraStartBytes)
+
+	_, readerror, err := readAt(file, startBytes, writeStart)
 	if err != nil {
-		return 0, fmt.Errorf("cannot write last block size: %s", err)
+		return 0, fmt.Errorf("error reading start block: %s", err)
+	}
+	if readerror != nil {
+		return 0, fmt.Errorf("error reading start block: %s", readerror)
 	}
 
-	// Write the encrypted data to the file
-	_, err = file.WriteAt(enc.Bytes(), blockOffset)
+	extraEndBytes := cipherSizeInt64 - ((offset + int64(len(data))) % cipherSizeInt64)
+	endBytes := make([]byte, extraEndBytes)
+	fileLength, err := getFileLength(file)
 	if err != nil {
-		return 0, fmt.Errorf("unable to write encrypted data: %s", err)
+		return 0, err
 	}
 
-	return int(length), nil
+	if offset+int64(len(data)) < fileLength {
+		_, readerror, err := readAt(file, endBytes, offset+int64(len(data)))
+		if err != nil {
+			return 0, fmt.Errorf("error reading end block: %s", err)
+		}
+		if readerror != nil && readerror != io.EOF {
+			return 0, fmt.Errorf("error reading end block: %s", err)
+		}
+	}
+
+	bytesToWrite := append(startBytes, data...)
+	bytesToWrite = append(bytesToWrite, endBytes...)
+
+	Log.Info("startBytes :", string(startBytes))
+	Log.Info("data :", string(data))
+	Log.Info("Bytes to write :", string(bytesToWrite))
+	encBytes, err := encryption.Encrypt(bytesToWrite)
+	if err != nil {
+		return 0, err
+	}
+
+	encData := encBytes.Bytes()
+	n, err := file.WriteAt(encData, writeStart+1)
+	if err != nil {
+		return n, err
+	}
+
+	Log.Info("offset : ", offset)
+	Log.Info("data:", string(data))
+	Log.Info("file length:", fileLength)
+	if offset+int64(len(data)) > fileLength {
+		endBlockSize := (offset + int64(len(data))) % cipherSizeInt64
+		Log.Info("End block size : ", endBlockSize)
+		_, err := file.WriteAt([]byte{byte(endBlockSize)}, 0)
+		if err != nil {
+			return n, err
+		}
+	}
+
+	return n, nil
 }
