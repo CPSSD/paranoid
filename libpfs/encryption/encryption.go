@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 )
 
@@ -87,19 +86,4 @@ func LastBlockSize(r *os.File) (size int, err error) {
 		return 0, errors.New("error getting last block")
 	}
 	return int(buf[0]), nil
-}
-
-// GetLastBlock gets the last block of the file
-func GetLastBlock(r *os.File) (data []byte, err error) {
-	buf := make([]byte, cipherBlock.BlockSize())
-	stats, err := r.Stat()
-	if err != nil {
-		return buf, err
-	}
-	size := stats.Size()
-	_, err = r.ReadAt(buf, size-int64(len(buf)))
-	if err == io.EOF {
-		return buf, nil
-	}
-	return buf, err
 }
