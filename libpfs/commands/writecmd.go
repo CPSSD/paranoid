@@ -142,9 +142,6 @@ func writeAt(file *os.File, data []byte, offset int64) (wroteLen int, err error)
 	bytesToWrite := append(startBytes, data...)
 	bytesToWrite = append(bytesToWrite, endBytes...)
 
-	Log.Info("startBytes :", string(startBytes))
-	Log.Info("data :", string(data))
-	Log.Info("Bytes to write :", string(bytesToWrite))
 	encBytes, err := encryption.Encrypt(bytesToWrite)
 	if err != nil {
 		return 0, err
@@ -152,16 +149,17 @@ func writeAt(file *os.File, data []byte, offset int64) (wroteLen int, err error)
 
 	encData := encBytes.Bytes()
 	n, err := file.WriteAt(encData, writeStart+1)
+	n = n - int(extraStartBytes)
+	if n > len(data) {
+		n = len(data)
+	}
+
 	if err != nil {
 		return n, err
 	}
 
-	Log.Info("offset : ", offset)
-	Log.Info("data:", string(data))
-	Log.Info("file length:", fileLength)
 	if offset+int64(len(data)) > fileLength {
 		endBlockSize := (offset + int64(len(data))) % cipherSizeInt64
-		Log.Info("End block size : ", endBlockSize)
 		_, err := file.WriteAt([]byte{byte(endBlockSize)}, 0)
 		if err != nil {
 			return n, err
