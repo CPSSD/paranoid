@@ -227,32 +227,33 @@ func (s *RaftNetworkServer) ClientToLeaderRequest(ctx context.Context, req *pb.E
 
 //sendLeaderLogEntry forwards a client request to the leader
 func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
-	sendLogTimeout := time.Now().Add(LEADER_REQUEST_TIMEOUT)
+	sendLogTimeout := time.After(LEADER_REQUEST_TIMEOUT)
+	lastError := errors.New("timeout before client to leader request was attempted")
 	for {
-		leaderNode := s.getLeader()
-		if leaderNode == nil {
-			if time.Now().After(sendLogTimeout) {
-				return errors.New("Unable to find leader")
-			} else {
+		select {
+		case <-sendLogTimeout:
+			return lastError
+		default:
+			leaderNode := s.getLeader()
+			if leaderNode == nil {
+				lastError = errors.New("Unable to find leader")
 				continue
 			}
-		}
 
-		conn, err := s.Dial(leaderNode, SEND_ENTRY_TIMEOUT)
-		if err != nil {
-			if time.Now().After(sendLogTimeout) {
-				return err
-			} else {
+			conn, err := s.Dial(leaderNode, SEND_ENTRY_TIMEOUT)
+			if err != nil {
+				lastError = err
 				continue
 			}
-		}
-		defer conn.Close()
+			defer conn.Close()
 
-		if err == nil {
-			client := pb.NewRaftNetworkClient(conn)
-			_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{s.State.NodeId, entry})
-			if err == nil || time.Now().After(sendLogTimeout) {
-				return err
+			if err == nil {
+				client := pb.NewRaftNetworkClient(conn)
+				_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{s.State.NodeId, entry})
+				if err == nil {
+					return err
+				}
+				lastError = err
 			}
 		}
 	}
