@@ -167,12 +167,11 @@ func readAt(file *os.File, bytesRead []byte, offset int64) (n int, readerror err
 		n = int(fileLength - offset)
 	}
 
-	decBuf, err := encryption.Decrypt(newBytesRead)
+	err = encryption.Decrypt(newBytesRead)
 	if err != nil {
 		return 0, nil, err
 	}
-	decBytes := decBuf.Bytes()
-	decBytes = decBytes[extraStartBytes:]
-	copy(bytesRead, decBytes)
+	newBytesRead = newBytesRead[extraStartBytes:]
+	copy(bytesRead, newBytesRead)
 	return n, readerror, nil
 }

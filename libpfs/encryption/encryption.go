@@ -1,7 +1,6 @@
 package encryption
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"errors"
@@ -40,39 +39,30 @@ func GetCipherSize() int {
 	return cipherBlock.BlockSize()
 }
 
-// Encrypt encrypts the data and returns a bytes.Buffer with the results
-func Encrypt(data []byte) (bytes.Buffer, error) {
-	var encryptedData bytes.Buffer
+// Encrypt encrypts the given data in place
+func Encrypt(data []byte) error {
 	cipherBlockSize := cipherBlock.BlockSize()
 	if len(data)%cipherBlockSize != 0 {
-		return encryptedData, errors.New("can not encrypt data not of size n * blocksize")
+		return errors.New("can not encrypt data not of size n * blocksize")
 	}
-	encBuf := make([]byte, cipherBlockSize)
 
 	for i := 0; i < len(data); i += cipherBlockSize {
-		cipherBlock.Encrypt(encBuf, data[i:i+cipherBlockSize])
-		encryptedData.Write(encBuf)
+		cipherBlock.Encrypt(data[i:i+cipherBlockSize], data[i:i+cipherBlockSize])
 	}
-
-	return encryptedData, nil
+	return nil
 }
 
-// Decrypt decrypts the data
-func Decrypt(data []byte) (bytes.Buffer, error) {
+// Decrypt decrypts the given data in place
+func Decrypt(data []byte) error {
 	cipherBlockSize := cipherBlock.BlockSize()
-	var dec bytes.Buffer
 	if len(data)%cipherBlockSize != 0 {
-		return dec, errors.New("can not decrypt data not of size n*blocksize")
+		return errors.New("can not decrypt data not of size n*blocksize")
 	}
-
-	decBuf := make([]byte, cipherBlockSize)
 
 	for i := 0; i < len(data); i += cipherBlockSize {
-		cipherBlock.Decrypt(decBuf, data[i:i+cipherBlockSize])
-		dec.Write(decBuf)
+		cipherBlock.Decrypt(data[i:i+cipherBlockSize], data[i:i+cipherBlockSize])
 	}
-
-	return dec, nil
+	return nil
 }
 
 // LastBlockSize reads the size of the last block from the beginning of the file

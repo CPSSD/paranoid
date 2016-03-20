@@ -142,13 +142,12 @@ func writeAt(file *os.File, data []byte, offset int64) (wroteLen int, err error)
 	bytesToWrite := append(startBytes, data...)
 	bytesToWrite = append(bytesToWrite, endBytes...)
 
-	encBytes, err := encryption.Encrypt(bytesToWrite)
+	err = encryption.Encrypt(bytesToWrite)
 	if err != nil {
 		return 0, err
 	}
 
-	encData := encBytes.Bytes()
-	n, err := file.WriteAt(encData, writeStart+1)
+	n, err := file.WriteAt(bytesToWrite, writeStart+1)
 	n = n - int(extraStartBytes)
 	if n > len(data) {
 		n = len(data)
