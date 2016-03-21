@@ -5,6 +5,7 @@ package commands
 import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
+	"math/rand"
 	"os"
 	"path"
 	"syscall"
@@ -568,5 +569,62 @@ func TestComplexDirectoryUsage(t *testing.T) {
 
 	if files[0] != "docs" {
 		t.Error("File is not equal to 'docs':", files[0])
+	}
+}
+
+func randN(x int) int {
+	if x == 0 {
+		return 0
+	}
+	return rand.Intn(x)
+}
+
+func TestComplexReadWrite(t *testing.T) {
+	setupTestDirectory()
+
+	seed := time.Now().UnixNano()
+	Log.Info("Test seed : ", seed)
+	rand.Seed(seed)
+
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	if code != returncodes.OK {
+		t.Error("error creating test file:", err)
+	}
+
+	currentFileData := make([]byte, 1024)
+	fileLength := 0
+
+	//Perform 100 random writes
+	for i := 0; i < 100; i++ {
+		maxWriteStart := fileLength
+		if maxWriteStart > 900 {
+			maxWriteStart = 900
+		}
+		writeStart := randN(maxWriteStart)
+		writeLength := randN(50) + 10
+		data := make([]byte, writeLength)
+		for j := 0; j < writeLength; j++ {
+			data[j] = byte(randN(26) + int('A'))
+		}
+
+		code, err, _ = WriteCommand(testDirectory, "test.txt", int64(writeStart), int64(writeLength), data)
+		if code != returncodes.OK {
+			t.Error("Write did not return OK. Actual:", code, " Error:", err)
+		}
+
+		if writeStart+writeLength > fileLength {
+			fileLength = writeStart + writeLength
+		}
+
+		copy(currentFileData[writeStart:writeStart+writeLength], data)
+	}
+
+	code, err, returnData := ReadCommand(testDirectory, "test.txt", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Read did not return OK. Actual:", code, " Error:", err)
+	}
+
+	if string(returnData) != string(currentFileData[:fileLength]) {
+		t.Errorf("Output does not match \n Expected: %s\n Actual: %s\n", string(currentFileData[:fileLength]), string(returnData))
 	}
 }
