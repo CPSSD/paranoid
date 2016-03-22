@@ -12,7 +12,7 @@ import (
 
 func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*pb.EmptyMessage, error) {
 	for _, node := range globals.Nodes.GetAll() {
-		if node.IP == req.OwnerNode.Ip && node.Port == req.OwnerNode.Port && node.CommonName == req.OwnerNode.CommonName {
+		if node.UUID == req.OwnerNode.Uuid {
 			var prime big.Int
 			prime.SetBytes(req.Prime)
 			// We must convert a slice to an array

@@ -24,6 +24,7 @@ func SendKeyPiece(piece *keyman.KeyPiece) {
 		Ip:         globals.ThisNode.IP,
 		Port:       globals.ThisNode.Port,
 		CommonName: globals.ThisNode.CommonName,
+		Uuid:       globals.ThisNode.UUID,
 	}
 	keyProto := &pb.KeyPiece{
 		Data:              piece.Data,

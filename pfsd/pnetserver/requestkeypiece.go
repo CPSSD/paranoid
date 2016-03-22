@@ -10,7 +10,7 @@ import (
 
 func (s *ParanoidServer) RequestKeyPiece(ctx context.Context, req *pb.PingRequest) (*pb.KeyPiece, error) {
 	for _, node := range globals.Nodes.GetAll() {
-		if node.IP == req.Ip && node.Port == req.Port && node.CommonName == req.CommonName {
+		if node.UUID == req.Uuid {
 			key, ok := globals.HeldKeyPieces[node]
 			if !ok {
 				Log.Warn("Key not found for node", node)
