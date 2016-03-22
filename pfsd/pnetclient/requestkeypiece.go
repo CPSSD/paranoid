@@ -34,6 +34,7 @@ func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w *sync.WaitGroup)
 		Ip:         globals.ThisNode.IP,
 		Port:       globals.ThisNode.Port,
 		CommonName: globals.ThisNode.CommonName,
+		Uuid:       globals.ThisNode.UUID,
 	}
 	pieceProto, err := client.RequestKeyPiece(context.Background(), thisNodeProto)
 	if err != nil {
