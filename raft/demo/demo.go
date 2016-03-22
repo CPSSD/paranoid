@@ -35,27 +35,27 @@ var (
 )
 
 func getRandomInterval() time.Duration {
-	interval := int(RANDOM_NUMBER_GEN_MAX) - int(RANDOM_NUMBER_GEN_MIN)
-	randx := rand.Intn(interval)
+	interval := int64(RANDOM_NUMBER_GEN_MAX) - int64(RANDOM_NUMBER_GEN_MIN)
+	randx := rand.Int63n(interval)
 	return RANDOM_NUMBER_GEN_MIN + time.Duration(randx)
 }
 
 func getRandomDropInterval() time.Duration {
-	interval := int(RANDOM_DROP_INTERVAL_MAX) - int(RANDOM_DROP_INTERVAL_MIN)
-	randx := rand.Intn(interval)
+	interval := int64(RANDOM_DROP_INTERVAL_MAX) - int64(RANDOM_DROP_INTERVAL_MIN)
+	randx := rand.Int63n(interval)
 	return RANDOM_DROP_INTERVAL_MIN + time.Duration(randx)
 }
 
 func getRandomDrop() time.Duration {
 	randomChance := rand.Intn(100)
 	if randomChance < 20 { //5 to 8 second drop
-		interval := int(8*time.Second) - int(5*time.Second)
-		randx := rand.Intn(interval)
+		interval := int64(8*time.Second) - int64(5*time.Second)
+		randx := rand.Int63n(interval)
 		return time.Second*5 + time.Duration(randx)
 	}
 	// 2 to 5 second drop
-	interval := int(5*time.Second) - int(2*time.Second)
-	randx := rand.Intn(interval)
+	interval := int64(5*time.Second) - int64(2*time.Second)
+	randx := rand.Int63n(interval)
 	return time.Second*2 + time.Duration(randx)
 }
 
