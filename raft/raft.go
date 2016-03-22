@@ -283,7 +283,7 @@ func convertNodesToProto(nodes []Node) []*pb.Node {
 //getRandomElectionTimeout returns a time between ELECTION_TIMEOUT and ELECTION_TIMEOUT*2
 func getRandomElectionTimeout() time.Duration {
 	rand.Seed(time.Now().UnixNano())
-	return ELECTION_TIMEOUT + time.Duration(rand.Intn(int(ELECTION_TIMEOUT)))
+	return ELECTION_TIMEOUT + time.Duration(rand.Int63n(int64(ELECTION_TIMEOUT)))
 }
 
 func (s *RaftNetworkServer) electionTimeOut() {
