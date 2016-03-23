@@ -78,9 +78,12 @@ func TestComplexCommandUsage(t *testing.T) {
 		t.Error("error creating test file:", err)
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test.txt", -1, -1, []byte("START"))
+	code, err, n := WriteCommand(testDirectory, "test.txt", -1, -1, []byte("START"))
 	if code != returncodes.OK {
-		t.Error("Read did not return OK. Actual:", code, " Error:", err)
+		t.Error("Write did not return OK. Actual:", code, " Error:", err)
+	}
+	if n != len([]byte("START")) {
+		t.Error("Write did not return correct number of bytes Actual:", n, "Expected:", len([]byte("START")))
 	}
 
 	code, err, returnData := ReadCommand(testDirectory, "test.txt", 2, 2)
@@ -92,9 +95,12 @@ func TestComplexCommandUsage(t *testing.T) {
 		t.Error("Output from partial read does not match ", string(returnData))
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test.txt", 5, -1, []byte("END"))
+	code, err, n = WriteCommand(testDirectory, "test.txt", 5, -1, []byte("END"))
 	if code != returncodes.OK {
-		t.Error("Read did not return OK Actual: ", code, " Error:", err)
+		t.Error("Write did not return OK Actual: ", code, " Error:", err)
+	}
+	if n != len([]byte("END")) {
+		t.Error("Write did not return correct number of bytes Actual:", n, "Expected:", len([]byte("END")))
 	}
 
 	code, err, returnData = ReadCommand(testDirectory, "test.txt", -1, -1)
@@ -272,9 +278,12 @@ func TestLinkCommand(t *testing.T) {
 		t.Error("Readdir got incorrect results")
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test2.txt", -1, -1, []byte("hellotest"))
+	code, err, n := WriteCommand(testDirectory, "test2.txt", -1, -1, []byte("hellotest"))
 	if code != returncodes.OK {
 		t.Error("Write did not return OK. Actual:", code, " Error:", err)
+	}
+	if n != len([]byte("hellotest")) {
+		t.Error("Write did not return correct number of bytes Actual:", n, "Expected:", len([]byte("hellotest")))
 	}
 
 	code, err, data := ReadCommand(testDirectory, "test.txt", -1, -1)
@@ -380,9 +389,12 @@ func TestTruncate(t *testing.T) {
 		t.Error("error creating test file:", err)
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test.txt", -1, -1, []byte("HI!!!!!"))
+	code, err, n := WriteCommand(testDirectory, "test.txt", -1, -1, []byte("HI!!!!!"))
 	if code != returncodes.OK {
 		t.Error("Write command failed! : ", err)
+	}
+	if n != len([]byte("HI!!!!!")) {
+		t.Error("Write did not return correct number of bytes Actual:", n, "Expected:", len([]byte("HI!!!!!")))
 	}
 
 	code, err = TruncateCommand(testDirectory, "test.txt", 3)
@@ -483,9 +495,13 @@ func TestComplexDirectoryUsage(t *testing.T) {
 	}
 
 	// writing and reading from file within directory
-	code, err, _ = WriteCommand(testDirectory, "documents/important_links.txt", -1, -1, []byte("https://www.google.com/"))
+	toWrite := []byte("https://www.google.com/")
+	code, err, n := WriteCommand(testDirectory, "documents/important_links.txt", -1, -1, toWrite)
 	if code != returncodes.OK {
 		t.Error("Write did not return OK. Actual:", code, " Error:", err)
+	}
+	if n != len(toWrite) {
+		t.Error("Write did not return correct number of bytes Actual:", n, "Expected:", len(toWrite))
 	}
 
 	code, err, data := ReadCommand(testDirectory, "documents/important_links.txt", -1, -1)
@@ -607,9 +623,12 @@ func TestComplexReadWrite(t *testing.T) {
 			data[j] = byte(randN(26) + int('A'))
 		}
 
-		code, err, _ = WriteCommand(testDirectory, "test.txt", int64(writeStart), int64(writeLength), data)
+		code, err, n := WriteCommand(testDirectory, "test.txt", int64(writeStart), int64(writeLength), data)
 		if code != returncodes.OK {
 			t.Error("Write did not return OK. Actual:", code, " Error:", err)
+		}
+		if n != len(data) {
+			t.Error("Write did not return correct number of bytes Actual:", n, "Expected:", len(data))
 		}
 
 		if writeStart+writeLength > fileLength {
