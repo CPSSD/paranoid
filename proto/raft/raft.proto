@@ -8,6 +8,7 @@ service RaftNetwork {
     rpc AppendEntries (AppendEntriesRequest) returns (AppendEntriesResponse) {}
     rpc RequestVote (RequestVoteRequest) returns (RequestVoteResponse) {}
     rpc ClientToLeaderRequest (EntryRequest) returns (EmptyMessage) {}
+    rpc InstallSnapshot (SnapshotRequest) returns (SnapshotResponse) {}
 }
 
 message EmptyMessage {}
@@ -108,4 +109,26 @@ message RequestVoteRequest {
 message RequestVoteResponse {
     uint64 term = 1; // required
     bool vote_granted = 2; // required
+}
+
+message SnapshotRequest {
+    uint64 term = 1; // required
+    string leader_id = 2; // required
+    enum SnapshotType {
+      TarFile = 0;
+      ConfigurationFile = 1;
+    }
+    SnapshotType type = 3; // required 
+   
+    uint64 last_included_index = 4; // required 
+    uint64 last_included_term = 5; // required 
+
+    uint64 offset = 6; // required
+    bytes data = 7;  // required 
+
+    bool done = 8; // required
+}
+
+message SnapshotResponse {
+    uint64 term = 1; // required
 }
