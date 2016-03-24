@@ -5,6 +5,7 @@ package commands
 import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
+	"math/rand"
 	"os"
 	"path"
 	"syscall"
@@ -77,9 +78,12 @@ func TestComplexCommandUsage(t *testing.T) {
 		t.Error("error creating test file:", err)
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test.txt", -1, -1, []byte("START"))
+	code, err, bytesWritten := WriteCommand(testDirectory, "test.txt", -1, -1, []byte("START"))
 	if code != returncodes.OK {
-		t.Error("Read did not return OK. Actual:", code, " Error:", err)
+		t.Error("Write did not return OK. Actual:", code, " Error:", err)
+	}
+	if bytesWritten != len([]byte("START")) {
+		t.Error("Write did not return correct number of bytes Actual:", bytesWritten, "Expected:", len([]byte("START")))
 	}
 
 	code, err, returnData := ReadCommand(testDirectory, "test.txt", 2, 2)
@@ -91,9 +95,12 @@ func TestComplexCommandUsage(t *testing.T) {
 		t.Error("Output from partial read does not match ", string(returnData))
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test.txt", 5, -1, []byte("END"))
+	code, err, bytesWritten = WriteCommand(testDirectory, "test.txt", 5, -1, []byte("END"))
 	if code != returncodes.OK {
-		t.Error("Read did not return OK Actual: ", code, " Error:", err)
+		t.Error("Write did not return OK Actual: ", code, " Error:", err)
+	}
+	if bytesWritten != len([]byte("END")) {
+		t.Error("Write did not return correct number of bytes Actual:", bytesWritten, "Expected:", len([]byte("END")))
 	}
 
 	code, err, returnData = ReadCommand(testDirectory, "test.txt", -1, -1)
@@ -271,9 +278,12 @@ func TestLinkCommand(t *testing.T) {
 		t.Error("Readdir got incorrect results")
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test2.txt", -1, -1, []byte("hellotest"))
+	code, err, bytesWritten := WriteCommand(testDirectory, "test2.txt", -1, -1, []byte("hellotest"))
 	if code != returncodes.OK {
 		t.Error("Write did not return OK. Actual:", code, " Error:", err)
+	}
+	if bytesWritten != len([]byte("hellotest")) {
+		t.Error("Write did not return correct number of bytes Actual:", bytesWritten, "Expected:", len([]byte("hellotest")))
 	}
 
 	code, err, data := ReadCommand(testDirectory, "test.txt", -1, -1)
@@ -379,9 +389,12 @@ func TestTruncate(t *testing.T) {
 		t.Error("error creating test file:", err)
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test.txt", -1, -1, []byte("HI!!!!!"))
+	code, err, bytesWritten := WriteCommand(testDirectory, "test.txt", -1, -1, []byte("HI!!!!!"))
 	if code != returncodes.OK {
 		t.Error("Write command failed! : ", err)
+	}
+	if bytesWritten != len([]byte("HI!!!!!")) {
+		t.Error("Write did not return correct number of bytes Actual:", bytesWritten, "Expected:", len([]byte("HI!!!!!")))
 	}
 
 	code, err = TruncateCommand(testDirectory, "test.txt", 3)
@@ -482,9 +495,13 @@ func TestComplexDirectoryUsage(t *testing.T) {
 	}
 
 	// writing and reading from file within directory
-	code, err, _ = WriteCommand(testDirectory, "documents/important_links.txt", -1, -1, []byte("https://www.google.com/"))
+	toWrite := []byte("https://www.google.com/")
+	code, err, bytesWritten := WriteCommand(testDirectory, "documents/important_links.txt", -1, -1, toWrite)
 	if code != returncodes.OK {
 		t.Error("Write did not return OK. Actual:", code, " Error:", err)
+	}
+	if bytesWritten != len(toWrite) {
+		t.Error("Write did not return correct number of bytes Actual:", bytesWritten, "Expected:", len(toWrite))
 	}
 
 	code, err, data := ReadCommand(testDirectory, "documents/important_links.txt", -1, -1)
@@ -568,5 +585,65 @@ func TestComplexDirectoryUsage(t *testing.T) {
 
 	if files[0] != "docs" {
 		t.Error("File is not equal to 'docs':", files[0])
+	}
+}
+
+func randN(x int) int {
+	if x == 0 {
+		return 0
+	}
+	return rand.Intn(x)
+}
+
+func TestComplexReadWrite(t *testing.T) {
+	setupTestDirectory()
+
+	seed := time.Now().UnixNano()
+	Log.Info("Test seed : ", seed)
+	rand.Seed(seed)
+
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	if code != returncodes.OK {
+		t.Error("error creating test file:", err)
+	}
+
+	currentFileData := make([]byte, 1024)
+	fileLength := 0
+
+	//Perform 100 random writes
+	for i := 0; i < 100; i++ {
+		maxWriteStart := fileLength
+		if maxWriteStart > 900 {
+			maxWriteStart = 900
+		}
+		writeStart := randN(maxWriteStart)
+		writeLength := randN(50) + 10
+		data := make([]byte, writeLength)
+		for j := 0; j < writeLength; j++ {
+			data[j] = byte(randN(26) + int('A'))
+		}
+
+		code, err, bytesWritten := WriteCommand(testDirectory, "test.txt", int64(writeStart), int64(writeLength), data)
+		if code != returncodes.OK {
+			t.Error("Write did not return OK. Actual:", code, " Error:", err)
+		}
+		if bytesWritten != len(data) {
+			t.Error("Write did not return correct number of bytes Actual:", bytesWritten, "Expected:", len(data))
+		}
+
+		if writeStart+writeLength > fileLength {
+			fileLength = writeStart + writeLength
+		}
+
+		copy(currentFileData[writeStart:writeStart+writeLength], data)
+	}
+
+	code, err, returnData := ReadCommand(testDirectory, "test.txt", -1, -1)
+	if code != returncodes.OK {
+		t.Error("Read did not return OK. Actual:", code, " Error:", err)
+	}
+
+	if string(returnData) != string(currentFileData[:fileLength]) {
+		t.Errorf("Output does not match \n Expected: %s\n Actual: %s\n", string(currentFileData[:fileLength]), string(returnData))
 	}
 }
