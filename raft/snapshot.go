@@ -15,7 +15,7 @@ import (
 
 const (
 	SnapshotDirectory        string = "snapshots"
-	CurrentSnapshotDirectory string = "nextsnapshot"
+	CurrentSnapshotDirectory string = "currentsnapshot"
 	NextShapshotDirectory    string = "nextsnapshot"
 	SnapshotMetaFileName     string = "snapshotmeta"
 	TarFileName              string = "snapshot.tar"
@@ -106,28 +106,23 @@ func unpackTarFile(tarFilePath, directory string) error {
 }
 
 func tarSnapshot(snapshotDirectory string) error {
-	contentsPath := path.Join(snapshotDirectory, "contents-tar")
-	namesPath := path.Join(snapshotDirectory, "names-tar")
-	inodesPath := path.Join(snapshotDirectory, "inodes-tar")
-	configPath := path.Join(snapshotDirectory, PersistentConfigurationFileName)
-	tarFilePath := path.Join(snapshotDirectory, TarFileName)
-
-	err := os.Rename(path.Join(snapshotDirectory, "contents"), contentsPath)
+	err := os.Rename(path.Join(snapshotDirectory, "contents"), path.Join(snapshotDirectory, "contents-tar"))
 	if err != nil {
 		return fmt.Errorf("error creating tar file: %s", err)
 	}
 
-	err = os.Rename(path.Join(snapshotDirectory, "inodes"), inodesPath)
+	err = os.Rename(path.Join(snapshotDirectory, "inodes"), path.Join(snapshotDirectory, "inodes-tar"))
 	if err != nil {
 		return fmt.Errorf("error creating tar file: %s", err)
 	}
 
-	err = os.Rename(path.Join(snapshotDirectory, "names"), namesPath)
+	err = os.Rename(path.Join(snapshotDirectory, "names"), path.Join(snapshotDirectory, "names-tar"))
 	if err != nil {
 		return fmt.Errorf("error creating tar file: %s", err)
 	}
 
-	tar := exec.Command("tar", "cf", tarFilePath, contentsPath, namesPath, inodesPath, configPath)
+	tar := exec.Command("tar", "--directory="+snapshotDirectory, "-cf", path.Join(snapshotDirectory, TarFileName),
+		"contents-tar", "names-tar", "inodes-tar", PersistentConfigurationFileName)
 	err = tar.Run()
 	if err != nil {
 		return fmt.Errorf("error creating tar file: %s", err)
@@ -140,6 +135,16 @@ func startNextSnapshotWithCurrent(currentSnapshot, nextSnapshot string) error {
 	err := unpackTarFile(path.Join(currentSnapshot, TarFileName), nextSnapshot)
 	if err != nil {
 		return fmt.Errorf("error starting new snapshot from current snapshot:", err)
+	}
+
+	err = os.Mkdir(path.Join(nextSnapshot, "meta"), 0700)
+	if err != nil {
+		return fmt.Errorf("error starting next snapshot: %s", err)
+	}
+
+	_, err = os.Create(path.Join(nextSnapshot, "meta", "lock"))
+	if err != nil {
+		return fmt.Errorf("error starting next snapshot: %s", err)
 	}
 
 	return nil
@@ -171,6 +176,16 @@ func (s *RaftNetworkServer) startNextSnapshot(nextSnapshot string) error {
 	}
 
 	err = os.Mkdir(path.Join(nextSnapshot, "names"), 0700)
+	if err != nil {
+		return fmt.Errorf("error starting next snapshot: %s", err)
+	}
+
+	err = os.Mkdir(path.Join(nextSnapshot, "meta"), 0700)
+	if err != nil {
+		return fmt.Errorf("error starting next snapshot: %s", err)
+	}
+
+	_, err = os.Create(path.Join(nextSnapshot, "meta", "lock"))
 	if err != nil {
 		return fmt.Errorf("error starting next snapshot: %s", err)
 	}
@@ -228,7 +243,36 @@ func (s *RaftNetworkServer) applyLogUpdates(snapshotDirectory string, startIndex
 	return lastIncludedTerm, nil
 }
 
-func (s *RaftNetworkServer) createSnapshot(lastIncludedIndex uint64) error {
+//performCleanup is used to clean up tempory files used in snapshot creation
+func performCleanup(snapshotPath string) error {
+	err := os.RemoveAll(path.Join(snapshotPath, "contents-tar"))
+	if err != nil {
+		return fmt.Errorf("error cleaning up temporay files: %s", err)
+	}
+
+	err = os.RemoveAll(path.Join(snapshotPath, "inodes-tar"))
+	if err != nil {
+		return fmt.Errorf("error cleaning up temporay files: %s", err)
+	}
+
+	err = os.RemoveAll(path.Join(snapshotPath, "names-tar"))
+	if err != nil {
+		return fmt.Errorf("error cleaning up temporay files: %s", err)
+	}
+
+	err = os.RemoveAll(path.Join(snapshotPath, "meta"))
+	if err != nil {
+		return fmt.Errorf("error cleaning up temporay files: %s", err)
+	}
+
+	err = os.Remove(path.Join(snapshotPath, PersistentConfigurationFileName))
+	if err != nil {
+		return fmt.Errorf("error cleaning up temporay files: %s", err)
+	}
+	return nil
+}
+
+func (s *RaftNetworkServer) createSnapshot(lastIncludedIndex uint64) (err error) {
 	defer s.Wait.Done()
 
 	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
@@ -239,12 +283,26 @@ func (s *RaftNetworkServer) createSnapshot(lastIncludedIndex uint64) error {
 	}
 	s.State.SetPerformingSnapshot(true)
 
-	_, err := os.Stat(nextSnapshot)
+	_, err = os.Stat(nextSnapshot)
 	if !os.IsNotExist(err) {
 		return errors.New("snapshot creation already in progress")
 	}
 
-	startLogIndex := uint64(0)
+	err = os.Mkdir(nextSnapshot, 0700)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			cleanuperror := os.RemoveAll(nextSnapshot)
+			if cleanuperror != nil {
+				Log.Error("error removing temporary snapshot creation files:", cleanuperror)
+			}
+		}
+	}()
+
+	startLogIndex := uint64(1)
 
 	_, err = os.Stat(currentSnapshot)
 	if err == nil {
@@ -278,6 +336,11 @@ func (s *RaftNetworkServer) createSnapshot(lastIncludedIndex uint64) error {
 	}
 
 	err = tarSnapshot(nextSnapshot)
+	if err != nil {
+		return err
+	}
+
+	err = performCleanup(nextSnapshot)
 	if err != nil {
 		return err
 	}
