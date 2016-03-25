@@ -12,6 +12,7 @@ import (
 
 const (
 	PersistentConfigurationFileName string = "persistentConfigFile"
+	OriginalConfigurationFileName   string = "originalConfigFile"
 )
 
 //Configuration manages configuration information of a raft server
@@ -463,6 +464,14 @@ func (c *Configuration) savePersistentConfiguration() {
 	}
 }
 
+func (c *Configuration) saveOriginalConfiguration() {
+	err := os.Rename(path.Join(c.raftInfoDirectory, PersistentConfigurationFileName), path.Join(c.raftInfoDirectory, OriginalConfigurationFileName))
+	if err != nil {
+		Log.Fatal("Error saving original configuration to disk:", err)
+	}
+	c.savePersistentConfiguration()
+}
+
 func getPersistentConfiguration(persistentConfigurationFile string) *persistentConfiguration {
 	if _, err := os.Stat(persistentConfigurationFile); os.IsNotExist(err) {
 		return nil
@@ -480,7 +489,7 @@ func getPersistentConfiguration(persistentConfigurationFile string) *persistentC
 	return perConfig
 }
 
-func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfiguration, myNodeDetails Node) *Configuration {
+func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfiguration, myNodeDetails Node, saveOriginalConfiguration bool) *Configuration {
 	var config *Configuration
 	if testConfiguration != nil {
 		config = &Configuration{
@@ -519,5 +528,8 @@ func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfigur
 		}
 	}
 	config.savePersistentConfiguration()
+	if saveOriginalConfiguration {
+		config.saveOriginalConfiguration()
+	}
 	return config
 }

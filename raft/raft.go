@@ -37,9 +37,10 @@ type RaftNetworkServer struct {
 	State *RaftState
 	Wait  sync.WaitGroup
 
-	nodeDetails   Node
-	TLSEnabled    bool
-	TLSSkipVerify bool
+	nodeDetails       Node
+	raftInfoDirectory string
+	TLSEnabled        bool
+	TLSSkipVerify     bool
 
 	QuitChannelClosed    bool
 	Quit                 chan bool
@@ -619,6 +620,7 @@ func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory stri
 	raftServer.QuitChannelClosed = false
 	raftServer.Wait.Add(4)
 	raftServer.nodeDetails = nodeDetails
+	raftServer.raftInfoDirectory = raftInfoDirectory
 	raftServer.TLSEnabled = TLSEnabled
 	raftServer.TLSSkipVerify = TLSSkipVerify
 	raftServer.ChangeNodeLocation(nodeDetails.NodeID, nodeDetails.IP, nodeDetails.Port)

@@ -38,9 +38,10 @@ type RaftState struct {
 	//Used for testing purposes
 	specialNumber uint64
 
-	NodeId       string
-	pfsDirectory string
-	currentState int
+	NodeId             string
+	pfsDirectory       string
+	currentState       int
+	performingSnapshot bool
 
 	currentTerm uint64
 	votedFor    string
@@ -102,6 +103,18 @@ func (s *RaftState) SetCurrentState(x int) {
 		s.setLeaderIdUnsafe(s.NodeId)
 		s.StartLeading <- true
 	}
+}
+
+func (s *RaftState) GetPerformingSnapshot() bool {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+	return s.performingSnapshot
+}
+
+func (s *RaftState) SetPerformingSnapshot(x bool) {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+	s.performingSnapshot = x
 }
 
 func (s *RaftState) GetCommitIndex() uint64 {
@@ -335,7 +348,7 @@ func newRaftState(myNodeDetails Node, pfsDirectory, raftInfoDirectory string, te
 			commitIndex:       0,
 			lastApplied:       0,
 			leaderId:          "",
-			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails),
+			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails, true),
 			raftInfoDirectory: raftInfoDirectory,
 		}
 	} else {
@@ -349,7 +362,7 @@ func newRaftState(myNodeDetails Node, pfsDirectory, raftInfoDirectory string, te
 			commitIndex:       0,
 			lastApplied:       persistentState.LastApplied,
 			leaderId:          "",
-			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails),
+			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails, true),
 			raftInfoDirectory: raftInfoDirectory,
 		}
 	}
