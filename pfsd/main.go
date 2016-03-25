@@ -29,7 +29,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 )
 
 var (
@@ -236,13 +235,9 @@ func main() {
 
 	globals.ParanoidDir = paranoidDirAbs
 	globals.MountPoint = mountPointAbs
-	ignore.IgnoreFile = path.Join(mountPointAbs, ".pfsignore")
-	ignore.FileLastUpdated = time.Unix(0, 0)
-	ignore.FoundGlobs = make(map[string]ignore.SolvedPaths)
+	ignore.IgnoreFile = path.Join(mountPointAbs, "IgnoreFile")
 	setupLogging()
-
 	getFileSystemAttributes()
-
 	globals.TLSSkipVerify = *skipVerify
 	if *certFile != "" && *keyFile != "" {
 		globals.TLSEnabled = true

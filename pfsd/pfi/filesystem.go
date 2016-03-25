@@ -93,7 +93,8 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 	Log.Info("Create called on : " + name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(name) {
+	Log.Info("Ignore : " + name)
+	if SendOverNetwork && !ignore.ShouldIgnore(name) {
 		code, err = globals.RaftNetworkServer.RequestCreatCommand(name, mode)
 	} else {
 		code, err = commands.CreatCommand(globals.ParanoidDir, name, os.FileMode(mode))
@@ -135,7 +136,7 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	Log.Info("Rename called on : " + oldName + " to be renamed to " + newName)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(newName) {
+	if SendOverNetwork && !ignore.ShouldIgnore(newName) {
 		code, err = globals.RaftNetworkServer.RequestRenameCommand(oldName, newName)
 	} else {
 		code, err = commands.RenameCommand(globals.ParanoidDir, oldName, newName)
@@ -156,7 +157,7 @@ func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse
 	Log.Info("Link called")
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(newName) {
+	if SendOverNetwork && !ignore.ShouldIgnore(newName) {
 		code, err = globals.RaftNetworkServer.RequestLinkCommand(oldName, newName)
 	} else {
 		code, err = commands.LinkCommand(globals.ParanoidDir, oldName, newName)
@@ -177,7 +178,7 @@ func (fs *ParanoidFileSystem) Symlink(oldName string, newName string, context *f
 	Log.Info("Symbolic link called from", oldName, "to", newName)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(newName) {
+	if SendOverNetwork && !ignore.ShouldIgnore(newName) {
 		code, err = globals.RaftNetworkServer.RequestSymlinkCommand(oldName, newName)
 	} else {
 		code, err = commands.SymlinkCommand(globals.ParanoidDir, oldName, newName)
@@ -211,7 +212,7 @@ func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) fuse.St
 	Log.Info("Unlink callde on : " + name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(name) {
+	if SendOverNetwork && !ignore.ShouldIgnore(name) {
 		code, err = globals.RaftNetworkServer.RequestUnlinkCommand(name)
 	} else {
 		code, err = commands.UnlinkCommand(globals.ParanoidDir, name)
@@ -232,7 +233,7 @@ func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Cont
 	Log.Info("Mkdir called on : " + name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(name) {
+	if SendOverNetwork && !ignore.ShouldIgnore(name) {
 		code, err = globals.RaftNetworkServer.RequestMkdirCommand(name, mode)
 	} else {
 		code, err = commands.MkdirCommand(globals.ParanoidDir, name, os.FileMode(mode))
@@ -253,7 +254,7 @@ func (fs *ParanoidFileSystem) Rmdir(name string, context *fuse.Context) fuse.Sta
 	Log.Info("Rmdir called on : " + name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(name) {
+	if SendOverNetwork && !ignore.ShouldIgnore(name) {
 		code, err = globals.RaftNetworkServer.RequestRmdirCommand(name)
 	} else {
 		code, err = commands.RmdirCommand(globals.ParanoidDir, name)

@@ -53,7 +53,7 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 		err          error
 		bytesWritten int
 	)
-	if SendOverNetwork && !ignore.PfsIgnore(f.Name) {
+	if SendOverNetwork && !ignore.ShouldIgnore(f.Name) {
 		code, err, bytesWritten = globals.RaftNetworkServer.RequestWriteCommand(f.Name, off, int64(len(content)), content)
 	} else {
 		code, err, bytesWritten = commands.WriteCommand(globals.ParanoidDir, f.Name, off, int64(len(content)), content)
@@ -79,7 +79,7 @@ func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	Log.Info("Truncate called on file : " + f.Name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(f.Name) {
+	if SendOverNetwork && !ignore.ShouldIgnore(f.Name) {
 		code, err = globals.RaftNetworkServer.RequestTruncateCommand(f.Name, int64(size))
 	} else {
 		code, err = commands.TruncateCommand(globals.ParanoidDir, f.Name, int64(size))
@@ -101,7 +101,7 @@ func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 	Log.Info("Utimens called on file : " + f.Name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(f.Name) {
+	if SendOverNetwork && !ignore.ShouldIgnore(f.Name) {
 		code, err = globals.RaftNetworkServer.RequestUtimesCommand(f.Name, atime, mtime)
 	} else {
 		code, err = commands.UtimesCommand(globals.ParanoidDir, f.Name, atime, mtime)
@@ -122,7 +122,7 @@ func (f *ParanoidFile) Chmod(perms uint32) fuse.Status {
 	Log.Info("Chmod called on file : " + f.Name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !ignore.PfsIgnore(f.Name) {
+	if SendOverNetwork && !ignore.ShouldIgnore(f.Name) {
 		code, err = globals.RaftNetworkServer.RequestChmodCommand(f.Name, perms)
 	} else {
 		code, err = commands.ChmodCommand(globals.ParanoidDir, f.Name, os.FileMode(perms))

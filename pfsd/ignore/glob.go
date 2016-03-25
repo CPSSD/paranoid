@@ -1,32 +1,28 @@
 package ignore
 
 import (
-	"github.com/cpssd/paranoid/logger"
-	"io/ioutil"
-	"os"
-	"reflect"
+	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	"strings"
-	"time"
 )
 
 type SolvedPaths struct {
-	value  bool
-	solved time.Time
+	value bool
+	path  string
 }
 
 var IgnoreFile string
-var Log *logger.ParanoidLogger
-var IgnoreData []string
-var FileLastUpdated time.Time
-var FoundGlobs map[string]SolvedPaths
 
 const recursiveStar string = "**"
 const star string = "*"
 const negation string = "!"
 
-func IgnoreExists() bool {
-	_, err := os.Stat(IgnoreFile)
-	return !os.IsNotExist(err)
+func ignoreExists() bool {
+	_, err, _ := commands.StatCommand(globals.ParanoidDir, "IgnoreFile")
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func dualStarGlob(pattern, file string) bool {
@@ -103,11 +99,7 @@ func checkDir(pattern, file string) bool {
 }
 
 func Glob(pattern, file string) bool {
-	//Checking if the start of the File a Negation is set
-	negationSet := false
 	if string(pattern[0]) == "!" {
-		negationSet = true
-		//strip the not as its not of use anymore
 		pattern = strings.Trim(pattern, "!")
 	}
 	//Removing trailing slashes
@@ -122,47 +114,19 @@ func Glob(pattern, file string) bool {
 	}
 
 	isGlobbed := starGlob(pattern, file) || dualStarGlob(pattern, file) || pattern == file
-	if negationSet {
-		if isGlobbed {
-			return false
-		}
-	}
+
 	return isGlobbed || checkDir(pattern, file)
 }
 
-func buildCache(data string) {
-	newData := strings.Split(data, "\n")
-	if reflect.DeepEqual(newData, IgnoreData) {
-		return
-	} else {
-		IgnoreData = nil
-		for _, pattern := range newData {
-			IgnoreData = append(IgnoreData, pattern)
+func ShouldIgnore(filePath string) bool {
+	shouldGlob := false
+	if ignoreExists() {
+		_, err, returnData := commands.ReadCommand(globals.ParanoidDir, "IgnoreFile", -1, -1)
+		if err != nil {
+			return false
 		}
-	}
-}
-
-func PfsIgnore(filePath string) bool {
-	if IgnoreExists() {
-		interval := 10 * time.Second
-		mapPattern, ok := FoundGlobs[filePath]
-		if ok && mapPattern.solved.Before(FileLastUpdated.Add(interval)) {
-			return FoundGlobs[filePath].value
-		}
-		//No Valid Data in Solved Cache //checking file Cache
-		if time.Now().After(FileLastUpdated.Add(interval)) {
-			//If We cant read the file we may as well use the old version.
-			data, err := ioutil.ReadFile(IgnoreFile)
-			if err != nil {
-				Log.Error("Can not read .pfsignore file:", err)
-			} else {
-				buildCache(string(data))
-				FileLastUpdated = time.Now()
-			}
-		}
-		shouldGlob := false
 		negationSet := false
-		for _, pattern := range IgnoreData {
+		for _, pattern := range strings.Split(string(returnData), "\n") {
 			if pattern != "" {
 				if string(pattern[0]) == "!" {
 					negationSet = true
@@ -171,10 +135,9 @@ func PfsIgnore(filePath string) bool {
 				shouldGlob = shouldGlob || globResponse
 			}
 		}
-		FoundGlobs[filePath] = SolvedPaths{value: shouldGlob, solved: time.Now()}
 		if negationSet && shouldGlob {
-			return !shouldGlob
+			shouldGlob = !shouldGlob
 		}
 	}
-	return false
+	return shouldGlob
 }

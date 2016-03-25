@@ -20,8 +20,6 @@ var flagtests = []struct {
 	{"bin/**/asdf", "bin/some/random/path/asdf", true},
 	{"bin/file.html", "bin/asdf.html", false},
 	{"!bin/file.html", "bin/file.html", false},
-	{"!bin", "bin", false},
-	{"!bin", "asdf", false},
 }
 
 func TestGlobbing(t *testing.T) {
