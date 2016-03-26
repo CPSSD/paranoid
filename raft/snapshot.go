@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	libpfs "github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"golang.org/x/net/context"
@@ -88,16 +89,28 @@ func unpackTarFile(tarFilePath, directory string) error {
 		return fmt.Errorf("error unarchiving %s: %s", tarFilePath, err)
 	}
 
+	err = os.RemoveAll(path.Join(directory, "contents"))
+	if err != nil {
+		return fmt.Errorf("error unpacking %s: %s", tarFilePath, err)
+	}
 	err = os.Rename(path.Join(directory, "contents-tar"), path.Join(directory, "contents"))
 	if err != nil {
 		return fmt.Errorf("error unpacking %s: %s", tarFilePath, err)
 	}
 
+	err = os.RemoveAll(path.Join(directory, "names"))
+	if err != nil {
+		return fmt.Errorf("error unpacking %s: %s", tarFilePath, err)
+	}
 	err = os.Rename(path.Join(directory, "names-tar"), path.Join(directory, "names"))
 	if err != nil {
 		return fmt.Errorf("error unpacking %s: %s", tarFilePath, err)
 	}
 
+	err = os.RemoveAll(path.Join(directory, "inodes"))
+	if err != nil {
+		return fmt.Errorf("error unpacking %s: %s", tarFilePath, err)
+	}
 	err = os.Rename(path.Join(directory, "inodes-tar"), path.Join(directory, "inodes"))
 	if err != nil {
 		return fmt.Errorf("error unpacking %s: %s", tarFilePath, err)
@@ -272,7 +285,7 @@ func performCleanup(snapshotPath string) error {
 	return nil
 }
 
-func (s *RaftNetworkServer) createSnapshot(lastIncludedIndex uint64) (err error) {
+func (s *RaftNetworkServer) CreateSnapshot(lastIncludedIndex uint64) (err error) {
 	defer s.Wait.Done()
 
 	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
@@ -282,6 +295,7 @@ func (s *RaftNetworkServer) createSnapshot(lastIncludedIndex uint64) (err error)
 		return errors.New("snapshot creation already in progress")
 	}
 	s.State.SetPerformingSnapshot(true)
+	defer s.State.SetPerformingSnapshot(false)
 
 	_, err = os.Stat(nextSnapshot)
 	if !os.IsNotExist(err) {
@@ -349,6 +363,68 @@ func (s *RaftNetworkServer) createSnapshot(lastIncludedIndex uint64) (err error)
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+//Revert the statemachine state to the snapshot state.
+//Remove all log entries
+func (s *RaftNetworkServer) RevertToSnapshot(snapshotPath string) error {
+	s.State.ApplyEntryLock.Lock()
+	defer s.State.ApplyEntryLock.Unlock()
+
+	snapshotMeta, err := getSnapshotMetaInformation(snapshotPath)
+	if err != nil {
+		if err != nil {
+			return fmt.Errorf("error reverting to snapshot: %s", err)
+		}
+	}
+
+	err = libpfs.GetFileSystemLock(s.State.pfsDirectory, libpfs.ExclusiveLock)
+	if err != nil {
+		return fmt.Errorf("error reverting to snapshot: %s", err)
+	}
+
+	defer func() {
+		err := libpfs.UnLockFileSystem(s.State.pfsDirectory)
+		if err != nil {
+			Log.Fatal("error reverting to snapshot: %s", err)
+		}
+	}()
+
+	err = unpackTarFile(path.Join(snapshotPath, TarFileName), s.State.pfsDirectory)
+	if err != nil {
+		return fmt.Errorf("error reverting to snapshot: %s", err)
+	}
+
+	err = os.Rename(path.Join(s.State.pfsDirectory, PersistentConfigurationFileName), path.Join(s.raftInfoDirectory, PersistentConfigurationFileName))
+	if err != nil {
+		return fmt.Errorf("error reverting to snapshot: %s", err)
+	}
+
+	err = s.State.Configuration.UpdateFromConfigurationFile(path.Join(s.raftInfoDirectory, PersistentConfigurationFileName), snapshotMeta.LastIncludedIndex)
+	if err != nil {
+		return fmt.Errorf("error reverting to snapshot: %s", err)
+	}
+
+	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
+	if currentSnapshot != snapshotPath {
+		err = os.Rename(snapshotPath, currentSnapshot)
+		if err != nil {
+			return fmt.Errorf("error reverting to snapshot: %s", err)
+		}
+	}
+
+	//TODO: change this to remove all log entries
+	//This is just temporary for testing purposes
+	if s.State.Log.GetMostRecentIndex() > snapshotMeta.LastIncludedIndex {
+		err = s.State.Log.DiscardLogEntries(snapshotMeta.LastIncludedIndex + 1)
+		if err != nil {
+			return fmt.Errorf("error reverting to snapshot: %s", err)
+		}
+	}
+	s.State.SetLastApplied(snapshotMeta.LastIncludedIndex)
+	s.State.SetCommitIndex(snapshotMeta.LastIncludedIndex)
 
 	return nil
 }

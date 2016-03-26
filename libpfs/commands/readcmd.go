@@ -20,13 +20,13 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 
 	namepath := getParanoidPath(paranoidDirectory, filePath)
 
-	err := getFileSystemLock(paranoidDirectory, sharedLock)
+	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, nil
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -62,7 +62,7 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 		return code, fmt.Errorf("unable to access %s: %s", filePath, err), nil
 	}
 
-	err = getFileLock(paranoidDirectory, inodeFileName, sharedLock)
+	err = getFileLock(paranoidDirectory, inodeFileName, SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, nil
 	}

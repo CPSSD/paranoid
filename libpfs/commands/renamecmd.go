@@ -25,13 +25,13 @@ func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCo
 		return returncodes.EUNEXPECTED, err
 	}
 
-	err = getFileSystemLock(paranoidDirectory, exclusiveLock)
+	err = GetFileSystemLock(paranoidDirectory, ExclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err

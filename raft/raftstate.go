@@ -65,6 +65,7 @@ type RaftState struct {
 	raftInfoDirectory   string
 	persistentStateLock sync.Mutex
 	stateChangeLock     sync.Mutex
+	ApplyEntryLock      sync.Mutex
 }
 
 func (s *RaftState) GetCurrentTerm() uint64 {
@@ -248,6 +249,8 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 func (s *RaftState) ApplyLogEntries() {
 	s.stateChangeLock.Lock()
 	defer s.stateChangeLock.Unlock()
+	s.ApplyEntryLock.Lock()
+	defer s.ApplyEntryLock.Unlock()
 
 	if s.commitIndex > s.lastApplied {
 		for i := s.lastApplied + 1; i <= s.commitIndex; i++ {

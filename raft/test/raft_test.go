@@ -4,6 +4,7 @@ package test
 
 import (
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft"
@@ -18,6 +19,7 @@ import (
 func TestMain(m *testing.M) {
 	raft.Log = logger.New("rafttest", "rafttest", os.DevNull)
 	raftlog.Log = logger.New("rafttest", "rafttest", os.DevNull)
+	commands.Log = logger.New("rafttest", "rafttest", os.DevNull)
 	exitCode := m.Run()
 	os.Exit(exitCode)
 }

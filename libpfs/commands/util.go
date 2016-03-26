@@ -88,23 +88,23 @@ func getFileLength(file *os.File) (int64, error) {
 
 //Types of locks
 const (
-	sharedLock = iota
-	exclusiveLock
+	SharedLock = iota
+	ExclusiveLock
 )
 
-func getFileSystemLock(paranoidDir string, lockType int) error {
+func GetFileSystemLock(paranoidDir string, lockType int) error {
 	lockPath := path.Join(paranoidDir, "meta", "lock")
 	file, err := os.Open(lockPath)
 	if err != nil {
 		return fmt.Errorf("could not get meta/lock file descriptor: %s", err)
 	}
 	defer file.Close()
-	if lockType == sharedLock {
+	if lockType == SharedLock {
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_SH)
 		if err != nil {
 			return fmt.Errorf("error getting shared lock on meta/lock: %s", err)
 		}
-	} else if lockType == exclusiveLock {
+	} else if lockType == ExclusiveLock {
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX)
 		if err != nil {
 			return fmt.Errorf("error getting exclusive lock on meta/lock: %s", err)
@@ -120,12 +120,12 @@ func getFileLock(paranoidDir, fileName string, lockType int) error {
 		return fmt.Errorf("could not get file descriptor for lock file %s: %s", fileName, err)
 	}
 	defer file.Close()
-	if lockType == sharedLock {
+	if lockType == SharedLock {
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_SH)
 		if err != nil {
 			return fmt.Errorf("could not get shared lock on lock file %s: %s", fileName, err)
 		}
-	} else if lockType == exclusiveLock {
+	} else if lockType == ExclusiveLock {
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX)
 		if err != nil {
 			return fmt.Errorf("could not get exclusive lock on lock file %s: %s", fileName, err)
@@ -134,7 +134,7 @@ func getFileLock(paranoidDir, fileName string, lockType int) error {
 	return nil
 }
 
-func unLockFileSystem(paranoidDir string) error {
+func UnLockFileSystem(paranoidDir string) error {
 	lockPath := path.Join(paranoidDir, "meta", "lock")
 	file, err := os.Open(lockPath)
 	if err != nil {

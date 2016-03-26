@@ -134,6 +134,32 @@ func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex ui
 	}
 }
 
+func (c *Configuration) UpdateFromConfigurationFile(configurationFilePath string, lastLogIndex uint64) error {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	configuration := getPersistentConfiguration(configurationFilePath)
+	if configuration == nil {
+		return errors.New("unable to update configuration from file")
+	}
+
+	c.currentConfiguration = configuration.CurrentConfiguration
+	c.futureConfiguration = configuration.FutureConfiguration
+	c.futureConfigurationActive = configuration.FutureConfigurationActive
+
+	for i := 0; i < len(c.currentConfiguration); i++ {
+		c.currentNextIndex[i] = lastLogIndex + 1
+		c.currentMatchIndex[i] = 0
+	}
+	for i := 0; i < len(c.futureConfiguration); i++ {
+		c.futureNextIndex[i] = lastLogIndex + 1
+		c.futureMatchIndex[i] = 0
+	}
+
+	c.savePersistentConfiguration()
+	return nil
+}
+
 func (c *Configuration) GetFutureConfigurationActive() bool {
 	return c.futureConfigurationActive
 }

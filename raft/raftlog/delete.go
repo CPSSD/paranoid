@@ -25,7 +25,7 @@ func (rl *RaftLog) DiscardLogEntries(startIndex uint64) error {
 	}
 
 	if rl.currentIndex > 1 {
-		logEntry, err := rl.GetLogEntry(rl.currentIndex - 1)
+		logEntry, err := rl.GetLogEntryUnsafe(rl.currentIndex - 1)
 		if err != nil {
 			Log.Fatal("error deleting log entries:", err)
 		}

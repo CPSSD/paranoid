@@ -18,13 +18,13 @@ func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 	Log.Info("chmod command called")
 	Log.Verbose("chmod : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
+	err := GetFileSystemLock(paranoidDirectory, ExclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err

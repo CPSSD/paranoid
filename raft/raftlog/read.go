@@ -10,12 +10,7 @@ import (
 	"strconv"
 )
 
-// GetLogEntry will read an entry at the given index returning
-// the protobuf and an error if something went wrong
-func (rl *RaftLog) GetLogEntry(index uint64) (entry *pb.LogEntry, err error) {
-	rl.indexLock.Lock()
-	defer rl.indexLock.Unlock()
-
+func (rl *RaftLog) GetLogEntryUnsafe(index uint64) (entry *pb.LogEntry, err error) {
 	if index < 1 || index >= rl.currentIndex {
 		return nil, errors.New("index out of bounds")
 	}
@@ -34,6 +29,15 @@ func (rl *RaftLog) GetLogEntry(index uint64) (entry *pb.LogEntry, err error) {
 	}
 
 	return entry, nil
+}
+
+// GetLogEntry will read an entry at the given index returning
+// the protobuf and an error if something went wrong
+func (rl *RaftLog) GetLogEntry(index uint64) (entry *pb.LogEntry, err error) {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+
+	return rl.GetLogEntryUnsafe(index)
 }
 
 // GetEntriesSince returns a list of entries including and after the one
