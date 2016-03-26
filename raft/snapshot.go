@@ -359,6 +359,11 @@ func (s *RaftNetworkServer) CreateSnapshot(lastIncludedIndex uint64) (err error)
 		return err
 	}
 
+	err = os.RemoveAll(currentSnapshot)
+	if err != nil {
+		return err
+	}
+
 	err = os.Rename(nextSnapshot, currentSnapshot)
 	if err != nil {
 		return err

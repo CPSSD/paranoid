@@ -59,7 +59,7 @@ func TestSnapshoting(t *testing.T) {
 		t.Fatal("Error performing write command:", err)
 	}
 
-	//Take snapshot
+	raft.Log.Info("Taking first snapshot")
 	raftServer.Wait.Add(1)
 	err = raftServer.CreateSnapshot(raftServer.State.Log.GetMostRecentIndex())
 	if err != nil {
@@ -71,7 +71,7 @@ func TestSnapshoting(t *testing.T) {
 		t.Fatal("Error performing write command:", err)
 	}
 
-	//Revert to snapshot
+	raft.Log.Info("Reverting to snapshot")
 	err = raftServer.RevertToSnapshot(path.Join(raftDirectory, raft.SnapshotDirectory, raft.CurrentSnapshotDirectory))
 	if err != nil {
 		t.Fatal("Error reverting to snapshot:", err)
@@ -80,5 +80,43 @@ func TestSnapshoting(t *testing.T) {
 	code, err, data := commands.ReadCommand(pfsDirectory, "test.txt", -1, -1)
 	if string(data) != "hello" {
 		t.Fatal("Error reverting snapshot. Read does not match 'hello'. Actual:", string(data))
+	}
+
+	code, err = raftServer.RequestCreatCommand("test2.txt", 0700)
+	if code != returncodes.OK {
+		t.Fatal("Error performing create command:", err)
+	}
+
+	code, err, _ = raftServer.RequestWriteCommand("test2.txt", 0, 5, []byte("world"))
+	if code != returncodes.OK {
+		t.Fatal("Error performing write command:", err)
+	}
+
+	raft.Log.Info("Taking second snapshot")
+	raftServer.Wait.Add(1)
+	err = raftServer.CreateSnapshot(raftServer.State.Log.GetMostRecentIndex())
+	if err != nil {
+		t.Fatal("Error taking snapshot:", err)
+	}
+
+	code, err, _ = raftServer.RequestWriteCommand("test2.txt", 0, 5, []byte("earth"))
+	if code != returncodes.OK {
+		t.Fatal("Error performing write command:", err)
+	}
+
+	raft.Log.Info("Reverting to snapshot")
+	err = raftServer.RevertToSnapshot(path.Join(raftDirectory, raft.SnapshotDirectory, raft.CurrentSnapshotDirectory))
+	if err != nil {
+		t.Fatal("Error reverting to snapshot:", err)
+	}
+
+	code, err, data = commands.ReadCommand(pfsDirectory, "test.txt", -1, -1)
+	if string(data) != "hello" {
+		t.Fatal("Error reverting snapshot. Read does not match 'hello'. Actual:", string(data))
+	}
+
+	code, err, data = commands.ReadCommand(pfsDirectory, "test2.txt", -1, -1)
+	if string(data) != "world" {
+		t.Fatal("Error reverting snapshot. Read does not match 'world'. Actual:", string(data))
 	}
 }
