@@ -95,7 +95,7 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 				Log.Fatal("Unable to get log entry:", err)
 			}
 			if logEntryAtIndex.Term != req.Term {
-				s.State.Log.DiscardLogEntries(logIndex)
+				s.State.Log.DiscardLogEntriesAfter(logIndex)
 				s.appendLogEntry(req.Entries[i])
 			}
 		} else {

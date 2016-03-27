@@ -423,7 +423,7 @@ func (s *RaftNetworkServer) RevertToSnapshot(snapshotPath string) error {
 	//TODO: change this to remove all log entries
 	//This is just temporary for testing purposes
 	if s.State.Log.GetMostRecentIndex() > snapshotMeta.LastIncludedIndex {
-		err = s.State.Log.DiscardLogEntries(snapshotMeta.LastIncludedIndex + 1)
+		err = s.State.Log.DiscardLogEntriesAfter(snapshotMeta.LastIncludedIndex + 1)
 		if err != nil {
 			return fmt.Errorf("error reverting to snapshot: %s", err)
 		}

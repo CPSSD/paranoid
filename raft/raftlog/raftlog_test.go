@@ -76,7 +76,7 @@ func TestWriteReadDelete(t *testing.T) {
 		t.Error("received error writing log, err:", err)
 	}
 
-	files, err := ioutil.ReadDir(logDir)
+	files, err := ioutil.ReadDir(path.Join(logDir, LogEntryDirectoryName))
 	if err != nil {
 		t.Error("Error reading log directory")
 	}
@@ -117,12 +117,12 @@ func TestWriteReadDelete(t *testing.T) {
 	}
 
 	// Testing Delete functionality
-	err = rl.DiscardLogEntries(1)
+	err = rl.DiscardLogEntriesAfter(1)
 	if err != nil {
 		t.Error("Error received when deleting log: ", err)
 	}
 
-	files, err = ioutil.ReadDir(logDir)
+	files, err = ioutil.ReadDir(path.Join(logDir, LogEntryDirectoryName))
 	if err != nil {
 		t.Error("Error reading log directory")
 	}

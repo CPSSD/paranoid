@@ -7,20 +7,32 @@ import (
 	"strconv"
 )
 
-// DiscardLogEntries an entry in the logs per index and all logs after it
-func (rl *RaftLog) DiscardLogEntries(startIndex uint64) error {
+func (rl *RaftLog) deleteLogEntry(index uint64) {
+	entryPath := path.Join(rl.logDir, LogEntryDirectoryName, strconv.FormatUint(storageIndexToFileIndex(index), 10))
+	fi, err := os.Stat(entryPath)
+	if err != nil {
+		Log.Fatalf("unable to delete log of index %d with error: %s", index, err)
+	}
+	entrySize := uint64(fi.Size())
+
+	err = os.Remove(entryPath)
+	if err != nil {
+		Log.Fatalf("unable to delete log of index %d with error: %s", index, err)
+	}
+	rl.setLogSizeBytes(rl.logSizeBytes - entrySize)
+}
+
+// DiscardLogEntriesAfter discards an entry in the logs at startIndex and all logs after it
+func (rl *RaftLog) DiscardLogEntriesAfter(startIndex uint64) error {
 	rl.indexLock.Lock()
 	defer rl.indexLock.Unlock()
 
-	if startIndex < 1 || startIndex >= rl.currentIndex {
+	if startIndex <= rl.startIndex || startIndex >= rl.currentIndex {
 		return errors.New("index out of bounds")
 	}
 
 	for i := rl.currentIndex - 1; i >= startIndex; i-- {
-		err := os.Remove(path.Join(rl.logDir, strconv.FormatUint(storageIndexToFileIndex(i), 10)))
-		if err != nil {
-			Log.Fatalf("unable to delete log of index %d with error: %s", i, err)
-		}
+		rl.deleteLogEntry(i)
 		rl.currentIndex--
 	}
 
@@ -35,4 +47,21 @@ func (rl *RaftLog) DiscardLogEntries(startIndex uint64) error {
 	}
 
 	return nil
+}
+
+// DiscardLogEntriesBefore discards an entry in the logs at endIndex and all logs before it
+func (rl *RaftLog) DiscardLogEntriesBefore(endIndex uint64) {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+
+	for i := rl.startIndex + 1; i <= endIndex; i++ {
+		logEntry, err := rl.GetLogEntryUnsafe(i)
+		if err != nil {
+			Log.Fatal("error deleting log entries:", err)
+		}
+
+		rl.deleteLogEntry(i)
+		rl.setStartIndex(i)
+		rl.setStartTerm(logEntry.Term)
+	}
 }

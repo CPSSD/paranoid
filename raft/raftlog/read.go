@@ -16,7 +16,7 @@ func (rl *RaftLog) GetLogEntryUnsafe(index uint64) (entry *pb.LogEntry, err erro
 	}
 
 	fileIndex := storageIndexToFileIndex(index)
-	filePath := path.Join(rl.logDir, strconv.FormatUint(fileIndex, 10))
+	filePath := path.Join(rl.logDir, LogEntryDirectoryName, strconv.FormatUint(fileIndex, 10))
 	fileData, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, errors.New("failed to read logfile")
@@ -66,7 +66,7 @@ func (rl *RaftLog) GetLogEntries(index, maxCount uint64) (entries []*pb.Entry, e
 	entries = make([]*pb.Entry, min(rl.currentIndex-index, maxCount))
 	for i := index; i < min(rl.currentIndex, index+maxCount); i++ {
 		fileIndex := storageIndexToFileIndex(i)
-		filePath := path.Join(rl.logDir, strconv.FormatUint(fileIndex, 10))
+		filePath := path.Join(rl.logDir, LogEntryDirectoryName, strconv.FormatUint(fileIndex, 10))
 		fileData, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			return nil, errors.New("failed to read logfile")
