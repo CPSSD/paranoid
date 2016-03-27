@@ -28,6 +28,8 @@ type Configuration struct {
 	futureNextIndex     []uint64
 	futureMatchIndex    []uint64
 
+	sendingSnapshot map[string]bool
+
 	raftInfoDirectory    string
 	persistentConfigLock sync.Mutex
 	configLock           sync.Mutex
@@ -403,6 +405,20 @@ func (c *Configuration) SetMatchIndex(nodeID string, x uint64) {
 			c.futureMatchIndex[i] = x
 		}
 	}
+}
+
+func (c *Configuration) GetSendingSnapshot(nodeID string) bool {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	return c.sendingSnapshot[nodeID]
+}
+
+func (c *Configuration) SetSendingSnapshot(nodeID string, x bool) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	c.sendingSnapshot[nodeID] = x
 }
 
 //CalculateNewCommitIndex calculates a new commit index in the manner described in the Raft paper

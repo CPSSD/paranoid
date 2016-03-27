@@ -12,18 +12,23 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"time"
 )
 
 const (
 	SnapshotDirectory        string = "snapshots"
 	CurrentSnapshotDirectory string = "currentsnapshot"
-	NextShapshotDirectory    string = "nextsnapshot"
 	SnapshotMetaFileName     string = "snapshotmeta"
 	TarFileName              string = "snapshot.tar"
 )
 
+const (
+	SNAPSHOT_INTERVAL time.Duration = 5 * time.Minute
+	SNAPSHOT_LOGSIZE  uint64        = 2 * 1024 * 1024 //2 MegaBytes
+)
+
 // Called every time raft network server starts up
-// Creates the snapshot directory if it does not exist and removes any snapshot we were building that was not completed
+// Makes sure snapshot directory exists and we have access to it
 func (s *RaftNetworkServer) setupSnapshotDirectory() {
 	_, err := os.Stat(path.Join(s.raftInfoDirectory, SnapshotDirectory))
 	if os.IsNotExist(err) {
@@ -33,14 +38,6 @@ func (s *RaftNetworkServer) setupSnapshotDirectory() {
 		}
 	} else if err != nil {
 		Log.Fatal("error acessing snapshot directory:", err)
-	}
-
-	_, err = os.Stat(path.Join(s.raftInfoDirectory, SnapshotDirectory, NextShapshotDirectory))
-	if err == nil {
-		err := os.RemoveAll(path.Join(s.raftInfoDirectory, SnapshotDirectory, NextShapshotDirectory))
-		if err != nil {
-			Log.Fatal("failed to discard old in progress snapshot")
-		}
 	}
 }
 
@@ -289,18 +286,13 @@ func (s *RaftNetworkServer) CreateSnapshot(lastIncludedIndex uint64) (err error)
 	defer s.Wait.Done()
 
 	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
-	nextSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, NextShapshotDirectory)
+	nextSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, generateNewUUID())
 
 	if s.State.GetPerformingSnapshot() == true {
 		return errors.New("snapshot creation already in progress")
 	}
 	s.State.SetPerformingSnapshot(true)
 	defer s.State.SetPerformingSnapshot(false)
-
-	_, err = os.Stat(nextSnapshot)
-	if !os.IsNotExist(err) {
-		return errors.New("snapshot creation already in progress")
-	}
 
 	err = os.Mkdir(nextSnapshot, 0700)
 	if err != nil {
@@ -344,12 +336,12 @@ func (s *RaftNetworkServer) CreateSnapshot(lastIncludedIndex uint64) (err error)
 		return err
 	}
 
-	err = saveSnapshotMetaInformation(nextSnapshot, lastIncludedIndex, lastIncludedTerm)
+	err = tarSnapshot(nextSnapshot)
 	if err != nil {
 		return err
 	}
 
-	err = tarSnapshot(nextSnapshot)
+	err = saveSnapshotMetaInformation(nextSnapshot, lastIncludedIndex, lastIncludedTerm)
 	if err != nil {
 		return err
 	}
@@ -359,15 +351,7 @@ func (s *RaftNetworkServer) CreateSnapshot(lastIncludedIndex uint64) (err error)
 		return err
 	}
 
-	err = os.RemoveAll(currentSnapshot)
-	if err != nil {
-		return err
-	}
-
-	err = os.Rename(nextSnapshot, currentSnapshot)
-	if err != nil {
-		return err
-	}
+	s.State.NewSnapshotCreated <- true
 
 	return nil
 }
@@ -420,14 +404,7 @@ func (s *RaftNetworkServer) RevertToSnapshot(snapshotPath string) error {
 		}
 	}
 
-	//TODO: change this to remove all log entries
-	//This is just temporary for testing purposes
-	if s.State.Log.GetMostRecentIndex() > snapshotMeta.LastIncludedIndex {
-		err = s.State.Log.DiscardLogEntriesAfter(snapshotMeta.LastIncludedIndex + 1)
-		if err != nil {
-			return fmt.Errorf("error reverting to snapshot: %s", err)
-		}
-	}
+	s.State.Log.DiscardAllLogEntries(snapshotMeta.LastIncludedIndex, snapshotMeta.LastIncludedTerm)
 	s.State.SetLastApplied(snapshotMeta.LastIncludedIndex)
 	s.State.SetCommitIndex(snapshotMeta.LastIncludedIndex)
 
@@ -440,4 +417,106 @@ func (s *RaftNetworkServer) InstallSnapshot(ctx context.Context, req *pb.Snapsho
 	}
 
 	return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, nil
+}
+
+func (s *RaftNetworkServer) sendSnapshot(node *Node) {
+	defer s.Wait.Done()
+	defer s.State.DecrementSnapshotCounter()
+	conn, err := s.Dial(node, HEARTBEAT_TIMEOUT)
+	if err != nil {
+		Log.Error("error sending snapshot:", err)
+		return
+	}
+	defer conn.Close()
+}
+
+//Update the current snapshot to the most recent snapshot available and remove all incomplete snapshots
+func (s *RaftNetworkServer) updateCurrentSnapshot() error {
+	snapshots, err := ioutil.ReadDir(path.Join(s.raftInfoDirectory, SnapshotDirectory))
+	if err != nil {
+		return fmt.Errorf("unable to update current snapshot: %s", err)
+	}
+
+	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
+	currentSnapshotMeta, err := getSnapshotMetaInformation(currentSnapshot)
+
+	mostRecentSnapshot := ""
+	mostRecentSnapshotIndex := currentSnapshotMeta.LastIncludedIndex
+	mostRecentSnapshotTerm := uint64(0)
+
+	for i := 0; i < len(snapshots); i++ {
+		snapshotPath := path.Join(s.raftInfoDirectory, SnapshotDirectory, snapshots[i].Name())
+		snapshotMeta, err := getSnapshotMetaInformation(snapshotPath)
+		if err != nil {
+			Log.Warn("error updating current snapshot:", err)
+		} else {
+			if snapshotMeta.LastIncludedIndex > mostRecentSnapshotIndex {
+				mostRecentSnapshot = snapshotPath
+				mostRecentSnapshotIndex = snapshotMeta.LastIncludedIndex
+				mostRecentSnapshotTerm = snapshotMeta.LastIncludedTerm
+			}
+		}
+	}
+
+	if mostRecentSnapshot != "" {
+		err = os.RemoveAll(currentSnapshot)
+		if err != nil {
+			return fmt.Errorf("unable to update current snapshot: %s", err)
+		}
+
+		err = os.Rename(mostRecentSnapshot, currentSnapshot)
+		if err != nil {
+			Log.Fatal("Failed to rename new snapshot after deleteing current snapshot:", err)
+		}
+
+		s.State.Log.DiscardLogEntriesBefore(mostRecentSnapshotIndex, mostRecentSnapshotTerm)
+
+		for i := 0; i < len(snapshots); i++ {
+			snapshotPath := path.Join(s.raftInfoDirectory, SnapshotDirectory, snapshots[i].Name())
+			if snapshotPath != currentSnapshot && snapshotPath != mostRecentSnapshot {
+				err = os.RemoveAll(snapshotPath)
+				if err != nil {
+					Log.Warn("error updating current snapshot:", err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *RaftNetworkServer) manageSnapshoting() {
+	defer s.Wait.Done()
+	for {
+		select {
+		case _, ok := <-s.Quit:
+			if !ok {
+				s.QuitChannelClosed = true
+				s.State.SetCurrentState(INACTIVE)
+				Log.Info("Exiting snapshot managment loop")
+				return
+			}
+		case <-s.State.SnapshotCounterAtZero:
+			err := s.updateCurrentSnapshot()
+			if err != nil {
+				Log.Error("manage snapshoting: %s", err)
+			}
+		case <-s.State.NewSnapshotCreated:
+			Log.Info("New Snapshot Created")
+			if s.State.GetSnapshotCounterValue() == 0 {
+				err := s.updateCurrentSnapshot()
+				if err != nil {
+					Log.Error("manage snapshoting: %s", err)
+				}
+			}
+		case node := <-s.State.SendSnapshot:
+			if s.State.Configuration.GetSendingSnapshot(node.NodeID) == false {
+				Log.Info("Send current snapshot to", node)
+				s.State.Configuration.SetSendingSnapshot(node.NodeID, true)
+				s.Wait.Add(1)
+				s.State.IncrementSnapshotCounter()
+				go s.sendSnapshot(&node)
+			}
+		}
+	}
 }

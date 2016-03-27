@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 )
 
 func TestSnapshoting(t *testing.T) {
@@ -71,6 +72,9 @@ func TestSnapshoting(t *testing.T) {
 		t.Fatal("Error performing write command:", err)
 	}
 
+	//Sleep to give time for the snapshot managment goroutine to update the current snapshot
+	time.Sleep(1)
+
 	raft.Log.Info("Reverting to snapshot")
 	err = raftServer.RevertToSnapshot(path.Join(raftDirectory, raft.SnapshotDirectory, raft.CurrentSnapshotDirectory))
 	if err != nil {
@@ -103,6 +107,9 @@ func TestSnapshoting(t *testing.T) {
 	if code != returncodes.OK {
 		t.Fatal("Error performing write command:", err)
 	}
+
+	//Sleep to give time for the snapshot managment goroutine to update the current snapshot
+	time.Sleep(1)
 
 	raft.Log.Info("Reverting to snapshot")
 	err = raftServer.RevertToSnapshot(path.Join(raftDirectory, raft.SnapshotDirectory, raft.CurrentSnapshotDirectory))

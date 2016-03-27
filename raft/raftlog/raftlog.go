@@ -2,6 +2,7 @@ package raftlog
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/cpssd/paranoid/logger"
 	"io/ioutil"
 	"os"
@@ -13,6 +14,8 @@ const (
 	LogEntryDirectoryName string = "log_entries"
 	LogMetaFileName       string = "logmetainfo"
 )
+
+var ErrIndexBelowStartIndex = errors.New("given index is below start index")
 
 var Log *logger.ParanoidLogger
 
@@ -135,6 +138,12 @@ func (rl *RaftLog) setLogSizeBytes(x uint64) {
 	rl.saveMetaInfo()
 }
 
+func (rl *RaftLog) GetLogSizeBytes() uint64 {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+	return rl.logSizeBytes
+}
+
 func (rl *RaftLog) setStartIndex(x uint64) {
 	rl.startIndex = x
 	rl.saveMetaInfo()
@@ -143,4 +152,10 @@ func (rl *RaftLog) setStartIndex(x uint64) {
 func (rl *RaftLog) setStartTerm(x uint64) {
 	rl.startTerm = x
 	rl.saveMetaInfo()
+}
+
+func (rl *RaftLog) GetStartTerm() uint64 {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+	return rl.startTerm
 }

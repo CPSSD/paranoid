@@ -38,10 +38,9 @@ type RaftState struct {
 	//Used for testing purposes
 	specialNumber uint64
 
-	NodeId             string
-	pfsDirectory       string
-	currentState       int
-	performingSnapshot bool
+	NodeId       string
+	pfsDirectory string
+	currentState int
 
 	currentTerm uint64
 	votedFor    string
@@ -57,6 +56,12 @@ type RaftState struct {
 	StopLeading       chan bool
 	SendAppendEntries chan bool
 	LeaderElected     chan bool
+
+	snapshotCounter       int
+	performingSnapshot    bool
+	SendSnapshot          chan Node
+	NewSnapshotCreated    chan bool
+	SnapshotCounterAtZero chan bool
 
 	waitingForApplied    bool
 	EntryApplied         chan *EntryAppliedInfo
@@ -116,6 +121,27 @@ func (s *RaftState) SetPerformingSnapshot(x bool) {
 	s.stateChangeLock.Lock()
 	defer s.stateChangeLock.Unlock()
 	s.performingSnapshot = x
+}
+
+func (s *RaftState) IncrementSnapshotCounter() {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+	s.snapshotCounter++
+}
+
+func (s *RaftState) DecrementSnapshotCounter() {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+	s.snapshotCounter--
+	if s.snapshotCounter == 0 {
+		s.SnapshotCounterAtZero <- true
+	}
+}
+
+func (s *RaftState) GetSnapshotCounterValue() int {
+	s.stateChangeLock.Lock()
+	defer s.stateChangeLock.Unlock()
+	return s.snapshotCounter
 }
 
 func (s *RaftState) GetCommitIndex() uint64 {
@@ -342,31 +368,35 @@ func newRaftState(myNodeDetails Node, pfsDirectory, raftInfoDirectory string, te
 	var raftState *RaftState
 	if persistentState == nil {
 		raftState = &RaftState{
-			specialNumber:     0,
-			pfsDirectory:      pfsDirectory,
-			NodeId:            myNodeDetails.NodeID,
-			currentTerm:       0,
-			votedFor:          "",
-			Log:               raftlog.New(path.Join(raftInfoDirectory, LogDirectory)),
-			commitIndex:       0,
-			lastApplied:       0,
-			leaderId:          "",
-			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails, true),
-			raftInfoDirectory: raftInfoDirectory,
+			specialNumber:      0,
+			pfsDirectory:       pfsDirectory,
+			NodeId:             myNodeDetails.NodeID,
+			currentTerm:        0,
+			votedFor:           "",
+			Log:                raftlog.New(path.Join(raftInfoDirectory, LogDirectory)),
+			commitIndex:        0,
+			lastApplied:        0,
+			leaderId:           "",
+			snapshotCounter:    0,
+			performingSnapshot: false,
+			Configuration:      newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails, true),
+			raftInfoDirectory:  raftInfoDirectory,
 		}
 	} else {
 		raftState = &RaftState{
-			specialNumber:     persistentState.SpecialNumber,
-			pfsDirectory:      pfsDirectory,
-			NodeId:            myNodeDetails.NodeID,
-			currentTerm:       persistentState.CurrentTerm,
-			votedFor:          persistentState.VotedFor,
-			Log:               raftlog.New(path.Join(raftInfoDirectory, LogDirectory)),
-			commitIndex:       0,
-			lastApplied:       persistentState.LastApplied,
-			leaderId:          "",
-			Configuration:     newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails, true),
-			raftInfoDirectory: raftInfoDirectory,
+			specialNumber:      persistentState.SpecialNumber,
+			pfsDirectory:       pfsDirectory,
+			NodeId:             myNodeDetails.NodeID,
+			currentTerm:        persistentState.CurrentTerm,
+			votedFor:           persistentState.VotedFor,
+			Log:                raftlog.New(path.Join(raftInfoDirectory, LogDirectory)),
+			commitIndex:        0,
+			lastApplied:        persistentState.LastApplied,
+			leaderId:           "",
+			snapshotCounter:    0,
+			performingSnapshot: false,
+			Configuration:      newConfiguration(raftInfoDirectory, testConfiguration, myNodeDetails, true),
+			raftInfoDirectory:  raftInfoDirectory,
 		}
 	}
 
@@ -376,6 +406,9 @@ func newRaftState(myNodeDetails Node, pfsDirectory, raftInfoDirectory string, te
 	raftState.SendAppendEntries = make(chan bool, 100)
 	raftState.LeaderElected = make(chan bool, 1)
 	raftState.EntryApplied = make(chan *EntryAppliedInfo, 100)
+	raftState.NewSnapshotCreated = make(chan bool, 100)
+	raftState.SnapshotCounterAtZero = make(chan bool, 100)
+	raftState.SendSnapshot = make(chan Node, 100)
 	raftState.ConfigurationApplied = make(chan *pb.Configuration, 100)
 	return raftState
 }

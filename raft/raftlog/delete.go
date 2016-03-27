@@ -50,11 +50,11 @@ func (rl *RaftLog) DiscardLogEntriesAfter(startIndex uint64) error {
 }
 
 // DiscardLogEntriesBefore discards an entry in the logs at endIndex and all logs before it
-func (rl *RaftLog) DiscardLogEntriesBefore(endIndex uint64) {
+func (rl *RaftLog) DiscardLogEntriesBefore(endIndex, endTerm uint64) {
 	rl.indexLock.Lock()
 	defer rl.indexLock.Unlock()
 
-	for i := rl.startIndex + 1; i <= endIndex; i++ {
+	for i := rl.startIndex + 1; i <= min(endIndex, rl.currentIndex-1); i++ {
 		logEntry, err := rl.GetLogEntryUnsafe(i)
 		if err != nil {
 			Log.Fatal("error deleting log entries:", err)
@@ -64,4 +64,31 @@ func (rl *RaftLog) DiscardLogEntriesBefore(endIndex uint64) {
 		rl.setStartIndex(i)
 		rl.setStartTerm(logEntry.Term)
 	}
+
+	if rl.startIndex >= rl.currentIndex {
+		rl.currentIndex = rl.startIndex + 1
+		rl.mostRecentTerm = endTerm
+	}
+}
+
+//Used once a new snapshot has been reverted to
+func (rl *RaftLog) DiscardAllLogEntries(snapshotIndex, snapshotTerm uint64) {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+
+	err := os.RemoveAll(path.Join(rl.logDir, LogEntryDirectoryName))
+	if err != nil {
+		Log.Fatal("error deleting all log entries:", err)
+	}
+
+	err = os.Mkdir(path.Join(rl.logDir, LogEntryDirectoryName), 0700)
+	if err != nil {
+		Log.Fatal("error deleting all log entries:", err)
+	}
+
+	rl.setLogSizeBytes(0)
+	rl.setStartIndex(snapshotIndex)
+	rl.setStartTerm(snapshotTerm)
+	rl.currentIndex = rl.startIndex + 1
+	rl.mostRecentTerm = snapshotTerm
 }

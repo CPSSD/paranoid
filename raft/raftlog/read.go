@@ -15,6 +15,10 @@ func (rl *RaftLog) GetLogEntryUnsafe(index uint64) (entry *pb.LogEntry, err erro
 		return nil, errors.New("index out of bounds")
 	}
 
+	if index <= rl.startIndex {
+		return nil, ErrIndexBelowStartIndex
+	}
+
 	fileIndex := storageIndexToFileIndex(index)
 	filePath := path.Join(rl.logDir, LogEntryDirectoryName, strconv.FormatUint(fileIndex, 10))
 	fileData, err := ioutil.ReadFile(filePath)
@@ -61,6 +65,10 @@ func (rl *RaftLog) GetLogEntries(index, maxCount uint64) (entries []*pb.Entry, e
 
 	if index < 1 || index >= rl.currentIndex {
 		return nil, errors.New("index out of bounds")
+	}
+
+	if index <= rl.startIndex {
+		return nil, ErrIndexBelowStartIndex
 	}
 
 	entries = make([]*pb.Entry, min(rl.currentIndex-index, maxCount))
