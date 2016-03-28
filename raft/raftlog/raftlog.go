@@ -159,3 +159,9 @@ func (rl *RaftLog) GetStartTerm() uint64 {
 	defer rl.indexLock.Unlock()
 	return rl.startTerm
 }
+
+func (rl *RaftLog) GetStartIndex() uint64 {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+	return rl.startIndex
+}

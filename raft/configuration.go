@@ -146,7 +146,12 @@ func (c *Configuration) UpdateFromConfigurationFile(configurationFilePath string
 	}
 
 	c.currentConfiguration = configuration.CurrentConfiguration
+	c.currentNextIndex = make([]uint64, len(c.currentConfiguration))
+	c.currentMatchIndex = make([]uint64, len(c.currentConfiguration))
+
 	c.futureConfiguration = configuration.FutureConfiguration
+	c.futureNextIndex = make([]uint64, len(c.futureConfiguration))
+	c.futureMatchIndex = make([]uint64, len(c.futureConfiguration))
 	c.futureConfigurationActive = configuration.FutureConfigurationActive
 
 	for i := 0; i < len(c.currentConfiguration); i++ {
@@ -569,6 +574,7 @@ func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfigur
 			}
 		}
 	}
+	config.sendingSnapshot = make(map[string]bool)
 	config.savePersistentConfiguration()
 	if saveOriginalConfiguration {
 		config.saveOriginalConfiguration()

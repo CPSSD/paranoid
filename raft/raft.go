@@ -450,6 +450,12 @@ func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 	defer s.Wait.Done()
 	nextIndex := s.State.Configuration.GetNextIndex(node.NodeID)
 	sendingSnapshot := s.State.Configuration.GetSendingSnapshot(node.NodeID)
+
+	if s.State.Log.GetStartIndex() >= nextIndex && sendingSnapshot == false {
+		s.State.SendSnapshot <- *node
+		sendingSnapshot = true
+	}
+
 	conn, err := s.Dial(node, HEARTBEAT_TIMEOUT)
 	defer conn.Close()
 	if err == nil {

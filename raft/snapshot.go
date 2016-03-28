@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"time"
 )
 
@@ -24,7 +25,7 @@ const (
 )
 
 const (
-	SNAPSHOT_INTERVAL         time.Duration = 5 * time.Minute
+	SNAPSHOT_INTERVAL         time.Duration = 1 * time.Minute
 	SNAPSHOT_LOGSIZE          uint64        = 2 * 1024 * 1024 //2 MegaBytes
 	SNAPSHOT_CHUNK_SIZE       int64         = 1024
 	MAX_INSTALLSNAPSHOT_FAILS int           = 10
@@ -421,6 +422,52 @@ func (s *RaftNetworkServer) InstallSnapshot(ctx context.Context, req *pb.Snapsho
 		return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, nil
 	}
 
+	snapshotPath := path.Join(s.raftInfoDirectory, SnapshotDirectory, req.LeaderId+strconv.FormatUint(req.LastIncludedIndex, 10))
+	if req.Offset == 0 {
+		err := os.RemoveAll(snapshotPath)
+		if err != nil {
+			Log.Error("Error recieving snapshot:", err)
+			return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, err
+		}
+
+		err = os.Mkdir(snapshotPath, 0700)
+		if err != nil {
+			Log.Error("Error recieving snapshot:", err)
+			return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, err
+		}
+
+		snapshotFile, err := os.Create(path.Join(snapshotPath, TarFileName))
+		if err != nil {
+			Log.Error("Error recieving snapshot:", err)
+			return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, err
+		}
+		snapshotFile.Close()
+	}
+
+	snapshotFile, err := os.OpenFile(path.Join(snapshotPath, TarFileName), os.O_WRONLY, 0600)
+	if err != nil {
+		Log.Error("Error recieving snapshot:", err)
+		return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, err
+	}
+	defer snapshotFile.Close()
+
+	bytesWritten, err := snapshotFile.WriteAt(req.Data, int64(req.Offset))
+	if err != nil {
+		Log.Error("Error recieving snapshot:", err)
+		return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, err
+	}
+	if bytesWritten != len(req.Data) {
+		Log.Error("Error recieving snapshot: incorrect number of bytes written to snapshot file")
+		return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, errors.New("incorrect number of bytes written to snapshot file")
+	}
+
+	if req.Done == false {
+		return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, nil
+	}
+
+	saveSnapshotMetaInformation(snapshotPath, req.LastIncludedIndex, req.LastIncludedTerm, false)
+	s.State.NewSnapshotCreated <- true
+
 	return &pb.SnapshotResponse{s.State.GetCurrentTerm()}, nil
 }
 
@@ -496,6 +543,7 @@ func (s *RaftNetworkServer) sendSnapshot(node *Node) {
 				}
 				if done {
 					Log.Info("Sucessfully send complete snapshot to:", node.String())
+					s.State.Configuration.SetNextIndex(node.NodeID, snapshotMeta.LastIncludedIndex+1)
 					return
 				}
 				snapshotFileOffset = snapshotFileOffset + int64(bytesRead)
