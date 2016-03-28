@@ -114,19 +114,14 @@ message RequestVoteResponse {
 message SnapshotRequest {
     uint64 term = 1; // required
     string leader_id = 2; // required
-    enum SnapshotType {
-      TarFile = 0;
-      ConfigurationFile = 1;
-    }
-    SnapshotType type = 3; // required 
    
-    uint64 last_included_index = 4; // required 
-    uint64 last_included_term = 5; // required 
+    uint64 last_included_index = 3; // required 
+    uint64 last_included_term = 4; // required 
 
-    uint64 offset = 6; // required
-    bytes data = 7;  // required 
+    uint64 offset = 5; // required
+    bytes data = 6;  // required 
 
-    bool done = 8; // required
+    bool done = 7; // required
 }
 
 message SnapshotResponse {

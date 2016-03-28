@@ -8,6 +8,7 @@ import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"golang.org/x/net/context"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -23,8 +24,10 @@ const (
 )
 
 const (
-	SNAPSHOT_INTERVAL time.Duration = 5 * time.Minute
-	SNAPSHOT_LOGSIZE  uint64        = 2 * 1024 * 1024 //2 MegaBytes
+	SNAPSHOT_INTERVAL         time.Duration = 5 * time.Minute
+	SNAPSHOT_LOGSIZE          uint64        = 2 * 1024 * 1024 //2 MegaBytes
+	SNAPSHOT_CHUNK_SIZE       int64         = 1024
+	MAX_INSTALLSNAPSHOT_FAILS int           = 10
 )
 
 // Called every time raft network server starts up
@@ -44,6 +47,7 @@ func (s *RaftNetworkServer) setupSnapshotDirectory() {
 type SnapShotInfo struct {
 	LastIncludedIndex uint64 `json:"lastincludedindex"`
 	LastIncludedTerm  uint64 `json:"lastincludedterm"`
+	SelfCreated       bool   `json:"selfcreated"`
 }
 
 func getSnapshotMetaInformation(snapShotPath string) (*SnapShotInfo, error) {
@@ -60,10 +64,11 @@ func getSnapshotMetaInformation(snapShotPath string) (*SnapShotInfo, error) {
 	return snapShotInfo, nil
 }
 
-func saveSnapshotMetaInformation(snapShotPath string, lastIncludedIndex, lastIncludedTerm uint64) error {
+func saveSnapshotMetaInformation(snapShotPath string, lastIncludedIndex, lastIncludedTerm uint64, selfCreated bool) error {
 	snapShotInfo := &SnapShotInfo{
 		LastIncludedIndex: lastIncludedIndex,
 		LastIncludedTerm:  lastIncludedTerm,
+		SelfCreated:       selfCreated,
 	}
 
 	snapShotInfoJson, err := json.Marshal(snapShotInfo)
@@ -341,7 +346,7 @@ func (s *RaftNetworkServer) CreateSnapshot(lastIncludedIndex uint64) (err error)
 		return err
 	}
 
-	err = saveSnapshotMetaInformation(nextSnapshot, lastIncludedIndex, lastIncludedTerm)
+	err = saveSnapshotMetaInformation(nextSnapshot, lastIncludedIndex, lastIncludedTerm, true)
 	if err != nil {
 		return err
 	}
@@ -422,12 +427,89 @@ func (s *RaftNetworkServer) InstallSnapshot(ctx context.Context, req *pb.Snapsho
 func (s *RaftNetworkServer) sendSnapshot(node *Node) {
 	defer s.Wait.Done()
 	defer s.State.DecrementSnapshotCounter()
+	defer s.State.Configuration.SetSendingSnapshot(node.NodeID, false)
+
 	conn, err := s.Dial(node, HEARTBEAT_TIMEOUT)
 	if err != nil {
 		Log.Error("error sending snapshot:", err)
 		return
 	}
 	defer conn.Close()
+
+	client := pb.NewRaftNetworkClient(conn)
+	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
+	snapshotMeta, err := getSnapshotMetaInformation(currentSnapshot)
+	if err != nil {
+		Log.Error("Error sending snapshot:", err)
+		return
+	}
+
+	snapshotFile, err := os.Open(path.Join(currentSnapshot, TarFileName))
+	if err != nil {
+		Log.Error("Error sending snapshot:", err)
+		return
+	}
+	defer snapshotFile.Close()
+
+	snapshotChunk := make([]byte, SNAPSHOT_CHUNK_SIZE)
+	snapshotFileOffset := int64(0)
+	installRequestsFailed := 0
+
+	for {
+		select {
+		case _, ok := <-s.Quit:
+			if !ok {
+				s.QuitChannelClosed = true
+				Log.Info("Stop sending snapshot to:", node.String())
+				return
+			}
+		default:
+			if s.State.GetCurrentState() != LEADER {
+				Log.Info("Ceasing sending snapshot due to state change")
+				return
+			}
+
+			done := false
+			bytesRead, err := snapshotFile.ReadAt(snapshotChunk, snapshotFileOffset)
+			if err != nil {
+				if err == io.EOF {
+					done = true
+				} else {
+					Log.Error("Error sending snapshot:", err)
+					return
+				}
+			}
+
+			response, err := client.InstallSnapshot(context.Background(), &pb.SnapshotRequest{
+				Term:              s.State.GetCurrentTerm(),
+				LeaderId:          s.nodeDetails.NodeID,
+				LastIncludedIndex: snapshotMeta.LastIncludedIndex,
+				LastIncludedTerm:  snapshotMeta.LastIncludedTerm,
+				Offset:            uint64(snapshotFileOffset),
+				Data:              snapshotChunk[:bytesRead],
+				Done:              done,
+			})
+			if err == nil {
+				if response.Term > s.State.GetCurrentTerm() {
+					s.State.StopLeading <- true
+					return
+				}
+				if done {
+					Log.Info("Sucessfully send complete snapshot to:", node.String())
+					return
+				}
+				snapshotFileOffset = snapshotFileOffset + int64(bytesRead)
+			} else {
+				if installRequestsFailed > MAX_INSTALLSNAPSHOT_FAILS {
+					Log.Error("InstallSnapshot request failed repeatedly:", err)
+					return
+				} else {
+					Log.Warn("InstallSnapshot request failed:", err)
+					installRequestsFailed++
+				}
+			}
+		}
+	}
 }
 
 //Update the current snapshot to the most recent snapshot available and remove all incomplete snapshots
@@ -439,10 +521,14 @@ func (s *RaftNetworkServer) updateCurrentSnapshot() error {
 
 	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
 	currentSnapshotMeta, err := getSnapshotMetaInformation(currentSnapshot)
+	if err != nil {
+		currentSnapshotMeta = &SnapShotInfo{
+			LastIncludedIndex: 0,
+		}
+	}
 
 	mostRecentSnapshot := ""
-	mostRecentSnapshotIndex := currentSnapshotMeta.LastIncludedIndex
-	mostRecentSnapshotTerm := uint64(0)
+	mostRecentSnapshotMeta := currentSnapshotMeta
 
 	for i := 0; i < len(snapshots); i++ {
 		snapshotPath := path.Join(s.raftInfoDirectory, SnapshotDirectory, snapshots[i].Name())
@@ -450,10 +536,9 @@ func (s *RaftNetworkServer) updateCurrentSnapshot() error {
 		if err != nil {
 			Log.Warn("error updating current snapshot:", err)
 		} else {
-			if snapshotMeta.LastIncludedIndex > mostRecentSnapshotIndex {
+			if snapshotMeta.LastIncludedIndex > mostRecentSnapshotMeta.LastIncludedIndex {
 				mostRecentSnapshot = snapshotPath
-				mostRecentSnapshotIndex = snapshotMeta.LastIncludedIndex
-				mostRecentSnapshotTerm = snapshotMeta.LastIncludedTerm
+				mostRecentSnapshotMeta = snapshotMeta
 			}
 		}
 	}
@@ -469,7 +554,14 @@ func (s *RaftNetworkServer) updateCurrentSnapshot() error {
 			Log.Fatal("Failed to rename new snapshot after deleteing current snapshot:", err)
 		}
 
-		s.State.Log.DiscardLogEntriesBefore(mostRecentSnapshotIndex, mostRecentSnapshotTerm)
+		if mostRecentSnapshotMeta.SelfCreated {
+			s.State.Log.DiscardLogEntriesBefore(mostRecentSnapshotMeta.LastIncludedIndex, mostRecentSnapshotMeta.LastIncludedTerm)
+		} else {
+			err = s.RevertToSnapshot(currentSnapshot)
+			if err != nil {
+				Log.Fatal("Update current snapshot failed:", err)
+			}
+		}
 
 		for i := 0; i < len(snapshots); i++ {
 			snapshotPath := path.Join(s.raftInfoDirectory, SnapshotDirectory, snapshots[i].Name())
@@ -487,15 +579,23 @@ func (s *RaftNetworkServer) updateCurrentSnapshot() error {
 
 func (s *RaftNetworkServer) manageSnapshoting() {
 	defer s.Wait.Done()
+	snapshotTimer := time.NewTimer(SNAPSHOT_INTERVAL)
 	for {
 		select {
 		case _, ok := <-s.Quit:
 			if !ok {
 				s.QuitChannelClosed = true
-				s.State.SetCurrentState(INACTIVE)
 				Log.Info("Exiting snapshot managment loop")
 				return
 			}
+		case <-snapshotTimer.C:
+			if s.State.GetPerformingSnapshot() == false {
+				if s.State.Log.GetLogSizeBytes() > SNAPSHOT_LOGSIZE {
+					s.Wait.Add(1)
+					go s.CreateSnapshot(s.State.GetLastApplied())
+				}
+			}
+			snapshotTimer.Reset(SNAPSHOT_INTERVAL)
 		case <-s.State.SnapshotCounterAtZero:
 			err := s.updateCurrentSnapshot()
 			if err != nil {
