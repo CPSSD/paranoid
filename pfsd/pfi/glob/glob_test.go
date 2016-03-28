@@ -1,4 +1,4 @@
-package ignore
+package glob
 
 import (
 	"testing"

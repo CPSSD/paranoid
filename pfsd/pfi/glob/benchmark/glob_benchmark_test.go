@@ -1,7 +1,7 @@
 package benchmark
 
 import (
-	. "github.com/cpssd/paranoid/pfsd/ignore"
+	. "github.com/cpssd/paranoid/pfsd/pfi/glob"
 	"testing"
 )
 

@@ -12,7 +12,7 @@ import (
 
 //WriteCommand writes data to the given file
 func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data []byte) (returnCode returncodes.Code, returnError error, bytesWrote int) {
-	Log.Info("write command called")
+	Log.Info("write command called", filePath)
 	Log.Verbose("write : given paranoidDirectory =", paranoidDirectory)
 
 	err := GetFileSystemLock(paranoidDirectory, SharedLock)

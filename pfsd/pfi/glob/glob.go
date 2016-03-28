@@ -1,4 +1,4 @@
-package ignore
+package glob
 
 import (
 	"github.com/cpssd/paranoid/libpfs/commands"
@@ -11,13 +11,11 @@ type SolvedPaths struct {
 	path  string
 }
 
-var IgnoreFile string
-
 const recursiveStar string = "**"
 const star string = "*"
 const negation string = "!"
 
-func ignoreExists() bool {
+func ignoreExists(path string) bool {
 	_, err, _ := commands.StatCommand(globals.ParanoidDir, "IgnoreFile")
 	if err != nil {
 		return false
@@ -120,23 +118,26 @@ func Glob(pattern, file string) bool {
 
 func ShouldIgnore(filePath string) bool {
 	shouldGlob := false
-	if ignoreExists() {
-		_, err, returnData := commands.ReadCommand(globals.ParanoidDir, "IgnoreFile", -1, -1)
-		if err != nil {
-			return false
-		}
-		negationSet := false
-		for _, pattern := range strings.Split(string(returnData), "\n") {
-			if pattern != "" {
-				if string(pattern[0]) == "!" {
-					negationSet = true
-				}
-				globResponse := Glob(pattern, filePath)
-				shouldGlob = shouldGlob || globResponse
+	isIgnore := strings.HasSuffix(strings.TrimSuffix(filePath, "/"), "IgnoreFile")
+	if !isIgnore {
+		if ignoreExists(filePath) {
+			_, err, returnData := commands.ReadCommand(globals.ParanoidDir, "IgnoreFile", -1, -1)
+			if err != nil {
+				return false
 			}
-		}
-		if negationSet && shouldGlob {
-			shouldGlob = !shouldGlob
+			negationSet := false
+			for _, pattern := range strings.Split(string(returnData), "\n") {
+				if pattern != "" {
+					if string(pattern[0]) == "!" {
+						negationSet = true
+					}
+					globResponse := Glob(pattern, filePath)
+					shouldGlob = shouldGlob || globResponse
+				}
+			}
+			if negationSet && shouldGlob {
+				shouldGlob = !shouldGlob
+			}
 		}
 	}
 	return shouldGlob
