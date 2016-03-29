@@ -18,8 +18,8 @@ type statInfo struct {
 	Mode   os.FileMode
 }
 
-//StatCommand returns information about a file
-func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnError error, info statInfo) {
+// StatCommand returns information about a file as statInfo object
+func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Code, returnError error, info statInfo) {
 	Log.Info("stat command called")
 	Log.Verbose("stat : given paranoidDirectory", paranoidDirectory)
 
@@ -53,11 +53,16 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnErro
 	}
 
 	inodeName := string(inodeBytes)
-	contentsFile := path.Join(paranoidDirectory, "contents", inodeName)
+	contentsFilePath := path.Join(paranoidDirectory, "contents", inodeName)
 
-	fi, err := os.Lstat(contentsFile)
+	contentsFile, err := os.Open(contentsFilePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error Lstating file:", err), statInfo{}
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file: %s", err), statInfo{}
+	}
+
+	fi, err := os.Lstat(contentsFilePath)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error Lstating file: %s", err), statInfo{}
 	}
 
 	stat := fi.Sys().(*syscall.Stat_t)
@@ -65,11 +70,16 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode int, returnErro
 	ctime := time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
 	mode, err := getFileMode(paranoidDirectory, inodeName)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error getting filemode:", err), statInfo{}
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting filemode: %s", err), statInfo{}
+	}
+
+	fileLength, err := getFileLength(contentsFile)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error getting file length: %s", err), statInfo{}
 	}
 
 	statData := &statInfo{
-		Length: fi.Size(),
+		Length: fileLength,
 		Mtime:  fi.ModTime(),
 		Ctime:  ctime,
 		Atime:  atime,

@@ -22,6 +22,13 @@ type Node struct {
 	UUID       string
 }
 
+type FileSystemAttributes struct {
+	Encrypted     bool       `json:"encrypted"`
+	KeyGenerated  bool       `json:"keygenerated"`
+	NetworkOff    bool       `json:"networkoff"`
+	EncryptionKey keyman.Key `json:"encryptionkey,omitempty"` //The encryption key is only saved to file in this manner if networking is turned off
+}
+
 func (n Node) String() string {
 	return fmt.Sprintf("%s:%s", n.IP, n.Port)
 }
@@ -97,6 +104,7 @@ func (ns *nodes) GetAll() []Node {
 //	--------------------
 
 // Global key used by this instance of PFSD
+var Encrypted bool
 var EncryptionKey *keyman.Key
 
 // Indicates when the system has been locked and keys have been distributed

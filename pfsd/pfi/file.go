@@ -48,7 +48,7 @@ func (f *ParanoidFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status
 func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 	Log.Info("Write called on file : " + f.Name)
 	var (
-		code         int
+		code         returncodes.Code
 		err          error
 		bytesWritten int
 	)
@@ -76,7 +76,7 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 //Truncate is called when a file is to be reduced in length to size.
 func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	Log.Info("Truncate called on file : " + f.Name)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestTruncateCommand(f.Name, int64(size))
@@ -98,7 +98,7 @@ func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 //Utimens updates the access and mofication time of the file.
 func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 	Log.Info("Utimens called on file : " + f.Name)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestUtimesCommand(f.Name, atime, mtime)
@@ -119,7 +119,7 @@ func (f *ParanoidFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 //Chmod changes the permission flags of the file
 func (f *ParanoidFile) Chmod(perms uint32) fuse.Status {
 	Log.Info("Chmod called on file : " + f.Name)
-	var code int
+	var code returncodes.Code
 	var err error
 	if SendOverNetwork {
 		code, err = globals.RaftNetworkServer.RequestChmodCommand(f.Name, perms)

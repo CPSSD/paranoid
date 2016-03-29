@@ -10,7 +10,7 @@ import (
 )
 
 // RenameCommand is called when renaming a file
-func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCode int, returnError error) {
+func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("rename command called")
 	oldFileParanoidPath := getParanoidPath(paranoidDirectory, oldFilePath)
 	newFileParanoidPath := getParanoidPath(paranoidDirectory, newFilePath)
@@ -74,7 +74,7 @@ func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCo
 
 	err = os.Rename(oldFileParanoidPath, newFileParanoidPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error renaming file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error renaming file: %s", err)
 	}
 
 	return returncodes.OK, nil

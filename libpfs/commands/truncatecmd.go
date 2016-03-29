@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"os"
 	"path"
@@ -10,7 +11,7 @@ import (
 )
 
 //TruncateCommand reduces the file given to the new length
-func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCode int, returnError error) {
+func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCode returncodes.Code, returnError error) {
 	Log.Info("truncate command called")
 	Log.Verbose("truncate : given paranoidDirectory = " + paranoidDirectory)
 
@@ -73,14 +74,46 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 
 	contentsFile, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeName), os.O_WRONLY, 0777)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file: %s", err)
 	}
 	defer contentsFile.Close()
 
-	err = contentsFile.Truncate(length)
+	err = truncate(contentsFile, length)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file: %s", err)
 	}
 
 	return returncodes.OK, nil
+}
+
+func truncate(file *os.File, length int64) error {
+	if !encryption.Encrypted {
+		return file.Truncate(length)
+	}
+
+	cipherSizeInt64 := int64(encryption.GetCipherSize())
+	newLastBlockLength := length % cipherSizeInt64
+
+	if newLastBlockLength == 0 {
+		err := file.Truncate(length + 1)
+		if err != nil {
+			return err
+		}
+		_, err = file.WriteAt([]byte{byte(cipherSizeInt64)}, 0)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	err := file.Truncate(length + 1 + cipherSizeInt64 - newLastBlockLength)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.WriteAt([]byte{byte(newLastBlockLength)}, 0)
+	if err != nil {
+		return err
+	}
+	return nil
 }

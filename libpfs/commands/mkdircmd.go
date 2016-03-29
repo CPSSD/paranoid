@@ -11,7 +11,7 @@ import (
 )
 
 // MkdirCommand is called when making a paranoidDirectory
-func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCode int, returnError error) {
+func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCode returncodes.Code, returnError error) {
 	Log.Info("mkdir command called")
 	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
@@ -49,34 +49,34 @@ func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCo
 
 	err = os.Mkdir(dirParanoidPath, mode)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error making paranoidDirectory "+dirParanoidPath+" :", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error making paranoidDirectory %s: %s", dirParanoidPath, err)
 	}
 
 	contentsFile, err := os.Create(contentsPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file: %s", err)
 	}
 	defer contentsFile.Close()
 
 	err = contentsFile.Chmod(os.FileMode(mode))
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error changing file permissions:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error changing file permissions: %s", err)
 	}
 
 	dirInfoFile, err := os.Create(dirInfoPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error creating info file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating info file: %s", err)
 	}
 	defer dirInfoFile.Close()
 
 	_, err = dirInfoFile.Write(inodeBytes)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to info file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to info file: %s", err)
 	}
 
 	inodeFile, err := os.Create(inodePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error creating inode file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating inode file: %s", err)
 	}
 	defer inodeFile.Close()
 
@@ -86,12 +86,12 @@ func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCo
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)
 	}
 
 	_, err = inodeFile.Write(jsonData)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file: %s", err)
 	}
 
 	return returncodes.OK, nil

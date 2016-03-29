@@ -11,7 +11,7 @@ import (
 )
 
 //UtimesCommand updates the acess time and modified time of a file
-func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) (returnCode int, returnError error) {
+func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) (returnCode returncodes.Code, returnError error) {
 	Log.Info("utimes command called")
 	Log.Verbose("utimes : given paranoidDirectory = " + paranoidDirectory)
 
@@ -65,13 +65,13 @@ func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) 
 
 	file, err := os.Open(path.Join(paranoidDirectory, "contents", inodeName))
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file: %s", err)
 	}
 	defer file.Close()
 
 	fi, err := file.Stat()
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error stating file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error stating file: %s", err)
 	}
 
 	stat := fi.Sys().(*syscall.Stat_t)
@@ -84,17 +84,17 @@ func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) 
 	if atime == nil {
 		err = os.Chtimes(path.Join(paranoidDirectory, "contents", inodeName), oldatime, *mtime)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
+			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times: %s", err)
 		}
 	} else if mtime == nil {
 		err = os.Chtimes(path.Join(paranoidDirectory, "contents", inodeName), *atime, oldmtime)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
+			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times: %s", err)
 		}
 	} else {
 		err = os.Chtimes(path.Join(paranoidDirectory, "contents", inodeName), *atime, *mtime)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times:", err)
+			return returncodes.EUNEXPECTED, fmt.Errorf("error changing times: %s", err)
 		}
 	}
 

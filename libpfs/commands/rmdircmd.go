@@ -11,7 +11,7 @@ import (
 )
 
 // RmdirCommand removes a paranoidDirectory
-func RmdirCommand(paranoidDirectory, dirPath string) (returnCode int, returnError error) {
+func RmdirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("rmdir command called")
 	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
 	if err != nil {
@@ -43,7 +43,7 @@ func RmdirCommand(paranoidDirectory, dirPath string) (returnCode int, returnErro
 		if os.IsPermission(err) {
 			return returncodes.EACCES, errors.New("could not access " + dirPath)
 		}
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading paranoidDirectory:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading paranoidDirectory: %s", err)
 	}
 
 	if len(files) > 1 {

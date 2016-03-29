@@ -3,6 +3,7 @@
 package commands
 
 import (
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
 	"math/rand"
@@ -19,6 +20,22 @@ func TestMain(m *testing.M) {
 	Log = logger.New("commandsTest", "pfsmTest", os.DevNull)
 	testDirectory = path.Join(os.TempDir(), "paranoidTest")
 	defer removeTestDir()
+
+	Log.Info("Running tests with no encryption")
+	encryption.Encrypted = false
+	noEncryption := m.Run()
+	if noEncryption != 0 {
+		os.Exit(noEncryption)
+	}
+
+	Log.Info("Running tests with encryption")
+	encryption.Encrypted = true
+	encryptionKey := []byte("86F7E437FAA5A7FCE15D1DDCB9EAEAEA")
+	cipherBlock, err := encryption.GenerateAESCipherBlock(encryptionKey)
+	if err != nil {
+		Log.Fatal("Could not create cipherBlock", err)
+	}
+	encryption.SetCipher(cipherBlock)
 	os.Exit(m.Run())
 }
 
@@ -66,6 +83,7 @@ func TestSimpleCommandUsage(t *testing.T) {
 	}
 
 	if string(returnData) != "BLAH #1" {
+		Log.Info("Len good : ", len("BLAH #1"), " Len bad : ", len(returnData))
 		t.Error("Output does not match BLAH #1. Actual:", string(returnData))
 	}
 }

@@ -10,7 +10,7 @@ import (
 )
 
 //ReadDirCommand returns a list of all the files in the given paranoidDirectory
-func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode int, returnError error, fileNames []string) {
+func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.Code, returnError error, fileNames []string) {
 	Log.Info("readdir command called")
 	Log.Verbose("readdir : given paranoidDirectory = " + paranoidDirectory)
 
@@ -54,7 +54,7 @@ func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode int, returnEr
 
 	files, err := ioutil.ReadDir(dirParanoidPath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading paranoidDirectory "+dirPath+":", err), nil
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading paranoidDirectory %s: %s", dirPath, err), nil
 	}
 
 	var names []string

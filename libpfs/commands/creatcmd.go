@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"io/ioutil"
 	"os"
@@ -11,7 +12,7 @@ import (
 )
 
 //CreatCommand creates a new file with the name filePath in the pfs paranoidDirectory
-func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode int, returnError error) {
+func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode returncodes.Code, returnError error) {
 	Log.Info("creat command called")
 	Log.Verbose("creat : paranoidDirectory = " + paranoidDirectory)
 
@@ -59,19 +60,29 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		Count: 1}
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)
 	}
 
 	err = ioutil.WriteFile(path.Join(paranoidDirectory, "inodes", uuidstring), jsonData, 0600)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing inodes file: %s", err)
 	}
 
 	contentsFile, err := os.Create(path.Join(paranoidDirectory, "contents", uuidstring))
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file:", err)
+		return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file: %s", err)
 	}
 	defer contentsFile.Close()
+
+	if encryption.Encrypted {
+		n, err := contentsFile.WriteAt([]byte{1}, 0)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error creating contents file: %s", err)
+		}
+		if n != 1 {
+			return returncodes.EUNEXPECTED, errors.New("error writing first byte to contents file")
+		}
+	}
 
 	return returncodes.OK, nil
 }

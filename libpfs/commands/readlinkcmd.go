@@ -10,8 +10,9 @@ import (
 )
 
 // ReadlinkCommand reads the value of the symbolic link
-func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode int, returnError error, linkContents string) {
+func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.Code, returnError error, linkContents string) {
 	Log.Info("readlink command called")
+
 	err := getFileSystemLock(paranoidDirectory, sharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, ""
@@ -69,14 +70,14 @@ func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode int, return
 
 	inodeContents, err := ioutil.ReadFile(inodePath)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error reading link:", err), ""
+		return returncodes.EUNEXPECTED, fmt.Errorf("error reading link: %s", err), ""
 	}
 
 	inodeData := &inode{}
 	Log.Verbose("readlink unmarshaling ", string(inodeContents))
 	err = json.Unmarshal(inodeContents, &inodeData)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshalling json:", err), ""
+		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshalling json: %s", err), ""
 	}
 
 	return returncodes.OK, nil, inodeData.Link

@@ -42,7 +42,7 @@ func Buildfs(c *cli.Context) {
 	}
 
 	doInit(pfsName, c.String("pool"), c.String("cert"),
-		c.String("key"), c.Bool("unsecure"))
+		c.String("key"), c.Bool("unsecure"), c.Bool("unencrypted"), c.Bool("networkoff"))
 
 	u, err := user.Current()
 	if err != nil {

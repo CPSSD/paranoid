@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"io"
 	"os"
@@ -13,8 +14,7 @@ import (
 )
 
 //ReadCommand reads data from a file
-//Offset and length can be given as -1 to note that the defaults should be used.
-func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode int, returnError error, fileContents []byte) {
+func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode returncodes.Code, returnError error, fileContents []byte) {
 	Log.Info("read command called")
 	Log.Verbose("read : given paranoidDirectory = " + paranoidDirectory)
 
@@ -78,12 +78,13 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 
 	file, err := os.OpenFile(path.Join(paranoidDirectory, "contents", inodeFileName), os.O_RDONLY, 0777)
 	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file", err), nil
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening contents file: %s", err), nil
 	}
 	defer file.Close()
 
 	var fileBuffer bytes.Buffer
 	bytesRead := make([]byte, 1024)
+
 	maxRead := 100000000
 
 	if offset == -1 {
@@ -98,36 +99,79 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 	}
 
 	for {
-		n, err := file.ReadAt(bytesRead, offset)
+		n, readerror, err := readAt(file, bytesRead, offset)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error reading file %s", err), nil
+		}
+
 		if n > maxRead {
 			bytesRead = bytesRead[0:maxRead]
 			_, err := fileBuffer.Write(bytesRead)
 			if err != nil {
-				return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer:", err), nil
+				return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer: %s", err), nil
 			}
 			break
 		}
 
 		offset = offset + int64(n)
 		maxRead = maxRead - n
-		if err == io.EOF {
+		if readerror == io.EOF {
 			bytesRead = bytesRead[:n]
 			_, err := fileBuffer.Write(bytesRead)
 			if err != nil {
-				return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer:", err), nil
+				return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer: %s", err), nil
 			}
 			break
 		}
 
-		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error reading from "+filePath+":", err), nil
+		if readerror != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error reading from %s: %s", filePath, err), nil
 		}
 
 		bytesRead = bytesRead[:n]
 		_, err = fileBuffer.Write(bytesRead)
 		if err != nil {
-			return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer:", err), nil
+			return returncodes.EUNEXPECTED, fmt.Errorf("error writing to file buffer: %s", err), nil
 		}
 	}
 	return returncodes.OK, nil, fileBuffer.Bytes()
+}
+
+func readAt(file *os.File, bytesRead []byte, offset int64) (n int, readerror error, err error) {
+	if !encryption.Encrypted {
+		n, readerror := file.ReadAt(bytesRead, offset)
+		return n, readerror, nil
+	}
+
+	if len(bytesRead) == 0 {
+		return 0, nil, nil
+	}
+
+	cipherSizeInt64 := int64(encryption.GetCipherSize())
+	extraStartBytes := offset % cipherSizeInt64
+	extraEndBytes := cipherSizeInt64 - ((offset + int64(len(bytesRead))) % cipherSizeInt64)
+	readStart := 1 + offset - extraStartBytes
+	newBytesRead := make([]byte, int64(len(bytesRead))+extraStartBytes+extraEndBytes)
+
+	fileLength, err := getFileLength(file)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	n, readerror = file.ReadAt(newBytesRead, readStart)
+	n = n - int(extraStartBytes)
+	if n > len(bytesRead) {
+		n = len(bytesRead)
+	}
+	if offset+int64(n) > fileLength {
+		n = int(fileLength - offset)
+	}
+
+	err = encryption.Decrypt(newBytesRead)
+	if err != nil {
+		return 0, nil, err
+	}
+	newBytesRead = newBytesRead[extraStartBytes:]
+	copy(bytesRead, newBytesRead)
+	return n, readerror, nil
 }

@@ -3,8 +3,10 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
+	"github.com/cpssd/paranoid/pfsd/globals"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -61,6 +63,22 @@ func TestKillSignal(t *testing.T) {
 	_, err = commands.InitCommand(path.Join(os.TempDir(), "testksDirectory"))
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	attributes := &globals.FileSystemAttributes{
+		Encrypted:    true,
+		KeyGenerated: false,
+		NetworkOff:   false,
+	}
+
+	attributesJson, err := json.Marshal(attributes)
+	if err != nil {
+		t.Fatal("unable to save file system attributes to file:", err)
+	}
+
+	err = ioutil.WriteFile(path.Join(os.TempDir(), "testksDirectory", "meta", "attributes"), attributesJson, 0600)
+	if err != nil {
+		t.Fatal("unable to save file system attributes to file:", err)
 	}
 
 	pfsd := exec.Command("pfsd", path.Join(os.TempDir(), "testksDirectory"), path.Join(os.TempDir(), "testksMountpoint"), "localhost", "10102", "testPool")
