@@ -180,6 +180,12 @@ func protoNodesToNodes(protoNodes []*pb.Node) []Node {
 }
 
 func (s *RaftNetworkServer) appendLogEntry(entry *pb.Entry) {
+	_, err := s.State.Log.AppendEntry(&pb.LogEntry{s.State.GetCurrentTerm(), entry})
+	if err != nil {
+		Log.Error("failed to append log entry:", err)
+		return
+	}
+
 	if entry.Type == pb.Entry_ConfigurationChange {
 		config := entry.GetConfig()
 		if config == nil {
@@ -191,7 +197,6 @@ func (s *RaftNetworkServer) appendLogEntry(entry *pb.Entry) {
 			s.State.Configuration.NewFutureConfiguration(protoNodesToNodes(config.Nodes), s.State.Log.GetMostRecentIndex())
 		}
 	}
-	s.State.Log.AppendEntry(&pb.LogEntry{s.State.GetCurrentTerm(), entry})
 }
 
 func (s *RaftNetworkServer) addLogEntryLeader(entry *pb.Entry) error {

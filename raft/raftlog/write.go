@@ -2,6 +2,8 @@ package raftlog
 
 import (
 	"errors"
+	"fmt"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/golang/protobuf/proto"
 	"os"
@@ -21,6 +23,17 @@ func (rl *RaftLog) AppendEntry(en *pb.LogEntry) (index uint64, err error) {
 	protoData, err := proto.Marshal(en)
 	if err != nil {
 		return 0, errors.New("Failed to Marshal entry")
+	}
+
+	if encryption.Encrypted {
+		blockSize := encryption.GetCipherSize()
+		extraBytes := make([]byte, blockSize-len(protoData)%blockSize)
+		protoData = append(protoData, extraBytes...)
+		err = encryption.Encrypt(protoData)
+		if err != nil {
+			return 0, fmt.Errorf("error encrypting log entry: %s", err)
+		}
+		protoData = append(protoData, byte(len(extraBytes)))
 	}
 
 	file, err := os.Create(filePath)
