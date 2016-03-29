@@ -289,8 +289,6 @@ func performCleanup(snapshotPath string) error {
 }
 
 func (s *RaftNetworkServer) CreateSnapshot(lastIncludedIndex uint64) (err error) {
-	defer s.Wait.Done()
-
 	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
 	nextSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, generateNewUUID())
 
@@ -640,14 +638,20 @@ func (s *RaftNetworkServer) manageSnapshoting() {
 			if s.State.GetPerformingSnapshot() == false {
 				if s.State.Log.GetLogSizeBytes() > SNAPSHOT_LOGSIZE {
 					s.Wait.Add(1)
-					go s.CreateSnapshot(s.State.GetLastApplied())
+					go func() {
+						defer s.Wait.Done()
+						err := s.CreateSnapshot(s.State.GetLastApplied())
+						if err != nil {
+							Log.Error("manage snapshotting:", err)
+						}
+					}()
 				}
 			}
 			snapshotTimer.Reset(SNAPSHOT_INTERVAL)
 		case <-s.State.SnapshotCounterAtZero:
 			err := s.updateCurrentSnapshot()
 			if err != nil {
-				Log.Error("manage snapshoting: %s", err)
+				Log.Error("manage snapshoting:", err)
 			}
 		case <-s.State.NewSnapshotCreated:
 			Log.Info("New Snapshot Created")

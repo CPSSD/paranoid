@@ -61,7 +61,6 @@ func TestSnapshoting(t *testing.T) {
 	}
 
 	raft.Log.Info("Taking first snapshot")
-	raftServer.Wait.Add(1)
 	err = raftServer.CreateSnapshot(raftServer.State.Log.GetMostRecentIndex())
 	if err != nil {
 		t.Fatal("Error taking snapshot:", err)
@@ -103,7 +102,6 @@ func TestSnapshoting(t *testing.T) {
 	}
 
 	raft.Log.Info("Taking second snapshot")
-	raftServer.Wait.Add(1)
 	err = raftServer.CreateSnapshot(raftServer.State.Log.GetMostRecentIndex())
 	if err != nil {
 		t.Fatal("Error taking snapshot:", err)
