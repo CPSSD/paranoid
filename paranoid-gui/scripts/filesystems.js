@@ -13,7 +13,7 @@ function getFilesystems() {
     var filesystem = {
       name: fileNames[i],
       path: path.join(fileSystemsDir, fileNames[i]),
-      mounted: true,
+      mounted: false,
       //attributes: require(path.join(fileSystemsDir, fileNames[i], "meta", "attributes"))
     };
     filesystems.push(filesystem);
@@ -48,10 +48,43 @@ function drawFileSystems() {
   $("#filist").append(items.join(' '));
 }
 
+function newfs(form) {
+  console.log(form);
+  var exec = require('child_process').exec;
+  var cmd = "paranoid-cli init ";
+  if (!form.secure.checked) {
+    cmd += "-u ";
+  }
+  if (!form.network.checked) {
+    cmd += "--networkoff ";
+  }
+  if (!form.encrypted.checked) {
+    cmd += "--unencrypted ";
+  }
+  if (form.cert.value !== "") {
+    cmd += "--cert " + form.cert.value + " ";
+  }
+  if (form.key.value !== "") {
+    cmd += "--key " + form.key.value + " ";
+  }
+  if (form.pool.value !== "") {
+    cmd += "--pool " + form.pool.value + " ";
+  }
+  cmd += form.name.value;
+
+  exec(cmd, function(error, stdout, stderr) {
+    console.log(error);
+    fileSystems = getFilesystems();
+    $("#filist").empty();
+    drawFileSystems();
+  });
+}
+
 function deleteFs(i) {
   var exec = require('child_process').exec;
   var cmd = "paranoid-cli delete " + fileSystems[i].name;
   exec(cmd, function(error, stdout, stderr) {
+    console.log(error);
     fileSystems = getFilesystems();
     $("#filist").empty();
     drawFileSystems();
@@ -59,9 +92,18 @@ function deleteFs(i) {
 }
 
 function mountFs(i) {
-  alert("mountfs " + i);
+  fileSystems[i].mounted = true;
+  $("#filist").empty();
+  drawFileSystems();
 }
 
 function unmountFs(i) {
-  alert("unmountfs " + i);
+  var exec = require('child_process').exec;
+  var cmd = "paranoid-cli unmount " + fileSystems[i].name;
+  exec(cmd, function(error, stdout, stderr) {
+    console.log(error);
+    fileSystems[i].mounted = false;
+    $("#filist").empty();
+    drawFileSystems();
+  });
 }
