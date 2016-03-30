@@ -106,3 +106,7 @@ div#box .box-panel {
   padding: 15px;
   background-color: #fff;
 }
+
+div#buttons {
+  padding-top: 15px;
+}

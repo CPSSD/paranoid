@@ -25,17 +25,17 @@ function getFilesystems() {
 function drawFileSystem(i) {
   var fileSystem = fileSystems[i];
   var heading = '<h1>' + fileSystem.name + '</h1>';
-  var status = '<p>Mounted: ';
+  var status = '';
   if (fileSystem.mounted) {
-    status += "<b>True</b></p>";
+    status += '<span class="label label-success">Mounted</span>';
   } else {
-    status += "<b>False</b></p>";
+    status += '<span class="label label-default">Unmounted</span>';
   }
 
-  var buttonGroupHeader = '<div class="btn-group">';
+  var buttonGroupHeader = '<div id="buttons"><div class="btn-group">';
   var groupBodyMount = '<button type="button" class="btn btn-info btn-block" onclick="mountFs(' + i + ')">Mount</button>';
   var groupBodyUnmount = '<button type="button" class="btn btn-warning btn-block" onclick="unmountFs(' + i + ')">Unmount</button>';
-  var groupBodyDelete = '<button type="button" class="btn btn-danger btn-block" onclick="deleteFs(' + i + ')">Delete</button></div>';
+  var groupBodyDelete = '<button type="button" class="btn btn-danger btn-block" onclick="deleteFs(' + i + ')">Delete</button></div></div>';
 
   $(".content").html(heading + status + buttonGroupHeader + groupBodyMount + groupBodyUnmount + groupBodyDelete);
 }
