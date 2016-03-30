@@ -22,7 +22,25 @@ function getFilesystems() {
   return filesystems;
 }
 
-function drawFileSystems() {
+function drawFileSystem(i) {
+  var fileSystem = fileSystems[i];
+  var heading = '<h1>' + fileSystem.name + '</h1>';
+  var status = '<p>Mounted: ';
+  if (fileSystem.mounted) {
+    status += "<b>True</b></p>";
+  } else {
+    status += "<b>False</b></p>";
+  }
+
+  var buttonGroupHeader = '<div class="btn-group">';
+  var groupBodyMount = '<button type="button" class="btn btn-info btn-block" onclick="mountFs(' + i + ')">Mount</button>';
+  var groupBodyUnmount = '<button type="button" class="btn btn-warning btn-block" onclick="unmountFs(' + i + ')">Unmount</button>';
+  var groupBodyDelete = '<button type="button" class="btn btn-danger btn-block" onclick="deleteFs(' + i + ')">Delete</button></div>';
+
+  $(".content").html(heading + status + buttonGroupHeader + groupBodyMount + groupBodyUnmount + groupBodyDelete);
+}
+/*
+function drawFileSystem(fileS) {
   var items = [];
   $.each(fileSystems, function(i, item) {
     var panelIdentifier = '<div class="panel panel-';
@@ -46,7 +64,7 @@ function drawFileSystems() {
   });
 
   $("#filist").append(items.join(' '));
-}
+}*/
 
 function newfs(form) {
   console.log(form);
@@ -86,15 +104,17 @@ function deleteFs(i) {
   exec(cmd, function(error, stdout, stderr) {
     console.log(error);
     fileSystems = getFilesystems();
-    $("#filist").empty();
-    drawFileSystems();
+    $("#nav").empty();
+    loadSideBar();
+    rowClicked(i);
   });
 }
 
 function mountFs(i) {
   fileSystems[i].mounted = true;
-  $("#filist").empty();
-  drawFileSystems();
+  $("#nav").empty();
+  loadSideBar();
+  rowClicked(i);
 }
 
 function unmountFs(i) {
@@ -103,7 +123,8 @@ function unmountFs(i) {
   exec(cmd, function(error, stdout, stderr) {
     console.log(error);
     fileSystems[i].mounted = false;
-    $("#filist").empty();
-    drawFileSystems();
+    $("#nav").empty();
+    loadSideBar();
+    rowClicked(i);
   });
 }

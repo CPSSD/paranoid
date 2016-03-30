@@ -26,7 +26,7 @@ div#header {
 }
 
 .logo a{
-  font-size: 2em;
+  font-size: 1.6em;
   color: #fff;
   margin-left: 10px;
 }
@@ -35,18 +35,74 @@ div#header {
   font-weight: 300;
 }
 
-div#content {
-  padding: 15px;
+div#container {
   width: 100%;
+  margin: 0 auto;
+}
+
+.sidebar {
+  width:250px;
+  height: 100%;
+  background-color: #171717;
+  float: left;
+}
+
+.content {
+  width: auto;
   height: 100%;
   background-color: #95a5a6;
+  margin-left: 250px;
+  padding: 15px;
 }
 
-div#newfs {
+.content p {
+  color: #424242;
+  font-size: 0.7em;
+}
+
+a#mounted {
+  background-color: #2ecc71;
+}
+
+ul#nav li{
+  list-style: none;
+}
+
+ul#nav li a{
+  color: #ccc;
+  display: block;
+  padding: 10px;
+  font-size: 0.8em;
+  border-bottom: 1px solid #0A0A0A;
+  -webkit-transition: 0.2s;
+}
+
+ul#nav li a:hover {
+  background-color: #030303;
+  color: #fff;
+  padding-left: 20px;
+}
+
+ul#nav li a.selected {
+  background-color: #030303;
+  color: #fff;
+}
+
+div#box {
+  margin-top: 15px;
+}
+
+div#box .box-top {
+  color: #fff;
+  text-shadow: 0px 0px 1px #000;
+  background-color: #2980b9;
   padding: 5px;
-  background-color: #bdc3c7;
+  padding-left: 15px;
+  font-weight: 500;
+
 }
 
-div#filesystems {
-  padding-top: 15px;
+div#box .box-panel {
+  padding: 15px;
+  background-color: #fff;
 }

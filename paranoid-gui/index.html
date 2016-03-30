@@ -4,25 +4,14 @@
     <script src="scripts/jquery-2.2.2.min.js"></script>
     <script src="scripts/filesystems.js"></script>
     <script type="text/javascript">
-      var formShown = false;
       var fileSystems = getFilesystems();
-
-      $(document).ready(function() {
-        $("#newfs").hide()
-        drawFileSystems(fileSystems, "filist");
-      })
-      function formbtClick() {
-        if (formShown) {
-         $("#newfs").slideUp(200)
-         $("#formbt").html('New Filesystem');
-         formShown = false;
-       } else {
-          $("#newfs").slideDown(200)
-          $("#formbt").html('Close');
-          formShown = true;
-        }
-      }
+      $(document).ready(function () {
+        console.log(fileSystems);
+        loadSideBar();
+        $(".content").load("html/form.html")
+      });
     </script>
+    <script src="scripts/nav.js"></script>
     <link rel="stylesheet" type="text/css" href="css/master.css">
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="css/site.css">
@@ -35,37 +24,14 @@
       </div>
     </div>
 
-    <div id="content">
-      <button type="button" id="formbt" class="btn btn-info btn-block" name="button" onclick="formbtClick()">New Filesystem</button>
-      <div id="newfs">
-        <h3>Create a new filesystem</h3>
-        <form id="newfsForm" action="#" type="submit" onsubmit="newfs(this);">
-          <label>Name</label>
-          <input type="text" name="name" class='form-control' placeholder="Name for your filesystem">
-          <label>Secure</label>
-          <input type="checkbox" name="secure" checked><br>
-          <label>Use Network</label>
-          <input type="checkbox" name="network" checked><br>
-          <label>Encrypted</label>
-          <input type="checkbox" name="encrypted" checked><br>
-          <label>Cert</label>
-          <input type="text" name="cert" class='form-control' placeholder="Path to existing cert file">
-          <label>Key</label>
-          <input type="text" name="key" class='form-control' placeholder="Path to existing key file">
-          <label>Pool</label>
-          <input type="text" name="pool" class='form-control' placeholder="Pool name (opt)"><br>
-          <button type="submit" class="btn btn-success">Submit</button>
-        </form>
-      </div>
-
-      <div id="filesystems">
-        <ul id="filist">
+    <div id="container">
+      <div class="sidebar">
+        <ul id="nav">
         </ul>
       </div>
 
-    </div>
-
-
+      <div class="content">
+      </div>
     </div>
   </body>
 
