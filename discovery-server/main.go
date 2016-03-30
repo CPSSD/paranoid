@@ -30,6 +30,7 @@ var (
 	certFile      = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile       = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
 	loadState     = flag.Bool("state", true, "Load the Nodes from the statefile")
+	serverPort    = flag.Int("filePort", 10111, "File Server Port")
 )
 
 func createRPCServer() *grpc.Server {
@@ -66,8 +67,8 @@ func main() {
 
 	dnetserver.RenewInterval = renewDuration
 
-	if *port < 1 || *port > 65535 {
-		dnetserver.Log.Fatal("Port must be a number between 1 and 65535, inclusive.")
+	if *port < 1 || *port > 65535 || *serverPort < 1 || *serverPort > 65535 {
+		dnetserver.Log.Fatal("Ports must be a number between 1 and 65535, inclusive.")
 	}
 
 	dnetserver.Log.Info("Starting Paranoid Discovery Server")
@@ -82,7 +83,8 @@ func main() {
 		dnetserver.LoadState()
 	}
 	server.FileMap = make(map[string]*server.FileCache)
-	go server.ServeFiles()
+	servePort := strconv.Itoa(*serverPort)
+	go server.ServeFiles(servePort)
 	srv := createRPCServer()
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})
 	fileServe.RegisterFileserverServer(srv, &server.FileserverServer{})

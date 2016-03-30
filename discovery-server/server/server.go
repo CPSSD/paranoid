@@ -20,6 +20,7 @@ type FileserverServer struct{}
 
 var FileMap map[string]*FileCache
 var Log *logger.ParanoidLogger
+var Port string
 
 func getFileFromHash(hash string) ([]byte, string, error) {
 	value, ok := FileMap[hash]
@@ -33,7 +34,7 @@ func getFileFromHash(hash string) ([]byte, string, error) {
 	return value.FileData, value.FileName, nil
 }
 
-func ServeFiles() {
+func ServeFiles(serverPort string) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			log.Println(r.URL)
@@ -50,5 +51,6 @@ func ServeFiles() {
 			}
 		}
 	})
-	http.ListenAndServe(":10111", nil)
+	Port = ":" + serverPort
+	http.ListenAndServe(Port, nil)
 }

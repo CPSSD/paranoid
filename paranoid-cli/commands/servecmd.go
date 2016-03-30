@@ -25,28 +25,30 @@ func Serve(c *cli.Context) {
 	}
 	var requestLimit int
 	var requestTimeout int
-
-	if len(args) > 3 {
+	var err error
+	if len(args) < 3 {
 		requestLimit = 0
 		requestTimeout = 0
 	} else {
-		requestLimit, _ = strconv.Atoi(args[2])
-		requestTimeout, _ = strconv.Atoi(args[3])
+		requestLimit, err = strconv.Atoi(args[2])
+		requestTimeout, err = strconv.Atoi(args[3])
+		if err != nil {
+			fmt.Println("Unable to parse optional paramaters")
+			Log.Fatal("Unable to parse optional paramaters:", err)
+		}
 	}
 
 	file := args[1]
 
 	usr, err := user.Current()
 	if err != nil {
-		Log.Error("Could not get user information:", err)
 		fmt.Println("Unable to get information on current user:", err)
-		os.Exit(1)
+		Log.Fatal("Could not get user information:", err)
 	}
 	pfsDir := path.Join(usr.HomeDir, ".pfs", "filesystems", args[0])
 	if _, err := os.Stat(pfsDir); err != nil {
 		fmt.Printf("%s does not exist. Please call 'paranoid-cli init' before running this command.", pfsDir)
 		Log.Fatal("PFS directory does not exist.")
-		os.Exit(1)
 	}
 
 	serveFilePath, err := filepath.Abs(file)
@@ -62,9 +64,8 @@ func Serve(c *cli.Context) {
 	port, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "port"))
 
 	if err != nil {
-		Log.Error("Unable to read Ip and Port of discovery server", err)
 		fmt.Println("Could not find Ip address of the file server")
-		os.Exit(1)
+		Log.Fatal("Unable to read Ip and Port of discovery server", err)
 	}
 
 	address := string(ip) + ":" + string(port)
@@ -74,9 +75,8 @@ func Serve(c *cli.Context) {
 	opts = append(opts, grpc.WithInsecure())
 	connection, err := grpc.Dial(address, opts...)
 	if err != nil {
-		Log.Error("Unable to Connect to Discovery Share Server", err)
 		fmt.Println("Failed to Connect to Discovery Share Server")
-		os.Exit(1)
+		Log.Fatal("Unable to Connect to Discovery Share Server", err)
 	}
 	defer connection.Close()
 
@@ -90,10 +90,8 @@ func Serve(c *cli.Context) {
 			Limit:    int32(requestLimit),
 		})
 	if err != nil {
-		Log.Error("Couldn't message Discovery Share Server", err)
-		fmt.Println("Unable to send File to Discovery Share Server", err)
-		os.Exit(1)
+		fmt.Println("Unable to send File to Discovery Share Server")
+		Log.Fatal("Couldn't message Discovery Share Server", err)
 	}
-	serverPort, _ := strconv.Atoi(string(port))
-	fmt.Println("File now avaliable at:", "http://"+string(ip)+":"+strconv.Itoa((serverPort+10))+"/"+response.ServeResponse)
+	fmt.Println("File now avaliable at:", "http://"+string(ip)+response.ServerPort+"/"+response.ServeResponse)
 }

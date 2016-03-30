@@ -11,6 +11,7 @@ service Fileserver {
 
 message ServeResponse {
   string ServeResponse = 1; // required
+  string ServerPort = 2; // optional
 }
 
 message ServeRequest {

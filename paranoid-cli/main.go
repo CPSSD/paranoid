@@ -139,14 +139,14 @@ func main() {
 		{
 			Name:      "serve",
 			Usage:     "Serve file from discovery share server",
-			ArgsUsage: "[pfs-name, file-name, request limit(opt), timeout...]",
+			ArgsUsage: "pfs-name, file-name, [request limit, timeout]",
 			Action:    commands.Serve,
 		},
 		{
-			Name:      "userve",
+			Name:      "unserve",
 			Usage:     "remove file from discovery share server",
-			ArgsUsage: "[pfs-name, file-name...]",
-			Action:    commands.Userve,
+			ArgsUsage: "pfs-name, file-hash",
+			Action:    commands.Unserve,
 		},
 		{
 			Name:      "list-nodes",

@@ -14,7 +14,7 @@ import (
 )
 
 //Removes files from Paranoid File Server
-func Userve(c *cli.Context) {
+func Unserve(c *cli.Context) {
 	args := c.Args()
 
 	if len(args) < 2 {

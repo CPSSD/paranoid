@@ -31,6 +31,7 @@ var _ = math.Inf
 
 type ServeResponse struct {
 	ServeResponse string `protobuf:"bytes,1,opt,name=ServeResponse" json:"ServeResponse,omitempty"`
+	ServerPort    string `protobuf:"bytes,2,opt,name=ServerPort" json:"ServerPort,omitempty"`
 }
 
 func (m *ServeResponse) Reset()         { *m = ServeResponse{} }

@@ -12,5 +12,5 @@ func (s *FileserverServer) UnServeFile(ctx context.Context, req *pb.UnServeReque
 			delete(FileMap, req.TileHash)
 		}
 	}
-	return &pb.ServeResponse{"File Successfully Removed"}, nil
+	return &pb.ServeResponse{"File Successfully Removed", ""}, nil
 }
