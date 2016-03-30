@@ -2,10 +2,14 @@
   <head>
     <title>Paranoid Filesystems</title>
     <script src="scripts/jquery-2.2.2.min.js"></script>
+    <script src="scripts/filesystems.js"></script>
     <script type="text/javascript">
       var formShown = false;
+      var fileSystems = getFilesystems();
+
       $(document).ready(function() {
         $("#newfs").hide()
+        drawFileSystems(fileSystems, "filist");
       })
       function newfs(form) {
         alert(form.name.value);
@@ -35,30 +39,32 @@
     </div>
 
     <div id="content">
-      <button type="button" id="formbt" class="btn btn-primary btn-block" name="button" onclick="formbtClick()">New Filesystem</button>
+      <button type="button" id="formbt" class="btn btn-info btn-block" name="button" onclick="formbtClick()">New Filesystem</button>
       <div id="newfs">
         <h3>Create a new filesystem</h3>
         <form id="newfsForm" type="submit" onsubmit="newfs(this);">
-            <label>Name</label>
-            <input type="text" name="name" class='form-control' placeholder="Name for your filesystem">
-            <label>Secure</label>
-            <input type="checkbox" name="secure" checked><br>
-            <label>Cert</label>
-            <input type="text" name="name" class='form-control' placeholder="Path to existing cert file">
-            <label>Key</label>
-            <input type="text" name="name" class='form-control' placeholder="Path to existing key file">
-            <label>Pool</label>
-            <input type="text" name="name" class='form-control' placeholder="Pool name (opt)"><br>
-            <button type="button" class="btn btn-success">Submit</button>
-          </div>
+          <label>Name</label>
+          <input type="text" name="name" class='form-control' placeholder="Name for your filesystem">
+          <label>Secure</label>
+          <input type="checkbox" name="secure" checked><br>
+          <label>Cert</label>
+          <input type="text" name="name" class='form-control' placeholder="Path to existing cert file">
+          <label>Key</label>
+          <input type="text" name="name" class='form-control' placeholder="Path to existing key file">
+          <label>Pool</label>
+          <input type="text" name="name" class='form-control' placeholder="Pool name (opt)"><br>
+          <button type="button" class="btn btn-success">Submit</button>
         </form>
       </div>
 
       <div id="filesystems">
         <ul id="filist">
-
         </ul>
       </div>
+
+    </div>
+
+
     </div>
   </body>
 

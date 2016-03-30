@@ -1,0 +1,67 @@
+var path = require("path");
+var fs = require("fs");
+
+function getUserHome() {
+  return process.env.HOME || process.env.USERPROFILE;
+}
+
+function getFilesystems() {
+  var fileSystemsDir = path.join(getUserHome(), ".pfs", "filesystems");
+  var fileNames = fs.readdirSync(fileSystemsDir);
+  var filesystems = [];
+  for (var i=0; i<fileNames.length; i++) {
+    var filesystem = {
+      name: fileNames[i],
+      path: path.join(fileSystemsDir, fileNames[i]),
+      mounted: true,
+      //attributes: require(path.join(fileSystemsDir, fileNames[i], "meta", "attributes"))
+    };
+    filesystems.push(filesystem);
+  }
+
+  return filesystems;
+}
+
+function drawFileSystems() {
+  var items = [];
+  $.each(fileSystems, function(i, item) {
+    var panelIdentifier = '<div class="panel panel-';
+    if (item.mounted) {
+      panelIdentifier += 'success">';
+    } else {
+      panelIdentifier += 'primary">';
+    }
+
+    var panelheading = '<div class="panel-heading"><h3 class="panel-title">' + item.name + '</h3></div>';
+
+    var panelBodyheader = '<div class="panel-body"><b>Path: </b>' + item.path + '<br>';
+    var panelBodyMount = '<div class="row"><div class="col-md-3"><button type="button" class="btn btn-info btn-block" onclick="mountFs(' + i + ')">Mount</button></div>';
+    var panelBodyUnmount = '<div class="col-md-3"><button type="button" class="btn btn-warning btn-block" onclick="unmountFs(' + i + ')">Unmount</button></div>';
+    var panelBodyDelete = '<div class="col-md-3"><button type="button" class="btn btn-danger btn-block" onclick="deleteFs(' + i + ')">Delete</button></div></div>';
+
+    var panelBody = panelBodyheader + panelBodyMount + panelBodyUnmount +
+      panelBodyDelete + "</div>";
+
+    items.push(panelIdentifier + panelheading + panelBody + "</div>");
+  });
+
+  $("#filist").append(items.join(' '));
+}
+
+function deleteFs(i) {
+  var exec = require('child_process').exec;
+  var cmd = "paranoid-cli delete " + fileSystems[i].name;
+  exec(cmd, function(error, stdout, stderr) {
+    fileSystems = getFilesystems();
+    $("#filist").empty();
+    drawFileSystems();
+  });
+}
+
+function mountFs(i) {
+  alert("mountfs " + i);
+}
+
+function unmountFs(i) {
+  alert("unmountfs " + i);
+}
