@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package fileserver;
+
+service Fileserver {
+  // Discovery Calls
+  rpc ServeFile (ServeRequest) returns (ServeResponse) {}
+  rpc UnServeFile (UnServeRequest) returns (ServeResponse) {}
+}
+
+
+message ServeResponse {
+  string ServeResponse = 1; // required
+}
+
+message ServeRequest {
+  string      Uuid = 1; // required
+  string      FileName = 2;// required
+  bytes       FileData = 3;// required
+  int32       Timeout = 4;// optional
+  int32       Limit = 5;// optional
+}
+
+message UnServeRequest {
+  string    Uuid = 1; // required
+  string    TileHash = 2;// required
+}

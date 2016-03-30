@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"github.com/cpssd/paranoid/discovery-server/dnetserver"
+	"github.com/cpssd/paranoid/discovery-server/server"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
+	fileServe "github.com/cpssd/paranoid/proto/fileserver"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
@@ -49,6 +51,7 @@ func main() {
 	flag.Parse()
 	dnetserver.Log = logger.New("main", "discovery-server", *logDir)
 	dnetserver.Pools = make(map[string]*dnetserver.Pool)
+	server.Log = logger.New("fileServer", "discovery-server", *logDir)
 	err := dnetserver.Log.SetOutput(logger.LOGFILE | logger.STDERR)
 	if err != nil {
 		dnetserver.Log.Error("Failed to set logger output:", err)
@@ -78,9 +81,11 @@ func main() {
 	if *loadState {
 		dnetserver.LoadState()
 	}
-
+	server.FileMap = make(map[string]*server.FileCache)
+	go server.ServeFiles()
 	srv := createRPCServer()
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})
+	fileServe.RegisterFileserverServer(srv, &server.FileserverServer{})
 
 	dnetserver.Log.Info("gRPC server created")
 	srv.Serve(lis)

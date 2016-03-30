@@ -137,6 +137,18 @@ func main() {
 			Action:    commands.Status,
 		},
 		{
+			Name:      "serve",
+			Usage:     "Serve file from discovery share server",
+			ArgsUsage: "[pfs-name, file-name, request limit(opt), timeout...]",
+			Action:    commands.Serve,
+		},
+		{
+			Name:      "userve",
+			Usage:     "remove file from discovery share server",
+			ArgsUsage: "[pfs-name, file-name...]",
+			Action:    commands.Userve,
+		},
+		{
 			Name:      "list-nodes",
 			Usage:     "list the nodes connected to local PFSD instances",
 			ArgsUsage: "[pfs-name ...]",
