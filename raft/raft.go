@@ -81,6 +81,13 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 		preLogEntry, err := s.State.Log.GetLogEntry(req.PrevLogIndex)
 		if err != nil && err != raftlog.ErrIndexBelowStartIndex {
 			Log.Fatal("Unable to get log entry:", err)
+		} else if err == raftlog.ErrIndexBelowStartIndex {
+			if req.PrevLogIndex != s.State.Log.GetMostRecentIndex() {
+				return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
+			}
+			if req.PrevLogTerm != s.State.Log.GetMostRecentTerm() {
+				return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
+			}
 		} else if err == nil {
 			if preLogEntry.Term != req.PrevLogTerm {
 				return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
