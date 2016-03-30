@@ -54,6 +54,12 @@ message StateMachineCommand {
     int64 modify_nanoseconds = 12;  // optional
 }
 
+message KeyStateMessage {
+    Node key_owner = 1;             // required
+    Node key_holder = 2;            // required
+    int64 current_generation = 3;   // required
+}
+
 message Node {
     string ip = 1; // required
     string port = 2; // required
