@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <title>Paranoid Filesystems</title>
+    <script src="scripts/jquery-2.2.2.min.js"></script>
+    <script type="text/javascript">
+      var formShown = false;
+      $(document).ready(function() {
+        $("#newfs").hide()
+      })
+      function newfs(form) {
+        alert(form.name.value);
+      }
+      function formbtClick() {
+        if (formShown) {
+         $("#newfs").slideUp(200)
+         $("#formbt").html('New Filesystem');
+         formShown = false;
+       } else {
+          $("#newfs").slideDown(200)
+          $("#formbt").html('Close');
+          formShown = true;
+        }
+      }
+    </script>
+    <link rel="stylesheet" type="text/css" href="css/master.css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/site.css">
+  </head>
+
+  <body>
+    <div id="header">
+      <div class="logo">
+        <a>Paranoid<span>Filesystems</span></a>
+      </div>
+    </div>
+
+    <div id="content">
+      <button type="button" id="formbt" class="btn btn-primary btn-block" name="button" onclick="formbtClick()">New Filesystem</button>
+      <div id="newfs">
+        <h3>Create a new filesystem</h3>
+        <form id="newfsForm" type="submit" onsubmit="newfs(this);">
+            <label>Name</label>
+            <input type="text" name="name" class='form-control' placeholder="Name for your filesystem">
+            <label>Secure</label>
+            <input type="checkbox" name="secure" checked><br>
+            <label>Cert</label>
+            <input type="text" name="name" class='form-control' placeholder="Path to existing cert file">
+            <label>Key</label>
+            <input type="text" name="name" class='form-control' placeholder="Path to existing key file">
+            <label>Pool</label>
+            <input type="text" name="name" class='form-control' placeholder="Pool name (opt)"><br>
+            <button type="button" class="btn btn-success">Submit</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="filesystems">
+        <ul id="filist">
+
+        </ul>
+      </div>
+    </div>
+  </body>
+
+</html>

@@ -1,0 +1,10 @@
+{
+  "name" : "paranoid-gui",
+  "description" : "Paranoid GUI",
+  "version" : "0.0.1",
+  "main" : "index.html",
+  "window": {
+    "width": 800,
+    "height": 500
+  }
+}
