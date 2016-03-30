@@ -94,7 +94,7 @@ function newfs(form) {
     console.log(error);
     fileSystems = getFilesystems();
     $("#filist").empty();
-    drawFileSystems();
+    rowClicked(-1);
   });
 }
 
