@@ -84,7 +84,7 @@ func Serve(c *cli.Context) {
 	response, err := serverClient.ServeFile(context.Background(),
 		&pb.ServeRequest{
 			Uuid:     string(uuid),
-			FileName: file,
+			FileName: serveFilePath,
 			FileData: serveData,
 			Timeout:  int32(requestTimeout),
 			Limit:    int32(requestLimit),
