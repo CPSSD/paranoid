@@ -104,6 +104,7 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	}
 	ksm.Elements[elem.generation] = append(ksm.Elements[elem.generation], elem)
 
+	Log.Verbosef("KeyPiece exchange tracked: %s -> %s", owner.UUID, holder.UUID)
 	return nil
 }
 
