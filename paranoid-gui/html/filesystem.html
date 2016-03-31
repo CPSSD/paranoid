@@ -5,19 +5,19 @@
 
 <div id="fsStatus">
   <h3>Status  <span class="label label-success" id="fsMountedLabel">Mounted</span></h3>
-
+  <button class="btn btn-warning" id="mountUnmountButton" onClick="mountUnmountButtonClicked()"></button>
   <hr>
 </div>
 
 <div id="fsMountSection">
   <h3>Mount your FileSystem</h3>
-  <form id="fsMountForm" action="#" type="submit" onsubmit="">
+  <form id="fsMountForm">
     <label>Location</label>
-    <input type="text" name="location" class='form-control' placeholder="Directory in which to mount your filesystem" required>
+    <input type="file" id="location" class='form-control' placeholder="Directory in which to mount your filesystem" required webkitdirectory directory multiple>
     <label>Interface</label>
-    <input type="text" name="interface" class='form-control' placeholder="A network interface over which to make connections">
+    <input type="text" id="interface" class='form-control' placeholder="A network interface over which to make connections">
     <label>Discovery Server</label>
-    <input type="text" name="discovery" class='form-control' placeholder="The address of the discovery server - ip:port">
+    <input type="text" id="discovery" class='form-control' placeholder="The address of the discovery server - ip:port">
     <button type="submit" class="btn btn-success">Mount</button>
   </form>
   <hr>

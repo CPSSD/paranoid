@@ -14,7 +14,7 @@ function getFilesystems() {
     var filesystem = {
       name: fileNames[i],
       path: path.join(fileSystemsDir, fileNames[i]),
-      mounted: false,
+      mounted: fileSystemIsMounted(fileNames[i]),
       attributes: loadJsonFile(path.join(fsPath, "meta", "attributes")),
       pool: readFile(path.join(fsPath, "meta", "pool")),
       uuid: readFile(path.join(fsPath, "meta", "uuid"))
@@ -32,8 +32,28 @@ function drawFileSystem(i) {
   var html = $.parseHTML(str);
   $(".content").html(html);
 
+  // Heading
   $(".content #fsName").html(fileSystem.name);
   $(".content #fsMountSection").hide();
+
+  // status section
+  if (!fileSystem.mounted) {
+    $(".content #fsStatus #fsMountedLabel").html('<b>UnMounted<b>');
+    $(".content #fsStatus #fsMountedLabel").addClass("label label-warning");
+  }
+
+  if (fileSystem.mounted) {
+    $(".content #mountUnmountButton").html("Unmount");
+    $(".content #mountUnmountButton").attr("class", "btn btn-warning");
+    $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + i + ")");
+  } else {
+    $(".content #mountUnmountButton").html("Mount");
+    $(".content #mountUnmountButton").attr("class", "btn btn-success");
+    $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + i + ")");
+  }
+
+  // mount section
+  $(".content #fsMountSection #fsMountForm").submit(mountFS);
 
   // attributes section
   if (!fileSystem.attributes.encrypted) {
@@ -82,7 +102,23 @@ function newfs(form) {
   }
   cmd += form.name.value;
 
+  alert(cmd);
   exec(cmd, function(error, stdout, stderr) {
+    var e = false;
+    if (error !== null) {
+      alert("error" + error);
+      e = true;
+    }
+
+    if (stdout !== "") {
+      alert(stdout);
+      e = true;
+    }
+
+    if (e) {
+      return;
+    }
+    
     fileSystems = getFilesystems();
     $("#filist").empty();
     rowClicked(-1);
@@ -108,7 +144,7 @@ function deleteFs(i) {
     fileSystems = getFilesystems();
     $("#nav").empty();
     loadSideBar();
-    rowClicked(i);
+    rowClicked(-1);
   });
 }
 
@@ -129,4 +165,89 @@ function readFile(filePath) {
 
 function loadJsonFile(filePath) {
   return JSON.parse(readFile(filePath));
+}
+
+function fileSystemIsMounted(fsName) {
+  var pidFile = path.join(getUserHome(), ".pfs", "filesystems", fsName, "meta", "pfsd.pid");
+
+  if (!pathExists(pidFile)) {
+    return false;
+  } else {
+    var pid = readFile(pidFile);
+    var execSync = require('child_process').execSync;
+    var cmd = "ps " + pid;
+    try {
+      var code = execSync(cmd);
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  }
+}
+
+function mountUnmountButtonClicked(i){
+  var fileSystem = fileSystems[i];
+  if (fileSystem.mounted) {
+    unMountFs(i);
+  } else {
+    if (!$(".content #fsMountSection").is(":visible")) {
+      $(".content #fsMountSection").slideDown(200);
+    } else {
+      $(".content #fsMountSection").slideUp(200);
+    }
+  }
+}
+
+function unMountFs(i) {
+  var execSync = require('child_process').execSync;
+  var cmd = "paranoid-cli unmount " + fileSystems[i].name;
+  try {
+    var code = execSync(cmd);
+    fileSystems[i].mounted = false;
+    $("#nav").empty();
+    loadSideBar();
+    rowClicked(i);
+  } catch (e) {
+    alert(e);
+    return false;
+  }
+}
+
+function mountFS() {
+  var exec = require('child_process').exec;
+  var cmd = "paranoid-cli mount -n ";
+
+  if($("#fsMountSection #fsMountForm #interface").val() !== "") {
+    cmd += "-i " + $("#fsMountSection #fsMountForm #interface").val() + " ";
+  }
+
+  if($("#fsMountSection #fsMountForm #discovery").val() !== "") {
+    cmd += "-d " + $("#fsMountSection #fsMountForm #discovery").val() + " ";
+  }
+
+  cmd += fileSystems[selected].name + " " + $("#fsMountSection #fsMountForm #location").val();
+
+  exec(cmd, function(error, stdout, stderr) {
+    var e = false;
+    if (error !== null) {
+      alert("error" + error);
+      e = true;
+    }
+
+    if (stdout !== "") {
+      alert(stdout);
+      e = true;
+    }
+
+    if (e) {
+      return;
+    }
+
+    fileSystems = getFilesystems();
+    $("#nav").empty();
+    loadSideBar();
+    rowClicked(selected);
+  });
+  return false;
 }
