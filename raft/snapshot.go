@@ -41,7 +41,7 @@ func (s *RaftNetworkServer) setupSnapshotDirectory() {
 			Log.Fatal("failed to create snapshot directory:", err)
 		}
 	} else if err != nil {
-		Log.Fatal("error acessing snapshot directory:", err)
+		Log.Fatal("error accessing snapshot directory:", err)
 	}
 }
 
