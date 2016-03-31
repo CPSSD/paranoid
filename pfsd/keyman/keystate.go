@@ -7,10 +7,13 @@ import (
 	"io"
 	"os"
 	"path"
+	"sync"
 )
 
 // Hardcoded because the KSM will not track joined nodes until next sprint (Sprint 7)
 const MIN_SHARES_REQUIRED int = 2
+
+const KSM_FILE_NAME string = "key_state"
 
 var StateMachine *KeyStateMachine
 
@@ -39,12 +42,19 @@ type KeyStateMachine struct {
 	// The first index indicates the generation.
 	// The second index is unimportant as order doesn't matter there.
 	Elements map[int]([]*keyStateElement)
+
+	stateLock sync.Mutex
+	fileLock  sync.Mutex
+
+	// This is, once again, to avoid an import cycle
+	PfsDir string
 }
 
-func NewKSM() *KeyStateMachine {
+func NewKSM(pfsDir string) *KeyStateMachine {
 	return &KeyStateMachine{
 		CurrentGeneration: -1,
 		Elements:          make(map[int]([]*keyStateElement)),
+		PfsDir:            pfsDir,
 	}
 }
 
@@ -60,23 +70,18 @@ func NewKSMFromReader(reader io.Reader) (*KeyStateMachine, error) {
 }
 
 func NewKSMFromPFSDir(pfsDir string) (*KeyStateMachine, error) {
-	file, err := os.Open(path.Join(pfsDir, "meta", "key_state"))
+	file, err := os.Open(path.Join(pfsDir, "meta", KSM_FILE_NAME))
 	if err != nil {
 		Log.Errorf("Unable to open %s for reading state: %s", pfsDir, err)
 		return nil, fmt.Errorf("unable to open %s: %s", pfsDir, err)
 	}
 	defer file.Close()
-	ksm := new(KeyStateMachine)
-	dec := gob.NewDecoder(file)
-	err = dec.Decode(ksm)
-	if err != nil {
-		Log.Error("Failed decoding GOB KeyStateMachine data:", err)
-		return nil, fmt.Errorf("failed decoding from GOB: %s", err)
-	}
-	return ksm, nil
+	return NewKSMFromReader(file)
 }
 
 func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
+	ksm.stateLock.Lock()
+	defer ksm.stateLock.Unlock()
 	owner := &Node{
 		IP:         req.GetKeyOwner().Ip,
 		Port:       req.GetKeyOwner().Port,
@@ -103,6 +108,12 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 		delete(ksm.Elements, elem.generation)
 	}
 	ksm.Elements[elem.generation] = append(ksm.Elements[elem.generation], elem)
+	err := ksm.SerialiseToPFSDir()
+	if err != nil {
+		// If the serialisation fails, undo the update.
+		ksm.Elements[elem.generation] = ksm.Elements[elem.generation][:len(ksm.Elements[elem.generation])-1]
+		return fmt.Errorf("failed to commit change to KeyStateMachine: %s", err)
+	}
 
 	Log.Verbosef("KeyPiece exchange tracked: %s -> %s", owner.UUID, holder.UUID)
 	return nil
@@ -123,12 +134,24 @@ func (ksm KeyStateMachine) canUpdateGeneration(generation int) bool {
 	return true
 }
 
-func (ksm KeyStateMachine) Serialise(writer io.Writer) error {
+func (ksm *KeyStateMachine) Serialise(writer io.Writer) error {
 	enc := gob.NewEncoder(writer)
 	err := enc.Encode(ksm)
 	if err != nil {
 		Log.Error("Failed encoding KeyStateMachine to GOB:", err)
-		return fmt.Errorf("failed encoding to GOB: %s", err)
+		return fmt.Errorf("failed encoding KeyStateMachine to GOB:", err)
 	}
 	return nil
+}
+
+func (ksm *KeyStateMachine) SerialiseToPFSDir() error {
+	ksm.fileLock.Lock()
+	defer ksm.fileLock.Unlock()
+	file, err := os.Open(path.Join(ksm.PfsDir, "meta", KSM_FILE_NAME))
+	if err != nil {
+		Log.Errorf("Unable to open %s for writing state: %s", ksm.PfsDir, err)
+		return fmt.Errorf("unable to open %s for writing state: %s", ksm.PfsDir, err)
+	}
+	defer file.Close()
+	return ksm.Serialise(file)
 }

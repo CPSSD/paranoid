@@ -37,12 +37,13 @@ func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*p
 				CommonName: globals.ThisNode.CommonName,
 				NodeId:     globals.ThisNode.UUID,
 			}
-			_, err := globals.RaftNetworkServer.RequestKeyStateUpdate(raftOwner, raftHolder,
+
+			globals.HeldKeyPieces.AddPiece(node, piece)
+			err := globals.RaftNetworkServer.RequestKeyStateUpdate(raftOwner, raftHolder,
 				int64(keyman.StateMachine.CurrentGeneration+1))
 			if err != nil {
 				return &pb.EmptyMessage{}, grpc.Errorf(codes.FailedPrecondition, "failed to commit to Raft: %s", err)
 			}
-			globals.HeldKeyPieces.AddPiece(node, piece)
 			Log.Info("Received KeyPiece from", node)
 			return &pb.EmptyMessage{}, nil
 		}

@@ -142,7 +142,7 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (*StateMachineRe
 	return nil, errors.New("waited too long to commit Log entry")
 }
 
-func (s *RaftNetworkServer) RequestKeyStateUpdate(owner, holder *pb.Node, generation int64) (returncodes.Code, error) {
+func (s *RaftNetworkServer) RequestKeyStateUpdate(owner, holder *pb.Node, generation int64) error {
 	entry := &pb.Entry{
 		Type: pb.Entry_KeyStateMessage,
 		Uuid: generateNewUUID(),
@@ -154,9 +154,10 @@ func (s *RaftNetworkServer) RequestKeyStateUpdate(owner, holder *pb.Node, genera
 	}
 	result, err := s.RequestAddLogEntry(entry)
 	if err != nil {
-		return returncodes.EBUSY, err
+		Log.Error("failed to add log entry for key state update:", err)
+		return err
 	}
-	return result.Code, result.Err
+	return result.Err
 }
 
 func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length int64,
