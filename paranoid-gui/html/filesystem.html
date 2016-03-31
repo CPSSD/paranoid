@@ -1,0 +1,45 @@
+<div id="fsHeader">
+  <h1 id="fsName">FileSystem</h1>
+  <hr>
+</div>
+
+<div id="fsStatus">
+  <h3>Status  <span class="label label-success" id="fsMountedLabel">Mounted</span></h3>
+
+  <hr>
+</div>
+
+<div id="fsMountSection">
+  <h3>Mount your FileSystem</h3>
+  <form id="fsMountForm" action="#" type="submit" onsubmit="">
+    <label>Location</label>
+    <input type="text" name="location" class='form-control' placeholder="Directory in which to mount your filesystem" required>
+    <label>Interface</label>
+    <input type="text" name="interface" class='form-control' placeholder="A network interface over which to make connections">
+    <label>Discovery Server</label>
+    <input type="text" name="discovery" class='form-control' placeholder="The address of the discovery server - ip:port">
+    <button type="submit" class="btn btn-success">Mount</button>
+  </form>
+  <hr>
+</div>
+
+<div id="fsAttributes">
+  <h3>Attributes</h3>
+  <ul class="list-group" id="fsAttributesList">
+    <li class="list-group-item" id="fsAttributeEncrypted">Encrypted<span class="label label-success" id="badge">YES</span></li>
+    <li class="list-group-item" id="fsAttributeNetwork">Network<span class="label label-success" id="badge">YES</span></li>
+    <li class="list-group-item" id="fsAttributeKeygen">Key Generated<span class="label label-success" id="badge">YES</span></li>
+    <li class="list-group-item" id="fsAttributePool">Pool<span class="label label-success" id="badge">strange_fox</span></li>
+    <li class="list-group-item" id="fsAttributeKeygen">UUID<span class="label label-success" id="badge">e256a4ed-43c2-4011-a1c8-545bc73cc021</li>
+  </ul>
+  <hr>
+</div>
+
+<div id="fsDeleteSection">
+  <h3>Delete FileSystem</h3>
+  <form id="fsDeleteForm" action="#" type="submit" onsubmit="">
+    <label>Confirm Deletion</label>
+    <input type="text" name="nameCheck" class='form-control' placeholder="Enter the filesystem name" required>
+    <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+</div>

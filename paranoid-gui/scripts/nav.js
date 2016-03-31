@@ -1,6 +1,7 @@
 var selected = -1;
 
 function loadSideBar() {
+  $("#nav").empty();
   var items = [
   ];
 
@@ -32,9 +33,11 @@ function rowClicked(i) {
   if (i < -1 || i > fileSystems.length) {
     i = -1;
   }
+  selected = i;
   if (i == -1) {
     $(".content").load("html/form.html");
   } else {
     drawFileSystem(i);
   }
+  loadSideBar();
 }

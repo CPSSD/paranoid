@@ -60,6 +60,10 @@ div#container {
   font-size: 0.7em;
 }
 
+#badge {
+  float: right;
+}
+
 a#mounted {
   background-color: #2ecc71;
 }
@@ -86,6 +90,7 @@ ul#nav li a:hover {
 ul#nav li a.selected {
   background-color: #030303;
   color: #fff;
+  padding-left: 20px;
 }
 
 div#box {
@@ -109,4 +114,11 @@ div#box .box-panel {
 
 div#buttons {
   padding-top: 15px;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
+div#buttons.btn {
+  width: 33%;
 }

@@ -14,7 +14,7 @@ function getFilesystems() {
       name: fileNames[i],
       path: path.join(fileSystemsDir, fileNames[i]),
       mounted: false,
-      //attributes: require(path.join(fileSystemsDir, fileNames[i], "meta", "attributes"))
+      attributes: loadJsonFile(path.join(fileSystemsDir, fileNames[i], "meta", "attributes"))
     };
     filesystems.push(filesystem);
   }
@@ -22,7 +22,7 @@ function getFilesystems() {
   return filesystems;
 }
 
-function drawFileSystem(i) {
+function drawFileSystem(i) {/*
   var fileSystem = fileSystems[i];
   var heading = '<h1>' + fileSystem.name + '</h1>';
   var status = '';
@@ -33,41 +33,15 @@ function drawFileSystem(i) {
   }
 
   var buttonGroupHeader = '<div id="buttons"><div class="btn-group">';
-  var groupBodyMount = '<button type="button" class="btn btn-info btn-block" onclick="mountFs(' + i + ')">Mount</button>';
-  var groupBodyUnmount = '<button type="button" class="btn btn-warning btn-block" onclick="unmountFs(' + i + ')">Unmount</button>';
-  var groupBodyDelete = '<button type="button" class="btn btn-danger btn-block" onclick="deleteFs(' + i + ')">Delete</button></div></div>';
+  var groupBodyMount = '<button type="button" class="btn btn-info" onclick="mountFs(' + i + ')">Mount</button>';
+  var groupBodyUnmount = '<button type="button" class="btn btn-warning" onclick="unmountFs(' + i + ')">Unmount</button>';
+  var groupBodyDelete = '<button type="button" class="btn btn-danger" onclick="deleteFs(' + i + ')">Delete</button></div></div>';
 
-  $(".content").html(heading + status + buttonGroupHeader + groupBodyMount + groupBodyUnmount + groupBodyDelete);
+  $(".content").html(heading + status + buttonGroupHeader + groupBodyMount + groupBodyUnmount + groupBodyDelete);*/
+  $(".content").load("html/filesystem.html");
 }
-/*
-function drawFileSystem(fileS) {
-  var items = [];
-  $.each(fileSystems, function(i, item) {
-    var panelIdentifier = '<div class="panel panel-';
-    if (item.mounted) {
-      panelIdentifier += 'success">';
-    } else {
-      panelIdentifier += 'primary">';
-    }
-
-    var panelheading = '<div class="panel-heading"><h3 class="panel-title">' + item.name + '</h3></div>';
-
-    var panelBodyheader = '<div class="panel-body"><b>Path: </b>' + item.path + '<br>';
-    var panelBodyMount = '<div class="row"><div class="col-md-3"><button type="button" class="btn btn-info btn-block" onclick="mountFs(' + i + ')">Mount</button></div>';
-    var panelBodyUnmount = '<div class="col-md-3"><button type="button" class="btn btn-warning btn-block" onclick="unmountFs(' + i + ')">Unmount</button></div>';
-    var panelBodyDelete = '<div class="col-md-3"><button type="button" class="btn btn-danger btn-block" onclick="deleteFs(' + i + ')">Delete</button></div></div>';
-
-    var panelBody = panelBodyheader + panelBodyMount + panelBodyUnmount +
-      panelBodyDelete + "</div>";
-
-    items.push(panelIdentifier + panelheading + panelBody + "</div>");
-  });
-
-  $("#filist").append(items.join(' '));
-}*/
 
 function newfs(form) {
-  console.log(form);
   var exec = require('child_process').exec;
   var cmd = "paranoid-cli init ";
   if (!form.secure.checked) {
@@ -91,7 +65,6 @@ function newfs(form) {
   cmd += form.name.value;
 
   exec(cmd, function(error, stdout, stderr) {
-    console.log(error);
     fileSystems = getFilesystems();
     $("#filist").empty();
     rowClicked(-1);
@@ -102,7 +75,9 @@ function deleteFs(i) {
   var exec = require('child_process').exec;
   var cmd = "paranoid-cli delete " + fileSystems[i].name;
   exec(cmd, function(error, stdout, stderr) {
-    console.log(error);
+    if (error != nil) {
+      alert(error);
+    }
     fileSystems = getFilesystems();
     $("#nav").empty();
     loadSideBar();
@@ -121,10 +96,31 @@ function unmountFs(i) {
   var exec = require('child_process').exec;
   var cmd = "paranoid-cli unmount " + fileSystems[i].name;
   exec(cmd, function(error, stdout, stderr) {
-    console.log(error);
+    if (error != nil) {
+      alert(error);
+    }
     fileSystems[i].mounted = false;
     $("#nav").empty();
     loadSideBar();
     rowClicked(i);
   });
+}
+
+function pathExists(filePath) {
+  var fs = require("fs");
+  try {
+    fs.accessSync(filePath, fs.F_OK);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function readFile(filePath) {
+  var fs = require("fs");
+  return fs.readFileSync(filePath);
+}
+
+function loadJsonFile(filePath) {
+  return JSON.parse(readFile(filePath));
 }
