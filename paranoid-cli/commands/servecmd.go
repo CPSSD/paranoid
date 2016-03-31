@@ -29,7 +29,14 @@ func Serve(c *cli.Context) {
 	if len(args) < 3 {
 		requestLimit = 0
 		requestTimeout = 0
-	} else {
+	} else if len(args) < 4 {
+		requestLimit, err = strconv.Atoi(args[2])
+		requestTimeout = 0
+		if err != nil {
+			fmt.Println("Unable to parse optional paramaters")
+			Log.Fatal("Unable to parse optional paramaters:", err)
+		}
+	} else if len(args) < 5 {
 		requestLimit, err = strconv.Atoi(args[2])
 		requestTimeout, err = strconv.Atoi(args[3])
 		if err != nil {

@@ -18,7 +18,7 @@ func Unserve(c *cli.Context) {
 	args := c.Args()
 
 	if len(args) < 2 {
-		cli.ShowCommandHelp(c, "userve")
+		cli.ShowCommandHelp(c, "unserve")
 		os.Exit(1)
 	}
 
@@ -65,10 +65,10 @@ func Unserve(c *cli.Context) {
 	defer connection.Close()
 
 	serverClient := pb.NewFileserverClient(connection)
-	_, err = serverClient.UnServeFile(context.Background(),
+	response, err := serverClient.UnServeFile(context.Background(),
 		&pb.UnServeRequest{
 			Uuid:     string(uuid),
-			TileHash: args[1],
+			FileHash: args[1],
 		})
 	if err != nil {
 		Log.Error("Couldn't message Discovery Share Server", err)
@@ -76,5 +76,5 @@ func Unserve(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	fmt.Println("Removed File, ", args[1])
+	fmt.Println(response.ServeResponse)
 }
