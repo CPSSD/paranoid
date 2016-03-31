@@ -5,7 +5,14 @@ import (
 	"fmt"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"io"
+	"os"
+	"path"
 )
+
+// Hardcoded because the KSM will not track joined nodes until next sprint (Sprint 7)
+const MIN_SHARES_REQUIRED int = 2
+
+var StateMachine *KeyStateMachine
 
 // We have to recreate globals.Node here to avoid an import cycle.
 // This just in: Go is officially worse than C at this.
@@ -31,13 +38,13 @@ type KeyStateMachine struct {
 
 	// The first index indicates the generation.
 	// The second index is unimportant as order doesn't matter there.
-	Elements [][]*keyStateElement
+	Elements map[int]([]*keyStateElement)
 }
 
 func NewKSM() *KeyStateMachine {
 	return &KeyStateMachine{
 		CurrentGeneration: -1,
-		Elements:          make([][]*keyStateElement, 0, 256),
+		Elements:          make(map[int]([]*keyStateElement)),
 	}
 }
 
@@ -46,7 +53,24 @@ func NewKSMFromReader(reader io.Reader) (*KeyStateMachine, error) {
 	dec := gob.NewDecoder(reader)
 	err := dec.Decode(ksm)
 	if err != nil {
-		Log.Fatal("Failed decoding GOB KeyStateMachine data:", err)
+		Log.Error("Failed decoding GOB KeyStateMachine data:", err)
+		return nil, fmt.Errorf("failed decoding from GOB: %s", err)
+	}
+	return ksm, nil
+}
+
+func NewKSMFromPFSDir(pfsDir string) (*KeyStateMachine, error) {
+	file, err := os.Open(path.Join(pfsDir, "meta", "key_state"))
+	if err != nil {
+		Log.Errorf("Unable to open %s for reading state: %s", pfsDir, err)
+		return nil, fmt.Errorf("unable to open %s: %s", pfsDir, err)
+	}
+	defer file.Close()
+	ksm := new(KeyStateMachine)
+	dec := gob.NewDecoder(file)
+	err = dec.Decode(ksm)
+	if err != nil {
+		Log.Error("Failed decoding GOB KeyStateMachine data:", err)
 		return nil, fmt.Errorf("failed decoding from GOB: %s", err)
 	}
 	return ksm, nil
@@ -70,16 +94,32 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 		owner:      owner,
 		holder:     holder,
 	}
-	if elem.generation > ksm.CurrentGeneration {
+
+	// If a new generation is created, the state machine will only
+	// update its CurrentGeneration when enough generation N+1 elements
+	// exist for every node in the cluster to unlock if locked.
+	if elem.generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(elem.generation) {
 		ksm.CurrentGeneration = elem.generation
-		if elem.generation > cap(ksm.Elements) {
-			tmp := make([][]*keyStateElement, len(ksm.Elements), cap(ksm.Elements)*2)
-			ksm.Elements = tmp
-		}
+		delete(ksm.Elements, elem.generation)
 	}
 	ksm.Elements[elem.generation] = append(ksm.Elements[elem.generation], elem)
 
 	return nil
+}
+
+// Count all of the keys grouped by owner and make sure they meet a minimum.
+func (ksm KeyStateMachine) canUpdateGeneration(generation int) bool {
+	// Map of UUIDs (as string) to int
+	owners := make(map[string]int)
+	for _, v := range ksm.Elements[generation] {
+		owners[v.owner.UUID] += 1
+	}
+	for _, count := range owners {
+		if count < MIN_SHARES_REQUIRED {
+			return false
+		}
+	}
+	return true
 }
 
 func (ksm KeyStateMachine) Serialise(writer io.Writer) error {

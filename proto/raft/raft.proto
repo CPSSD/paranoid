@@ -85,12 +85,14 @@ message Entry {
       StateMachineCommand = 0;
       ConfigurationChange = 1;
       Demo = 2;
+      KeyStateMessage = 3;
     }
     EntryType type = 1; // required 
     string uuid = 2; // required
     StateMachineCommand command = 3; // optional 
     Configuration config = 4; // optional 
     DemoCommand demo = 5; // optional
+    KeyStateMessage key_change = 6; // optional
 }
 
 message LogEntry {
