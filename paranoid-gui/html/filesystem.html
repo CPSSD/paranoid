@@ -29,17 +29,15 @@
     <li class="list-group-item" id="fsAttributeEncrypted">Encrypted<span class="label label-success" id="badge">YES</span></li>
     <li class="list-group-item" id="fsAttributeNetwork">Network<span class="label label-success" id="badge">YES</span></li>
     <li class="list-group-item" id="fsAttributeKeygen">Key Generated<span class="label label-success" id="badge">YES</span></li>
-    <li class="list-group-item" id="fsAttributePool">Pool<span class="label label-success" id="badge">strange_fox</span></li>
-    <li class="list-group-item" id="fsAttributeKeygen">UUID<span class="label label-success" id="badge">e256a4ed-43c2-4011-a1c8-545bc73cc021</li>
+    <li class="list-group-item" id="fsAttributePool">Pool<span class="label label-primary" id="badge">strange_fox</span></li>
+    <li class="list-group-item" id="fsAttributeUuid">UUID<span class="label label-primary" id="badge">e256a4ed-43c2-4011-a1c8-545bc73cc021</li>
   </ul>
   <hr>
 </div>
 
 <div id="fsDeleteSection">
   <h3>Delete FileSystem</h3>
-  <form id="fsDeleteForm" action="#" type="submit" onsubmit="">
     <label>Confirm Deletion</label>
-    <input type="text" name="nameCheck" class='form-control' placeholder="Enter the filesystem name" required>
-    <button type="submit" class="btn btn-danger">Delete</button>
-  </form>
+    <input type="text" name="nameCheck" class='form-control' placeholder="Enter the filesystem name" id="nameCheckText">
+    <button type="submit" class="btn btn-danger" id="deleteButton">Delete</button>
 </div>

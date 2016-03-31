@@ -30,7 +30,7 @@ function loadSideBar() {
 }
 
 function rowClicked(i) {
-  if (i < -1 || i > fileSystems.length) {
+  if (i < -1 || i >= fileSystems.length) {
     i = -1;
   }
   selected = i;

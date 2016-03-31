@@ -10,11 +10,14 @@ function getFilesystems() {
   var fileNames = fs.readdirSync(fileSystemsDir);
   var filesystems = [];
   for (var i=0; i<fileNames.length; i++) {
+    var fsPath = path.join(fileSystemsDir, fileNames[i]);
     var filesystem = {
       name: fileNames[i],
       path: path.join(fileSystemsDir, fileNames[i]),
       mounted: false,
-      attributes: loadJsonFile(path.join(fileSystemsDir, fileNames[i], "meta", "attributes"))
+      attributes: loadJsonFile(path.join(fsPath, "meta", "attributes")),
+      pool: readFile(path.join(fsPath, "meta", "pool")),
+      uuid: readFile(path.join(fsPath, "meta", "uuid"))
     };
     filesystems.push(filesystem);
   }
@@ -22,23 +25,38 @@ function getFilesystems() {
   return filesystems;
 }
 
-function drawFileSystem(i) {/*
+function drawFileSystem(i) {
   var fileSystem = fileSystems[i];
-  var heading = '<h1>' + fileSystem.name + '</h1>';
-  var status = '';
-  if (fileSystem.mounted) {
-    status += '<span class="label label-success">Mounted</span>';
-  } else {
-    status += '<span class="label label-default">Unmounted</span>';
+
+  var str = readFile("html/filesystem.html");
+  var html = $.parseHTML(str);
+  $(".content").html(html);
+
+  $(".content #fsName").html(fileSystem.name);
+  $(".content #fsMountSection").hide();
+
+  // attributes section
+  if (!fileSystem.attributes.encrypted) {
+    $(".content #fsAttributes #fsAttributeEncrypted #badge").html('<b>NO<b>');
+    $(".content #fsAttributes #fsAttributeEncrypted #badge").addClass("label label-danger");
   }
 
-  var buttonGroupHeader = '<div id="buttons"><div class="btn-group">';
-  var groupBodyMount = '<button type="button" class="btn btn-info" onclick="mountFs(' + i + ')">Mount</button>';
-  var groupBodyUnmount = '<button type="button" class="btn btn-warning" onclick="unmountFs(' + i + ')">Unmount</button>';
-  var groupBodyDelete = '<button type="button" class="btn btn-danger" onclick="deleteFs(' + i + ')">Delete</button></div></div>';
+  if (fileSystem.attributes.networkoff) {
+    $(".content #fsAttributes #fsAttributeNetwork #badge").html('<b>NO<b>');
+    $(".content #fsAttributes #fsAttributeNetwork #badge").addClass("label label-danger");
+  }
 
-  $(".content").html(heading + status + buttonGroupHeader + groupBodyMount + groupBodyUnmount + groupBodyDelete);*/
-  $(".content").load("html/filesystem.html");
+  if (!fileSystem.attributes.keygenerated) {
+    $(".content #fsAttributes #fsAttributeKeygen #badge").html('<b>NO<b>');
+    $(".content #fsAttributes #fsAttributeKeygen #badge").addClass("label label-danger");
+  }
+
+  $(".content #fsAttributes #fsAttributePool #badge").html('<b>' + fileSystem.pool + '<b>');
+  $(".content #fsAttributes #fsAttributeUuid #badge").html('<b>' + fileSystem.uuid + '<b>');
+
+  // delete section
+  $(".content #fsDeleteSection #deleteButton").attr("onClick", 'deleteClicked($(".content #fsDeleteSection #nameCheckText").val(), ' + i + ');');
+
 }
 
 function newfs(form) {
@@ -71,35 +89,23 @@ function newfs(form) {
   });
 }
 
+function deleteClicked(val, i) {
+  var fileSystem = fileSystems[i];
+  if (val != fileSystem.name) {
+    alert("Incorrect FileSystem name");
+  } else {
+    deleteFs(i);
+  }
+}
+
 function deleteFs(i) {
   var exec = require('child_process').exec;
   var cmd = "paranoid-cli delete " + fileSystems[i].name;
   exec(cmd, function(error, stdout, stderr) {
-    if (error != nil) {
+    if (error !== null) {
       alert(error);
     }
     fileSystems = getFilesystems();
-    $("#nav").empty();
-    loadSideBar();
-    rowClicked(i);
-  });
-}
-
-function mountFs(i) {
-  fileSystems[i].mounted = true;
-  $("#nav").empty();
-  loadSideBar();
-  rowClicked(i);
-}
-
-function unmountFs(i) {
-  var exec = require('child_process').exec;
-  var cmd = "paranoid-cli unmount " + fileSystems[i].name;
-  exec(cmd, function(error, stdout, stderr) {
-    if (error != nil) {
-      alert(error);
-    }
-    fileSystems[i].mounted = false;
     $("#nav").empty();
     loadSideBar();
     rowClicked(i);
@@ -118,7 +124,7 @@ function pathExists(filePath) {
 
 function readFile(filePath) {
   var fs = require("fs");
-  return fs.readFileSync(filePath);
+  return fs.readFileSync(filePath, "utf8");
 }
 
 function loadJsonFile(filePath) {
