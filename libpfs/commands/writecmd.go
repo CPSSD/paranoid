@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"syscall"
 )
 
 //WriteCommand writes data to the given file
@@ -53,11 +52,6 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 		return code, err, 0
 	}
 	inodeName := string(fileInodeBytes)
-
-	code, err = canAccessFile(paranoidDirectory, inodeName, getAccessMode(syscall.O_WRONLY))
-	if err != nil {
-		return code, fmt.Errorf("unable to access %s: %s", filePath, err), 0
-	}
 
 	err = getFileLock(paranoidDirectory, inodeName, ExclusiveLock)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"os"
 	"path"
-	"syscall"
 )
 
 //TruncateCommand reduces the file given to the new length
@@ -51,11 +50,6 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 		return code, err
 	}
 	inodeName := string(fileInodeBytes)
-
-	code, err = canAccessFile(paranoidDirectory, inodeName, getAccessMode(syscall.O_WRONLY))
-	if err != nil {
-		return code, fmt.Errorf("unable to access %s: %s", filePath, err)
-	}
 
 	err = getFileLock(paranoidDirectory, inodeName, ExclusiveLock)
 	if err != nil {
