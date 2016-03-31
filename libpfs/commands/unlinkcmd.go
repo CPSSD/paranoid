@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"syscall"
 )
 
 // UnlinkCommand removes a filename link from an inode.
@@ -48,12 +47,6 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.C
 	inodeBytes, code, err := getFileInode(fileParanoidPath)
 	if code != returncodes.OK {
 		return code, err
-	}
-
-	//checking if we have access to the file.
-	code, err = canAccessFile(paranoidDirectory, string(inodeBytes), getAccessMode(syscall.O_WRONLY))
-	if err != nil {
-		return code, fmt.Errorf("unable to access %s: %s", filePath, err)
 	}
 
 	// removing filename

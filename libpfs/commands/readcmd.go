@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	"syscall"
 )
 
 //ReadCommand reads data from a file
@@ -56,11 +55,6 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 		return code, err, nil
 	}
 	inodeFileName := string(inodeBytes)
-
-	code, err = canAccessFile(paranoidDirectory, inodeFileName, getAccessMode(syscall.O_RDONLY))
-	if err != nil {
-		return code, fmt.Errorf("unable to access %s: %s", filePath, err), nil
-	}
 
 	err = getFileLock(paranoidDirectory, inodeFileName, SharedLock)
 	if err != nil {

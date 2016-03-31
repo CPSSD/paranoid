@@ -6,7 +6,6 @@ import (
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"io/ioutil"
 	"os"
-	"syscall"
 )
 
 // RenameCommand is called when renaming a file
@@ -60,16 +59,6 @@ func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCo
 				return returncodes.EEXIST, errors.New(newFilePath + " already exists")
 			}
 		}
-	}
-
-	inodeBytes, code, err := getFileInode(oldFileParanoidPath)
-	if code != returncodes.OK || err != nil {
-		return code, err
-	}
-
-	code, err = canAccessFile(paranoidDirectory, string(inodeBytes), getAccessMode(syscall.O_WRONLY))
-	if err != nil {
-		return code, fmt.Errorf("unable to access %s: %s", oldFilePath, err)
 	}
 
 	err = os.Rename(oldFileParanoidPath, newFileParanoidPath)

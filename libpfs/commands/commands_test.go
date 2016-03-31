@@ -185,11 +185,6 @@ func TestFilePermissionsCommands(t *testing.T) {
 		t.Error("Incorrect file permissions = ", statIn.Mode.Perm())
 	}
 
-	code, err, _ = WriteCommand(testDirectory, "test.txt", -1, -1, []byte("yay"))
-	if code != returncodes.EACCES {
-		t.Error("Should not be able to write file ", statIn.Mode.Perm())
-	}
-
 	code, err = AccessCommand(testDirectory, "test.txt", 4)
 	if code != returncodes.OK {
 		t.Error("Access command did not return OK. Actual:", code, " Error:", err)
