@@ -2,6 +2,8 @@ package raftlog
 
 import (
 	"errors"
+	"fmt"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
@@ -24,6 +26,15 @@ func (rl *RaftLog) GetLogEntryUnsafe(index uint64) (entry *pb.LogEntry, err erro
 	fileData, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, errors.New("failed to read logfile")
+	}
+
+	if encryption.Encrypted {
+		err = encryption.Decrypt(fileData[:len(fileData)-1])
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt logfile: %s", err)
+		}
+		extraEndBytes := int(fileData[len(fileData)-1]) + 1
+		fileData = fileData[:len(fileData)-extraEndBytes]
 	}
 
 	entry = &pb.LogEntry{}
@@ -78,6 +89,15 @@ func (rl *RaftLog) GetLogEntries(index, maxCount uint64) (entries []*pb.Entry, e
 		fileData, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			return nil, errors.New("failed to read logfile")
+		}
+
+		if encryption.Encrypted {
+			err = encryption.Decrypt(fileData[:len(fileData)-1])
+			if err != nil {
+				return nil, fmt.Errorf("failed to decrypt logfile: %s", err)
+			}
+			extraEndBytes := int(fileData[len(fileData)-1]) + 1
+			fileData = fileData[:len(fileData)-extraEndBytes]
 		}
 
 		entry := &pb.LogEntry{}
