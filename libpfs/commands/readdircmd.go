@@ -14,13 +14,13 @@ func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.C
 	Log.Info("readdir command called")
 	Log.Verbose("readdir : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(paranoidDirectory, sharedLock)
+	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, nil
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err

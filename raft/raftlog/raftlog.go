@@ -1,17 +1,36 @@
 package raftlog
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/cpssd/paranoid/logger"
 	"io/ioutil"
 	"os"
+	"path"
 	"sync"
 )
 
+const (
+	LogEntryDirectoryName string = "log_entries"
+	LogMetaFileName       string = "logmetainfo"
+)
+
+var ErrIndexBelowStartIndex = errors.New("given index is below start index")
+
 var Log *logger.ParanoidLogger
+
+type PeristentLogState struct {
+	LogSizeBytes uint64 `json:"logsizebytes"`
+	StartIndex   uint64 `json:"startindex"`
+	StartTerm    uint64 `json:"startterm"`
+}
 
 // RaftLog is the structure through which logging functinality can be accessed
 type RaftLog struct {
 	logDir         string
+	startIndex     uint64
+	startTerm      uint64
+	logSizeBytes   uint64
 	currentIndex   uint64
 	mostRecentTerm uint64
 	indexLock      sync.Mutex
@@ -22,30 +41,72 @@ func New(logDirectory string) *RaftLog {
 	rl := &RaftLog{
 		logDir: logDirectory,
 	}
-	fileDescriptors, err := ioutil.ReadDir(rl.logDir)
+
+	logEntryDirectory := path.Join(rl.logDir, LogEntryDirectoryName)
+	logMetaFile := path.Join(rl.logDir, LogMetaFileName)
+
+	fileDescriptors, err := ioutil.ReadDir(logEntryDirectory)
 	if err != nil {
 		if os.IsNotExist(err) {
-			err := os.Mkdir(rl.logDir, 0700)
+			err := os.MkdirAll(logEntryDirectory, 0700)
 			if err != nil {
 				Log.Fatal("failed to create log directory:", err)
 			}
 		} else if os.IsPermission(err) {
-			Log.Fatal("raft logger does not have permissions for:", rl.logDir)
+			Log.Fatal("raft logger does not have permissions for:", logEntryDirectory)
 		} else {
 			Log.Fatal("unable to read log directory:", err)
 		}
 	}
-	rl.currentIndex = uint64(len(fileDescriptors) + 1)
-	if rl.currentIndex > 1 {
+
+	rl.startIndex = 0
+	rl.startTerm = 0
+	rl.logSizeBytes = 0
+	rl.mostRecentTerm = 0
+	metaFileContents, err := ioutil.ReadFile(logMetaFile)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			Log.Fatal("unable to read raft log meta information:", err)
+		}
+	} else {
+		metaInfo := &PeristentLogState{}
+		err = json.Unmarshal(metaFileContents, metaInfo)
+		if err != nil {
+			Log.Fatal("unable to read raft log meta information:", err)
+		}
+		rl.startIndex = metaInfo.StartIndex
+		rl.logSizeBytes = metaInfo.LogSizeBytes
+		rl.startTerm = metaInfo.StartTerm
+		rl.mostRecentTerm = metaInfo.StartTerm
+	}
+
+	rl.currentIndex = uint64(len(fileDescriptors)) + rl.startIndex + 1
+	if rl.currentIndex > rl.startIndex+1 {
 		logEntry, err := rl.GetLogEntry(rl.currentIndex - 1)
 		if err != nil {
-			Log.Fatal("Failed setting up raft logger, could not get most recent term:", err)
+			Log.Fatal("failed setting up raft logger, could not get most recent term:", err)
 		}
 		rl.mostRecentTerm = logEntry.Term
-	} else {
-		rl.mostRecentTerm = 0
 	}
 	return rl
+}
+
+func (rl *RaftLog) saveMetaInfo() {
+	metaInfo := &PeristentLogState{
+		LogSizeBytes: rl.logSizeBytes,
+		StartIndex:   rl.startIndex,
+		StartTerm:    rl.startTerm,
+	}
+
+	metaInfoJson, err := json.Marshal(metaInfo)
+	if err != nil {
+		Log.Fatal("unable to save raft log meta information:", err)
+	}
+
+	err = ioutil.WriteFile(path.Join(rl.logDir, LogMetaFileName), metaInfoJson, 0600)
+	if err != nil {
+		Log.Fatal("unable to save raft log meta information:", err)
+	}
 }
 
 // GetMostRecentIndex returns the index of the last log entry
@@ -70,4 +131,37 @@ func fileIndexToStorageIndex(i uint64) uint64 {
 // storageIndexToFileIndex converts a storage index to a fileIndex
 func storageIndexToFileIndex(i uint64) uint64 {
 	return i + 1000000
+}
+
+func (rl *RaftLog) setLogSizeBytes(x uint64) {
+	rl.logSizeBytes = x
+	rl.saveMetaInfo()
+}
+
+func (rl *RaftLog) GetLogSizeBytes() uint64 {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+	return rl.logSizeBytes
+}
+
+func (rl *RaftLog) setStartIndex(x uint64) {
+	rl.startIndex = x
+	rl.saveMetaInfo()
+}
+
+func (rl *RaftLog) setStartTerm(x uint64) {
+	rl.startTerm = x
+	rl.saveMetaInfo()
+}
+
+func (rl *RaftLog) GetStartTerm() uint64 {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+	return rl.startTerm
+}
+
+func (rl *RaftLog) GetStartIndex() uint64 {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+	return rl.startIndex
 }

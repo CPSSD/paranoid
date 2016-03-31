@@ -16,13 +16,13 @@ func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) 
 	Log.Info("symlink command called")
 	targetParanoidPath := getParanoidPath(paranoidDirectory, targetFilePath)
 
-	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
+	err := GetFileSystemLock(paranoidDirectory, ExclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err

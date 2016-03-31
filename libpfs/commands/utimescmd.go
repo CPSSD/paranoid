@@ -15,13 +15,13 @@ func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) 
 	Log.Info("utimes command called")
 	Log.Verbose("utimes : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(paranoidDirectory, sharedLock)
+	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -50,7 +50,7 @@ func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) 
 		return code, fmt.Errorf("unable to access %s: %s", filePath, err)
 	}
 
-	err = getFileLock(paranoidDirectory, inodeName, exclusiveLock)
+	err = getFileLock(paranoidDirectory, inodeName, ExclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}

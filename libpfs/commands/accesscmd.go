@@ -11,13 +11,13 @@ func AccessCommand(paranoidDirectory, filePath string, mode uint32) (returnCode 
 	Log.Info("access command called")
 	Log.Verbose("access : given paranoidDirectory = " + paranoidDirectory)
 
-	err := getFileSystemLock(paranoidDirectory, sharedLock)
+	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err

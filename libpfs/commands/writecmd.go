@@ -16,13 +16,13 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 	Log.Info("write command called")
 	Log.Verbose("write : given paranoidDirectory =", paranoidDirectory)
 
-	err := getFileSystemLock(paranoidDirectory, sharedLock)
+	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, 0
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -59,7 +59,7 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 		return code, fmt.Errorf("unable to access %s: %s", filePath, err), 0
 	}
 
-	err = getFileLock(paranoidDirectory, inodeName, exclusiveLock)
+	err = getFileLock(paranoidDirectory, inodeName, ExclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, 0
 	}

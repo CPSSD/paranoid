@@ -10,18 +10,17 @@ import (
 	"strconv"
 )
 
-// GetLogEntry will read an entry at the given index returning
-// the protobuf and an error if something went wrong
-func (rl *RaftLog) GetLogEntry(index uint64) (entry *pb.LogEntry, err error) {
-	rl.indexLock.Lock()
-	defer rl.indexLock.Unlock()
-
+func (rl *RaftLog) GetLogEntryUnsafe(index uint64) (entry *pb.LogEntry, err error) {
 	if index < 1 || index >= rl.currentIndex {
 		return nil, errors.New("index out of bounds")
 	}
 
+	if index <= rl.startIndex {
+		return nil, ErrIndexBelowStartIndex
+	}
+
 	fileIndex := storageIndexToFileIndex(index)
-	filePath := path.Join(rl.logDir, strconv.FormatUint(fileIndex, 10))
+	filePath := path.Join(rl.logDir, LogEntryDirectoryName, strconv.FormatUint(fileIndex, 10))
 	fileData, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, errors.New("failed to read logfile")
@@ -34,6 +33,15 @@ func (rl *RaftLog) GetLogEntry(index uint64) (entry *pb.LogEntry, err error) {
 	}
 
 	return entry, nil
+}
+
+// GetLogEntry will read an entry at the given index returning
+// the protobuf and an error if something went wrong
+func (rl *RaftLog) GetLogEntry(index uint64) (entry *pb.LogEntry, err error) {
+	rl.indexLock.Lock()
+	defer rl.indexLock.Unlock()
+
+	return rl.GetLogEntryUnsafe(index)
 }
 
 // GetEntriesSince returns a list of entries including and after the one
@@ -59,10 +67,14 @@ func (rl *RaftLog) GetLogEntries(index, maxCount uint64) (entries []*pb.Entry, e
 		return nil, errors.New("index out of bounds")
 	}
 
+	if index <= rl.startIndex {
+		return nil, ErrIndexBelowStartIndex
+	}
+
 	entries = make([]*pb.Entry, min(rl.currentIndex-index, maxCount))
 	for i := index; i < min(rl.currentIndex, index+maxCount); i++ {
 		fileIndex := storageIndexToFileIndex(i)
-		filePath := path.Join(rl.logDir, strconv.FormatUint(fileIndex, 10))
+		filePath := path.Join(rl.logDir, LogEntryDirectoryName, strconv.FormatUint(fileIndex, 10))
 		fileData, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			return nil, errors.New("failed to read logfile")

@@ -23,13 +23,13 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Cod
 	Log.Info("stat command called")
 	Log.Verbose("stat : given paranoidDirectory", paranoidDirectory)
 
-	err := getFileSystemLock(paranoidDirectory, sharedLock)
+	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, statInfo{}
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err

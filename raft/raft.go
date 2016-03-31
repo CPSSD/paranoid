@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/raft"
+	"github.com/cpssd/paranoid/raft/raftlog"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -37,9 +38,10 @@ type RaftNetworkServer struct {
 	State *RaftState
 	Wait  sync.WaitGroup
 
-	nodeDetails   Node
-	TLSEnabled    bool
-	TLSSkipVerify bool
+	nodeDetails       Node
+	raftInfoDirectory string
+	TLSEnabled        bool
+	TLSSkipVerify     bool
 
 	QuitChannelClosed    bool
 	Quit                 chan bool
@@ -77,11 +79,19 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), s.State.Log.GetMostRecentIndex() + 1, false}, nil
 		}
 		preLogEntry, err := s.State.Log.GetLogEntry(req.PrevLogIndex)
-		if err != nil {
+		if err != nil && err != raftlog.ErrIndexBelowStartIndex {
 			Log.Fatal("Unable to get log entry:", err)
-		}
-		if preLogEntry.Term != req.PrevLogTerm {
-			return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
+		} else if err == raftlog.ErrIndexBelowStartIndex {
+			if req.PrevLogIndex != s.State.Log.GetMostRecentIndex() {
+				return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
+			}
+			if req.PrevLogTerm != s.State.Log.GetMostRecentTerm() {
+				return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
+			}
+		} else if err == nil {
+			if preLogEntry.Term != req.PrevLogTerm {
+				return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, false}, nil
+			}
 		}
 	}
 
@@ -90,12 +100,13 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 
 		if s.State.Log.GetMostRecentIndex() >= logIndex {
 			logEntryAtIndex, err := s.State.Log.GetLogEntry(logIndex)
-			if err != nil {
+			if err != nil && err != raftlog.ErrIndexBelowStartIndex {
 				Log.Fatal("Unable to get log entry:", err)
-			}
-			if logEntryAtIndex.Term != req.Term {
-				s.State.Log.DiscardLogEntries(logIndex)
-				s.appendLogEntry(req.Entries[i])
+			} else if err == nil {
+				if logEntryAtIndex.Term != req.Term {
+					s.State.Log.DiscardLogEntriesAfter(logIndex)
+					s.appendLogEntry(req.Entries[i])
+				}
 			}
 		} else {
 			s.appendLogEntry(req.Entries[i])
@@ -445,23 +456,40 @@ func (s *RaftNetworkServer) manageElections() {
 func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 	defer s.Wait.Done()
 	nextIndex := s.State.Configuration.GetNextIndex(node.NodeID)
+	sendingSnapshot := s.State.Configuration.GetSendingSnapshot(node.NodeID)
+
+	if s.State.Log.GetStartIndex() >= nextIndex && sendingSnapshot == false {
+		s.State.SendSnapshot <- *node
+		sendingSnapshot = true
+	}
+
 	conn, err := s.Dial(node, HEARTBEAT_TIMEOUT)
 	defer conn.Close()
 	if err == nil {
 		client := pb.NewRaftNetworkClient(conn)
-		if s.State.Log.GetMostRecentIndex() >= nextIndex {
+		if s.State.Log.GetMostRecentIndex() >= nextIndex && sendingSnapshot == false {
 			prevLogTerm := uint64(0)
 			if nextIndex-1 > 0 {
 				prevLogEntry, err := s.State.Log.GetLogEntry(nextIndex - 1)
 				if err != nil {
-					Log.Fatal("Unable to get log entry at", nextIndex-1, ":", err)
+					if err == raftlog.ErrIndexBelowStartIndex {
+						prevLogTerm = s.State.Log.GetStartTerm()
+					} else {
+						Log.Fatal("Unable to get log entry at", nextIndex-1, ":", err)
+					}
+				} else {
+					prevLogTerm = prevLogEntry.Term
 				}
-				prevLogTerm = prevLogEntry.Term
 			}
 
 			nextLogEntries, err := s.State.Log.GetLogEntries(nextIndex, MAX_APPEND_ENTRIES)
 			if err != nil {
-				Log.Fatal("Unable to get log entry:", err)
+				if err == raftlog.ErrIndexBelowStartIndex {
+					s.State.SendSnapshot <- *node
+					return
+				} else {
+					Log.Fatal("Unable to get log entry:", err)
+				}
 			}
 			numLogEntries := uint64(len(nextLogEntries))
 
@@ -617,14 +645,18 @@ func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory stri
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
 	raftServer.QuitChannelClosed = false
-	raftServer.Wait.Add(4)
+	raftServer.Wait.Add(5)
 	raftServer.nodeDetails = nodeDetails
+	raftServer.raftInfoDirectory = raftInfoDirectory
 	raftServer.TLSEnabled = TLSEnabled
 	raftServer.TLSSkipVerify = TLSSkipVerify
 	raftServer.ChangeNodeLocation(nodeDetails.NodeID, nodeDetails.IP, nodeDetails.Port)
+	raftServer.setupSnapshotDirectory()
+
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()
 	go raftServer.manageConfigurationChanges()
+	go raftServer.manageSnapshoting()
 	return raftServer
 }

@@ -13,13 +13,13 @@ import (
 // RmdirCommand removes a paranoidDirectory
 func RmdirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("rmdir command called")
-	err := getFileSystemLock(paranoidDirectory, exclusiveLock)
+	err := GetFileSystemLock(paranoidDirectory, ExclusiveLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err

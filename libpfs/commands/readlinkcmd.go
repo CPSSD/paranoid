@@ -13,13 +13,13 @@ import (
 func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.Code, returnError error, linkContents string) {
 	Log.Info("readlink command called")
 
-	err := getFileSystemLock(paranoidDirectory, sharedLock)
+	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, ""
 	}
 
 	defer func() {
-		err := unLockFileSystem(paranoidDirectory)
+		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
 			returnCode = returncodes.EUNEXPECTED
 			returnError = err
@@ -52,7 +52,7 @@ func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes
 		return code, err, ""
 	}
 
-	err = getFileLock(paranoidDirectory, string(linkInode), sharedLock)
+	err = getFileLock(paranoidDirectory, string(linkInode), SharedLock)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, ""
 	}

@@ -12,6 +12,7 @@ import (
 
 const (
 	PersistentConfigurationFileName string = "persistentConfigFile"
+	OriginalConfigurationFileName   string = "originalConfigFile"
 )
 
 //Configuration manages configuration information of a raft server
@@ -26,6 +27,8 @@ type Configuration struct {
 	futureConfiguration []Node
 	futureNextIndex     []uint64
 	futureMatchIndex    []uint64
+
+	sendingSnapshot map[string]bool
 
 	raftInfoDirectory    string
 	persistentConfigLock sync.Mutex
@@ -131,6 +134,37 @@ func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex ui
 		c.currentNextIndex[i] = lastLogIndex + 1
 		c.currentMatchIndex[i] = 0
 	}
+}
+
+func (c *Configuration) UpdateFromConfigurationFile(configurationFilePath string, lastLogIndex uint64) error {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	configuration := getPersistentConfiguration(configurationFilePath)
+	if configuration == nil {
+		return errors.New("unable to update configuration from file")
+	}
+
+	c.currentConfiguration = configuration.CurrentConfiguration
+	c.currentNextIndex = make([]uint64, len(c.currentConfiguration))
+	c.currentMatchIndex = make([]uint64, len(c.currentConfiguration))
+
+	c.futureConfiguration = configuration.FutureConfiguration
+	c.futureNextIndex = make([]uint64, len(c.futureConfiguration))
+	c.futureMatchIndex = make([]uint64, len(c.futureConfiguration))
+	c.futureConfigurationActive = configuration.FutureConfigurationActive
+
+	for i := 0; i < len(c.currentConfiguration); i++ {
+		c.currentNextIndex[i] = lastLogIndex + 1
+		c.currentMatchIndex[i] = 0
+	}
+	for i := 0; i < len(c.futureConfiguration); i++ {
+		c.futureNextIndex[i] = lastLogIndex + 1
+		c.futureMatchIndex[i] = 0
+	}
+
+	c.savePersistentConfiguration()
+	return nil
 }
 
 func (c *Configuration) GetFutureConfigurationActive() bool {
@@ -378,6 +412,20 @@ func (c *Configuration) SetMatchIndex(nodeID string, x uint64) {
 	}
 }
 
+func (c *Configuration) GetSendingSnapshot(nodeID string) bool {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	return c.sendingSnapshot[nodeID]
+}
+
+func (c *Configuration) SetSendingSnapshot(nodeID string, x bool) {
+	c.configLock.Lock()
+	defer c.configLock.Unlock()
+
+	c.sendingSnapshot[nodeID] = x
+}
+
 //CalculateNewCommitIndex calculates a new commit index in the manner described in the Raft paper
 func (c *Configuration) CalculateNewCommitIndex(lastCommitIndex, term uint64, log *raftlog.RaftLog) uint64 {
 	c.configLock.Lock()
@@ -463,6 +511,14 @@ func (c *Configuration) savePersistentConfiguration() {
 	}
 }
 
+func (c *Configuration) saveOriginalConfiguration() {
+	err := os.Rename(path.Join(c.raftInfoDirectory, PersistentConfigurationFileName), path.Join(c.raftInfoDirectory, OriginalConfigurationFileName))
+	if err != nil {
+		Log.Fatal("Error saving original configuration to disk:", err)
+	}
+	c.savePersistentConfiguration()
+}
+
 func getPersistentConfiguration(persistentConfigurationFile string) *persistentConfiguration {
 	if _, err := os.Stat(persistentConfigurationFile); os.IsNotExist(err) {
 		return nil
@@ -480,7 +536,7 @@ func getPersistentConfiguration(persistentConfigurationFile string) *persistentC
 	return perConfig
 }
 
-func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfiguration, myNodeDetails Node) *Configuration {
+func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfiguration, myNodeDetails Node, saveOriginalConfiguration bool) *Configuration {
 	var config *Configuration
 	if testConfiguration != nil {
 		config = &Configuration{
@@ -518,6 +574,10 @@ func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfigur
 			}
 		}
 	}
+	config.sendingSnapshot = make(map[string]bool)
 	config.savePersistentConfiguration()
+	if saveOriginalConfiguration {
+		config.saveOriginalConfiguration()
+	}
 	return config
 }
