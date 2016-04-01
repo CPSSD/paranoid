@@ -2,6 +2,7 @@ package glob
 
 import (
 	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"strings"
 )
@@ -15,9 +16,12 @@ const recursiveStar string = "**"
 const star string = "*"
 const negation string = "!"
 
-func ignoreExists(path string) bool {
-	_, err, _ := commands.StatCommand(globals.ParanoidDir, "IgnoreFile")
+var Log *logger.ParanoidLogger
+
+func ignoreExists() bool {
+	_, err, _ := commands.StatCommand(globals.ParanoidDir, ".pfsignore")
 	if err != nil {
+		Log.Info("No Ignore File Found:", err)
 		return false
 	}
 	return true
@@ -118,10 +122,10 @@ func Glob(pattern, file string) bool {
 
 func ShouldIgnore(filePath string) bool {
 	shouldGlob := false
-	isIgnore := strings.HasSuffix(strings.TrimSuffix(filePath, "/"), "IgnoreFile")
+	isIgnore := strings.HasSuffix(strings.TrimSuffix(filePath, "/"), ".pfsignore")
 	if !isIgnore {
-		if ignoreExists(filePath) {
-			_, err, returnData := commands.ReadCommand(globals.ParanoidDir, "IgnoreFile", -1, -1)
+		if ignoreExists() {
+			_, err, returnData := commands.ReadCommand(globals.ParanoidDir, ".pfsignore", -1, -1)
 			if err != nil {
 				return false
 			}
@@ -133,12 +137,16 @@ func ShouldIgnore(filePath string) bool {
 					}
 					globResponse := Glob(pattern, filePath)
 					shouldGlob = shouldGlob || globResponse
+					Log.Info(pattern, shouldGlob)
 				}
 			}
 			if negationSet && shouldGlob {
 				shouldGlob = !shouldGlob
 			}
 		}
+	}
+	if shouldGlob {
+		Log.Info("File", filePath, "is being Ignored")
 	}
 	return shouldGlob
 }

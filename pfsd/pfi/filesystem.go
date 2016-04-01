@@ -94,10 +94,8 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 	var code returncodes.Code
 	var err error
 	if SendOverNetwork && !glob.ShouldIgnore(name) {
-		Log.Info("File : "+name, "Being Sent over the Network")
 		code, err = globals.RaftNetworkServer.RequestCreatCommand(name, mode)
 	} else {
-		Log.Info("File : "+name, "Will not send over the Network")
 		code, err = commands.CreatCommand(globals.ParanoidDir, name, os.FileMode(mode))
 	}
 

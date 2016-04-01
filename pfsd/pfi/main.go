@@ -3,10 +3,10 @@ package pfi
 import (
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
-	"path"
-
+	"github.com/cpssd/paranoid/pfsd/pfi/glob"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
+	"path"
 )
 
 func StartPfi(logVerbose bool) {
@@ -14,7 +14,7 @@ func StartPfi(logVerbose bool) {
 	var err error
 	Log = logger.New("pfi", "pfsd", path.Join(globals.ParanoidDir, "meta", "logs"))
 	Log.SetOutput(logger.STDERR | logger.LOGFILE)
-
+	glob.Log = Log
 	if globals.RaftNetworkServer == nil {
 		SendOverNetwork = false
 	} else {
