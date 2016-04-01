@@ -102,11 +102,10 @@ function newfs(form) {
   }
   cmd += form.name.value;
 
-  alert(cmd);
-  exec(cmd, function(error, stdout, stderr) {
+  exec(cmd, {input:"2\n\n\n\n"}, function(error, stdout, stderr) {
     var e = false;
     if (error !== null) {
-      alert("error" + error);
+      alert(error);
       e = true;
     }
 
@@ -118,9 +117,9 @@ function newfs(form) {
     if (e) {
       return;
     }
-    
+
     fileSystems = getFilesystems();
-    $("#filist").empty();
+    loadSideBar();
     rowClicked(-1);
   });
 }
@@ -138,11 +137,20 @@ function deleteFs(i) {
   var exec = require('child_process').exec;
   var cmd = "paranoid-cli delete " + fileSystems[i].name;
   exec(cmd, function(error, stdout, stderr) {
+    var e = false;
     if (error !== null) {
       alert(error);
+      e = true;
     }
+    if (stdout !== "") {
+      alert(stdout);
+      e = true;
+    }
+    if (e) {
+      return;
+    }
+
     fileSystems = getFilesystems();
-    $("#nav").empty();
     loadSideBar();
     rowClicked(-1);
   });
@@ -180,7 +188,7 @@ function fileSystemIsMounted(fsName) {
       var code = execSync(cmd);
       return true;
     } catch (e) {
-      console.log(e);
+      alert(e);
       return false;
     }
   }
@@ -205,7 +213,6 @@ function unMountFs(i) {
   try {
     var code = execSync(cmd);
     fileSystems[i].mounted = false;
-    $("#nav").empty();
     loadSideBar();
     rowClicked(i);
   } catch (e) {
@@ -231,7 +238,7 @@ function mountFS() {
   exec(cmd, function(error, stdout, stderr) {
     var e = false;
     if (error !== null) {
-      alert("error" + error);
+      alert(error);
       e = true;
     }
 
@@ -245,7 +252,6 @@ function mountFS() {
     }
 
     fileSystems = getFilesystems();
-    $("#nav").empty();
     loadSideBar();
     rowClicked(selected);
   });

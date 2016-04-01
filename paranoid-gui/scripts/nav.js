@@ -25,7 +25,6 @@ function loadSideBar() {
     items.push(entry);
   });
 
-  console.log(items);
   $("#nav").append(items.join(' '));
 }
 

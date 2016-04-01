@@ -22,7 +22,7 @@ div#header {
 
 .logo {
   float: left;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 .logo a{
@@ -64,10 +64,6 @@ div#container {
   float: right;
 }
 
-a#mounted {
-  background-color: #2ecc71;
-}
-
 ul#nav li{
   list-style: none;
 }
@@ -81,6 +77,12 @@ ul#nav li a{
   -webkit-transition: 0.2s;
 }
 
+ul#nav li a#mounted {
+  background-color: #27ae60;
+  color: #000;
+  font-weight: bold;
+}
+
 ul#nav li a:hover {
   background-color: #030303;
   color: #fff;
@@ -88,8 +90,6 @@ ul#nav li a:hover {
 }
 
 ul#nav li a.selected {
-  background-color: #030303;
-  color: #fff;
   padding-left: 20px;
 }
 
