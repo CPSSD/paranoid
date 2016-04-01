@@ -86,7 +86,7 @@ func checkDir(pattern, file string) bool {
 		return patternArr[0] == fileArr[0]
 	}
 
-	for i := 0; i < len(patternArr); i++ {
+	for i := 0; i < len(patternArr)-1; i++ {
 		if patternArr[i] == "" || fileArr[i] == "" {
 			break
 		}
