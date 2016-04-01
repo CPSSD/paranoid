@@ -537,6 +537,16 @@ func (s *RaftNetworkServer) sendHeartBeat(node *Node) {
 			if err == nil {
 				if response.Term > s.State.GetCurrentTerm() {
 					s.State.StopLeading <- true
+				} else {
+					if response.Success == false {
+						if s.State.GetCurrentState() == LEADER {
+							if response.NextIndex == 0 {
+								s.State.Configuration.SetNextIndex(node.NodeID, nextIndex-1)
+							} else {
+								s.State.Configuration.SetNextIndex(node.NodeID, response.NextIndex)
+							}
+						}
+					}
 				}
 			}
 		}
