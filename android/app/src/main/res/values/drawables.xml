@@ -1,0 +1,8 @@
+<resources>
+    <item name="ic_menu_manage" type="drawable">@android:drawable/ic_menu_manage</item>
+
+    <item name="ic_media_play" type="drawable">@android:drawable/ic_media_play</item>
+    <item name="ic_media_stop" type="drawable">@*android:drawable/ic_media_stop</item>
+
+    <item name="ic_action_add" type="drawable">@drawable/ic_action_add</item>
+</resources>

@@ -1,3 +1,42 @@
 <resources>
+    <!--Application Name-->
     <string name="app_name">Paranoid</string>
+
+    <!--Activity Names-->
+    <string name="main_activity">Paranoid</string>
+    <string name="settings_activity">Settings</string>
+    <string name="about_activity">About</string>
+
+    <!--Sidebar opening-->
+    <string name="sidebar_drawer_open">Open Sidebar</string>
+    <string name="sidebar_drawer_close">Close Sidebar</string>
+
+    <!--Menu Entries-->
+    <string name="menu_pool_properties">Pool Properties</string>
+    <string name="menu_pool_selector">Pool List</string>
+    <string name="menu_add_pool">Add New Pool</string>
+
+    <!--About Page-->
+    <string name="about_android_devs">Android Developers</string>
+    <string name="about_paranoid_devs">Paranoid Project Developers</string>
+    <string name="about_project_mentor">Project Mentor</string>
+
+    <!--New Pool Fragment-->
+    <string name="newpool_title">Create New Pool</string>
+    <string name="newpool_full">Pool Name</string>
+    <string name="newpool_proper">pool_name</string>
+    <string name="newpool_showAdvanced">Advanced Settings</string>
+    <string name="newpool_discovery">paranoid.discovery.razoft.net:10101</string>
+    <string name="newpool_add">Add</string>
+    <string name="newpool_cancel">Cancel</string>
+    <string name="newpool_add_success">Successfully added</string>
+
+    <!--pfsd status messages-->
+    <string name="status_pfsd_success">pfsd started successfully</string>
+    <string name="status_pfsd_fail">pfsd failed to start</string>
+    <string name="status_pfsd_stop">pfsd has been stopped</string>
+
+    <!--Special Attributes-->
+    <string name="attr_sidebar_header">Sidebar Header</string>
+    <string name="attr_upper_status_bar">Upper Status Bar</string>
 </resources>

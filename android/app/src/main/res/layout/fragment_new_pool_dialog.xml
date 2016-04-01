@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:measureWithLargestChild="false"
+    android:animateLayoutChanges="false">
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/newpool_full"
+        android:layout_gravity="center_horizontal"
+        android:hint="@string/newpool_full"
+        android:layout_margin="@dimen/fab_margin" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/newpool_proper"
+        android:layout_gravity="center_horizontal"
+        android:hint="@string/newpool_proper"
+        android:layout_margin="@dimen/fab_margin" />
+
+    <CheckBox
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/newpool_showAdvanced"
+        android:id="@+id/newpool_showAdvanced"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="@dimen/fab_margin" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/newpool_discovery"
+        android:layout_gravity="center_horizontal"
+        android:hint="@string/newpool_discovery"
+        android:text="@string/newpool_discovery"
+        android:layout_margin="@dimen/fab_margin"/>
+
+</LinearLayout>

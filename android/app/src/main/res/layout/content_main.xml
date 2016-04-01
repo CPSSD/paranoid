@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/design_tab_scrollable_min_width"
+        android:id="@+id/pfsd_status"
+        android:background="#ff0000"
+        android:contentDescription="@string/attr_upper_status_bar" />
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Current Status"
+                android:id="@+id/textView2"
+                android:layout_column="0"
+                android:layout_margin="@dimen/fab_margin" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Offline"
+                android:id="@+id/status_current"
+                android:layout_column="18"
+                android:layout_margin="@dimen/fab_margin" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Local Address"
+                android:id="@+id/textView4"
+                android:layout_column="0"
+                android:layout_margin="@dimen/fab_margin" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:id="@+id/status_local_address"
+                android:layout_column="18"
+                android:layout_margin="@dimen/fab_margin" />
+
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:layout_width="190dp"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Connected Peers"
+                android:id="@+id/textView"
+                android:layout_margin="@dimen/fab_margin" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="None"
+                android:id="@+id/status_connected_peers"
+                android:layout_column="18"
+                android:layout_margin="@dimen/fab_margin" />
+        </TableRow>
+
+    </TableLayout>
+
+</LinearLayout>

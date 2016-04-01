@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--Top Group-->
+    <group>
+        <item
+            android:id="@+id/pool_properties"
+            android:icon="@drawable/ic_menu_manage"
+            android:title="@string/menu_pool_properties" />
+    </group>
+
+    <!--Pool List-->
+    <group android:menuCategory="container">
+        <item android:title="@string/menu_pool_selector">
+            <menu android:id="@+id/menu_pool_selector">
+
+            </menu>
+        </item>
+    </group>
+
+    <!--Add Pool-->
+    <group>
+        <item
+            android:id="@+id/menu_add_pool"
+            android:icon="@drawable/ic_action_add"
+            android:title="@string/menu_add_pool"/>
+    </group>
+</menu>
