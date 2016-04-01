@@ -103,19 +103,13 @@ function newfs(form) {
   cmd += form.name.value;
 
   exec(cmd, {input:"2\n\n\n\n"}, function(error, stdout, stderr) {
-    var e = false;
     if (error !== null) {
       alert(error);
-      e = true;
+      return;
     }
 
     if (stdout !== "") {
       alert(stdout);
-      e = true;
-    }
-
-    if (e) {
-      return;
     }
 
     fileSystems = getFilesystems();
