@@ -24,13 +24,13 @@ const (
 )
 
 var (
-	port          = flag.Int("port", 10101, "port to listen on")
-	logDir        = flag.String("log-directory", "/var/log", "directory in which to create ParanoidDiscovery.log")
-	renewInterval = flag.Int("renew-interval", 5*60*1000, "time after which membership expires, in ms")
-	certFile      = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
-	keyFile       = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
-	loadState     = flag.Bool("state", true, "Load the Nodes from the statefile")
-	serverPort    = flag.Int("filePort", 10111, "File Server Port")
+	port           = flag.Int("port", 10101, "port to listen on")
+	logDir         = flag.String("log-directory", "/var/log", "directory in which to create ParanoidDiscovery.log")
+	renewInterval  = flag.Int("renew-interval", 5*60*1000, "time after which membership expires, in ms")
+	certFile       = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
+	keyFile        = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+	loadState      = flag.Bool("state", true, "Load the Nodes from the statefile")
+	fileServerPort = flag.Int("filePort", 10111, "File Server Port")
 )
 
 func createRPCServer() *grpc.Server {
@@ -67,7 +67,7 @@ func main() {
 
 	dnetserver.RenewInterval = renewDuration
 
-	if *port < 1 || *port > 65535 || *serverPort < 1 || *serverPort > 65535 {
+	if *port < 1 || *port > 65535 || *fileServerPort < 1 || *fileServerPort > 65535 {
 		dnetserver.Log.Fatal("Ports must be a number between 1 and 65535, inclusive.")
 	}
 
@@ -83,7 +83,7 @@ func main() {
 		dnetserver.LoadState()
 	}
 	server.FileMap = make(map[string]*server.FileCache)
-	servePort := strconv.Itoa(*serverPort)
+	servePort := strconv.Itoa(*fileServerPort)
 	go server.ServeFiles(servePort)
 	srv := createRPCServer()
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})

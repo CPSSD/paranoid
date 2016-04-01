@@ -137,6 +137,12 @@ func main() {
 			Action:    commands.Status,
 		},
 		{
+			Name:      "list-serve",
+			Usage:     "List Files currently being served.",
+			ArgsUsage: "pfs-name",
+			Action:    commands.ListServe,
+		},
+		{
 			Name:      "serve",
 			Usage:     "Serve file from discovery share server",
 			ArgsUsage: "pfs-name, file-name, [request limit, timeout]",

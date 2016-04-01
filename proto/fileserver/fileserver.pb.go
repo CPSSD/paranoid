@@ -12,6 +12,9 @@ It has these top-level messages:
 	ServeResponse
 	ServeRequest
 	UnServeRequest
+	ListServeRequest
+	ListServeResponse
+	ServedFiles
 */
 package fileserver
 
@@ -40,7 +43,7 @@ func (*ServeResponse) ProtoMessage()    {}
 
 type ServeRequest struct {
 	Uuid     string `protobuf:"bytes,1,opt,name=Uuid" json:"Uuid,omitempty"`
-	FileName string `protobuf:"bytes,2,opt,name=FileName" json:"FileName,omitempty"`
+	FilePath string `protobuf:"bytes,2,opt,name=FilePath" json:"FilePath,omitempty"`
 	FileData []byte `protobuf:"bytes,3,opt,name=FileData,proto3" json:"FileData,omitempty"`
 	Timeout  int32  `protobuf:"varint,4,opt,name=Timeout" json:"Timeout,omitempty"`
 	Limit    int32  `protobuf:"varint,5,opt,name=Limit" json:"Limit,omitempty"`
@@ -52,17 +55,54 @@ func (*ServeRequest) ProtoMessage()    {}
 
 type UnServeRequest struct {
 	Uuid     string `protobuf:"bytes,1,opt,name=Uuid" json:"Uuid,omitempty"`
-	TileHash string `protobuf:"bytes,2,opt,name=TileHash" json:"TileHash,omitempty"`
+	FilePath string `protobuf:"bytes,2,opt,name=FilePath" json:"FilePath,omitempty"`
 }
 
 func (m *UnServeRequest) Reset()         { *m = UnServeRequest{} }
 func (m *UnServeRequest) String() string { return proto.CompactTextString(m) }
 func (*UnServeRequest) ProtoMessage()    {}
 
+type ListServeRequest struct {
+	Uuid string `protobuf:"bytes,1,opt,name=Uuid" json:"Uuid,omitempty"`
+}
+
+func (m *ListServeRequest) Reset()         { *m = ListServeRequest{} }
+func (m *ListServeRequest) String() string { return proto.CompactTextString(m) }
+func (*ListServeRequest) ProtoMessage()    {}
+
+type ListServeResponse struct {
+	Data []*ServedFiles `protobuf:"bytes,1,rep,name=data" json:"data,omitempty"`
+}
+
+func (m *ListServeResponse) Reset()         { *m = ListServeResponse{} }
+func (m *ListServeResponse) String() string { return proto.CompactTextString(m) }
+func (*ListServeResponse) ProtoMessage()    {}
+
+func (m *ListServeResponse) GetData() []*ServedFiles {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+type ServedFiles struct {
+	FilePath       string `protobuf:"bytes,1,opt,name=FilePath" json:"FilePath,omitempty"`
+	FileHash       string `protobuf:"bytes,2,opt,name=FileHash" json:"FileHash,omitempty"`
+	AccessLimit    int32  `protobuf:"varint,3,opt,name=AccessLimit" json:"AccessLimit,omitempty"`
+	ExpirationTime string `protobuf:"bytes,4,opt,name=ExpirationTime" json:"ExpirationTime,omitempty"`
+}
+
+func (m *ServedFiles) Reset()         { *m = ServedFiles{} }
+func (m *ServedFiles) String() string { return proto.CompactTextString(m) }
+func (*ServedFiles) ProtoMessage()    {}
+
 func init() {
 	proto.RegisterType((*ServeResponse)(nil), "fileserver.ServeResponse")
 	proto.RegisterType((*ServeRequest)(nil), "fileserver.ServeRequest")
 	proto.RegisterType((*UnServeRequest)(nil), "fileserver.UnServeRequest")
+	proto.RegisterType((*ListServeRequest)(nil), "fileserver.ListServeRequest")
+	proto.RegisterType((*ListServeResponse)(nil), "fileserver.ListServeResponse")
+	proto.RegisterType((*ServedFiles)(nil), "fileserver.ServedFiles")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -75,6 +115,7 @@ type FileserverClient interface {
 	// Discovery Calls
 	ServeFile(ctx context.Context, in *ServeRequest, opts ...grpc.CallOption) (*ServeResponse, error)
 	UnServeFile(ctx context.Context, in *UnServeRequest, opts ...grpc.CallOption) (*ServeResponse, error)
+	ListServer(ctx context.Context, in *ListServeRequest, opts ...grpc.CallOption) (*ListServeResponse, error)
 }
 
 type fileserverClient struct {
@@ -103,12 +144,22 @@ func (c *fileserverClient) UnServeFile(ctx context.Context, in *UnServeRequest, 
 	return out, nil
 }
 
+func (c *fileserverClient) ListServer(ctx context.Context, in *ListServeRequest, opts ...grpc.CallOption) (*ListServeResponse, error) {
+	out := new(ListServeResponse)
+	err := grpc.Invoke(ctx, "/fileserver.Fileserver/ListServer", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Fileserver service
 
 type FileserverServer interface {
 	// Discovery Calls
 	ServeFile(context.Context, *ServeRequest) (*ServeResponse, error)
 	UnServeFile(context.Context, *UnServeRequest) (*ServeResponse, error)
+	ListServer(context.Context, *ListServeRequest) (*ListServeResponse, error)
 }
 
 func RegisterFileserverServer(s *grpc.Server, srv FileserverServer) {
@@ -139,6 +190,18 @@ func _Fileserver_UnServeFile_Handler(srv interface{}, ctx context.Context, dec f
 	return out, nil
 }
 
+func _Fileserver_ListServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ListServeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(FileserverServer).ListServer(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Fileserver_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "fileserver.Fileserver",
 	HandlerType: (*FileserverServer)(nil),
@@ -150,6 +213,10 @@ var _Fileserver_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnServeFile",
 			Handler:    _Fileserver_UnServeFile_Handler,
+		},
+		{
+			MethodName: "ListServer",
+			Handler:    _Fileserver_ListServer_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},

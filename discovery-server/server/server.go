@@ -5,14 +5,16 @@ import (
 	"github.com/cpssd/paranoid/logger"
 	"log"
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
 type FileCache struct {
+	Uuid           string
 	AccessAmmount  int32
 	AccessLimit    int32
 	FileData       []byte
-	FileName       string
+	FilePath       string
 	ExpirationTime time.Time
 }
 
@@ -29,9 +31,10 @@ func getFileFromHash(hash string) ([]byte, string, error) {
 	}
 	if time.Now().After(value.ExpirationTime) || value.AccessAmmount >= value.AccessLimit {
 		Log.Info("Expired Filed attempted to be accessed")
+		delete(FileMap, hash)
 		return []byte(""), "", fmt.Errorf("File Expired")
 	}
-	return value.FileData, value.FileName, nil
+	return value.FileData, filepath.Base(value.FilePath), nil
 }
 
 func ServeFiles(serverPort string) {

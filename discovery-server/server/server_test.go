@@ -31,7 +31,7 @@ func testFileShare(t *testing.T) {
 
 	request := fileserver.ServeRequest{
 		Uuid:     "blahblah1",
-		FileName: "asdf.txt",
+		FilePath: "asdf.txt",
 		FileData: []byte("This is a Test"),
 	}
 

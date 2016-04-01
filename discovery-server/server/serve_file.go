@@ -8,7 +8,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"strings"
 	"time"
 )
 
@@ -23,14 +22,15 @@ func (s *FileserverServer) ServeFile(ctx context.Context, req *pb.ServeRequest) 
 	for i := 0; i < len(dnetserver.Nodes); i++ {
 		if dnetserver.Nodes[i].Data.Uuid == req.Uuid {
 			hasher := md5.New()
-			fileUUID := req.FileName + req.Uuid
-			filename := strings.Split(req.FileName, "/")
+			fileUUID := req.FilePath + req.Uuid
 			hasher.Write([]byte(fileUUID))
 			hash := hex.EncodeToString(hasher.Sum(nil))
-			fileData := &FileCache{0,
+			fileData := &FileCache{
+				req.Uuid,
+				0, //The file hasnt been used yet
 				req.Limit,
 				req.FileData,
-				filename[len(filename)-1],
+				req.FilePath,
 				time.Now().Add(time.Minute * time.Duration(req.Timeout))}
 			FileMap[hash] = fileData
 			return &pb.ServeResponse{hash, Port}, nil

@@ -6,6 +6,7 @@ import (
 	pb "github.com/cpssd/paranoid/proto/fileserver"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -91,7 +92,7 @@ func Serve(c *cli.Context) {
 	response, err := serverClient.ServeFile(context.Background(),
 		&pb.ServeRequest{
 			Uuid:     string(uuid),
-			FileName: serveFilePath,
+			FilePath: serveFilePath,
 			FileData: serveData,
 			Timeout:  int32(requestTimeout),
 			Limit:    int32(requestLimit),

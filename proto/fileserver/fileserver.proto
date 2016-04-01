@@ -6,6 +6,8 @@ service Fileserver {
   // Discovery Calls
   rpc ServeFile (ServeRequest) returns (ServeResponse) {}
   rpc UnServeFile (UnServeRequest) returns (ServeResponse) {}
+  rpc ListServer (ListServeRequest) returns (ListServeResponse) {}
+
 }
 
 
@@ -16,7 +18,7 @@ message ServeResponse {
 
 message ServeRequest {
   string      Uuid = 1; // required
-  string      FileName = 2;// required
+  string      FilePath = 2;// required
   bytes       FileData = 3;// required
   int32       Timeout = 4;// optional
   int32       Limit = 5;// optional
@@ -24,5 +26,20 @@ message ServeRequest {
 
 message UnServeRequest {
   string    Uuid = 1; // required
-  string    TileHash = 2;// required
+  string    FilePath = 2;// required
+}
+
+message ListServeRequest {
+  string    Uuid = 1; // required
+}
+
+message ListServeResponse {
+  repeated ServedFiles data = 1; // required
+}
+
+message ServedFiles {
+  string    FilePath = 1; // required
+  string    FileHash = 2; // required
+  int32     AccessLimit = 3; // required
+  string    ExpirationTime = 4; // required
 }
