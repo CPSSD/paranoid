@@ -10,12 +10,15 @@ service DiscoveryNetwork {
 
 message EmptyMessage {}
 message DisconnectRequest {
-  Node node = 1; // required
+  string pool = 1; // required
+  string password = 2; // optional
+  Node node = 3; // required
 }
 
 message JoinRequest {
   string pool = 1; // required
-  Node node = 2; // required
+  string password = 2; // optional
+  Node node = 3; // required
 }
 
 message JoinResponse {

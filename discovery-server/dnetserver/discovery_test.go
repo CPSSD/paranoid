@@ -39,17 +39,23 @@ func TestStateSave(t *testing.T) {
 		t.Error("Failed to read state file: ", err)
 	}
 
-	var nodes []Node
-	err = json.Unmarshal(stateFileData, &nodes)
+	var persistentState PersistentState
+	err = json.Unmarshal(stateFileData, &persistentState)
 	if err != nil {
 		Log.Fatal("Failed to un-marshal state file:", err)
 	}
 
-	if len(nodes) != 1 {
-		t.Error("wrong number of nodes in state file:", len(nodes))
+	if len(persistentState.Nodes) != 1 {
+		t.Error("wrong number of nodes in state file:", len(persistentState.Nodes))
 	}
-	if nodes[0].Data.Uuid != "blahblah1" || nodes[0].Pool != "TestPool" {
-		t.Error("Node in state file is wrong: ", nodes[0])
+	if len(persistentState.Pools) != 1 {
+		t.Error("wrong number of pools in state file:", len(persistentState.Pools))
+	}
+	if persistentState.Nodes[0].Data.Uuid != "blahblah1" || persistentState.Nodes[0].Pool != "TestPool" {
+		t.Error("Node in state file is wrong: ", persistentState.Nodes[0])
+	}
+	if persistentState.Pools[0].Name != "TestPool" {
+		t.Error("Pool in state file is wrong: ", persistentState.Pools[0])
 	}
 }
 
@@ -121,6 +127,7 @@ func TestDiscoveryNetwork(t *testing.T) {
 
 	//Disconnect node2
 	disconnectRequest := pb.DisconnectRequest{
+		Pool: "TestPool",
 		Node: &pb.Node{CommonName: "TestNode2", Ip: "1.1.1.2", Port: "1001", Uuid: "blahblah2"},
 	}
 	_, err = discovery.Disconnect(nil, &disconnectRequest)

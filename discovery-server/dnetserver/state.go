@@ -6,10 +6,19 @@ import (
 	"os"
 )
 
+type PersistentState struct {
+	Nodes []Node `json:"nodes"`
+	Pools []Pool `json:"pools"`
+}
+
 // saveState saves the current state of the discovery server to a file in it's
 // meta directory. the state includes all pools and nodes
 func saveState() {
-	stateData, err := json.Marshal(Nodes)
+	stateData, err := json.Marshal(&PersistentState{
+		Nodes: Nodes,
+		Pools: Pools,
+	})
+
 	if err != nil {
 		Log.Fatal("Couldn't marshal stateData:", err)
 	}
@@ -36,10 +45,15 @@ func LoadState() {
 
 	fileData, err := ioutil.ReadFile(StateFilePath)
 
-	err = json.Unmarshal(fileData, &Nodes)
+	perState := &PersistentState{}
+
+	err = json.Unmarshal(fileData, perState)
 	if err != nil {
 		Log.Fatal("Failed to un-marshal state file:", err)
 	}
+
+	Nodes = perState.Nodes
+	Pools = perState.Pools
 }
 
 // prepareStateFile prepares the statefile for a state update and returns the file

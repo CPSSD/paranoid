@@ -2,6 +2,7 @@ package dnetserver
 
 import (
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -12,6 +13,30 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 	defer saveState()
 	nodes := getNodes(req.Pool, req.Node.Uuid)
 	response := pb.JoinResponse{RenewInterval.Nanoseconds() / 1000 / 1000, nodes}
+
+	seenPool, err := checkPoolPassword(req.Pool, req.Password, req.Node)
+	if err != nil {
+		return &pb.JoinResponse{}, err
+	}
+
+	if seenPool == false {
+		hash := make([]byte, 0)
+		if req.Password != "" {
+			hash, err = bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+			if err != nil {
+				returnError := grpc.Errorf(codes.Internal,
+					"error hashing password: %s",
+					err,
+				)
+				return &pb.JoinResponse{}, returnError
+			}
+		}
+		newPool := Pool{
+			Name:         req.Pool,
+			PasswordHash: hash,
+		}
+		Pools = append(Pools, newPool)
+	}
 
 	// Go through each node and check was the node there
 	for i := 0; i < len(Nodes); i++ {

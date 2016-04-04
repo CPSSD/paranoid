@@ -33,9 +33,9 @@ func SetDiscovery(host, port string) {
 	}
 }
 
-func JoinDiscovery(pool string) {
-	if err := Join(pool); err != nil {
-		if err = retryJoin(pool); err != nil {
+func JoinDiscovery(pool, password string) {
+	if err := Join(pool, password); err != nil {
+		if err = retryJoin(pool, password); err != nil {
 			Log.Fatal("Failure dialing discovery server after multiple attempts, Giving up", err)
 		}
 	}
@@ -86,10 +86,10 @@ func JoinCluster() error {
 	}
 }
 
-func retryJoin(pool string) error {
+func retryJoin(pool, password string) error {
 	var err error
 	for i := 0; i < 10; i++ {
-		err = Join(pool)
+		err = Join(pool, password)
 		if err == nil {
 			break
 		}

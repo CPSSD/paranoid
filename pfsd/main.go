@@ -198,8 +198,8 @@ func getFileSystemAttributes() {
 func main() {
 	flag.Parse()
 
-	if len(flag.Args()) < 5 {
-		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <mount_point> <Discovery Server> <Discovery Port> <Discovery Pool>\n")
+	if len(flag.Args()) < 6 {
+		fmt.Print("Usage:\n\tpfsd <paranoid_directory> <mount_point> <Discovery Server> <Discovery Port> <Discovery Pool>, <Discovery Pool Password>\n")
 		os.Exit(1)
 	}
 
@@ -293,7 +293,7 @@ func main() {
 		}
 
 		dnetclient.SetDiscovery(flag.Arg(2), flag.Arg(3))
-		dnetclient.JoinDiscovery(flag.Arg(4))
+		dnetclient.JoinDiscovery(flag.Arg(4), flag.Arg(5))
 		startRPCServer(&lis)
 	}
 	createPid("pfsd")
