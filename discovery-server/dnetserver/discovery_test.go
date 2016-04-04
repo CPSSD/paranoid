@@ -167,3 +167,51 @@ func TestDiscoveryNetwork(t *testing.T) {
 		t.Error("Incorrect nodes returned :", joinResponse.Nodes)
 	}
 }
+
+func TestDiscoveryPasswords(t *testing.T) {
+	discovery := DiscoveryServer{}
+
+	//Join node1 with password
+	joinRequest := pb.JoinRequest{
+		Node:     &pb.Node{CommonName: "TestNode1", Ip: "1.1.1.1", Port: "1001", Uuid: "secretnode1"},
+		Pool:     "TestPasswordPool",
+		Password: "qwerty",
+	}
+
+	_, err := discovery.Join(nil, &joinRequest)
+	if err != nil {
+		t.Error("Error joining network : ", err)
+	}
+
+	//Join node2 without password
+	joinRequest = pb.JoinRequest{
+		Node: &pb.Node{CommonName: "TestNode2", Ip: "1.1.1.2", Port: "1001", Uuid: "secretnode2"},
+		Pool: "TestPasswordPool",
+	}
+	_, err = discovery.Join(nil, &joinRequest)
+	if err == nil {
+		t.Error("Node2 sucessfully joined password protected pool without password")
+	}
+
+	//Join node3 with incorrect password
+	joinRequest = pb.JoinRequest{
+		Node:     &pb.Node{CommonName: "TestNode3", Ip: "1.1.1.1", Port: "1002", Uuid: "secretnode3"},
+		Pool:     "TestPasswordPool",
+		Password: "qwerty2",
+	}
+	_, err = discovery.Join(nil, &joinRequest)
+	if err == nil {
+		t.Error("Node3 sucessfully joined password protected pool with incorrect password")
+	}
+
+	//Join node4 with correct password
+	joinRequest = pb.JoinRequest{
+		Node:     &pb.Node{CommonName: "TestNode4", Ip: "1.1.1.4", Port: "1001", Uuid: "secretnode4"},
+		Pool:     "TestPasswordPool",
+		Password: "qwerty",
+	}
+	_, err = discovery.Join(nil, &joinRequest)
+	if err != nil {
+		t.Error("Error joining network : ", err)
+	}
+}
