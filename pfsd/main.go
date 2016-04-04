@@ -63,17 +63,28 @@ func startRPCServer(lis *net.Listener) {
 		CommonName: globals.ThisNode.CommonName,
 		NodeID:     globals.ThisNode.UUID,
 	}
+
 	//First node to join a given cluster
 	if len(globals.Nodes.GetAll()) == 0 {
-		globals.RaftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, globals.ParanoidDir, path.Join(globals.ParanoidDir, "meta", "raft"),
+		globals.RaftNetworkServer = raft.NewRaftNetworkServer(
+			nodeDetails,
+			globals.ParanoidDir,
+			path.Join(globals.ParanoidDir, "meta", "raft"),
 			&raft.StartConfiguration{
 				Peers: []raft.Node{},
 			},
-			globals.TLSEnabled, globals.TLSSkipVerify)
+			globals.TLSEnabled,
+			globals.TLSSkipVerify)
 	} else {
-		globals.RaftNetworkServer = raft.NewRaftNetworkServer(nodeDetails, globals.ParanoidDir, path.Join(globals.ParanoidDir, "meta", "raft"), nil,
-			globals.TLSEnabled, globals.TLSSkipVerify)
+		globals.RaftNetworkServer = raft.NewRaftNetworkServer(
+			nodeDetails,
+			globals.ParanoidDir,
+			path.Join(globals.ParanoidDir, "meta", "raft"),
+			nil,
+			globals.TLSEnabled,
+			globals.TLSSkipVerify)
 	}
+
 	rpb.RegisterRaftNetworkServer(srv, globals.RaftNetworkServer)
 
 	globals.Wait.Add(1)
@@ -88,6 +99,7 @@ func startRPCServer(lis *net.Listener) {
 
 	//Do we need to request to join a cluster
 	if globals.RaftNetworkServer.State.Configuration.HasConfiguration() == false {
+		log.Info("Attempting to join raft cluster")
 		err := dnetclient.JoinCluster()
 		if err != nil {
 			log.Fatal("Unable to join a raft cluster")

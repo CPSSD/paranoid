@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net"
 	"strconv"
+	"sync"
 )
 
 var (
@@ -26,15 +27,27 @@ const attemptedPortAssignments = 10
 
 //Discovers UPnP devices on the network.
 func DiscoverDevices() error {
-	ipclients, _, err := internetgateway1.NewWANIPConnection1Clients()
-	if err == nil {
-		uPnPClientsIP = ipclients
-	}
-	pppclients, _, err := internetgateway1.NewWANPPPConnection1Clients()
-	if err == nil {
-		uPnPClientsPPP = pppclients
-	}
-	if len(ipclients) > 0 || len(pppclients) > 0 {
+	var discoveryFinished sync.WaitGroup
+	discoveryFinished.Add(2)
+
+	go func() {
+		defer discoveryFinished.Done()
+		ipclients, _, err := internetgateway1.NewWANIPConnection1Clients()
+		if err == nil {
+			uPnPClientsIP = ipclients
+		}
+	}()
+
+	go func() {
+		defer discoveryFinished.Done()
+		pppclients, _, err := internetgateway1.NewWANPPPConnection1Clients()
+		if err == nil {
+			uPnPClientsPPP = pppclients
+		}
+	}()
+
+	discoveryFinished.Wait()
+	if len(uPnPClientsIP) > 0 || len(uPnPClientsPPP) > 0 {
 		return nil
 	}
 	return errors.New("No devices found")
