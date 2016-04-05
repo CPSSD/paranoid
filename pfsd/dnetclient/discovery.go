@@ -66,7 +66,7 @@ func pingPeers() {
 }
 
 //JoinCluster sends a request to all peers to request to be added to the cluster
-func JoinCluster() error {
+func JoinCluster(password string) error {
 	timer := time.NewTimer(peerPingTimeOut)
 	defer timer.Stop()
 	for {
@@ -78,7 +78,7 @@ func JoinCluster() error {
 		case <-timer.C:
 			return errors.New("Failed to join raft cluster")
 		default:
-			err := pnetclient.JoinCluster()
+			err := pnetclient.JoinCluster(password)
 			if err == nil {
 				return nil
 			}

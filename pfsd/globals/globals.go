@@ -6,6 +6,7 @@ import (
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/raft"
+	"golang.org/x/crypto/bcrypt"
 	"os"
 	"path"
 	"sync"
@@ -61,6 +62,19 @@ var TLSEnabled bool
 
 // If true, PFSD will not verify the TLS credentials of anything it connects to
 var TLSSkipVerify bool
+
+// The hash of the password required to join the raft cluster
+var PoolPasswordHash []byte
+
+func SetPoolPasswordHash(password string) error {
+	PoolPasswordHash = make([]byte, 0)
+	if password != "" {
+		var err error
+		PoolPasswordHash, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		return err
+	}
+	return nil
+}
 
 // Global waitgroup for all goroutines in PFSD
 var Wait sync.WaitGroup

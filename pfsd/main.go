@@ -42,7 +42,7 @@ var (
 	verbose = flag.Bool("v", false, "Use verbose logging")
 )
 
-func startRPCServer(lis *net.Listener) {
+func startRPCServer(lis *net.Listener, password string) {
 	var opts []grpc.ServerOption
 	if globals.TLSEnabled {
 		log.Info("Starting ParanoidNetwork server with TLS.")
@@ -100,7 +100,7 @@ func startRPCServer(lis *net.Listener) {
 	//Do we need to request to join a cluster
 	if globals.RaftNetworkServer.State.Configuration.HasConfiguration() == false {
 		log.Info("Attempting to join raft cluster")
-		err := dnetclient.JoinCluster()
+		err := dnetclient.JoinCluster(password)
 		if err != nil {
 			log.Fatal("Unable to join a raft cluster")
 		}
@@ -294,7 +294,11 @@ func main() {
 
 		dnetclient.SetDiscovery(flag.Arg(2), flag.Arg(3))
 		dnetclient.JoinDiscovery(flag.Arg(4), flag.Arg(5))
-		startRPCServer(&lis)
+		err = globals.SetPoolPasswordHash(flag.Arg(5))
+		if err != nil {
+			log.Fatal("Error setting up password hash:", err)
+		}
+		startRPCServer(&lis, flag.Arg(5))
 	}
 	createPid("pfsd")
 	pfi.StartPfi(*verbose)

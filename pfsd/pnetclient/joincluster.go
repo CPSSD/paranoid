@@ -9,7 +9,7 @@ import (
 )
 
 //JoinCluster is used to request to join a raft cluster
-func JoinCluster() error {
+func JoinCluster(password string) error {
 	ip, err := upnp.GetIP()
 	if err != nil {
 		Log.Fatal("Can not contact peers: unable to get IP. Error:", err)
@@ -27,11 +27,12 @@ func JoinCluster() error {
 
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err = client.JoinCluster(context.Background(), &pb.PingRequest{
-			Ip:         ip,
-			Port:       globals.ThisNode.Port,
-			CommonName: globals.ThisNode.CommonName,
-			Uuid:       globals.ThisNode.UUID,
+		_, err = client.JoinCluster(context.Background(), &pb.JoinClusterRequest{
+			Ip:           ip,
+			Port:         globals.ThisNode.Port,
+			CommonName:   globals.ThisNode.CommonName,
+			Uuid:         globals.ThisNode.UUID,
+			PoolPassword: password,
 		})
 		if err != nil {
 			Log.Error("Error requesting to join cluster", node, ":", err)
