@@ -1,0 +1,11 @@
+# nwjs files
+locales/
+credits.html
+icudtl.dat
+*.bin
+*.pak
+lib/
+nw
+node_modules/
+build/
+res/fonts

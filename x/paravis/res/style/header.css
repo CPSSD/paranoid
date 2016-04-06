@@ -1,0 +1,23 @@
+header {
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--bg-header);
+  padding: var(--std-offset);
+}
+
+header .title {
+  float: left;
+  font-size: 1rem;
+  text-transform: capitalize;
+}
+
+/* Main Exit button */
+header .exit-button {
+  background-color: var(--bg-red);
+  height: 1rem;
+  width: 1rem;
+  float: right;
+}

@@ -1,0 +1,7 @@
+/* Variables */
+:root {
+  --bg-red: red;
+  --bg-header: rgba(255,255,255,0.1);
+
+  --std-offset: 0.5rem;
+}

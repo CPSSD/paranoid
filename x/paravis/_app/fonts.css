@@ -1,0 +1,21 @@
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Roboto'), local('OpenSans'), url(../res/fonts/Roboto-Regular.ttf) format('ttf');
+  unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: 'Roboto';
+  font-style: thin;
+  font-weight: 300;
+  src: local('Roboto'), local('OpenSans'), url(../res/fonts/Roboto-Thin.ttf) format('ttf');
+  unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+}
+@font-face {
+  font-family: 'Roboto';
+  font-style: medium;
+  font-weight: 500;
+  src: local('Roboto'), local('OpenSans'), url(../res/fonts/Roboto-Medium.ttf) format('ttf');
+  unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
+}

@@ -1,0 +1,14 @@
+{
+  "name":"paravis",
+  "description":"Paranoid Visualizer",
+  "version":"0.1.0",
+  "main":"/_app/main.html",
+  "window": {
+    "frame": false,
+    "fullscreen": true,
+    "resizable": true,
+    "title":"%name"
+  },
+  "js-flags":"--harmony",
+  "user-agent": "%name/%ver (%osinfo)"
+}

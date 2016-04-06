@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/_app/fonts.css">
+    <script type="application/javascript" src="/lib/jquery-2.2.3.min.js"></script>
+    <script type="application/javascript">
+      var fs = require('fs');
+      var elem = {};
+      
+      // Load all stylesheets
+      var stylesheetNames = fs.readdirSync("res/style");
+      for(var i = stylesheetNames.length; i--;){
+        elem = document.createElement("link")
+        elem.setAttribute("type", "text/css")
+        elem.setAttribute("rel", "stylesheet")
+        elem.setAttribute("href","/res/style/"+stylesheetNames[i]);
+
+        document.head.appendChild(elem);
+      }
+
+      // Load all Activities
+      var activityNames = fs.readdirSync("src/activity");
+      for(var i = activityNames.length; i--;){
+        elem = document.createElement("script")
+        elem.setAttribute("type", "application/javascript")
+        elem.setAttribute("src", "/src/activity/"+activityNames[i]);
+
+        document.head.appendChild(elem);
+      }
+    </script>
+    <script type="application/javascript" src="/_app/controller.js"></script>
+    <script type="application/javascript" src="/_app/Activity.js"></script>
+  </head>
+  <body>
+    <!-- Everything will be added here -->
+  </body>
+</html>
