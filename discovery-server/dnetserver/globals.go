@@ -25,6 +25,7 @@ type Node struct {
 // Pool struct to hold the pool data
 type Pool struct {
 	Name         string `json:"name"`
+	PasswordSalt []byte `json:"passwordsalt"`
 	PasswordHash []byte `json:"passwordhash"`
 }
 
@@ -54,7 +55,7 @@ func checkPoolPassword(pool, password string, node *pb.Node) (seenPool bool, err
 					return true, returnError
 				}
 			} else {
-				err := bcrypt.CompareHashAndPassword(Pools[i].PasswordHash, []byte(password))
+				err := bcrypt.CompareHashAndPassword(Pools[i].PasswordHash, append(Pools[i].PasswordSalt, []byte(password)...))
 				if err != nil {
 					Log.Errorf("Join: node %s attempted join password protected pool with incorrect password: %s",
 						node.Uuid,

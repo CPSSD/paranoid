@@ -17,7 +17,7 @@ func (s *ParanoidServer) JoinCluster(ctx context.Context, req *pb.JoinClusterReq
 			return &pb.EmptyMessage{}, errors.New("cluster is password protected but no password was given")
 		}
 	} else {
-		err := bcrypt.CompareHashAndPassword(globals.PoolPasswordHash, []byte(req.PoolPassword))
+		err := bcrypt.CompareHashAndPassword(globals.PoolPasswordHash, append(globals.PoolPasswordSalt, []byte(req.PoolPassword)...))
 		if err != nil {
 			return &pb.EmptyMessage{}, fmt.Errorf("unable to add node to raft cluster, password error:", err)
 		}

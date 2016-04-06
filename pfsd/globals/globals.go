@@ -1,16 +1,23 @@
 package globals
 
 import (
+	"crypto/rand"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/raft"
 	"golang.org/x/crypto/bcrypt"
+	"io"
 	"os"
 	"path"
 	"sync"
 	"time"
+)
+
+const (
+	PASSWORD_SALT_LENGTH int = 64
 )
 
 var Log *logger.ParanoidLogger
@@ -65,12 +72,21 @@ var TLSSkipVerify bool
 
 // The hash of the password required to join the raft cluster
 var PoolPasswordHash []byte
+var PoolPasswordSalt []byte
 
 func SetPoolPasswordHash(password string) error {
 	PoolPasswordHash = make([]byte, 0)
+	PoolPasswordSalt = make([]byte, PASSWORD_SALT_LENGTH)
+	n, err := io.ReadFull(rand.Reader, PoolPasswordSalt)
+	if err != nil {
+		return err
+	}
+	if n != PASSWORD_SALT_LENGTH {
+		return errors.New("unable to read correct number of bytes from random number generator")
+	}
+
 	if password != "" {
-		var err error
-		PoolPasswordHash, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		PoolPasswordHash, err = bcrypt.GenerateFromPassword(append(PoolPasswordSalt, []byte(password)...), bcrypt.DefaultCost)
 		return err
 	}
 	return nil

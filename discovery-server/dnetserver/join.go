@@ -1,11 +1,17 @@
 package dnetserver
 
 import (
+	"crypto/rand"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"io"
+)
+
+const (
+	PASSWORD_SALT_LENGTH int = 64
 )
 
 // Join method for Discovery Server
@@ -21,8 +27,24 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 
 	if seenPool == false {
 		hash := make([]byte, 0)
+		salt := make([]byte, PASSWORD_SALT_LENGTH)
+		n, err := io.ReadFull(rand.Reader, salt)
+		if err != nil {
+			returnError := grpc.Errorf(codes.Internal,
+				"error hashing password: %s",
+				err,
+			)
+			return &pb.JoinResponse{}, returnError
+		}
+		if n != PASSWORD_SALT_LENGTH {
+			returnError := grpc.Errorf(codes.Internal,
+				"error hashing password: unable to read salt from random number generator",
+			)
+			return &pb.JoinResponse{}, returnError
+		}
+
 		if req.Password != "" {
-			hash, err = bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+			hash, err = bcrypt.GenerateFromPassword(append(salt, []byte(req.Password)...), bcrypt.DefaultCost)
 			if err != nil {
 				returnError := grpc.Errorf(codes.Internal,
 					"error hashing password: %s",
@@ -33,6 +55,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 		}
 		newPool := Pool{
 			Name:         req.Pool,
+			PasswordSalt: salt,
 			PasswordHash: hash,
 		}
 		Pools = append(Pools, newPool)
