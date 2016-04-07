@@ -20,12 +20,12 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 	nodes := getNodes(req.Pool, req.Node.Uuid)
 	response := pb.JoinResponse{RenewInterval.Nanoseconds() / 1000 / 1000, nodes}
 
-	seenPool, err := checkPoolPassword(req.Pool, req.Password, req.Node)
-	if err != nil {
-		return &pb.JoinResponse{}, err
-	}
-
-	if seenPool == false {
+	if Pools[req.Pool] != nil {
+		err := checkPoolPassword(req.Pool, req.Password, req.Node)
+		if err != nil {
+			return &pb.JoinResponse{}, err
+		}
+	} else {
 		hash := make([]byte, 0)
 		salt := make([]byte, PASSWORD_SALT_LENGTH)
 		n, err := io.ReadFull(rand.Reader, salt)
@@ -53,12 +53,11 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 				return &pb.JoinResponse{}, returnError
 			}
 		}
-		newPool := Pool{
-			Name:         req.Pool,
+		newPool := &PoolInfo{
 			PasswordSalt: salt,
 			PasswordHash: hash,
 		}
-		Pools = append(Pools, newPool)
+		Pools[req.Pool] = newPool
 	}
 
 	// Go through each node and check was the node there

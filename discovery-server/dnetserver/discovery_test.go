@@ -14,6 +14,7 @@ import (
 
 func TestMain(m *testing.M) {
 	Log = logger.New("discoveryTest", "discoveryTest", os.DevNull)
+	Pools = make(map[string]*PoolInfo)
 	StateFilePath = path.Join(os.TempDir(), "server_state.json")
 	os.Exit(m.Run())
 }
@@ -54,8 +55,8 @@ func TestStateSave(t *testing.T) {
 	if persistentState.Nodes[0].Data.Uuid != "blahblah1" || persistentState.Nodes[0].Pool != "TestPool" {
 		t.Error("Node in state file is wrong: ", persistentState.Nodes[0])
 	}
-	if persistentState.Pools[0].Name != "TestPool" {
-		t.Error("Pool in state file is wrong: ", persistentState.Pools[0])
+	if persistentState.Pools["TestPool"] == nil {
+		t.Error("Pool in state file is wrong: ", persistentState.Pools["TestPool"])
 	}
 }
 

@@ -43,6 +43,7 @@ func createRPCServer() *grpc.Server {
 func main() {
 	flag.Parse()
 	dnetserver.Log = logger.New("main", "discovery-server", *logDir)
+	dnetserver.Pools = make(map[string]*dnetserver.PoolInfo)
 	err := dnetserver.Log.SetOutput(logger.LOGFILE | logger.STDERR)
 	if err != nil {
 		dnetserver.Log.Error("Failed to set logger output:", err)

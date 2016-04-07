@@ -7,8 +7,8 @@ import (
 )
 
 type PersistentState struct {
-	Nodes []Node `json:"nodes"`
-	Pools []Pool `json:"pools"`
+	Nodes []Node               `json:"nodes"`
+	Pools map[string]*PoolInfo `json:"pools"`
 }
 
 // saveState saves the current state of the discovery server to a file in it's
