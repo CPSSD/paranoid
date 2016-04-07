@@ -2,6 +2,7 @@ class MainActivity extends Activity{
   constructor(){
     super();
     this.layout = "main";
+    this.db = new KeyValueDB(1, PermanentDB);
   }
 
   layout(){
