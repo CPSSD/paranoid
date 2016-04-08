@@ -36,7 +36,6 @@ var (
 
 	certFile   = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
 	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
-	noNetwork  = flag.Bool("no_networking", false, "Do not perform any networking")
 	skipVerify = flag.Bool("skip_verification", false,
 		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
 	verbose = flag.Bool("v", false, "Use verbose logging")
@@ -152,6 +151,7 @@ func getFileSystemAttributes() {
 	}
 
 	globals.Encrypted = attributes.Encrypted
+	globals.NetworkOff = attributes.NetworkOff
 	encryption.Encrypted = attributes.Encrypted
 
 	if attributes.Encrypted {
@@ -235,7 +235,7 @@ func main() {
 		globals.TLSEnabled = false
 	}
 
-	if !*noNetwork {
+	if !globals.NetworkOff {
 		discoveryPort, err := strconv.Atoi(flag.Arg(3))
 		if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
 			log.Fatal("Discovery port must be a number between 1 and 65535, inclusive.")

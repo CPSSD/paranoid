@@ -23,7 +23,7 @@ func stopAllServices() {
 	// Save all KeyPieces to disk, to ensure we haven't missed any so far.
 	globals.HeldKeyPieces.SaveToDisk()
 
-	if !*noNetwork {
+	if !globals.NetworkOff {
 		close(globals.RaftNetworkServer.Quit)
 		srv.Stop()
 		globals.RaftNetworkServer.Wait.Wait()
