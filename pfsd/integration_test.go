@@ -81,7 +81,16 @@ func TestKillSignal(t *testing.T) {
 		t.Fatal("unable to save file system attributes to file:", err)
 	}
 
-	pfsd := exec.Command("pfsd", path.Join(os.TempDir(), "testksDirectory"), path.Join(os.TempDir(), "testksMountpoint"), "localhost", "10102", "testPool")
+	pfsd := exec.Command(
+		"pfsd",
+		path.Join(os.TempDir(), "testksDirectory"),
+		path.Join(os.TempDir(), "testksMountpoint"),
+		"localhost",
+		"10102",
+		"testPool",
+		"",
+	)
+
 	err = pfsd.Start()
 	if err != nil {
 		t.Fatal(err)

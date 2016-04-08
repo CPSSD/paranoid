@@ -11,7 +11,7 @@ service ParanoidNetwork {
     // PFSD instance running on the client.
     rpc Ping (PingRequest) returns (EmptyMessage) {}
     // Used by a new node to let other nodes it is available to join the cluster.
-    rpc JoinCluster (PingRequest) returns (EmptyMessage) {}
+    rpc JoinCluster (JoinClusterRequest) returns (EmptyMessage) {}
 
     // Cryptography calls
     rpc SendKeyPiece (KeyPiece) returns (EmptyMessage) {}
@@ -25,6 +25,15 @@ message PingRequest {
     string port = 2;  // required
     string common_name = 3; // required
     string uuid = 4; // required
+}
+
+message JoinClusterRequest {
+    string ip = 1;  // required
+    string port = 2;  // required
+    string common_name = 3; // required
+    string uuid = 4; // required
+
+    string pool_password = 5; // optional
 }
 
 message KeyPiece {

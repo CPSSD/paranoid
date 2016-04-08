@@ -36,6 +36,7 @@ func doMount(c *cli.Context, args []string) {
 	if serverAddress = c.String("discovery-addr"); len(serverAddress) == 0 {
 		serverAddress = "paranoid.discovery.razoft.net:10101"
 	}
+	poolPassword := c.String("pool-password")
 	pfsName := args[0]
 	mountPoint := args[1]
 
@@ -124,7 +125,7 @@ func doMount(c *cli.Context, args []string) {
 			//TODO(terry): Add a way to check if the given cert is its own CA,
 			// and skip validation based on that.
 			pfsdArgs := []string{"-cert=" + certPath, "-key=" + keyPath, "-skip_verification",
-				pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool}
+				pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool, poolPassword}
 			var pfsdFlags []string
 			if c.GlobalBool("verbose") {
 				pfsdFlags = append(pfsdFlags, "-v")
@@ -153,7 +154,7 @@ func doMount(c *cli.Context, args []string) {
 			}
 
 			Log.Info("Starting PFSD in unsecure mode.")
-			pfsdArgs := []string{pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool}
+			pfsdArgs := []string{pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool, poolPassword}
 			var pfsdFlags []string
 			if c.GlobalBool("verbose") {
 				pfsdFlags = append(pfsdFlags, "-v")
@@ -171,7 +172,7 @@ func doMount(c *cli.Context, args []string) {
 		}
 	} else {
 		//No need to worry about security certs
-		pfsdArgs := []string{pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool}
+		pfsdArgs := []string{pfsDir, mountPoint, splitAddress[0], splitAddress[1], pool, poolPassword}
 		var pfsdFlags []string
 		if c.GlobalBool("verbose") {
 			pfsdFlags = append(pfsdFlags, "-v")

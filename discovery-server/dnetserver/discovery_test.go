@@ -14,6 +14,7 @@ import (
 
 func TestMain(m *testing.M) {
 	Log = logger.New("discoveryTest", "discoveryTest", os.DevNull)
+	Pools = make(map[string]*PoolInfo)
 	StateFilePath = path.Join(os.TempDir(), "server_state.json")
 	os.Exit(m.Run())
 }
@@ -39,17 +40,23 @@ func TestStateSave(t *testing.T) {
 		t.Error("Failed to read state file: ", err)
 	}
 
-	var nodes []Node
-	err = json.Unmarshal(stateFileData, &nodes)
+	var persistentState PersistentState
+	err = json.Unmarshal(stateFileData, &persistentState)
 	if err != nil {
 		Log.Fatal("Failed to un-marshal state file:", err)
 	}
 
-	if len(nodes) != 1 {
-		t.Error("wrong number of nodes in state file:", len(nodes))
+	if len(persistentState.Nodes) != 1 {
+		t.Error("wrong number of nodes in state file:", len(persistentState.Nodes))
 	}
-	if nodes[0].Data.Uuid != "blahblah1" || nodes[0].Pool != "TestPool" {
-		t.Error("Node in state file is wrong: ", nodes[0])
+	if len(persistentState.Pools) != 1 {
+		t.Error("wrong number of pools in state file:", len(persistentState.Pools))
+	}
+	if persistentState.Nodes[0].Data.Uuid != "blahblah1" || persistentState.Nodes[0].Pool != "TestPool" {
+		t.Error("Node in state file is wrong: ", persistentState.Nodes[0])
+	}
+	if persistentState.Pools["TestPool"] == nil {
+		t.Error("Pool in state file is wrong: ", persistentState.Pools["TestPool"])
 	}
 }
 
@@ -121,6 +128,7 @@ func TestDiscoveryNetwork(t *testing.T) {
 
 	//Disconnect node2
 	disconnectRequest := pb.DisconnectRequest{
+		Pool: "TestPool",
 		Node: &pb.Node{CommonName: "TestNode2", Ip: "1.1.1.2", Port: "1001", Uuid: "blahblah2"},
 	}
 	_, err = discovery.Disconnect(nil, &disconnectRequest)
@@ -158,5 +166,53 @@ func TestDiscoveryNetwork(t *testing.T) {
 	}
 	if len(joinResponse.Nodes) != 3 {
 		t.Error("Incorrect nodes returned :", joinResponse.Nodes)
+	}
+}
+
+func TestDiscoveryPasswords(t *testing.T) {
+	discovery := DiscoveryServer{}
+
+	//Join node1 with password
+	joinRequest := pb.JoinRequest{
+		Node:     &pb.Node{CommonName: "TestNode1", Ip: "1.1.1.1", Port: "1001", Uuid: "secretnode1"},
+		Pool:     "TestPasswordPool",
+		Password: "qwerty",
+	}
+
+	_, err := discovery.Join(nil, &joinRequest)
+	if err != nil {
+		t.Error("Error joining network : ", err)
+	}
+
+	//Join node2 without password
+	joinRequest = pb.JoinRequest{
+		Node: &pb.Node{CommonName: "TestNode2", Ip: "1.1.1.2", Port: "1001", Uuid: "secretnode2"},
+		Pool: "TestPasswordPool",
+	}
+	_, err = discovery.Join(nil, &joinRequest)
+	if err == nil {
+		t.Error("Node2 sucessfully joined password protected pool without password")
+	}
+
+	//Join node3 with incorrect password
+	joinRequest = pb.JoinRequest{
+		Node:     &pb.Node{CommonName: "TestNode3", Ip: "1.1.1.1", Port: "1002", Uuid: "secretnode3"},
+		Pool:     "TestPasswordPool",
+		Password: "qwerty2",
+	}
+	_, err = discovery.Join(nil, &joinRequest)
+	if err == nil {
+		t.Error("Node3 sucessfully joined password protected pool with incorrect password")
+	}
+
+	//Join node4 with correct password
+	joinRequest = pb.JoinRequest{
+		Node:     &pb.Node{CommonName: "TestNode4", Ip: "1.1.1.4", Port: "1001", Uuid: "secretnode4"},
+		Pool:     "TestPasswordPool",
+		Password: "qwerty",
+	}
+	_, err = discovery.Join(nil, &joinRequest)
+	if err != nil {
+		t.Error("Error joining network : ", err)
 	}
 }

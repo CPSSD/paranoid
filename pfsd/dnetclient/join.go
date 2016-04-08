@@ -11,7 +11,7 @@ import (
 
 // Join function to call in order to join the server
 // globals.ThisNode must be set before calling this.
-func Join(pool string) error {
+func Join(pool, password string) error {
 	conn, err := dialDiscovery()
 	if err != nil {
 		return fmt.Errorf("failed to dial discovery server: %s", err)
@@ -22,7 +22,8 @@ func Join(pool string) error {
 
 	response, err := dclient.Join(context.Background(),
 		&pb.JoinRequest{
-			Pool: pool,
+			Pool:     pool,
+			Password: password,
 			Node: &pb.Node{
 				Ip:         globals.ThisNode.IP,
 				Port:       globals.ThisNode.Port,

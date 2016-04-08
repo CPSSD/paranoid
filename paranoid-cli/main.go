@@ -104,6 +104,10 @@ func main() {
 					Name:  "d, discovery-addr",
 					Usage: "Use a custom discovery server. Specified with ip:port. Defaults to public discovery server",
 				},
+				cli.StringFlag{
+					Name:  "pool-password",
+					Usage: "connect to a pool that is password portected",
+				},
 			},
 		},
 		{
@@ -157,6 +161,14 @@ func main() {
 				cli.StringFlag{
 					Name:  "i, interface",
 					Usage: "name a network interface over which to make connections. Defaults to default interface",
+				},
+				cli.StringFlag{
+					Name:  "d, discovery-addr",
+					Usage: "Use a custom discovery server. Specified with ip:port. Defaults to public discovery server",
+				},
+				cli.StringFlag{
+					Name:  "pool-password",
+					Usage: "connect to a pool that is password portected",
 				},
 			},
 		},
