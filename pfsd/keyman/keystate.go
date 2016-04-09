@@ -31,9 +31,9 @@ func (n Node) String() string {
 }
 
 type keyStateElement struct {
-	generation int
-	owner      *Node
-	holder     *Node
+	Generation int
+	Owner      *Node
+	Holder     *Node
 }
 
 type KeyStateMachine struct {
@@ -95,23 +95,23 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 		UUID:       req.GetKeyHolder().NodeId,
 	}
 	elem := &keyStateElement{
-		generation: int(req.CurrentGeneration),
-		owner:      owner,
-		holder:     holder,
+		Generation: int(req.CurrentGeneration),
+		Owner:      owner,
+		Holder:     holder,
 	}
 
 	// If a new generation is created, the state machine will only
 	// update its CurrentGeneration when enough generation N+1 elements
 	// exist for every node in the cluster to unlock if locked.
-	if elem.generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(elem.generation) {
-		ksm.CurrentGeneration = elem.generation
-		delete(ksm.Elements, elem.generation)
+	if elem.Generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(elem.Generation) {
+		ksm.CurrentGeneration = elem.Generation
+		delete(ksm.Elements, elem.Generation)
 	}
-	ksm.Elements[elem.generation] = append(ksm.Elements[elem.generation], elem)
+	ksm.Elements[elem.Generation] = append(ksm.Elements[elem.Generation], elem)
 	err := ksm.SerialiseToPFSDir()
 	if err != nil {
 		// If the serialisation fails, undo the update.
-		ksm.Elements[elem.generation] = ksm.Elements[elem.generation][:len(ksm.Elements[elem.generation])-1]
+		ksm.Elements[elem.Generation] = ksm.Elements[elem.Generation][:len(ksm.Elements[elem.Generation])-1]
 		return fmt.Errorf("failed to commit change to KeyStateMachine: %s", err)
 	}
 
@@ -124,7 +124,7 @@ func (ksm KeyStateMachine) canUpdateGeneration(generation int) bool {
 	// Map of UUIDs (as string) to int
 	owners := make(map[string]int)
 	for _, v := range ksm.Elements[generation] {
-		owners[v.owner.UUID] += 1
+		owners[v.Owner.UUID] += 1
 	}
 	for _, count := range owners {
 		if count < MIN_SHARES_REQUIRED {
@@ -147,7 +147,7 @@ func (ksm *KeyStateMachine) Serialise(writer io.Writer) error {
 func (ksm *KeyStateMachine) SerialiseToPFSDir() error {
 	ksm.fileLock.Lock()
 	defer ksm.fileLock.Unlock()
-	file, err := os.Open(path.Join(ksm.PfsDir, "meta", KSM_FILE_NAME))
+	file, err := os.Create(path.Join(ksm.PfsDir, "meta", KSM_FILE_NAME))
 	if err != nil {
 		Log.Errorf("Unable to open %s for writing state: %s", ksm.PfsDir, err)
 		return fmt.Errorf("unable to open %s for writing state: %s", ksm.PfsDir, err)
