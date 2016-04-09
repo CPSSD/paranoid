@@ -16,6 +16,10 @@ import (
 	"time"
 )
 
+const (
+	DISCOVERY_STATE_DIR string = "discovery_state"
+)
+
 var (
 	port          = flag.Int("port", 10101, "port to listen on")
 	logDir        = flag.String("log-directory", "/var/log", "directory in which to create ParanoidDiscovery.log")
@@ -43,7 +47,7 @@ func createRPCServer() *grpc.Server {
 func main() {
 	flag.Parse()
 	dnetserver.Log = logger.New("main", "discovery-server", *logDir)
-	dnetserver.Pools = make(map[string]*dnetserver.PoolInfo)
+	dnetserver.Pools = make(map[string]*dnetserver.Pool)
 	err := dnetserver.Log.SetOutput(logger.LOGFILE | logger.STDERR)
 	if err != nil {
 		dnetserver.Log.Error("Failed to set logger output:", err)
@@ -98,7 +102,8 @@ func analyseWorkspace(log *logger.ParanoidLogger) {
 	metaDirPath := path.Join(pfsDirPath, "discovery_meta")
 	checkDir(metaDirPath, log)
 
-	dnetserver.StateFilePath = path.Join(metaDirPath, "server_state.json")
+	dnetserver.StateDirectoryPath = path.Join(metaDirPath, DISCOVERY_STATE_DIR)
+	checkDir(dnetserver.StateDirectoryPath, log)
 }
 
 // checkDir checks a directory and creates it if needed

@@ -14,8 +14,16 @@ import (
 
 func TestMain(m *testing.M) {
 	Log = logger.New("discoveryTest", "discoveryTest", os.DevNull)
-	Pools = make(map[string]*PoolInfo)
-	StateFilePath = path.Join(os.TempDir(), "server_state.json")
+	Pools = make(map[string]*Pool)
+	StateDirectoryPath = path.Join(os.TempDir(), "server_state")
+	err := os.RemoveAll(StateDirectoryPath)
+	if err != nil {
+		Log.Fatal("Test setup failed:", err)
+	}
+	err = os.Mkdir(StateDirectoryPath, 0700)
+	if err != nil {
+		Log.Fatal("Test setup failed:", err)
+	}
 	os.Exit(m.Run())
 }
 
@@ -35,12 +43,21 @@ func TestStateSave(t *testing.T) {
 		t.Error("Incorrect nodes returned :", joinResponse.Nodes)
 	}
 
-	stateFileData, err := ioutil.ReadFile(StateFilePath)
+	stateFiles, err := ioutil.ReadDir(StateDirectoryPath)
+	if err != nil {
+		t.Error("Failed to read state directory:", err)
+	}
+
+	if len(stateFiles) != 1 {
+		t.Error("Incorrect number of stateFiles in directory:", len(stateFiles))
+	}
+
+	stateFileData, err := ioutil.ReadFile(path.Join(StateDirectoryPath, "TestPool"))
 	if err != nil {
 		t.Error("Failed to read state file: ", err)
 	}
 
-	var persistentState PersistentState
+	var persistentState PoolInfo
 	err = json.Unmarshal(stateFileData, &persistentState)
 	if err != nil {
 		Log.Fatal("Failed to un-marshal state file:", err)
@@ -49,29 +66,34 @@ func TestStateSave(t *testing.T) {
 	if len(persistentState.Nodes) != 1 {
 		t.Error("wrong number of nodes in state file:", len(persistentState.Nodes))
 	}
-	if len(persistentState.Pools) != 1 {
-		t.Error("wrong number of pools in state file:", len(persistentState.Pools))
+	if persistentState.Nodes["blahblah1"] == nil {
+		t.Error("Node in state file is wrong, should not be nil")
 	}
-	if persistentState.Nodes[0].Data.Uuid != "blahblah1" || persistentState.Nodes[0].Pool != "TestPool" {
-		t.Error("Node in state file is wrong: ", persistentState.Nodes[0])
-	}
-	if persistentState.Pools["TestPool"] == nil {
-		t.Error("Pool in state file is wrong: ", persistentState.Pools["TestPool"])
+	if persistentState.Nodes["blahblah1"].Uuid != "blahblah1" || persistentState.Nodes["blahblah1"].Port != "1001" {
+		t.Error("Node in state file is wrong: ", persistentState.Nodes["blahblah1"])
 	}
 }
 
 func TestStateLoad(t *testing.T) {
 	LoadState()
 
-	if len(Nodes) != 1 {
-		t.Error("Wrong number of nodes loaded from state file")
+	if len(Pools) != 1 {
+		t.Error("Wrong number of pools loaded from state file")
 	}
 
-	if Nodes[0].Pool != "TestPool" || Nodes[0].Data.Uuid != "blahblah1" {
-		t.Error("loaded node is wrong:", Nodes[0])
+	for poolName, _ := range Pools {
+		if len(Pools[poolName].Info.Nodes) != 1 {
+			t.Error("Wrong number of nodes loaded from state file")
+		}
+		if Pools[poolName].Info.Nodes["blahblah1"] == nil {
+			t.Error("Node blahblah1 is nil")
+		}
+		if Pools[poolName].Info.Nodes["blahblah1"].Uuid != "blahblah1" {
+			t.Error("loaded node is wrong:", Pools[poolName].Info.Nodes["blahblah1"])
+		}
 	}
 
-	Nodes = nil
+	Pools = make(map[string]*Pool)
 }
 
 func TestDiscoveryNetwork(t *testing.T) {
