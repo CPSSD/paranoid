@@ -17,23 +17,10 @@ const KSM_FILE_NAME string = "key_state"
 
 var StateMachine *KeyStateMachine
 
-// We have to recreate globals.Node here to avoid an import cycle.
-// This just in: Go is officially worse than C at this.
-type Node struct {
-	IP         string
-	Port       string
-	CommonName string
-	UUID       string
-}
-
-func (n Node) String() string {
-	return fmt.Sprintf("%s:%s", n.IP, n.Port)
-}
-
 type keyStateElement struct {
 	Generation int
-	Owner      *Node
-	Holder     *Node
+	Owner      *pb.Node
+	Holder     *pb.Node
 }
 
 type KeyStateMachine struct {
@@ -82,30 +69,18 @@ func NewKSMFromPFSDir(pfsDir string) (*KeyStateMachine, error) {
 func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	ksm.stateLock.Lock()
 	defer ksm.stateLock.Unlock()
-	owner := &Node{
-		IP:         req.GetKeyOwner().Ip,
-		Port:       req.GetKeyOwner().Port,
-		CommonName: req.GetKeyOwner().CommonName,
-		UUID:       req.GetKeyOwner().NodeId,
-	}
-	holder := &Node{
-		IP:         req.GetKeyHolder().Ip,
-		Port:       req.GetKeyHolder().Port,
-		CommonName: req.GetKeyHolder().CommonName,
-		UUID:       req.GetKeyHolder().NodeId,
-	}
 	elem := &keyStateElement{
 		Generation: int(req.CurrentGeneration),
-		Owner:      owner,
-		Holder:     holder,
+		Owner:      req.GetKeyOwner(),
+		Holder:     req.GetKeyHolder(),
 	}
 
 	// If a new generation is created, the state machine will only
 	// update its CurrentGeneration when enough generation N+1 elements
 	// exist for every node in the cluster to unlock if locked.
 	if elem.Generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(elem.Generation) {
+		delete(ksm.Elements, ksm.CurrentGeneration)
 		ksm.CurrentGeneration = elem.Generation
-		delete(ksm.Elements, elem.Generation)
 	}
 	ksm.Elements[elem.Generation] = append(ksm.Elements[elem.Generation], elem)
 	err := ksm.SerialiseToPFSDir()
@@ -115,7 +90,7 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 		return fmt.Errorf("failed to commit change to KeyStateMachine: %s", err)
 	}
 
-	Log.Verbosef("KeyPiece exchange tracked: %s -> %s", owner.UUID, holder.UUID)
+	Log.Verbosef("KeyPiece exchange tracked: %s -> %s", elem.Owner.NodeId, elem.Holder.NodeId)
 	return nil
 }
 
@@ -124,7 +99,7 @@ func (ksm KeyStateMachine) canUpdateGeneration(generation int) bool {
 	// Map of UUIDs (as string) to int
 	owners := make(map[string]int)
 	for _, v := range ksm.Elements[generation] {
-		owners[v.Owner.UUID] += 1
+		owners[v.Owner.NodeId] += 1
 	}
 	for _, count := range owners {
 		if count < MIN_SHARES_REQUIRED {
