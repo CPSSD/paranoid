@@ -10,9 +10,6 @@ import (
 	"sync"
 )
 
-// Hardcoded because the KSM will not track joined nodes until next sprint (Sprint 7)
-const MIN_SHARES_REQUIRED int = 2
-
 const KSM_FILE_NAME string = "key_state"
 
 var StateMachine *KeyStateMachine
@@ -24,7 +21,10 @@ type keyStateElement struct {
 }
 
 type KeyStateMachine struct {
-	CurrentGeneration int
+	CurrentGeneration    int
+	InProgressGeneration int
+	// Key is generation number. Value is number of nodes in generation.
+	NumNodes map[int]int
 
 	// The first index indicates the generation.
 	// The second index is unimportant as order doesn't matter there.
@@ -39,9 +39,11 @@ type KeyStateMachine struct {
 
 func NewKSM(pfsDir string) *KeyStateMachine {
 	return &KeyStateMachine{
-		CurrentGeneration: -1,
-		Elements:          make(map[int]([]*keyStateElement)),
-		PfsDir:            pfsDir,
+		CurrentGeneration:    -1,
+		InProgressGeneration: -1,
+		NumNodes:             make(map[int]int),
+		Elements:             make(map[int]([]*keyStateElement)),
+		PfsDir:               pfsDir,
 	}
 }
 
@@ -66,9 +68,32 @@ func NewKSMFromPFSDir(pfsDir string) (*KeyStateMachine, error) {
 	return NewKSMFromReader(file)
 }
 
+func (ksm *KeyStateMachine) NewGeneration(generationNumber, numNodes int) error {
+	ksm.stateLock.Lock()
+	defer ksm.stateLock.Unlock()
+
+	if generationNumber <= ksm.InProgressGeneration {
+		return fmt.Errorf("proposed generation too low; given %d, minimum %d", generationNumber, ksm.CurrentGeneration+1)
+	}
+	if generationNumber > ksm.CurrentGeneration+1 {
+		if len(ksm.Elements[ksm.CurrentGeneration+1]) > 0 {
+			return fmt.Errorf("generation %d already in progress", ksm.CurrentGeneration+1)
+		}
+		return fmt.Errorf("generation number too large; next in sequence: %d", ksm.CurrentGeneration+1)
+	}
+	ksm.NumNodes[generationNumber] = numNodes
+	ksm.Elements[generationNumber] = []*keyStateElement{}
+	return nil
+}
+
 func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	ksm.stateLock.Lock()
 	defer ksm.stateLock.Unlock()
+
+	if _, ok := ksm.Elements[int(req.CurrentGeneration)]; !ok {
+		return fmt.Errorf("generation %d has not yet been initialised", req.CurrentGeneration)
+	}
+
 	elem := &keyStateElement{
 		Generation: int(req.CurrentGeneration),
 		Owner:      req.GetKeyOwner(),
@@ -78,15 +103,21 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	// If a new generation is created, the state machine will only
 	// update its CurrentGeneration when enough generation N+1 elements
 	// exist for every node in the cluster to unlock if locked.
+	var backupGeneration int
+	var backupElements []*keyStateElement
 	if elem.Generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(elem.Generation) {
-		delete(ksm.Elements, ksm.CurrentGeneration)
+		backupGeneration = ksm.CurrentGeneration
+		backupElements = ksm.Elements[ksm.CurrentGeneration]
 		ksm.CurrentGeneration = elem.Generation
+		delete(ksm.Elements, ksm.CurrentGeneration)
 	}
 	ksm.Elements[elem.Generation] = append(ksm.Elements[elem.Generation], elem)
 	err := ksm.SerialiseToPFSDir()
 	if err != nil {
 		// If the serialisation fails, undo the update.
 		ksm.Elements[elem.Generation] = ksm.Elements[elem.Generation][:len(ksm.Elements[elem.Generation])-1]
+		ksm.CurrentGeneration = backupGeneration
+		ksm.Elements[ksm.CurrentGeneration] = backupElements
 		return fmt.Errorf("failed to commit change to KeyStateMachine: %s", err)
 	}
 
@@ -101,8 +132,9 @@ func (ksm KeyStateMachine) canUpdateGeneration(generation int) bool {
 	for _, v := range ksm.Elements[generation] {
 		owners[v.Owner.NodeId] += 1
 	}
+	minNodesRequired := ksm.NumNodes[generation]/2 + 1
 	for _, count := range owners {
-		if count < MIN_SHARES_REQUIRED {
+		if count < minNodesRequired {
 			return false
 		}
 	}

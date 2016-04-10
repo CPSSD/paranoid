@@ -46,13 +46,17 @@ func TestKeyStateUpdate(t *testing.T) {
 	defer rafttestutil.StopRaftServer(nodeRaftServer)
 
 	keyman.StateMachine = keyman.NewKSM(path.Join(os.TempDir(), "keystatetest"))
+	err := keyman.StateMachine.NewGeneration(0, 1)
+	if err != nil {
+		t.Error("Failed to initialise new generation:", err)
+	}
 	pbnode := &pb.Node{
 		Ip:         "10.0.0.1",
 		Port:       "1337",
 		CommonName: "test-node",
 		NodeId:     "foobar",
 	}
-	err := nodeRaftServer.RequestKeyStateUpdate(pbnode, pbnode, 1)
+	err = nodeRaftServer.RequestKeyStateUpdate(pbnode, pbnode, 0)
 	if err != nil {
 		t.Error("RequestKeyStateUpdate returned error:", err)
 	}
@@ -65,6 +69,9 @@ func TestKeyStateUpdate(t *testing.T) {
 		t.Error("Failed to create new KSM from PFS directory:", err)
 	}
 	if !reflect.DeepEqual(*keyman.StateMachine, *testMachine) {
-		t.Error("Decoded and encoded KSM's do not match.")
+		t.Log("Decoded and encoded KSM's do not match.")
+		t.Log("Expected:", *keyman.StateMachine)
+		t.Log("Got:", *testMachine)
+		t.Fail()
 	}
 }
