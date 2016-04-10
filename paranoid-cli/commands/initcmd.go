@@ -106,6 +106,10 @@ func doInit(pfsname, pool, cert, key string, unsecure, unencrypted, networkoff b
 		Log.Fatal("cannot save file system information:", err)
 	}
 
+	if networkoff {
+		return
+	}
+
 	if unsecure {
 		fmt.Println("--unsecure specified. PFSD will not use TLS for its communication.")
 		return

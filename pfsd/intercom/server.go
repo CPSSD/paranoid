@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+const (
+	STATUS_NETWORKOFF string = "Networking disabled"
+)
+
 type IntercomServer struct{}
 type EmptyMessage struct{}
 
@@ -33,6 +37,12 @@ func (s *IntercomServer) ConfirmUp(req *EmptyMessage, resp *EmptyMessage) error 
 
 // Provides health data for the current node.
 func (s *IntercomServer) Status(req *EmptyMessage, resp *StatusResponse) error {
+	if globals.NetworkOff {
+		resp.Uptime = time.Since(globals.BootTime)
+		resp.Status = STATUS_NETWORKOFF
+		return nil
+	}
+
 	thisport, err := strconv.Atoi(globals.ThisNode.Port)
 	if err != nil {
 		Log.Error("Could not convert globals.ThisNode.Port to int.")

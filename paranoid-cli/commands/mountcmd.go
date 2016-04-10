@@ -177,7 +177,6 @@ func doMount(c *cli.Context, args []string) {
 		if c.GlobalBool("verbose") {
 			pfsdFlags = append(pfsdFlags, "-v")
 		}
-		pfsdFlags = append(pfsdFlags, "--no_networking")
 		cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 		err = cmd.Start()
 		if err != nil {

@@ -64,6 +64,8 @@ var DiscoveryAddr string
 // Nodes instance which controls all the information about other pfsd instances
 var Nodes = nodes{m: make(map[Node]bool)}
 
+var NetworkOff bool
+
 // If true, TLS is being used in all connections to and from PFSD
 var TLSEnabled bool
 
