@@ -81,29 +81,7 @@ func starGlob(pattern, file string) bool {
 	}
 }
 
-func checkDir(pattern, file string) bool {
-	patternArr := strings.Split(pattern, "/")
-	fileArr := strings.Split(file, "/")
-	dirsMatch := false
-
-	if len(patternArr) == 1 {
-		return patternArr[0] == fileArr[0]
-	}
-
-	for i := 0; i < len(patternArr)-1; i++ {
-		if patternArr[i] == "" || fileArr[i] == "" {
-			break
-		}
-		dirsMatch = dirsMatch && (patternArr[i] == fileArr[i])
-	}
-
-	return dirsMatch
-}
-
 func Glob(pattern, file string) bool {
-	if string(pattern[0]) == "!" {
-		pattern = strings.Trim(pattern, "!")
-	}
 	//Removing trailing slashes
 	pattern = strings.TrimSuffix(pattern, "/")
 
@@ -117,7 +95,7 @@ func Glob(pattern, file string) bool {
 
 	isGlobbed := starGlob(pattern, file) || dualStarGlob(pattern, file) || pattern == file
 
-	return isGlobbed || checkDir(pattern, file)
+	return isGlobbed
 }
 
 func ShouldIgnore(filePath string) bool {
@@ -130,10 +108,18 @@ func ShouldIgnore(filePath string) bool {
 				return false
 			}
 			negationSet := false
-			for _, pattern := range strings.Split(string(returnData), "\n") {
+			globs := strings.Split(string(returnData), "\n")
+			for _, pattern := range globs {
 				if pattern != "" {
-					if string(pattern[0]) == "!" {
-						negationSet = true
+					if string(pattern[0]) == negation {
+						for _, globPattern := range globs {
+							negationSet = true
+							if strings.HasPrefix(pattern, globPattern) && pattern != globPattern {
+								negationSet = false // if a directory is ignored negation is removed
+								break
+							}
+						}
+						pattern = strings.Trim(pattern, negation)
 					}
 					globResponse := Glob(pattern, filePath)
 					shouldGlob = shouldGlob || globResponse
@@ -146,7 +132,7 @@ func ShouldIgnore(filePath string) bool {
 		}
 	}
 	if shouldGlob {
-		Log.Info("File", filePath, "is being Ignored")
+		Log.Info("File", filePath, "has been ignored")
 	}
 	return shouldGlob
 }
