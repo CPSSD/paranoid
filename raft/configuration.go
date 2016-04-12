@@ -538,6 +538,7 @@ func getPersistentConfiguration(persistentConfigurationFile string) *persistentC
 
 func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfiguration, myNodeDetails Node, saveOriginalConfiguration bool) *Configuration {
 	var config *Configuration
+	loadedPersistentState := false
 	if testConfiguration != nil {
 		config = &Configuration{
 			myNodeId:          myNodeDetails.NodeID,
@@ -550,6 +551,7 @@ func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfigur
 	} else {
 		persistentConfig := getPersistentConfiguration(path.Join(raftInfoDirectory, PersistentConfigurationFileName))
 		if persistentConfig != nil {
+			loadedPersistentState = true
 			config = &Configuration{
 				myNodeId:          myNodeDetails.NodeID,
 				raftInfoDirectory: raftInfoDirectory,
@@ -576,7 +578,7 @@ func newConfiguration(raftInfoDirectory string, testConfiguration *StartConfigur
 	}
 	config.sendingSnapshot = make(map[string]bool)
 	config.savePersistentConfiguration()
-	if saveOriginalConfiguration {
+	if saveOriginalConfiguration && !loadedPersistentState {
 		config.saveOriginalConfiguration()
 	}
 	return config
