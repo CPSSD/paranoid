@@ -46,7 +46,7 @@ func TestKeyStateUpdate(t *testing.T) {
 	defer rafttestutil.StopRaftServer(nodeRaftServer)
 
 	keyman.StateMachine = keyman.NewKSM(path.Join(os.TempDir(), "keystatetest"))
-	err := keyman.StateMachine.NewGeneration(0, 1)
+	err := keyman.StateMachine.NewGeneration(0, []string{"foobar"})
 	if err != nil {
 		t.Error("Failed to initialise new generation:", err)
 	}

@@ -23,8 +23,9 @@ type keyStateElement struct {
 type KeyStateMachine struct {
 	CurrentGeneration    int
 	InProgressGeneration int
-	// Key is generation number. Value is number of nodes in generation.
-	NumNodes map[int]int
+	// Key is generation number.
+	// Value is a list of Node UUID's.
+	Nodes map[int]([]string)
 
 	// The first index indicates the generation.
 	// The second index is unimportant as order doesn't matter there.
@@ -41,7 +42,7 @@ func NewKSM(pfsDir string) *KeyStateMachine {
 	return &KeyStateMachine{
 		CurrentGeneration:    -1,
 		InProgressGeneration: -1,
-		NumNodes:             make(map[int]int),
+		Nodes:                make(map[int]([]string)),
 		Elements:             make(map[int]([]*keyStateElement)),
 		PfsDir:               pfsDir,
 	}
@@ -68,7 +69,7 @@ func NewKSMFromPFSDir(pfsDir string) (*KeyStateMachine, error) {
 	return NewKSMFromReader(file)
 }
 
-func (ksm *KeyStateMachine) NewGeneration(generationNumber, numNodes int) error {
+func (ksm *KeyStateMachine) NewGeneration(generationNumber int, nodeIds []string) error {
 	ksm.stateLock.Lock()
 	defer ksm.stateLock.Unlock()
 
@@ -81,9 +82,22 @@ func (ksm *KeyStateMachine) NewGeneration(generationNumber, numNodes int) error 
 		}
 		return fmt.Errorf("generation number too large; next in sequence: %d", ksm.CurrentGeneration+1)
 	}
-	ksm.NumNodes[generationNumber] = numNodes
+	ksm.Nodes[generationNumber] = nodeIds
 	ksm.Elements[generationNumber] = []*keyStateElement{}
 	return nil
+}
+
+func (ksm KeyStateMachine) NodeInGeneration(generationNumber int, nodeId string) bool {
+	nodeIds, ok := ksm.Nodes[generationNumber]
+	if !ok {
+		return false
+	}
+	for _, v := range nodeIds {
+		if v == nodeId {
+			return true
+		}
+	}
+	return false
 }
 
 func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
@@ -110,6 +124,7 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 		backupElements = ksm.Elements[ksm.CurrentGeneration]
 		ksm.CurrentGeneration = elem.Generation
 		delete(ksm.Elements, ksm.CurrentGeneration)
+		delete(ksm.Nodes, ksm.CurrentGeneration)
 	}
 	ksm.Elements[elem.Generation] = append(ksm.Elements[elem.Generation], elem)
 	err := ksm.SerialiseToPFSDir()
@@ -132,7 +147,7 @@ func (ksm KeyStateMachine) canUpdateGeneration(generation int) bool {
 	for _, v := range ksm.Elements[generation] {
 		owners[v.Owner.NodeId] += 1
 	}
-	minNodesRequired := ksm.NumNodes[generation]/2 + 1
+	minNodesRequired := len(ksm.Nodes[generation])/2 + 1
 	for _, count := range owners {
 		if count < minNodesRequired {
 			return false
