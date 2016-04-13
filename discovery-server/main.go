@@ -18,6 +18,7 @@ import (
 
 const (
 	DISCOVERY_STATE_DIR string = "discovery_state"
+	TEMP_STATE_DIR      string = ".tmp_state"
 )
 
 var (
@@ -103,7 +104,9 @@ func analyseWorkspace(log *logger.ParanoidLogger) {
 	checkDir(metaDirPath, log)
 
 	dnetserver.StateDirectoryPath = path.Join(metaDirPath, DISCOVERY_STATE_DIR)
+	dnetserver.TempDirectoryPath = path.Join(metaDirPath, TEMP_STATE_DIR)
 	checkDir(dnetserver.StateDirectoryPath, log)
+	checkDir(dnetserver.TempDirectoryPath, log)
 }
 
 // checkDir checks a directory and creates it if needed

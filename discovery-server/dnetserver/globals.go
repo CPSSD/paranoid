@@ -41,6 +41,9 @@ var RenewInterval time.Duration
 // StateDirectoryPath is the path to the directory in which the discovery server stores its state
 var StateDirectoryPath string
 
+// TempDirecotryPath is the path to the directory where temporary state files are stored
+var TempDirectoryPath string
+
 func checkPoolPassword(pool, password string, node *pb.Node) error {
 	if Pools[pool] != nil {
 		if password == "" {

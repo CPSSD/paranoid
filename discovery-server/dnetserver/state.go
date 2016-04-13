@@ -13,9 +13,15 @@ func saveState(pool string) {
 		Log.Fatal("Couldn't marshal stateData:", err)
 	}
 
-	file := prepareStateFile(pool)
-	defer file.Close()
-	_, err = file.Write(stateData)
+	newStateFilePath := path.Join(TempDirectoryPath, pool)
+	stateFilePath := path.Join(StateDirectoryPath, pool)
+
+	err = ioutil.WriteFile(newStateFilePath, stateData, 0600)
+	if err != nil {
+		Log.Fatal("Failed to write state data to state file:", err)
+	}
+
+	err = os.Rename(newStateFilePath, stateFilePath)
 	if err != nil {
 		Log.Fatal("Failed to write state data to state file:", err)
 	}
@@ -54,34 +60,4 @@ func LoadState() {
 			Log.Fatalf("Failed to un-marshal state file %s: %s", stateFilePath, err)
 		}
 	}
-}
-
-// prepareStateFile prepares the statefile for a state update and returns the file
-// ready to be writen to
-func prepareStateFile(pool string) *os.File {
-	stateFilePath := path.Join(StateDirectoryPath, pool)
-	_, err := os.Stat(stateFilePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			Log.Info("Creating state file: ", stateFilePath)
-			_, err1 := os.Create(stateFilePath)
-			if err1 != nil {
-				Log.Fatal("Could not create state file:", err1)
-			}
-		} else {
-			Log.Fatal("Couldnt stat stateFile:", err)
-		}
-	}
-
-	err = os.Truncate(stateFilePath, 0)
-	if err != nil {
-		Log.Fatal("Couldnt truncate state file:", err)
-	}
-
-	file, err := os.OpenFile(stateFilePath, os.O_WRONLY, 0600)
-	if err != nil {
-		Log.Fatal("Couldnt open stateFile:", err)
-	}
-
-	return file
 }
