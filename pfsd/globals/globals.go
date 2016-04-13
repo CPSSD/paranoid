@@ -172,7 +172,7 @@ func (ks KeyPieceStore) DeletePiece(node Node) {
 }
 
 func (ks KeyPieceStore) SaveToDisk() {
-	piecePath := path.Join(ParanoidDir, "meta", "pieces")
+	piecePath := path.Join(ParanoidDir, "meta", "pieces-new")
 	file, err := os.Create(piecePath)
 	if err != nil {
 		Log.Errorf("Unable to open %s for storing pieces: %s", piecePath, file)
@@ -183,6 +183,11 @@ func (ks KeyPieceStore) SaveToDisk() {
 	err = enc.Encode(ks)
 	if err != nil {
 		Log.Error("Failed encoding KeyPieceStore to GOB:", err)
+		return
+	}
+	err = os.Rename(piecePath, path.Join(ParanoidDir, "meta", "pieces"))
+	if err != nil {
+		Log.Error("Failed to save KeyPieceStore to file:", err)
 	}
 }
 

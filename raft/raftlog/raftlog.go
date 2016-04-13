@@ -103,7 +103,13 @@ func (rl *RaftLog) saveMetaInfo() {
 		Log.Fatal("unable to save raft log meta information:", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(rl.logDir, LogMetaFileName), metaInfoJson, 0600)
+	newMetaFile := path.Join(rl.logDir, LogMetaFileName+"-new")
+	err = ioutil.WriteFile(newMetaFile, metaInfoJson, 0600)
+	if err != nil {
+		Log.Fatal("unable to save raft log meta information:", err)
+	}
+
+	err = os.Rename(newMetaFile, path.Join(rl.logDir, LogMetaFileName))
 	if err != nil {
 		Log.Fatal("unable to save raft log meta information:", err)
 	}
