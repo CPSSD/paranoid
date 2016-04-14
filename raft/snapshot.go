@@ -390,14 +390,16 @@ func (s *RaftNetworkServer) RevertToSnapshot(snapshotPath string) error {
 		return fmt.Errorf("error reverting to snapshot: %s", err)
 	}
 
-	err = os.Rename(path.Join(s.State.pfsDirectory, PersistentConfigurationFileName), path.Join(s.raftInfoDirectory, PersistentConfigurationFileName))
+	err = s.State.Configuration.UpdateFromConfigurationFile(
+		path.Join(s.State.pfsDirectory, PersistentConfigurationFileName),
+		snapshotMeta.LastIncludedIndex)
 	if err != nil {
 		return fmt.Errorf("error reverting to snapshot: %s", err)
 	}
 
-	err = s.State.Configuration.UpdateFromConfigurationFile(path.Join(s.raftInfoDirectory, PersistentConfigurationFileName), snapshotMeta.LastIncludedIndex)
+	err = os.Remove(path.Join(s.State.pfsDirectory, PersistentConfigurationFileName))
 	if err != nil {
-		return fmt.Errorf("error reverting to snapshot: %s", err)
+		Log.Warn("Unable to delete snapshot configuration file")
 	}
 
 	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)
