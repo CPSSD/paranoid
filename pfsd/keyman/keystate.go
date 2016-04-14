@@ -169,11 +169,17 @@ func (ksm *KeyStateMachine) Serialise(writer io.Writer) error {
 func (ksm *KeyStateMachine) SerialiseToPFSDir() error {
 	ksm.fileLock.Lock()
 	defer ksm.fileLock.Unlock()
-	file, err := os.Create(path.Join(ksm.PfsDir, "meta", KSM_FILE_NAME))
+	ksmpath := path.Join(ksm.PfsDir, "meta", KSM_FILE_NAME)
+	file, err := os.Create(ksmpath + "-new")
 	if err != nil {
 		Log.Errorf("Unable to open %s for writing state: %s", ksm.PfsDir, err)
 		return fmt.Errorf("unable to open %s for writing state: %s", ksm.PfsDir, err)
 	}
 	defer file.Close()
-	return ksm.Serialise(file)
+	err = ksm.Serialise(file)
+	if err == nil {
+		os.Remove(ksmpath)
+		os.Rename(ksmpath+"-new", ksmpath)
+	}
+	return err
 }
