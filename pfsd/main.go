@@ -189,7 +189,13 @@ func getFileSystemAttributes() {
 		log.Fatal("unable to save new file system attributes to file:", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(globals.ParanoidDir, "meta", "attributes"), attributesJson, 0600)
+	newAttributesFile := path.Join(globals.ParanoidDir, "meta", "attributes-new")
+	err = ioutil.WriteFile(newAttributesFile, attributesJson, 0600)
+	if err != nil {
+		log.Fatal("unable to save new file system attributes to file:", err)
+	}
+
+	err = os.Rename(newAttributesFile, path.Join(globals.ParanoidDir, "meta", "attributes"))
 	if err != nil {
 		log.Fatal("unable to save new file system attributes to file:", err)
 	}
