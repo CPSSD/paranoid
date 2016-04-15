@@ -24,7 +24,7 @@ func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*p
 				Prime:             &prime,
 				Seq:               req.Seq,
 			}
-			globals.HeldKeyPieces.AddPiece(node, piece)
+			globals.HeldKeyPieces.AddPiece(node.UUID, piece)
 			Log.Info("Received KeyPiece from", node)
 			return &pb.EmptyMessage{}, nil
 		}

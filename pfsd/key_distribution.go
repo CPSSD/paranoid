@@ -25,7 +25,7 @@ func Lock() error {
 		return fmt.Errorf("could not chunk key: %s", err)
 	}
 	// We always keep the first piece and distribute the rest
-	globals.HeldKeyPieces[globals.ThisNode] = pieces[0]
+	globals.HeldKeyPieces.AddPiece(globals.ThisNode.UUID, pieces[0])
 
 	for i := 1; i < len(pieces); i++ {
 		pnetclient.SendKeyPiece(pieces[i])
@@ -46,7 +46,7 @@ func Unlock() error {
 		return fmt.Errorf("could not get key pieces: %s", err)
 	}
 	// Add our own KeyPiece in with the others.
-	pieces = append(pieces, globals.HeldKeyPieces[globals.ThisNode])
+	pieces = append(pieces, globals.HeldKeyPieces.GetPiece(globals.ThisNode.UUID))
 	key, err := keyman.RebuildKey(pieces)
 	if err != nil {
 		log.Warn("Could not rebuild key:", err)
