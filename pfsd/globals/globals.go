@@ -62,7 +62,7 @@ var ResetInterval time.Duration
 var DiscoveryAddr string
 
 // Nodes instance which controls all the information about other pfsd instances
-var Nodes = nodes{m: make(map[Node]bool)}
+var Nodes = nodes{m: make(map[string]Node)}
 
 var NetworkOff bool
 
@@ -104,20 +104,20 @@ var ShuttingDown bool
 // --------------------------------------------
 
 type nodes struct {
-	m    map[Node]bool
+	m    map[string]Node
 	lock sync.Mutex
 }
 
 func (ns *nodes) Add(n Node) {
 	ns.lock.Lock()
 	defer ns.lock.Unlock()
-	ns.m[n] = true
+	ns.m[n.UUID] = n
 }
 
 func (ns *nodes) Remove(n Node) {
 	ns.lock.Lock()
 	defer ns.lock.Unlock()
-	delete(ns.m, n)
+	delete(ns.m, n.UUID)
 }
 
 func (ns *nodes) GetAll() []Node {
@@ -125,7 +125,7 @@ func (ns *nodes) GetAll() []Node {
 	defer ns.lock.Unlock()
 
 	var res []Node
-	for node := range ns.m {
+	for _, node := range ns.m {
 		res = append(res, node)
 	}
 	return res
