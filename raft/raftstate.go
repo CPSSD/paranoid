@@ -278,6 +278,19 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 			Log.Fatal("Error applying KeyChange to state machine")
 		}
 		return PerformKSMCommand(keyman.StateMachine, keyChange)
+	case pb.Entry_NewGenerationMessage:
+		newGeneration := logEntry.Entry.GetNewGeneration()
+		if newGeneration == nil {
+			Log.Fatal("Error applying new generation to state machine")
+		}
+		var nodeIds []string = make([]string, 0)
+		for _, v := range newGeneration.GetNodes() {
+			nodeIds = append(nodeIds, v.NodeId)
+		}
+		err := keyman.StateMachine.NewGeneration(int(newGeneration.GenerationNumber), nodeIds)
+		return &StateMachineResult{
+			Err: err,
+		}
 	}
 	return nil
 }

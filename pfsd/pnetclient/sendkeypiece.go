@@ -20,7 +20,7 @@ func SendKeyPiece(piece *keyman.KeyPiece) {
 
 	client := pb.NewParanoidNetworkClient(conn)
 
-	thisNodeProto := &pb.PingRequest{
+	thisNodeProto := &pb.Node{
 		Ip:         globals.ThisNode.IP,
 		Port:       globals.ThisNode.Port,
 		CommonName: globals.ThisNode.CommonName,

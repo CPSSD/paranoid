@@ -23,7 +23,7 @@ func Ping() {
 
 		client := pb.NewParanoidNetworkClient(conn)
 
-		_, err = client.Ping(context.Background(), &pb.PingRequest{
+		_, err = client.Ping(context.Background(), &pb.Node{
 			Ip:         ip,
 			Port:       globals.ThisNode.Port,
 			CommonName: globals.ThisNode.CommonName,

@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (s *ParanoidServer) RequestKeyPiece(ctx context.Context, req *pb.PingRequest) (*pb.KeyPiece, error) {
+func (s *ParanoidServer) RequestKeyPiece(ctx context.Context, req *pb.Node) (*pb.KeyPiece, error) {
 	for _, node := range globals.Nodes.GetAll() {
 		if node.UUID == req.Uuid {
 			key := globals.HeldKeyPieces.GetPiece(0, node.UUID)
