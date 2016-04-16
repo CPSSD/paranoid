@@ -39,7 +39,11 @@ func StartPfi(logVerbose bool) {
 	globals.Wait.Add(1)
 	go func() {
 		defer globals.Wait.Done()
-		go server.Serve()
+		globals.Wait.Add(1)
+		go func() {
+			defer globals.Wait.Done()
+			server.Serve()
+		}()
 
 		select {
 		case _, ok := <-globals.Quit:

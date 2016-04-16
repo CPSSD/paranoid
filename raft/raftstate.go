@@ -55,6 +55,7 @@ type RaftState struct {
 	StartLeading      chan bool
 	StopLeading       chan bool
 	SendAppendEntries chan bool
+	ApplyEntries      chan bool
 	LeaderElected     chan bool
 
 	snapshotCounter       int
@@ -155,12 +156,14 @@ func (s *RaftState) SetCommitIndex(x uint64) {
 	defer s.stateChangeLock.Unlock()
 	s.commitIndex = x
 	s.SendAppendEntries <- true
+	s.ApplyEntries <- true
 }
 
 //setCommitIndexUnsafe must only be used when the stateChangeLock has already been locked
 func (s *RaftState) setCommitIndexUnsafe(x uint64) {
 	s.commitIndex = x
 	s.SendAppendEntries <- true
+	s.ApplyEntries <- true
 }
 
 func (s *RaftState) SetWaitingForApplied(x bool) {
@@ -303,7 +306,6 @@ func (s *RaftState) calculateNewCommitIndex() {
 	newCommitIndex := s.Configuration.CalculateNewCommitIndex(s.commitIndex, s.currentTerm, s.Log)
 	if newCommitIndex > s.commitIndex {
 		s.setCommitIndexUnsafe(newCommitIndex)
-		go s.ApplyLogEntries()
 	}
 }
 
@@ -404,6 +406,7 @@ func newRaftState(myNodeDetails Node, pfsDirectory, raftInfoDirectory string, te
 	raftState.StartLeading = make(chan bool, 100)
 	raftState.StopLeading = make(chan bool, 100)
 	raftState.SendAppendEntries = make(chan bool, 100)
+	raftState.ApplyEntries = make(chan bool, 100)
 	raftState.LeaderElected = make(chan bool, 1)
 	raftState.EntryApplied = make(chan *EntryAppliedInfo, 100)
 	raftState.NewSnapshotCreated = make(chan bool, 100)
