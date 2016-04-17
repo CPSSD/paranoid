@@ -40,6 +40,7 @@ message JoinClusterRequest {
 
 message NewGenerationRequest {
     Node requesting_node = 1;   // required
+    string pool_password = 2;   // required
 }
 
 message NewGenerationResponse {
@@ -55,4 +56,7 @@ message KeyPiece {
 
     // The Node data for the node who owns this KeyPiece
     Node owner_node = 5; // required
+
+    // The KeyStateMachine generation this key belongs to
+    int64 generation = 6;   // required
 }

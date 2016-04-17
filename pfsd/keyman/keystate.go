@@ -118,33 +118,12 @@ func (ksm *KeyStateMachine) UpdateFromStateFile(filePath string) error {
 
 	ksm.CurrentGeneration = tmpKSM.CurrentGeneration
 	ksm.InProgressGeneration = tmpKSM.InProgressGeneration
-	ksm.Nodes = tmpKSM.Nodes
-	ksm.Elements = tmpKSM.Elements
-	return nil
-}
-
-func (ksm *KeyStateMachine) NewGeneration(generationNumber int, nodeIds []string) error {
-	ksm.lock.Lock()
-	defer ksm.lock.Unlock()
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("unable to open %s: %s", filePath, err)
-	}
-	defer file.Close()
-	tmpKSM, err := NewKSMFromReader(file)
-	if err != nil {
-		return fmt.Errorf("unable to create new key state machine: %s", err)
-	}
-
-	ksm.CurrentGeneration = tmpKSM.CurrentGeneration
-	ksm.InProgressGeneration = tmpKSM.InProgressGeneration
 	ksm.DeprecatedGeneration = tmpKSM.DeprecatedGeneration
 	ksm.Generations = tmpKSM.Generations
 	return nil
 }
 
-func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int64, err error) {
+func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int64, peers []string, err error) {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
@@ -162,9 +141,9 @@ func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int6
 	if err != nil {
 		delete(ksm.Generations, ksm.InProgressGeneration)
 		ksm.InProgressGeneration--
-		return 0, err
+		return 0, nil, err
 	}
-	return ksm.InProgressGeneration, nil
+	return ksm.InProgressGeneration, existingNodes, nil
 }
 
 func (ksm KeyStateMachine) NodeInGeneration(generationNumber int64, nodeId string) bool {
@@ -180,7 +159,7 @@ func (ksm KeyStateMachine) NodeInGeneration(generationNumber int64, nodeId strin
 	return false
 }
 
-func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
+func (ksm *KeyStateMachine) Update(req *pb.KeyStateCommand) error {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 

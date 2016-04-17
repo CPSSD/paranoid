@@ -31,6 +31,12 @@ type StateMachineResult struct {
 	Code         returncodes.Code
 	Err          error
 	BytesWritten int
+	KSMResult    *ksmResult
+}
+
+type ksmResult struct {
+	GenerationNumber int
+	Peers            []*pb.Node
 }
 
 type EntryAppliedInfo struct {
@@ -145,9 +151,10 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (*StateMachineRe
 
 func (s *RaftNetworkServer) RequestKeyStateUpdate(owner, holder *pb.Node, generation int64) error {
 	entry := &pb.Entry{
-		Type: pb.Entry_KeyStateMessage,
+		Type: pb.Entry_KeyStateCommand,
 		Uuid: generateNewUUID(),
-		KeyChange: &pb.KeyStateMessage{
+		KeyCommand: &pb.KeyStateCommand{
+			Type:       pb.KeyStateCommand_UpdateKeyPiece,
 			KeyOwner:   owner,
 			KeyHolder:  holder,
 			Generation: generation,
@@ -159,6 +166,24 @@ func (s *RaftNetworkServer) RequestKeyStateUpdate(owner, holder *pb.Node, genera
 		return err
 	}
 	return result.Err
+}
+
+// Returns the new generation number, a list of peer nodes, and an error.
+func (s *RaftNetworkServer) RequestNewGeneration(newNode *pb.Node) (int, []*pb.Node, error) {
+	entry := &pb.Entry{
+		Type: pb.Entry_KeyStateCommand,
+		Uuid: generateNewUUID(),
+		KeyCommand: &pb.KeyStateCommand{
+			Type:    pb.KeyStateCommand_NewGeneration,
+			NewNode: newNode,
+		},
+	}
+	result, err := s.RequestAddLogEntry(entry)
+	if err != nil {
+		Log.Error("failed to add log entry for new generation:", err)
+		return -1, nil, err
+	}
+	return result.KSMResult.GenerationNumber, result.KSMResult.Peers, result.Err
 }
 
 func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length int64,
@@ -394,7 +419,7 @@ func PerformLibPfsCommand(directory string, command *pb.StateMachineCommand) *St
 	switch command.Type {
 	case TYPE_WRITE:
 		code, err, bytesWritten := commands.WriteCommand(directory, command.Path, int64(command.Offset), int64(command.Length), command.Data)
-		return &StateMachineResult{code, err, bytesWritten}
+		return &StateMachineResult{Code: code, Err: err, BytesWritten: bytesWritten}
 	case TYPE_CREAT:
 		code, err := commands.CreatCommand(directory, command.Path, os.FileMode(command.Mode))
 		return &StateMachineResult{Code: code, Err: err}
@@ -440,9 +465,23 @@ func PerformLibPfsCommand(directory string, command *pb.StateMachineCommand) *St
 	return nil
 }
 
-func PerformKSMCommand(sateMachine *keyman.KeyStateMachine, keyChange *pb.KeyStateMessage) *StateMachineResult {
-	err := keyman.StateMachine.Update(keyChange)
-	return &StateMachineResult{
-		Err: err,
+func PerformKSMCommand(sateMachine *keyman.KeyStateMachine, keyCommand *pb.KeyStateCommand) *StateMachineResult {
+	switch keyCommand.Type {
+	case pb.KeyStateCommand_UpdateKeyPiece:
+		err := keyman.StateMachine.Update(keyCommand)
+		return &StateMachineResult{
+			Err: err,
+		}
+	case pb.KeyStateCommand_NewGeneration:
+		generationNumber, peers, err := keyman.StateMachine.NewGeneration(keyCommand.GetNewNode())
+		return &StateMachineResult{
+			Err: err,
+			KSMResult: &ksmResult{
+				GenerationNumber: int(generationNumber),
+				Peers:            peers,
+			},
+		}
 	}
+	Log.Fatal("Unrecognised command type: %s", keyCommand.Type)
+	return nil
 }

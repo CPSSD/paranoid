@@ -272,25 +272,12 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 			Log.Fatal("PfsDirectory is not set")
 		}
 		return PerformLibPfsCommand(s.pfsDirectory, libpfsCommand)
-	case pb.Entry_KeyStateMessage:
-		keyChange := logEntry.Entry.GetKeyChange()
-		if keyChange == nil {
-			Log.Fatal("Error applying KeyChange to state machine")
+	case pb.Entry_KeyStateCommand:
+		keyCommand := logEntry.Entry.GetKeyCommand()
+		if keyCommand == nil {
+			Log.Fatal("Error applying KeyStateCommand to state machine")
 		}
-		return PerformKSMCommand(keyman.StateMachine, keyChange)
-	case pb.Entry_NewGenerationMessage:
-		newGeneration := logEntry.Entry.GetNewGeneration()
-		if newGeneration == nil {
-			Log.Fatal("Error applying new generation to state machine")
-		}
-		var nodeIds []string = make([]string, 0)
-		for _, v := range newGeneration.GetNodes() {
-			nodeIds = append(nodeIds, v.NodeId)
-		}
-		err := keyman.StateMachine.NewGeneration(int(newGeneration.GenerationNumber), nodeIds)
-		return &StateMachineResult{
-			Err: err,
-		}
+		return PerformKSMCommand(keyman.StateMachine, keyCommand)
 	}
 	return nil
 }

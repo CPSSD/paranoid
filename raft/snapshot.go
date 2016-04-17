@@ -276,8 +276,8 @@ func (s *RaftNetworkServer) applyLogUpdates(snapshotDirectory string, startIndex
 			} else {
 				snapshotConfig.NewFutureConfiguration(protoNodesToNodes(config.Nodes), 0)
 			}
-		case pb.Entry_KeyStateMessage:
-			keyChange := logEntry.Entry.GetKeyChange()
+		case pb.Entry_KeyStateCommand:
+			keyChange := logEntry.Entry.GetKeyCommand()
 			if keyChange == nil {
 				return 0, errors.New("unable to apply log entry with empty key change field")
 			}
@@ -434,11 +434,6 @@ func (s *RaftNetworkServer) RevertToSnapshot(snapshotPath string) error {
 	err = os.Remove(path.Join(s.State.pfsDirectory, PersistentConfigurationFileName))
 	if err != nil {
 		Log.Warn("Unable to delete snapshot configuration file")
-	}
-
-	err = keyman.StateMachine.UpdateFromStateFile(path.Join(s.State.pfsDirectory, "meta", keyman.KSM_FILE_NAME+"-tar"))
-	if err != nil {
-		return fmt.Errorf("error reverting to snapshot: %s", err)
 	}
 
 	err = keyman.StateMachine.UpdateFromStateFile(path.Join(s.State.pfsDirectory, "meta", keyman.KSM_FILE_NAME+"-tar"))

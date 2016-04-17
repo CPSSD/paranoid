@@ -3,18 +3,12 @@ package pnetclient
 import (
 	"errors"
 	"github.com/cpssd/paranoid/pfsd/globals"
-	"github.com/cpssd/paranoid/pfsd/upnp"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 )
 
 //JoinCluster is used to request to join a raft cluster
 func JoinCluster(password string) error {
-	ip, err := upnp.GetIP()
-	if err != nil {
-		Log.Fatal("Can not contact peers: unable to get IP. Error:", err)
-	}
-
 	nodes := globals.Nodes.GetAll()
 	for _, node := range nodes {
 		Log.Info("Sending join cluster request to node:", node)
@@ -28,7 +22,7 @@ func JoinCluster(password string) error {
 		client := pb.NewParanoidNetworkClient(conn)
 
 		_, err = client.JoinCluster(context.Background(), &pb.JoinClusterRequest{
-			Ip:           ip,
+			Ip:           globals.ThisNode.IP,
 			Port:         globals.ThisNode.Port,
 			CommonName:   globals.ThisNode.CommonName,
 			Uuid:         globals.ThisNode.UUID,

@@ -54,10 +54,20 @@ message StateMachineCommand {
     int64 modify_nanoseconds = 12;  // optional
 }
 
-message KeyStateMessage {
-    Node key_owner = 1;             // required
-    Node key_holder = 2;            // required
-    int64 generation = 3;   // required
+message KeyStateCommand {
+    enum KSMType {
+        UpdateKeyPiece = 0;
+        NewGeneration = 1;
+    }
+    KSMType type = 1;
+
+    // UpdateKeyPiece arguments
+    Node key_owner = 2;     // optional
+    Node key_holder = 3;    // optional
+    int64 generation = 4;   // optional
+
+    // NewGeneration arguments
+    Node new_node = 5;  // optional
 }
 
 message Node {
@@ -85,16 +95,14 @@ message Entry {
       StateMachineCommand = 0;
       ConfigurationChange = 1;
       Demo = 2;
-      KeyStateMessage = 3;
-      NewGenerationMessage = 4;
+      KeyStateCommand = 3;
     }
     EntryType type = 1; // required 
     string uuid = 2; // required
     StateMachineCommand command = 3; // optional 
     Configuration config = 4; // optional 
     DemoCommand demo = 5; // optional
-    KeyStateMessage key_change = 6; // optional
-    NewGenerationMessage new_generation = 7;    // optional
+    KeyStateCommand key_command = 6; // optional
 }
 
 message LogEntry {
@@ -136,9 +144,4 @@ message SnapshotRequest {
 
 message SnapshotResponse {
     uint64 term = 1; // required
-}
-
-message NewGenerationMessage {
-    int64 generation_number = 1;    // required
-    repeated Node nodes = 2;       // required
 }
