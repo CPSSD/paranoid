@@ -6,6 +6,7 @@ import (
 	"fmt"
 	libpfs "github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"golang.org/x/net/context"
 	"io"
@@ -137,8 +138,14 @@ func tarSnapshot(snapshotDirectory string) error {
 		return fmt.Errorf("error creating tar file: %s", err)
 	}
 
+	err = os.Rename(path.Join(snapshotDirectory, "meta", keyman.KSM_FILE_NAME),
+		path.Join(snapshotDirectory, "meta", keyman.KSM_FILE_NAME+"-tar"))
+	if err != nil {
+		return fmt.Errorf("error creating tar file: %s", err)
+	}
+
 	tar := exec.Command("tar", "--directory="+snapshotDirectory, "-cf", path.Join(snapshotDirectory, TarFileName),
-		"contents-tar", "names-tar", "inodes-tar", PersistentConfigurationFileName)
+		"contents-tar", "names-tar", "inodes-tar", PersistentConfigurationFileName, path.Join("meta", keyman.KSM_FILE_NAME+"-tar"))
 	err = tar.Run()
 	if err != nil {
 		return fmt.Errorf("error creating tar file: %s", err)
@@ -153,7 +160,8 @@ func startNextSnapshotWithCurrent(currentSnapshot, nextSnapshot string) error {
 		return fmt.Errorf("error starting new snapshot from current snapshot:", err)
 	}
 
-	err = os.Mkdir(path.Join(nextSnapshot, "meta"), 0700)
+	err = os.Rename(path.Join(nextSnapshot, "meta", keyman.KSM_FILE_NAME+"-tar"),
+		path.Join(nextSnapshot, "meta", keyman.KSM_FILE_NAME))
 	if err != nil {
 		return fmt.Errorf("error starting next snapshot: %s", err)
 	}
@@ -216,6 +224,22 @@ func (s *RaftNetworkServer) startNextSnapshot(nextSnapshot string) error {
 
 func (s *RaftNetworkServer) applyLogUpdates(snapshotDirectory string, startIndex, endIndex uint64) (lastIncludedTerm uint64, err error) {
 	snapshotConfig := newConfiguration(snapshotDirectory, nil, s.nodeDetails, false)
+	var snapshotKeyMachine *keyman.KeyStateMachine
+	_, err = os.Stat(path.Join(snapshotDirectory, "meta", keyman.KSM_FILE_NAME))
+	if os.IsNotExist(err) {
+		snapshotKeyMachine = keyman.NewKSM(snapshotDirectory)
+		err = snapshotKeyMachine.SerialiseToPFSDir()
+		if err != nil {
+			return 0, fmt.Errorf("unable to apply log entry: %s", err)
+		}
+	} else if err != nil {
+		return 0, fmt.Errorf("unable to apply log entry: %s", err)
+	} else {
+		snapshotKeyMachine, err = keyman.NewKSMFromPFSDir(snapshotDirectory)
+		if err != nil {
+			return 0, fmt.Errorf("unable to apply log entry: %s", err)
+		}
+	}
 
 	if startIndex > endIndex {
 		return 0, errors.New("no log entries to apply")
@@ -230,7 +254,8 @@ func (s *RaftNetworkServer) applyLogUpdates(snapshotDirectory string, startIndex
 			lastIncludedTerm = logEntry.Term
 		}
 
-		if logEntry.Entry.Type == pb.Entry_StateMachineCommand {
+		switch logEntry.Entry.Type {
+		case pb.Entry_StateMachineCommand:
 			libpfsCommand := logEntry.Entry.GetCommand()
 			if libpfsCommand == nil {
 				return 0, errors.New("unable to apply log entry with empty command field")
@@ -240,7 +265,7 @@ func (s *RaftNetworkServer) applyLogUpdates(snapshotDirectory string, startIndex
 			if result.Code == returncodes.EUNEXPECTED {
 				return 0, fmt.Errorf("error applying log entry: %s", result.Err)
 			}
-		} else if logEntry.Entry.Type == pb.Entry_ConfigurationChange {
+		case pb.Entry_ConfigurationChange:
 			config := logEntry.Entry.GetConfig()
 			if config == nil {
 				return 0, errors.New("unable to apply log entry with empty config field")
@@ -251,7 +276,16 @@ func (s *RaftNetworkServer) applyLogUpdates(snapshotDirectory string, startIndex
 			} else {
 				snapshotConfig.NewFutureConfiguration(protoNodesToNodes(config.Nodes), 0)
 			}
-		} else {
+		case pb.Entry_KeyStateMessage:
+			keyChange := logEntry.Entry.GetKeyChange()
+			if keyChange == nil {
+				return 0, errors.New("unable to apply log entry with empty key change field")
+			}
+			result := PerformKSMCommand(snapshotKeyMachine, keyChange)
+			if result.Err != nil {
+				return 0, fmt.Errorf("error applying log entry: %s", result.Err)
+			}
+		default:
 			return 0, fmt.Errorf("unable to snapshot command type %s", logEntry.Entry.Type)
 		}
 	}
@@ -400,6 +434,16 @@ func (s *RaftNetworkServer) RevertToSnapshot(snapshotPath string) error {
 	err = os.Remove(path.Join(s.State.pfsDirectory, PersistentConfigurationFileName))
 	if err != nil {
 		Log.Warn("Unable to delete snapshot configuration file")
+	}
+
+	err = keyman.StateMachine.UpdateFromStateFile(path.Join(s.State.pfsDirectory, "meta", keyman.KSM_FILE_NAME+"-tar"))
+	if err != nil {
+		return fmt.Errorf("error reverting to snapshot: %s", err)
+	}
+
+	err = os.Remove(path.Join(s.State.pfsDirectory, "meta", keyman.KSM_FILE_NAME+"-tar"))
+	if err != nil {
+		Log.Warn("Unable to delete snapshot configuration file:", err)
 	}
 
 	currentSnapshot := path.Join(s.raftInfoDirectory, SnapshotDirectory, CurrentSnapshotDirectory)

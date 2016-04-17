@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"google.golang.org/grpc"
 	"net"
@@ -437,4 +438,11 @@ func PerformLibPfsCommand(directory string, command *pb.StateMachineCommand) *St
 	}
 	Log.Fatal("Unrecognised command type")
 	return nil
+}
+
+func PerformKSMCommand(sateMachine *keyman.KeyStateMachine, keyChange *pb.KeyStateMessage) *StateMachineResult {
+	err := keyman.StateMachine.Update(keyChange)
+	return &StateMachineResult{
+		Err: err,
+	}
 }
