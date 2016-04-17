@@ -76,11 +76,8 @@ func (ksm *KeyStateMachine) NewGeneration(generationNumber int, nodeIds []string
 	if generationNumber <= ksm.InProgressGeneration {
 		return fmt.Errorf("proposed generation too low; given %d, minimum %d", generationNumber, ksm.CurrentGeneration+1)
 	}
-	if generationNumber > ksm.CurrentGeneration+1 {
-		if len(ksm.Elements[ksm.CurrentGeneration+1]) > 0 {
-			return fmt.Errorf("generation %d already in progress", ksm.CurrentGeneration+1)
-		}
-		return fmt.Errorf("generation number too large; next in sequence: %d", ksm.CurrentGeneration+1)
+	if generationNumber > ksm.CurrentGeneration+1 && len(ksm.Elements[ksm.CurrentGeneration+1]) > 0 {
+		return fmt.Errorf("generation %d already in progress", ksm.CurrentGeneration+1)
 	}
 	ksm.Nodes[generationNumber] = nodeIds
 	ksm.Elements[generationNumber] = []*keyStateElement{}
