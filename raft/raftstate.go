@@ -274,10 +274,7 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 		if keyChange == nil {
 			Log.Fatal("Error applying KeyChange to state machine")
 		}
-		err := keyman.StateMachine.Update(keyChange)
-		return &StateMachineResult{
-			Err: err,
-		}
+		return PerformKSMCommand(keyman.StateMachine, keyChange)
 	}
 	return nil
 }
