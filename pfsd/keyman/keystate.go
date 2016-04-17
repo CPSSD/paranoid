@@ -31,8 +31,7 @@ type KeyStateMachine struct {
 	// The second index is unimportant as order doesn't matter there.
 	Elements map[int]([]*keyStateElement)
 
-	stateLock sync.Mutex
-	fileLock  sync.Mutex
+	lock sync.Mutex
 
 	// This is, once again, to avoid an import cycle
 	PfsDir string
@@ -70,8 +69,8 @@ func NewKSMFromPFSDir(pfsDir string) (*KeyStateMachine, error) {
 }
 
 func (ksm *KeyStateMachine) NewGeneration(generationNumber int, nodeIds []string) error {
-	ksm.stateLock.Lock()
-	defer ksm.stateLock.Unlock()
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
 
 	if generationNumber <= ksm.InProgressGeneration {
 		return fmt.Errorf("proposed generation too low; given %d, minimum %d", generationNumber, ksm.CurrentGeneration+1)
@@ -98,8 +97,8 @@ func (ksm KeyStateMachine) NodeInGeneration(generationNumber int, nodeId string)
 }
 
 func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
-	ksm.stateLock.Lock()
-	defer ksm.stateLock.Unlock()
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
 
 	if _, ok := ksm.Elements[int(req.CurrentGeneration)]; !ok {
 		return fmt.Errorf("generation %d has not yet been initialised", req.CurrentGeneration)
@@ -111,25 +110,28 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 		Holder:     req.GetKeyHolder(),
 	}
 
+	ksm.Elements[elem.Generation] = append(ksm.Elements[elem.Generation], elem)
 	// If a new generation is created, the state machine will only
 	// update its CurrentGeneration when enough generation N+1 elements
 	// exist for every node in the cluster to unlock if locked.
 	var backupGeneration int
 	var backupElements []*keyStateElement
+	var backupNodes []string
 	if elem.Generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(elem.Generation) {
 		backupGeneration = ksm.CurrentGeneration
 		backupElements = ksm.Elements[ksm.CurrentGeneration]
-		ksm.CurrentGeneration = elem.Generation
+		backupNodes = ksm.Nodes[ksm.CurrentGeneration]
 		delete(ksm.Elements, ksm.CurrentGeneration)
 		delete(ksm.Nodes, ksm.CurrentGeneration)
+		ksm.CurrentGeneration = elem.Generation
 	}
-	ksm.Elements[elem.Generation] = append(ksm.Elements[elem.Generation], elem)
 	err := ksm.SerialiseToPFSDir()
 	if err != nil {
 		// If the serialisation fails, undo the update.
 		ksm.Elements[elem.Generation] = ksm.Elements[elem.Generation][:len(ksm.Elements[elem.Generation])-1]
 		ksm.CurrentGeneration = backupGeneration
 		ksm.Elements[ksm.CurrentGeneration] = backupElements
+		ksm.Nodes[ksm.CurrentGeneration] = backupNodes
 		return fmt.Errorf("failed to commit change to KeyStateMachine: %s", err)
 	}
 
@@ -143,6 +145,9 @@ func (ksm KeyStateMachine) canUpdateGeneration(generation int) bool {
 	owners := make(map[string]int)
 	for _, v := range ksm.Elements[generation] {
 		owners[v.Owner.NodeId] += 1
+	}
+	if len(owners) != len(ksm.Elements[generation]) {
+		return false
 	}
 	minNodesRequired := len(ksm.Nodes[generation])/2 + 1
 	for _, count := range owners {
@@ -164,19 +169,22 @@ func (ksm *KeyStateMachine) Serialise(writer io.Writer) error {
 }
 
 func (ksm *KeyStateMachine) SerialiseToPFSDir() error {
-	ksm.fileLock.Lock()
-	defer ksm.fileLock.Unlock()
 	ksmpath := path.Join(ksm.PfsDir, "meta", KSM_FILE_NAME)
 	file, err := os.Create(ksmpath + "-new")
 	if err != nil {
 		Log.Errorf("Unable to open %s for writing state: %s", ksm.PfsDir, err)
 		return fmt.Errorf("unable to open %s for writing state: %s", ksm.PfsDir, err)
 	}
-	defer file.Close()
 	err = ksm.Serialise(file)
+	file.Close()
 	if err == nil {
-		os.Remove(ksmpath)
-		os.Rename(ksmpath+"-new", ksmpath)
+		err := os.Rename(ksmpath+"-new", ksmpath)
+		if err != nil {
+			// We ignore the following error because if both file operations fail they are very
+			// likely caused by the same thing, so one error will give information for both.
+			os.Remove(ksmpath + "-new")
+			return fmt.Errorf("unable to rename %s to %s: %s", ksmpath+"-new", ksmpath, err)
+		}
 	}
 	return err
 }
