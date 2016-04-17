@@ -441,6 +441,11 @@ func (s *RaftNetworkServer) RevertToSnapshot(snapshotPath string) error {
 		return fmt.Errorf("error reverting to snapshot: %s", err)
 	}
 
+	err = keyman.StateMachine.UpdateFromStateFile(path.Join(s.State.pfsDirectory, "meta", keyman.KSM_FILE_NAME+"-tar"))
+	if err != nil {
+		return fmt.Errorf("error reverting to snapshot: %s", err)
+	}
+
 	err = os.Remove(path.Join(s.State.pfsDirectory, "meta", keyman.KSM_FILE_NAME+"-tar"))
 	if err != nil {
 		Log.Warn("Unable to delete snapshot configuration file:", err)
