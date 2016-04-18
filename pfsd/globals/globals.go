@@ -144,30 +144,30 @@ var SystemLocked bool = false
 
 var keyPieceStoreLock sync.Mutex
 
-type KeyPieceStore map[Node]*keyman.KeyPiece
+type KeyPieceStore map[string]*keyman.KeyPiece
 
 // Returns nil if the piece is not found
-func (ks KeyPieceStore) GetPiece(node Node) *keyman.KeyPiece {
+func (ks KeyPieceStore) GetPiece(nodeUUID string) *keyman.KeyPiece {
 	keyPieceStoreLock.Lock()
 	defer keyPieceStoreLock.Unlock()
-	piece, ok := ks[node]
+	piece, ok := ks[nodeUUID]
 	if !ok {
 		return nil
 	}
 	return piece
 }
 
-func (ks KeyPieceStore) AddPiece(node Node, piece *keyman.KeyPiece) {
+func (ks KeyPieceStore) AddPiece(nodeUUID string, piece *keyman.KeyPiece) {
 	keyPieceStoreLock.Lock()
 	defer keyPieceStoreLock.Unlock()
-	ks[node] = piece
+	ks[nodeUUID] = piece
 	ks.SaveToDisk()
 }
 
-func (ks KeyPieceStore) DeletePiece(node Node) {
+func (ks KeyPieceStore) DeletePiece(nodeUUID string) {
 	keyPieceStoreLock.Lock()
 	defer keyPieceStoreLock.Unlock()
-	delete(ks, node)
+	delete(ks, nodeUUID)
 	ks.SaveToDisk()
 }
 
