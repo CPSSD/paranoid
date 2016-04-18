@@ -2,6 +2,7 @@ package keyman
 
 import (
 	"encoding/gob"
+	"errors"
 	"fmt"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"io"
@@ -12,6 +13,7 @@ import (
 
 const KSM_FILE_NAME string = "key_state"
 
+var ErrGenerationDeprecated = errors.New("given generation was created before the current generation was set")
 var StateMachine *KeyStateMachine
 
 type keyStateElement struct {
@@ -36,6 +38,7 @@ func (g *Generation) RemoveElement() {
 type KeyStateMachine struct {
 	CurrentGeneration    int64
 	InProgressGeneration int64
+	DeprecatedGeneration int64
 
 	// The first index indicates the generation.
 	// The second index is unimportant as order doesn't matter there.
@@ -51,6 +54,7 @@ func NewKSM(pfsDir string) *KeyStateMachine {
 	return &KeyStateMachine{
 		CurrentGeneration:    -1,
 		InProgressGeneration: -1,
+		DeprecatedGeneration: -1,
 		Generations:          make(map[int64]*Generation),
 		PfsDir:               pfsDir,
 	}
@@ -93,6 +97,7 @@ func (ksm *KeyStateMachine) UpdateFromStateFile(filePath string) error {
 
 	ksm.CurrentGeneration = tmpKSM.CurrentGeneration
 	ksm.InProgressGeneration = tmpKSM.InProgressGeneration
+	ksm.DeprecatedGeneration = tmpKSM.DeprecatedGeneration
 	ksm.Generations = tmpKSM.Generations
 	return nil
 }
@@ -133,6 +138,10 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
+	if req.Generation != ksm.CurrentGeneration && req.Generation <= ksm.DeprecatedGeneration {
+		return ErrGenerationDeprecated
+	}
+
 	if _, ok := ksm.Generations[req.Generation]; !ok {
 		return fmt.Errorf("generation %d has not yet been initialised", req.Generation)
 	}
@@ -147,17 +156,20 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	// update its CurrentGeneration when enough generation N+1 elements
 	// exist for every node in the cluster to unlock if locked.
 	var backupGeneration int64
+	var backupDeprecatedGen int64
 	var backupGenerations map[int64]*Generation
 	updatedGeneration := false
 	if req.Generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(req.Generation) {
 		updatedGeneration = true
 		backupGeneration = ksm.CurrentGeneration
+		backupDeprecatedGen = ksm.DeprecatedGeneration
 		backupGenerations = ksm.Generations
 
 		ksm.Generations = make(map[int64]*Generation)
 		ksm.InProgressGeneration++
-		ksm.CurrentGeneration = ksm.InProgressGeneration
-		ksm.Generations[ksm.CurrentGeneration] = backupGenerations[req.Generation]
+		ksm.DeprecatedGeneration = ksm.InProgressGeneration
+		ksm.CurrentGeneration = req.Generation
+		ksm.Generations[req.Generation] = backupGenerations[req.Generation]
 	}
 	err := ksm.SerialiseToPFSDir()
 	if err != nil {
@@ -165,6 +177,7 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 		if updatedGeneration {
 			ksm.CurrentGeneration = backupGeneration
 			ksm.InProgressGeneration--
+			ksm.DeprecatedGeneration = backupDeprecatedGen
 			ksm.Generations = backupGenerations
 		}
 		ksm.Generations[req.Generation].RemoveElement()
