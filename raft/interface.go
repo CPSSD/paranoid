@@ -148,9 +148,9 @@ func (s *RaftNetworkServer) RequestKeyStateUpdate(owner, holder *pb.Node, genera
 		Type: pb.Entry_KeyStateMessage,
 		Uuid: generateNewUUID(),
 		KeyChange: &pb.KeyStateMessage{
-			KeyOwner:          owner,
-			KeyHolder:         holder,
-			CurrentGeneration: generation,
+			KeyOwner:   owner,
+			KeyHolder:  holder,
+			Generation: generation,
 		},
 	}
 	result, err := s.RequestAddLogEntry(entry)

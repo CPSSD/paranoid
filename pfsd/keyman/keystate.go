@@ -121,12 +121,12 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
-	if _, ok := ksm.Elements[int(req.CurrentGeneration)]; !ok {
-		return fmt.Errorf("generation %d has not yet been initialised", req.CurrentGeneration)
+	if _, ok := ksm.Elements[int(req.Generation)]; !ok {
+		return fmt.Errorf("generation %d has not yet been initialised", req.Generation)
 	}
 
 	elem := &keyStateElement{
-		Generation: int(req.CurrentGeneration),
+		Generation: int(req.Generation),
 		Owner:      req.GetKeyOwner(),
 		Holder:     req.GetKeyHolder(),
 	}
