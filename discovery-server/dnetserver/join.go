@@ -83,8 +83,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 	response := pb.JoinResponse{RenewInterval.Nanoseconds() / 1000 / 1000, nodes}
 
 	if Pools[req.Pool].Info.Nodes[req.Node.Uuid] != nil {
-		Pools[req.Pool].Info.Nodes[req.Node.Uuid].Ip = req.Node.Ip
-		Pools[req.Pool].Info.Nodes[req.Node.Uuid].Port = req.Node.Port
+		Pools[req.Pool].Info.Nodes[req.Node.Uuid] = req.Node
 		saveState(req.Pool)
 		return &response, nil
 	}
