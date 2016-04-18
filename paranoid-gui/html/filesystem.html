@@ -4,8 +4,14 @@
 </div>
 
 <div id="fsStatus">
-  <h3>Status  <span class="label label-success" id="fsMountedLabel">Mounted</span></h3>
-  <button class="btn btn-warning" id="mountUnmountButton" onClick="mountUnmountButtonClicked()"></button>
+  <h3>Status <span class="label label-success" id="fsMountedLabel">Mounted</span>
+     <button class="btn btn-normal" id="refreshButton" onClick="refreshButtonClicked()">refresh</button></h3>
+  <br>
+  <ul class="list-group" id="">
+    <li class="list-group-item"><h5>status</h5><br><div id="clistatus"></div></li>
+    <li class="list-group-item"><h5>Nodes</h5><br><div id="nodes"></div></li>
+  </ul>
+  <button class="btn btn-warning" id="mountUnmountButton" onClick="mountUnmountButtonClicked()">Mount</button>
   <hr>
 </div>
 
@@ -30,7 +36,7 @@
     <li class="list-group-item" id="fsAttributeNetwork">Network<span class="label label-success" id="badge">YES</span></li>
     <li class="list-group-item" id="fsAttributeKeygen">Key Generated<span class="label label-success" id="badge">YES</span></li>
     <li class="list-group-item" id="fsAttributePool">Pool<span class="label label-primary" id="badge">strange_fox</span></li>
-    <li class="list-group-item" id="fsAttributeUuid">UUID<span class="label label-primary" id="badge">e256a4ed-43c2-4011-a1c8-545bc73cc021</li>
+    <li class="list-group-item" id="fsAttributeUuid">UUID<span class="label label-primary" id="badge">e256a4ed-43c2-4011-a1c8-545bc73cc021</span></li>
   </ul>
   <hr>
 </div>

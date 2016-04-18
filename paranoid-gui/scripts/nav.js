@@ -9,7 +9,7 @@ function loadSideBar() {
   if (selected == -1) {
     starter += 'class="selected" ';
   }
-  starter += 'onclick="rowClicked(-1)">Create New</a></li>';
+  starter += 'onclick="rowClicked(-1)">Home</a></li>';
   items.push(starter);
 
   $.each(fileSystems, function(i, item) {
@@ -34,7 +34,7 @@ function rowClicked(i) {
   }
   selected = i;
   if (i == -1) {
-    $(".content").load("html/form.html");
+    $(".content").load("html/home.html");
   } else {
     drawFileSystem(i);
   }
