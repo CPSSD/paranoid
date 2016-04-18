@@ -251,3 +251,17 @@ function mountFS() {
   });
   return false;
 }
+
+function getFilesystemStatus(fsName, callback) {
+  var exec = require("child_process").exec;
+  var cmd = "paranoid-cli status " + fsName;
+
+  exec(cmt, function(error, stdout, stderr) {
+    if (error !== null) {
+      alert(error);
+      return;
+    }
+
+    callback(stdout);
+  });
+}
