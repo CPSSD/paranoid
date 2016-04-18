@@ -11,7 +11,7 @@ import (
 func (s *ParanoidServer) RequestKeyPiece(ctx context.Context, req *pb.PingRequest) (*pb.KeyPiece, error) {
 	for _, node := range globals.Nodes.GetAll() {
 		if node.UUID == req.Uuid {
-			key := globals.HeldKeyPieces.GetPiece(node.UUID)
+			key := globals.HeldKeyPieces.GetPiece(0, node.UUID)
 			if key == nil {
 				Log.Warn("Key not found for node", node)
 				err := grpc.Errorf(codes.NotFound, "Key not found for node %v", node)
