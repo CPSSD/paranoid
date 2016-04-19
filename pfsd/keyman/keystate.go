@@ -82,8 +82,8 @@ func NewKSMFromPFSDir(pfsDir string) (*KeyStateMachine, error) {
 }
 
 func (ksm *KeyStateMachine) UpdateFromStateFile(filePath string) error {
-	ksm.stateLock.Lock()
-	defer ksm.stateLock.Unlock()
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
 
 	file, err := os.Open(filePath)
 	if err != nil {

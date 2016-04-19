@@ -38,7 +38,7 @@ func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*p
 				NodeId:     globals.ThisNode.UUID,
 			}
 
-			globals.HeldKeyPieces.AddPiece(node, piece)
+			globals.HeldKeyPieces.AddPiece(node.UUID, piece)
 			err := globals.RaftNetworkServer.RequestKeyStateUpdate(raftOwner, raftHolder,
 				int64(keyman.StateMachine.CurrentGeneration+1))
 			if err != nil {
