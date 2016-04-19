@@ -22,8 +22,8 @@ type keyStateElement struct {
 }
 
 type Generation struct {
-	//A list of the UUIDs of all nodes included in the generation
-	Nodes    []string
+	//A list of all nodes included in the generation
+	Nodes    []*pb.Node
 	Elements []*keyStateElement
 }
 
@@ -102,13 +102,17 @@ func (ksm *KeyStateMachine) UpdateFromStateFile(filePath string) error {
 	return nil
 }
 
-func (ksm *KeyStateMachine) NewGeneration(nodeIds []string) (generationNumber int64, err error) {
+func (ksm *KeyStateMachine) NewGeneration(newNode *pb.Node) (generationNumber int64, err error) {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
+	var existingNodes []*pb.Node
+	if gen, ok := ksm.Generations[ksm.CurrentGeneration]; ok {
+		existingNodes = gen.Nodes
+	}
 	ksm.InProgressGeneration++
 	ksm.Generations[ksm.InProgressGeneration] = &Generation{
-		Nodes:    nodeIds,
+		Nodes:    append(existingNodes, newNode),
 		Elements: []*keyStateElement{},
 	}
 
@@ -127,7 +131,7 @@ func (ksm KeyStateMachine) NodeInGeneration(generationNumber int64, nodeId strin
 		return false
 	}
 	for _, v := range generation.Nodes {
-		if v == nodeId {
+		if v.NodeId == nodeId {
 			return true
 		}
 	}
