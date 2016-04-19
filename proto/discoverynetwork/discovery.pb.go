@@ -31,6 +31,10 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
 type EmptyMessage struct {
 }
 
@@ -118,6 +122,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for DiscoveryNetwork service
 
 type DiscoveryNetworkClient interface {
@@ -164,28 +172,40 @@ func RegisterDiscoveryNetworkServer(s *grpc.Server, srv DiscoveryNetworkServer) 
 	s.RegisterService(&_DiscoveryNetwork_serviceDesc, srv)
 }
 
-func _DiscoveryNetwork_Join_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _DiscoveryNetwork_Join_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JoinRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DiscoveryNetworkServer).Join(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DiscoveryNetworkServer).Join(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/discoverynetwork.DiscoveryNetwork/Join",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiscoveryNetworkServer).Join(ctx, req.(*JoinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveryNetwork_Disconnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _DiscoveryNetwork_Disconnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DisconnectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(DiscoveryNetworkServer).Disconnect(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(DiscoveryNetworkServer).Disconnect(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/discoverynetwork.DiscoveryNetwork/Disconnect",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiscoveryNetworkServer).Disconnect(ctx, req.(*DisconnectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _DiscoveryNetwork_serviceDesc = grpc.ServiceDesc{

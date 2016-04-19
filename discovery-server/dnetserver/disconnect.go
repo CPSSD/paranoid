@@ -12,7 +12,7 @@ func (s *DiscoveryServer) Disconnect(ctx context.Context, req *pb.DisconnectRequ
 	PoolLock.RLock()
 	defer PoolLock.RUnlock()
 
-	if Pools[req.Pool] != nil {
+	if _, ok := Pools[req.Pool]; ok {
 		Pools[req.Pool].PoolLock.Lock()
 		defer Pools[req.Pool].PoolLock.Unlock()
 		err := checkPoolPassword(req.Pool, req.Password, req.Node)
@@ -25,7 +25,7 @@ func (s *DiscoveryServer) Disconnect(ctx context.Context, req *pb.DisconnectRequ
 		return &pb.EmptyMessage{}, returnError
 	}
 
-	if Pools[req.Pool].Info.Nodes[req.Node.Uuid] != nil {
+	if _, ok := Pools[req.Pool].Info.Nodes[req.Node.Uuid]; ok {
 		delete(Pools[req.Pool].Info.Nodes, req.Node.Uuid)
 		saveState(req.Pool)
 		Log.Info("Disconnect: Node %s (%s:%s) disconnected", req.Node.Uuid, req.Node.Ip, req.Node.Port)

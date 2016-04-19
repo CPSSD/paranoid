@@ -40,6 +40,10 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
 type Configuration_ConfigurationType int32
 
 const (
@@ -327,6 +331,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for RaftNetwork service
 
 type RaftNetworkClient interface {
@@ -393,52 +401,76 @@ func RegisterRaftNetworkServer(s *grpc.Server, srv RaftNetworkServer) {
 	s.RegisterService(&_RaftNetwork_serviceDesc, srv)
 }
 
-func _RaftNetwork_AppendEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RaftNetwork_AppendEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AppendEntriesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RaftNetworkServer).AppendEntries(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RaftNetworkServer).AppendEntries(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raft.RaftNetwork/AppendEntries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftNetworkServer).AppendEntries(ctx, req.(*AppendEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RaftNetwork_RequestVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RaftNetwork_RequestVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RequestVoteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RaftNetworkServer).RequestVote(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RaftNetworkServer).RequestVote(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raft.RaftNetwork/RequestVote",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftNetworkServer).RequestVote(ctx, req.(*RequestVoteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RaftNetwork_ClientToLeaderRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RaftNetwork_ClientToLeaderRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EntryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RaftNetworkServer).ClientToLeaderRequest(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RaftNetworkServer).ClientToLeaderRequest(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raft.RaftNetwork/ClientToLeaderRequest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftNetworkServer).ClientToLeaderRequest(ctx, req.(*EntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RaftNetwork_InstallSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RaftNetwork_InstallSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SnapshotRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RaftNetworkServer).InstallSnapshot(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RaftNetworkServer).InstallSnapshot(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raft.RaftNetwork/InstallSnapshot",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftNetworkServer).InstallSnapshot(ctx, req.(*SnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _RaftNetwork_serviceDesc = grpc.ServiceDesc{

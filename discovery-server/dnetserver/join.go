@@ -17,7 +17,7 @@ const (
 // Join method for Discovery Server
 func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
 	PoolLock.RLock()
-	if Pools[req.Pool] != nil {
+	if _, ok := Pools[req.Pool]; ok {
 		defer PoolLock.RUnlock()
 		Pools[req.Pool].PoolLock.Lock()
 		defer Pools[req.Pool].PoolLock.Unlock()
@@ -31,7 +31,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 		PoolLock.Lock()
 		defer PoolLock.Unlock()
 
-		if Pools[req.Pool] != nil {
+		if _, ok := Pools[req.Pool]; ok {
 			Pools[req.Pool].PoolLock.Lock()
 			defer Pools[req.Pool].PoolLock.Unlock()
 			err := checkPoolPassword(req.Pool, req.Password, req.Node)
@@ -82,12 +82,6 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 	nodes := getNodes(req.Pool, req.Node.Uuid)
 	response := pb.JoinResponse{RenewInterval.Nanoseconds() / 1000 / 1000, nodes}
 
-	if Pools[req.Pool].Info.Nodes[req.Node.Uuid] != nil {
-		Pools[req.Pool].Info.Nodes[req.Node.Uuid] = req.Node
-		saveState(req.Pool)
-		return &response, nil
-	}
-
 	Pools[req.Pool].Info.Nodes[req.Node.Uuid] = req.Node
 	Log.Infof("Join: Node %s (%s:%s) joined \n", req.Node.Uuid, req.Node.Ip, req.Node.Port)
 	saveState(req.Pool)
@@ -97,7 +91,7 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 
 func getNodes(pool, requesterUuid string) []*pb.Node {
 	var nodes []*pb.Node
-	if Pools[pool] != nil {
+	if _, ok := Pools[pool]; ok {
 		for nodeUUID, _ := range Pools[pool].Info.Nodes {
 			nodes = append(nodes, Pools[pool].Info.Nodes[nodeUUID])
 		}

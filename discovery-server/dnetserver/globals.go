@@ -45,7 +45,7 @@ var StateDirectoryPath string
 var TempDirectoryPath string
 
 func checkPoolPassword(pool, password string, node *pb.Node) error {
-	if Pools[pool] != nil {
+	if _, ok := Pools[pool]; ok {
 		if password == "" {
 			if len(Pools[pool].Info.PasswordHash) != 0 {
 				Log.Errorf("Join: node %s attempted join password protected pool without a giving a password", node.Uuid)
