@@ -30,6 +30,10 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
 type EmptyMessage struct {
 }
 
@@ -41,7 +45,7 @@ func (*EmptyMessage) Descriptor() ([]byte, []int) { return fileDescriptor0, []in
 type PingRequest struct {
 	Ip         string `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
 	Port       string `protobuf:"bytes,2,opt,name=port" json:"port,omitempty"`
-	CommonName string `protobuf:"bytes,3,opt,name=common_name" json:"common_name,omitempty"`
+	CommonName string `protobuf:"bytes,3,opt,name=common_name,json=commonName" json:"common_name,omitempty"`
 	Uuid       string `protobuf:"bytes,4,opt,name=uuid" json:"uuid,omitempty"`
 }
 
@@ -53,9 +57,9 @@ func (*PingRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int
 type JoinClusterRequest struct {
 	Ip           string `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
 	Port         string `protobuf:"bytes,2,opt,name=port" json:"port,omitempty"`
-	CommonName   string `protobuf:"bytes,3,opt,name=common_name" json:"common_name,omitempty"`
+	CommonName   string `protobuf:"bytes,3,opt,name=common_name,json=commonName" json:"common_name,omitempty"`
 	Uuid         string `protobuf:"bytes,4,opt,name=uuid" json:"uuid,omitempty"`
-	PoolPassword string `protobuf:"bytes,5,opt,name=pool_password" json:"pool_password,omitempty"`
+	PoolPassword string `protobuf:"bytes,5,opt,name=pool_password,json=poolPassword" json:"pool_password,omitempty"`
 }
 
 func (m *JoinClusterRequest) Reset()                    { *m = JoinClusterRequest{} }
@@ -65,11 +69,11 @@ func (*JoinClusterRequest) Descriptor() ([]byte, []int) { return fileDescriptor0
 
 type KeyPiece struct {
 	Data              []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	ParentFingerprint []byte `protobuf:"bytes,2,opt,name=parent_fingerprint,proto3" json:"parent_fingerprint,omitempty"`
+	ParentFingerprint []byte `protobuf:"bytes,2,opt,name=parent_fingerprint,json=parentFingerprint,proto3" json:"parent_fingerprint,omitempty"`
 	Prime             []byte `protobuf:"bytes,3,opt,name=prime,proto3" json:"prime,omitempty"`
 	Seq               int64  `protobuf:"varint,4,opt,name=seq" json:"seq,omitempty"`
 	// The Node data for the node who owns this KeyPiece
-	OwnerNode *PingRequest `protobuf:"bytes,5,opt,name=owner_node" json:"owner_node,omitempty"`
+	OwnerNode *PingRequest `protobuf:"bytes,5,opt,name=owner_node,json=ownerNode" json:"owner_node,omitempty"`
 }
 
 func (m *KeyPiece) Reset()                    { *m = KeyPiece{} }
@@ -94,6 +98,10 @@ func init() {
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
 var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for ParanoidNetwork service
 
@@ -169,52 +177,76 @@ func RegisterParanoidNetworkServer(s *grpc.Server, srv ParanoidNetworkServer) {
 	s.RegisterService(&_ParanoidNetwork_serviceDesc, srv)
 }
 
-func _ParanoidNetwork_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _ParanoidNetwork_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ParanoidNetworkServer).Ping(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ParanoidNetworkServer).Ping(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/paranoid.ParanoidNetwork/Ping",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ParanoidNetworkServer).Ping(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _ParanoidNetwork_JoinCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _ParanoidNetwork_JoinCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JoinClusterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ParanoidNetworkServer).JoinCluster(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ParanoidNetworkServer).JoinCluster(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/paranoid.ParanoidNetwork/JoinCluster",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ParanoidNetworkServer).JoinCluster(ctx, req.(*JoinClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _ParanoidNetwork_SendKeyPiece_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _ParanoidNetwork_SendKeyPiece_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(KeyPiece)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ParanoidNetworkServer).SendKeyPiece(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ParanoidNetworkServer).SendKeyPiece(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/paranoid.ParanoidNetwork/SendKeyPiece",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ParanoidNetworkServer).SendKeyPiece(ctx, req.(*KeyPiece))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _ParanoidNetwork_RequestKeyPiece_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _ParanoidNetwork_RequestKeyPiece_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(ParanoidNetworkServer).RequestKeyPiece(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(ParanoidNetworkServer).RequestKeyPiece(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/paranoid.ParanoidNetwork/RequestKeyPiece",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ParanoidNetworkServer).RequestKeyPiece(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _ParanoidNetwork_serviceDesc = grpc.ServiceDesc{

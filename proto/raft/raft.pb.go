@@ -41,6 +41,10 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
 type Configuration_ConfigurationType int32
 
 const (
@@ -100,7 +104,7 @@ func (*EmptyMessage) ProtoMessage()               {}
 func (*EmptyMessage) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 type EntryRequest struct {
-	SenderId string `protobuf:"bytes,1,opt,name=sender_id" json:"sender_id,omitempty"`
+	SenderId string `protobuf:"bytes,1,opt,name=sender_id,json=senderId" json:"sender_id,omitempty"`
 	Entry    *Entry `protobuf:"bytes,2,opt,name=entry" json:"entry,omitempty"`
 }
 
@@ -118,11 +122,11 @@ func (m *EntryRequest) GetEntry() *Entry {
 
 type AppendEntriesRequest struct {
 	Term         uint64   `protobuf:"varint,1,opt,name=term" json:"term,omitempty"`
-	LeaderId     string   `protobuf:"bytes,2,opt,name=leader_id" json:"leader_id,omitempty"`
-	PrevLogIndex uint64   `protobuf:"varint,3,opt,name=prev_log_index" json:"prev_log_index,omitempty"`
-	PrevLogTerm  uint64   `protobuf:"varint,4,opt,name=prev_log_term" json:"prev_log_term,omitempty"`
+	LeaderId     string   `protobuf:"bytes,2,opt,name=leader_id,json=leaderId" json:"leader_id,omitempty"`
+	PrevLogIndex uint64   `protobuf:"varint,3,opt,name=prev_log_index,json=prevLogIndex" json:"prev_log_index,omitempty"`
+	PrevLogTerm  uint64   `protobuf:"varint,4,opt,name=prev_log_term,json=prevLogTerm" json:"prev_log_term,omitempty"`
 	Entries      []*Entry `protobuf:"bytes,5,rep,name=entries" json:"entries,omitempty"`
-	LeaderCommit uint64   `protobuf:"varint,6,opt,name=leader_commit" json:"leader_commit,omitempty"`
+	LeaderCommit uint64   `protobuf:"varint,6,opt,name=leader_commit,json=leaderCommit" json:"leader_commit,omitempty"`
 }
 
 func (m *AppendEntriesRequest) Reset()                    { *m = AppendEntriesRequest{} }
@@ -146,15 +150,15 @@ type StateMachineCommand struct {
 	// Used for Write and Truncate commands
 	Length int64 `protobuf:"varint,5,opt,name=length" json:"length,omitempty"`
 	// Used for Link and Rename commands
-	OldPath string `protobuf:"bytes,6,opt,name=old_path" json:"old_path,omitempty"`
-	NewPath string `protobuf:"bytes,7,opt,name=new_path" json:"new_path,omitempty"`
+	OldPath string `protobuf:"bytes,6,opt,name=old_path,json=oldPath" json:"old_path,omitempty"`
+	NewPath string `protobuf:"bytes,7,opt,name=new_path,json=newPath" json:"new_path,omitempty"`
 	// Used for Create, Chmod and Mkdir commands
 	Mode uint32 `protobuf:"varint,8,opt,name=mode" json:"mode,omitempty"`
 	// Used for Utimes command
-	AccessSeconds     int64 `protobuf:"varint,9,opt,name=access_seconds" json:"access_seconds,omitempty"`
-	AccessNanoseconds int64 `protobuf:"varint,10,opt,name=access_nanoseconds" json:"access_nanoseconds,omitempty"`
-	ModifySeconds     int64 `protobuf:"varint,11,opt,name=modify_seconds" json:"modify_seconds,omitempty"`
-	ModifyNanoseconds int64 `protobuf:"varint,12,opt,name=modify_nanoseconds" json:"modify_nanoseconds,omitempty"`
+	AccessSeconds     int64 `protobuf:"varint,9,opt,name=access_seconds,json=accessSeconds" json:"access_seconds,omitempty"`
+	AccessNanoseconds int64 `protobuf:"varint,10,opt,name=access_nanoseconds,json=accessNanoseconds" json:"access_nanoseconds,omitempty"`
+	ModifySeconds     int64 `protobuf:"varint,11,opt,name=modify_seconds,json=modifySeconds" json:"modify_seconds,omitempty"`
+	ModifyNanoseconds int64 `protobuf:"varint,12,opt,name=modify_nanoseconds,json=modifyNanoseconds" json:"modify_nanoseconds,omitempty"`
 }
 
 func (m *StateMachineCommand) Reset()                    { *m = StateMachineCommand{} }
@@ -163,8 +167,8 @@ func (*StateMachineCommand) ProtoMessage()               {}
 func (*StateMachineCommand) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
 type KeyStateMessage struct {
-	KeyOwner   *Node `protobuf:"bytes,1,opt,name=key_owner" json:"key_owner,omitempty"`
-	KeyHolder  *Node `protobuf:"bytes,2,opt,name=key_holder" json:"key_holder,omitempty"`
+	KeyOwner   *Node `protobuf:"bytes,1,opt,name=key_owner,json=keyOwner" json:"key_owner,omitempty"`
+	KeyHolder  *Node `protobuf:"bytes,2,opt,name=key_holder,json=keyHolder" json:"key_holder,omitempty"`
 	Generation int64 `protobuf:"varint,3,opt,name=generation" json:"generation,omitempty"`
 }
 
@@ -190,8 +194,8 @@ func (m *KeyStateMessage) GetKeyHolder() *Node {
 type Node struct {
 	Ip         string `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
 	Port       string `protobuf:"bytes,2,opt,name=port" json:"port,omitempty"`
-	CommonName string `protobuf:"bytes,3,opt,name=common_name" json:"common_name,omitempty"`
-	NodeId     string `protobuf:"bytes,4,opt,name=node_id" json:"node_id,omitempty"`
+	CommonName string `protobuf:"bytes,3,opt,name=common_name,json=commonName" json:"common_name,omitempty"`
+	NodeId     string `protobuf:"bytes,4,opt,name=node_id,json=nodeId" json:"node_id,omitempty"`
 }
 
 func (m *Node) Reset()                    { *m = Node{} }
@@ -231,7 +235,7 @@ type Entry struct {
 	Command   *StateMachineCommand `protobuf:"bytes,3,opt,name=command" json:"command,omitempty"`
 	Config    *Configuration       `protobuf:"bytes,4,opt,name=config" json:"config,omitempty"`
 	Demo      *DemoCommand         `protobuf:"bytes,5,opt,name=demo" json:"demo,omitempty"`
-	KeyChange *KeyStateMessage     `protobuf:"bytes,6,opt,name=key_change" json:"key_change,omitempty"`
+	KeyChange *KeyStateMessage     `protobuf:"bytes,6,opt,name=key_change,json=keyChange" json:"key_change,omitempty"`
 }
 
 func (m *Entry) Reset()                    { *m = Entry{} }
@@ -286,7 +290,7 @@ func (m *LogEntry) GetEntry() *Entry {
 
 type AppendEntriesResponse struct {
 	Term      uint64 `protobuf:"varint,1,opt,name=term" json:"term,omitempty"`
-	NextIndex uint64 `protobuf:"varint,2,opt,name=next_index" json:"next_index,omitempty"`
+	NextIndex uint64 `protobuf:"varint,2,opt,name=next_index,json=nextIndex" json:"next_index,omitempty"`
 	Success   bool   `protobuf:"varint,3,opt,name=success" json:"success,omitempty"`
 }
 
@@ -297,9 +301,9 @@ func (*AppendEntriesResponse) Descriptor() ([]byte, []int) { return fileDescript
 
 type RequestVoteRequest struct {
 	Term         uint64 `protobuf:"varint,1,opt,name=term" json:"term,omitempty"`
-	CandidateId  string `protobuf:"bytes,2,opt,name=candidate_id" json:"candidate_id,omitempty"`
-	LastLogIndex uint64 `protobuf:"varint,3,opt,name=last_log_index" json:"last_log_index,omitempty"`
-	LastLogTerm  uint64 `protobuf:"varint,4,opt,name=last_log_term" json:"last_log_term,omitempty"`
+	CandidateId  string `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId" json:"candidate_id,omitempty"`
+	LastLogIndex uint64 `protobuf:"varint,3,opt,name=last_log_index,json=lastLogIndex" json:"last_log_index,omitempty"`
+	LastLogTerm  uint64 `protobuf:"varint,4,opt,name=last_log_term,json=lastLogTerm" json:"last_log_term,omitempty"`
 }
 
 func (m *RequestVoteRequest) Reset()                    { *m = RequestVoteRequest{} }
@@ -309,7 +313,7 @@ func (*RequestVoteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0
 
 type RequestVoteResponse struct {
 	Term        uint64 `protobuf:"varint,1,opt,name=term" json:"term,omitempty"`
-	VoteGranted bool   `protobuf:"varint,2,opt,name=vote_granted" json:"vote_granted,omitempty"`
+	VoteGranted bool   `protobuf:"varint,2,opt,name=vote_granted,json=voteGranted" json:"vote_granted,omitempty"`
 }
 
 func (m *RequestVoteResponse) Reset()                    { *m = RequestVoteResponse{} }
@@ -319,9 +323,9 @@ func (*RequestVoteResponse) Descriptor() ([]byte, []int) { return fileDescriptor
 
 type SnapshotRequest struct {
 	Term              uint64 `protobuf:"varint,1,opt,name=term" json:"term,omitempty"`
-	LeaderId          string `protobuf:"bytes,2,opt,name=leader_id" json:"leader_id,omitempty"`
-	LastIncludedIndex uint64 `protobuf:"varint,3,opt,name=last_included_index" json:"last_included_index,omitempty"`
-	LastIncludedTerm  uint64 `protobuf:"varint,4,opt,name=last_included_term" json:"last_included_term,omitempty"`
+	LeaderId          string `protobuf:"bytes,2,opt,name=leader_id,json=leaderId" json:"leader_id,omitempty"`
+	LastIncludedIndex uint64 `protobuf:"varint,3,opt,name=last_included_index,json=lastIncludedIndex" json:"last_included_index,omitempty"`
+	LastIncludedTerm  uint64 `protobuf:"varint,4,opt,name=last_included_term,json=lastIncludedTerm" json:"last_included_term,omitempty"`
 	Offset            uint64 `protobuf:"varint,5,opt,name=offset" json:"offset,omitempty"`
 	Data              []byte `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`
 	Done              bool   `protobuf:"varint,7,opt,name=done" json:"done,omitempty"`
@@ -364,6 +368,10 @@ func init() {
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
 var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
 
 // Client API for RaftNetwork service
 
@@ -431,52 +439,76 @@ func RegisterRaftNetworkServer(s *grpc.Server, srv RaftNetworkServer) {
 	s.RegisterService(&_RaftNetwork_serviceDesc, srv)
 }
 
-func _RaftNetwork_AppendEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RaftNetwork_AppendEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AppendEntriesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RaftNetworkServer).AppendEntries(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RaftNetworkServer).AppendEntries(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raft.RaftNetwork/AppendEntries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftNetworkServer).AppendEntries(ctx, req.(*AppendEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RaftNetwork_RequestVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RaftNetwork_RequestVote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RequestVoteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RaftNetworkServer).RequestVote(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RaftNetworkServer).RequestVote(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raft.RaftNetwork/RequestVote",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftNetworkServer).RequestVote(ctx, req.(*RequestVoteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RaftNetwork_ClientToLeaderRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RaftNetwork_ClientToLeaderRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EntryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RaftNetworkServer).ClientToLeaderRequest(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RaftNetworkServer).ClientToLeaderRequest(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raft.RaftNetwork/ClientToLeaderRequest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftNetworkServer).ClientToLeaderRequest(ctx, req.(*EntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RaftNetwork_InstallSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RaftNetwork_InstallSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SnapshotRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RaftNetworkServer).InstallSnapshot(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RaftNetworkServer).InstallSnapshot(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raft.RaftNetwork/InstallSnapshot",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaftNetworkServer).InstallSnapshot(ctx, req.(*SnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _RaftNetwork_serviceDesc = grpc.ServiceDesc{
