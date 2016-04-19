@@ -31,7 +31,7 @@ func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		}
 	}()
 
-	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namepath := GetParanoidPath(paranoidDirectory, filePath)
 
 	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
@@ -46,7 +46,7 @@ func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		return returncodes.EIO, errors.New(filePath + " is of type symlink")
 	}
 
-	inodeNameBytes, code, err := getFileInode(namepath)
+	inodeNameBytes, code, err := GetFileInode(namepath)
 	if code != returncodes.OK {
 		return code, err
 	}
@@ -65,7 +65,7 @@ func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		return returncodes.EUNEXPECTED, fmt.Errorf("error reading inode: %s", err)
 	}
 
-	nodeData := &inode{}
+	nodeData := &Inode{}
 	err = json.Unmarshal(inodeContents, &nodeData)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshaling inode data: %s", err)

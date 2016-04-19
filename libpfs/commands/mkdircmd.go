@@ -26,7 +26,7 @@ func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCo
 		}
 	}()
 
-	dirParanoidPath := getParanoidPath(paranoidDirectory, dirPath)
+	dirParanoidPath := GetParanoidPath(paranoidDirectory, dirPath)
 	dirInfoPath := path.Join(dirParanoidPath, "info")
 
 	inodeBytes, err := generateNewInode()
@@ -80,10 +80,11 @@ func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCo
 	}
 	defer inodeFile.Close()
 
-	nodeData := &inode{
-		Mode:  mode | syscall.S_IFDIR,
-		Inode: inodeString,
-		Count: 1}
+	nodeData := &Inode{
+		Mode:    mode | syscall.S_IFDIR,
+		Inode:   inodeString,
+		Count:   1,
+		Ignored: false}
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)

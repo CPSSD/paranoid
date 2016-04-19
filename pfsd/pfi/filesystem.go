@@ -21,7 +21,7 @@ type ParanoidFileSystem struct {
 //GetAttr is called by fuse when the attributes of a
 //file or directory are needed. (pfs stat)
 func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.Status) {
-	Log.Info("GetAttr called on", name)
+	Log.Verbose("GetAttr called on", name)
 
 	// Special case : "" is the root of our filesystem
 	if name == "" {
@@ -35,7 +35,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		Log.Fatal("Error running stat command :", err)
 	}
 
-	if err != nil {
+	if err != nil { // TODO this produces tonnes of usless logspam
 		Log.Error("Error running stat command :", err)
 	}
 
@@ -56,7 +56,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 
 //OpenDir is called when the contents of a directory are needed.
 func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
-	Log.Info("OpenDir called on : " + name)
+	Log.Verbose("OpenDir called on : " + name)
 
 	code, err, fileNames := commands.ReadDirCommand(globals.ParanoidDir, name)
 	if code == returncodes.EUNEXPECTED {
@@ -73,7 +73,7 @@ func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fus
 
 	dirEntries := make([]fuse.DirEntry, len(fileNames))
 	for i, dirName := range fileNames {
-		Log.Info("OpenDir has " + dirName)
+		Log.Verbose("OpenDir has " + dirName)
 		dirEntries[i] = fuse.DirEntry{Name: dirName}
 	}
 
@@ -84,7 +84,7 @@ func (fs *ParanoidFileSystem) OpenDir(name string, context *fuse.Context) ([]fus
 //Read and Write (among others) opperations can be executed on this
 //custom file object (ParanoidFile, see below)
 func (fs *ParanoidFileSystem) Open(name string, flags uint32, context *fuse.Context) (nodefs.File, fuse.Status) {
-	Log.Info("Open called on : " + name)
+	Log.Verbose("Open called on : " + name)
 	return newParanoidFile(name), fuse.OK
 }
 
@@ -93,10 +93,11 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 	Log.Info("Create called on : " + name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !glob.ShouldIgnore(name) {
+	shouldGlob := glob.ShouldIgnore(name, false)
+	if SendOverNetwork && !shouldGlob {
 		code, err = globals.RaftNetworkServer.RequestCreatCommand(name, mode)
 	} else {
-		code, err = commands.CreatCommand(globals.ParanoidDir, name, os.FileMode(mode))
+		code, err = commands.CreatCommand(globals.ParanoidDir, name, os.FileMode(mode), shouldGlob)
 	}
 
 	if code == returncodes.EUNEXPECTED {
@@ -115,7 +116,7 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 
 //Access is called by fuse to see if it has access to a certain file
 func (fs *ParanoidFileSystem) Access(name string, mode uint32, context *fuse.Context) fuse.Status {
-	Log.Info("Access called on : " + name)
+	Log.Verbose("Access called on : " + name)
 	if name != "" {
 		code, err := commands.AccessCommand(globals.ParanoidDir, name, mode)
 		if code == returncodes.EUNEXPECTED {
@@ -135,7 +136,7 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	Log.Info("Rename called on : " + oldName + " to be renamed to " + newName)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !glob.ShouldIgnore(newName) {
+	if SendOverNetwork && !glob.ShouldIgnore(newName, false) {
 		code, err = globals.RaftNetworkServer.RequestRenameCommand(oldName, newName)
 	} else {
 		code, err = commands.RenameCommand(globals.ParanoidDir, oldName, newName)
@@ -156,7 +157,7 @@ func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse
 	Log.Info("Link called")
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !glob.ShouldIgnore(newName) {
+	if SendOverNetwork && !glob.ShouldIgnore(newName, false) {
 		code, err = globals.RaftNetworkServer.RequestLinkCommand(oldName, newName)
 	} else {
 		code, err = commands.LinkCommand(globals.ParanoidDir, oldName, newName)
@@ -177,7 +178,7 @@ func (fs *ParanoidFileSystem) Symlink(oldName string, newName string, context *f
 	Log.Info("Symbolic link called from", oldName, "to", newName)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !glob.ShouldIgnore(newName) {
+	if SendOverNetwork && !glob.ShouldIgnore(newName, false) {
 		code, err = globals.RaftNetworkServer.RequestSymlinkCommand(oldName, newName)
 	} else {
 		code, err = commands.SymlinkCommand(globals.ParanoidDir, oldName, newName)
@@ -208,10 +209,10 @@ func (fs *ParanoidFileSystem) Readlink(name string, context *fuse.Context) (stri
 
 //Unlink is called when deleting a file
 func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) fuse.Status {
-	Log.Info("Unlink callde on : " + name)
+	Log.Info("Unlink called on : " + name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !glob.ShouldIgnore(name) {
+	if SendOverNetwork && !glob.ShouldIgnore(name, false) {
 		code, err = globals.RaftNetworkServer.RequestUnlinkCommand(name)
 	} else {
 		code, err = commands.UnlinkCommand(globals.ParanoidDir, name)
@@ -232,7 +233,7 @@ func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Cont
 	Log.Info("Mkdir called on : " + name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !glob.ShouldIgnore(name) {
+	if SendOverNetwork && !glob.ShouldIgnore(name, false) {
 		code, err = globals.RaftNetworkServer.RequestMkdirCommand(name, mode)
 	} else {
 		code, err = commands.MkdirCommand(globals.ParanoidDir, name, os.FileMode(mode))
@@ -253,7 +254,7 @@ func (fs *ParanoidFileSystem) Rmdir(name string, context *fuse.Context) fuse.Sta
 	Log.Info("Rmdir called on : " + name)
 	var code returncodes.Code
 	var err error
-	if SendOverNetwork && !glob.ShouldIgnore(name) {
+	if SendOverNetwork && !glob.ShouldIgnore(name, true) {
 		code, err = globals.RaftNetworkServer.RequestRmdirCommand(name)
 	} else {
 		code, err = commands.RmdirCommand(globals.ParanoidDir, name)

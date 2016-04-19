@@ -396,7 +396,8 @@ func PerformLibPfsCommand(directory string, command *pb.StateMachineCommand) *St
 		code, err, bytesWritten := commands.WriteCommand(directory, command.Path, int64(command.Offset), int64(command.Length), command.Data)
 		return &StateMachineResult{code, err, bytesWritten}
 	case TYPE_CREAT:
-		code, err := commands.CreatCommand(directory, command.Path, os.FileMode(command.Mode))
+		//when coming from raft shouldGlob should obviously be false
+		code, err := commands.CreatCommand(directory, command.Path, os.FileMode(command.Mode), false)
 		return &StateMachineResult{Code: code, Err: err}
 	case TYPE_CHMOD:
 		code, err := commands.ChmodCommand(directory, command.Path, os.FileMode(command.Mode))

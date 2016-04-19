@@ -16,11 +16,12 @@ import (
 
 var Log *logger.ParanoidLogger
 
-type inode struct {
-	Count int         `json:"count"`
-	Inode string      `json:"inode"`
-	Mode  os.FileMode `json:"mode"`
-	Link  string      `json:"link,omitempty"`
+type Inode struct {
+	Count   int         `json:"count"`
+	Inode   string      `json:"inode"`
+	Mode    os.FileMode `json:"mode"`
+	Ignored bool        `json:"ignored"`
+	Link    string      `json:"link,omitempty"`
 }
 
 func getAccessMode(flags uint32) uint32 {
@@ -43,7 +44,7 @@ func getFileMode(paranoidDir, inodeName string) (os.FileMode, error) {
 		return os.FileMode(0), fmt.Errorf("error reading inode: %s", err)
 	}
 
-	nodeData := &inode{}
+	nodeData := &Inode{}
 	err = json.Unmarshal(inodeContents, &nodeData)
 	if err != nil {
 		return os.FileMode(0), fmt.Errorf("error unmarshaling inode data: %s", err)
@@ -138,12 +139,12 @@ func UnLockFileSystem(paranoidDir string) error {
 	lockPath := path.Join(paranoidDir, "meta", "lock")
 	file, err := os.Open(lockPath)
 	if err != nil {
-		return errors.New("could not get meta/lock file descriptor for unlock")
+		return errors.New("could not get meta/inodeName file descriptor for unlock")
 	}
 	defer file.Close()
 	err = syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
 	if err != nil {
-		return errors.New("could not unlock meta/lock")
+		return errors.New("could inodeName unlock meta/lock")
 	}
 	return nil
 }
@@ -162,7 +163,7 @@ func unLockFile(paranoidDir, fileName string) error {
 	return nil
 }
 
-func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
+func GetParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
 	split := strings.Split(realPath, "/")
 	paranoidPath = path.Join(paranoidDir, "names")
 	for i := range split {
@@ -179,7 +180,40 @@ func generateNewInode() (inodeBytes []byte, err error) {
 	return []byte(strings.TrimSpace(string(inodeBytes))), nil
 }
 
-func getFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Code, err error) {
+func UpdateInode(paranoidDirectory, filePath string, newnode Inode) (code returncodes.Code, err error) {
+	inodePath := path.Join(paranoidDirectory, "inodes", newnode.Inode)
+	openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0600)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error opening file: %s", err)
+	}
+	defer openedFile.Close()
+
+	Log.Verbose("truncating inode " + inodePath)
+	err = openedFile.Truncate(0)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file: %s", err)
+	}
+
+	newJSONData, err := json.Marshal(&newnode)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)
+	}
+
+	Log.Verbose("link : writing to file " + inodePath)
+	_, err = openedFile.Write(newJSONData)
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file: %s", err)
+	}
+
+	err = openedFile.Close()
+
+	if err != nil {
+		return returncodes.EUNEXPECTED, fmt.Errorf("error closing file: %s", err)
+	}
+	return returncodes.OK, nil
+}
+
+func GetFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Code, err error) {
 	f, err := os.Lstat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -235,7 +269,7 @@ func getFileType(directory, filePath string) (returncodes.Code, error) {
 		return typeDir, nil
 	}
 
-	inode, code, err := getFileInode(filePath)
+	inode, code, err := GetFileInode(filePath)
 	if err != nil {
 		return 0, fmt.Errorf("error getting file type of %s, error getting inode: %s", filePath, err)
 	}
@@ -244,7 +278,7 @@ func getFileType(directory, filePath string) (returncodes.Code, error) {
 		if code == returncodes.ENOENT {
 			return typeENOENT, nil
 		}
-		return 0, fmt.Errorf("error getting file type of %s, unexpected result from getFileInode: %s", filePath, code)
+		return 0, fmt.Errorf("error getting file type of %s, unexpected result from GetFileInode: %s", filePath, code)
 	}
 
 	f, err = os.Lstat(path.Join(directory, "contents", string(inode)))

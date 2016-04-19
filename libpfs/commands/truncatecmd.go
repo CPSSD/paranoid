@@ -27,7 +27,7 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 		}
 	}()
 
-	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namepath := GetParanoidPath(paranoidDirectory, filePath)
 	namepathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
@@ -45,7 +45,7 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 		return returncodes.EIO, errors.New(filePath + " is a symlink")
 	}
 
-	fileInodeBytes, code, err := getFileInode(namepath)
+	fileInodeBytes, code, err := GetFileInode(namepath)
 	if code != returncodes.OK {
 		return code, err
 	}

@@ -14,7 +14,7 @@ import (
 // SymlinkCommand creates a symbolic link
 func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("symlink command called")
-	targetParanoidPath := getParanoidPath(paranoidDirectory, targetFilePath)
+	tarGetParanoidPath := GetParanoidPath(paranoidDirectory, targetFilePath)
 
 	err := GetFileSystemLock(paranoidDirectory, ExclusiveLock)
 	if err != nil {
@@ -29,7 +29,7 @@ func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) 
 		}
 	}()
 
-	targetFilePathType, err := getFileType(paranoidDirectory, targetParanoidPath)
+	targetFilePathType, err := getFileType(paranoidDirectory, tarGetParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
@@ -46,7 +46,7 @@ func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) 
 	uuidString := string(uuidBytes)
 	Log.Verbose("symlink: uuid", uuidString)
 
-	err = ioutil.WriteFile(targetParanoidPath, uuidBytes, 0600)
+	err = ioutil.WriteFile(tarGetParanoidPath, uuidBytes, 0600)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing file: %s", err)
 	}
@@ -64,11 +64,12 @@ func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) 
 
 	stat := fi.Sys().(*syscall.Stat_t)
 
-	nodeData := &inode{
-		Mode:  os.FileMode(stat.Mode),
-		Inode: uuidString,
-		Count: 1,
-		Link:  existingFilePath,
+	nodeData := &Inode{
+		Mode:    os.FileMode(stat.Mode),
+		Inode:   uuidString,
+		Count:   1,
+		Ignored: false,
+		Link:    existingFilePath,
 	}
 
 	jsonData, err := json.Marshal(nodeData)

@@ -11,7 +11,6 @@ import (
 
 //ReadDirCommand returns a list of all the files in the given paranoidDirectory
 func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.Code, returnError error, fileNames []string) {
-	Log.Info("readdir command called")
 	Log.Verbose("readdir : given paranoidDirectory = " + paranoidDirectory)
 
 	err := GetFileSystemLock(paranoidDirectory, SharedLock)
@@ -33,7 +32,7 @@ func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.C
 	if dirPath == "" {
 		dirParanoidPath = path.Join(paranoidDirectory, "names")
 	} else {
-		dirParanoidPath = getParanoidPath(paranoidDirectory, dirPath)
+		dirParanoidPath = GetParanoidPath(paranoidDirectory, dirPath)
 		pathFileType, err := getFileType(paranoidDirectory, dirParanoidPath)
 		if err != nil {
 			return returncodes.EUNEXPECTED, err, nil

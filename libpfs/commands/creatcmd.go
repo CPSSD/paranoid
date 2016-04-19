@@ -12,7 +12,7 @@ import (
 )
 
 //CreatCommand creates a new file with the name filePath in the pfs paranoidDirectory
-func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (returnCode returncodes.Code, returnError error) {
+func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode, shouldGlob bool) (returnCode returncodes.Code, returnError error) {
 	Log.Info("creat command called")
 	Log.Verbose("creat : paranoidDirectory = " + paranoidDirectory)
 
@@ -29,7 +29,7 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		}
 	}()
 
-	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namepath := GetParanoidPath(paranoidDirectory, filePath)
 
 	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
@@ -54,10 +54,12 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		return returncodes.EUNEXPECTED, errors.New("error writing name file")
 	}
 
-	nodeData := &inode{
-		Mode:  perms,
-		Inode: uuidstring,
-		Count: 1}
+	nodeData := &Inode{
+		Mode:    perms,
+		Inode:   uuidstring,
+		Count:   1,
+		Ignored: shouldGlob}
+
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)

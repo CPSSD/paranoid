@@ -13,8 +13,8 @@ import (
 // LinkCommand creates a link of a file.
 func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("link command called")
-	existingParanoidPath := getParanoidPath(paranoidDirectory, existingFilePath)
-	targetParanoidPath := getParanoidPath(paranoidDirectory, targetFilePath)
+	existingParanoidPath := GetParanoidPath(paranoidDirectory, existingFilePath)
+	tarGetParanoidPath := GetParanoidPath(paranoidDirectory, targetFilePath)
 
 	Log.Verbose("link : given paranoidDirectory = " + paranoidDirectory)
 
@@ -48,7 +48,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 		return returncodes.EIO, errors.New("existing file " + existingFilePath + " is a symlink")
 	}
 
-	targetFileType, err := getFileType(paranoidDirectory, targetParanoidPath)
+	targetFileType, err := getFileType(paranoidDirectory, tarGetParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error getting target file %s file type: %s", targetFilePath, err)
 	}
@@ -58,7 +58,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 	}
 
 	// getting inode and fileMode of existing file
-	inodeBytes, code, err := getFileInode(existingParanoidPath)
+	inodeBytes, code, err := GetFileInode(existingParanoidPath)
 	if code != returncodes.OK {
 		return code, err
 	}
@@ -70,7 +70,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 	fileMode := fileInfo.Mode()
 
 	// creating target file pointing to same inode
-	err = ioutil.WriteFile(targetParanoidPath, inodeBytes, fileMode)
+	err = ioutil.WriteFile(tarGetParanoidPath, inodeBytes, fileMode)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to names file: %s", err)
 	}
@@ -83,7 +83,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 		return returncodes.EUNEXPECTED, fmt.Errorf("error reading inode: %s", err)
 	}
 
-	nodeData := &inode{}
+	nodeData := &Inode{}
 	err = json.Unmarshal(inodeContents, &nodeData)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshalling inode data: %s", err)
@@ -91,6 +91,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 
 	// itterating count and saving
 	nodeData.Count++
+
 	Log.Verbose("link : opening file " + inodePath)
 	openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0600)
 	if err != nil {

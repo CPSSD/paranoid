@@ -26,7 +26,7 @@ func RmdirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.Cod
 		}
 	}()
 
-	dirToDelete := getParanoidPath(paranoidDirectory, dirPath)
+	dirToDelete := GetParanoidPath(paranoidDirectory, dirPath)
 	dirType, err := getFileType(paranoidDirectory, dirToDelete)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
@@ -51,7 +51,7 @@ func RmdirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.Cod
 	}
 
 	infoFileToDelete := path.Join(dirToDelete, "info")
-	inodeBytes, code, err := getFileInode(dirToDelete)
+	inodeBytes, code, err := GetFileInode(dirToDelete)
 	if code != returncodes.OK {
 		return code, err
 	}

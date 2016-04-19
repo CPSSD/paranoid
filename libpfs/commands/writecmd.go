@@ -29,7 +29,7 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 		}
 	}()
 
-	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namepath := GetParanoidPath(paranoidDirectory, filePath)
 	namepathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, 0
@@ -47,7 +47,7 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 		return returncodes.EIO, errors.New(filePath + " is a symlink"), 0
 	}
 
-	fileInodeBytes, code, err := getFileInode(namepath)
+	fileInodeBytes, code, err := GetFileInode(namepath)
 	if code != returncodes.OK {
 		return code, err, 0
 	}

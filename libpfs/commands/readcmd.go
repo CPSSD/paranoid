@@ -14,10 +14,9 @@ import (
 
 //ReadCommand reads data from a file
 func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode returncodes.Code, returnError error, fileContents []byte) {
-	Log.Info("read command called")
 	Log.Verbose("read : given paranoidDirectory = " + paranoidDirectory)
 
-	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namepath := GetParanoidPath(paranoidDirectory, filePath)
 
 	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {
@@ -50,7 +49,7 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 		return returncodes.EIO, errors.New(filePath + " is a symlink"), nil
 	}
 
-	inodeBytes, code, err := getFileInode(namepath)
+	inodeBytes, code, err := GetFileInode(namepath)
 	if code != returncodes.OK || err != nil {
 		return code, err, nil
 	}

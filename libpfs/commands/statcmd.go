@@ -35,7 +35,7 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Cod
 			info = statInfo{}
 		}
 	}()
-	namepath := getParanoidPath(paranoidDirectory, filePath)
+	namepath := GetParanoidPath(paranoidDirectory, filePath)
 	namePathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, statInfo{}
@@ -44,7 +44,7 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Cod
 	if namePathType == typeENOENT {
 		return returncodes.ENOENT, errors.New(filePath + " does not exist"), statInfo{}
 	}
-	inodeBytes, code, err := getFileInode(namepath)
+	inodeBytes, code, err := GetFileInode(namepath)
 	if code != returncodes.OK {
 		return code, err, statInfo{}
 	}
