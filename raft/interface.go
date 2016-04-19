@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"google.golang.org/grpc"
 	"net"
@@ -140,6 +141,24 @@ func (s *RaftNetworkServer) RequestAddLogEntry(entry *pb.Entry) (*StateMachineRe
 		}
 	}
 	return nil, errors.New("waited too long to commit Log entry")
+}
+
+func (s *RaftNetworkServer) RequestKeyStateUpdate(owner, holder *pb.Node, generation int64) error {
+	entry := &pb.Entry{
+		Type: pb.Entry_KeyStateMessage,
+		Uuid: generateNewUUID(),
+		KeyChange: &pb.KeyStateMessage{
+			KeyOwner:   owner,
+			KeyHolder:  holder,
+			Generation: generation,
+		},
+	}
+	result, err := s.RequestAddLogEntry(entry)
+	if err != nil {
+		Log.Error("failed to add log entry for key state update:", err)
+		return err
+	}
+	return result.Err
 }
 
 func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length int64,
@@ -419,4 +438,11 @@ func PerformLibPfsCommand(directory string, command *pb.StateMachineCommand) *St
 	}
 	Log.Fatal("Unrecognised command type")
 	return nil
+}
+
+func PerformKSMCommand(sateMachine *keyman.KeyStateMachine, keyChange *pb.KeyStateMessage) *StateMachineResult {
+	err := keyman.StateMachine.Update(keyChange)
+	return &StateMachineResult{
+		Err: err,
+	}
 }

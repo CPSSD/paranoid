@@ -3,6 +3,7 @@ package raft
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft/raftlog"
 	"io/ioutil"
@@ -245,20 +246,21 @@ func (s *RaftState) GetSpecialNumber() uint64 {
 }
 
 func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
-	if logEntry.Entry.Type == pb.Entry_Demo {
+	switch logEntry.Entry.Type {
+	case pb.Entry_Demo:
 		demoCommand := logEntry.Entry.GetDemo()
 		if demoCommand == nil {
 			Log.Fatal("Error applying Log to state machine")
 		}
 		s.specialNumber = demoCommand.Number
-	} else if logEntry.Entry.Type == pb.Entry_ConfigurationChange {
+	case pb.Entry_ConfigurationChange:
 		config := logEntry.Entry.GetConfig()
 		if config != nil {
 			s.ConfigurationApplied <- config
 		} else {
 			Log.Fatal("Error applying configuration update")
 		}
-	} else if logEntry.Entry.Type == pb.Entry_StateMachineCommand {
+	case pb.Entry_StateMachineCommand:
 		libpfsCommand := logEntry.Entry.GetCommand()
 		if libpfsCommand == nil {
 			Log.Fatal("Error applying Log to state machine")
@@ -267,6 +269,12 @@ func (s *RaftState) applyLogEntry(logEntry *pb.LogEntry) *StateMachineResult {
 			Log.Fatal("PfsDirectory is not set")
 		}
 		return PerformLibPfsCommand(s.pfsDirectory, libpfsCommand)
+	case pb.Entry_KeyStateMessage:
+		keyChange := logEntry.Entry.GetKeyChange()
+		if keyChange == nil {
+			Log.Fatal("Error applying KeyChange to state machine")
+		}
+		return PerformKSMCommand(keyman.StateMachine, keyChange)
 	}
 	return nil
 }

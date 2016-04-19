@@ -30,15 +30,15 @@ type Node struct {
 	UUID       string
 }
 
+func (n Node) String() string {
+	return fmt.Sprintf("%s:%s", n.IP, n.Port)
+}
+
 type FileSystemAttributes struct {
 	Encrypted     bool       `json:"encrypted"`
 	KeyGenerated  bool       `json:"keygenerated"`
 	NetworkOff    bool       `json:"networkoff"`
 	EncryptionKey keyman.Key `json:"encryptionkey,omitempty"` //The encryption key is only saved to file in this manner if networking is turned off
-}
-
-func (n Node) String() string {
-	return fmt.Sprintf("%s:%s", n.IP, n.Port)
 }
 
 var RaftNetworkServer *raft.RaftNetworkServer

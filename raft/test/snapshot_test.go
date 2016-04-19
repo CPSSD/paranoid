@@ -5,6 +5,7 @@ package test
 import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/raft"
 	"github.com/cpssd/paranoid/raft/rafttestutil"
 	"os"
@@ -32,6 +33,7 @@ func TestSnapshoting(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to make pfsdirectory:", err)
 	}
+	keyman.StateMachine = keyman.NewKSM(pfsDirectory)
 	defer func() {
 		err = os.RemoveAll(pfsDirectory)
 		if err != nil {
