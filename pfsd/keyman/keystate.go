@@ -2,6 +2,7 @@ package keyman
 
 import (
 	"encoding/gob"
+	"errors"
 	"fmt"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"io"
@@ -12,24 +13,36 @@ import (
 
 const KSM_FILE_NAME string = "key_state"
 
+var ErrGenerationDeprecated = errors.New("given generation was created before the current generation was set")
 var StateMachine *KeyStateMachine
 
 type keyStateElement struct {
-	Generation int
-	Owner      *pb.Node
-	Holder     *pb.Node
+	Owner  *pb.Node
+	Holder *pb.Node
+}
+
+type Generation struct {
+	//A list of the UUIDs of all nodes included in the generation
+	Nodes    []string
+	Elements []*keyStateElement
+}
+
+func (g *Generation) AddElement(elem *keyStateElement) {
+	g.Elements = append(g.Elements, elem)
+}
+
+func (g *Generation) RemoveElement() {
+	g.Elements = g.Elements[:len(g.Elements)-1]
 }
 
 type KeyStateMachine struct {
-	CurrentGeneration    int
-	InProgressGeneration int
-	// Key is generation number.
-	// Value is a list of Node UUID's.
-	Nodes map[int]([]string)
+	CurrentGeneration    int64
+	InProgressGeneration int64
+	DeprecatedGeneration int64
 
 	// The first index indicates the generation.
 	// The second index is unimportant as order doesn't matter there.
-	Elements map[int]([]*keyStateElement)
+	Generations map[int64]*Generation
 
 	lock sync.Mutex
 
@@ -41,8 +54,8 @@ func NewKSM(pfsDir string) *KeyStateMachine {
 	return &KeyStateMachine{
 		CurrentGeneration:    -1,
 		InProgressGeneration: -1,
-		Nodes:                make(map[int]([]string)),
-		Elements:             make(map[int]([]*keyStateElement)),
+		DeprecatedGeneration: -1,
+		Generations:          make(map[int64]*Generation),
 		PfsDir:               pfsDir,
 	}
 }
@@ -84,32 +97,36 @@ func (ksm *KeyStateMachine) UpdateFromStateFile(filePath string) error {
 
 	ksm.CurrentGeneration = tmpKSM.CurrentGeneration
 	ksm.InProgressGeneration = tmpKSM.InProgressGeneration
-	ksm.Nodes = tmpKSM.Nodes
-	ksm.Elements = tmpKSM.Elements
+	ksm.DeprecatedGeneration = tmpKSM.DeprecatedGeneration
+	ksm.Generations = tmpKSM.Generations
 	return nil
 }
 
-func (ksm *KeyStateMachine) NewGeneration(generationNumber int, nodeIds []string) error {
+func (ksm *KeyStateMachine) NewGeneration(nodeIds []string) (generationNumber int64, err error) {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
-	if generationNumber <= ksm.InProgressGeneration {
-		return fmt.Errorf("proposed generation too low; given %d, minimum %d", generationNumber, ksm.CurrentGeneration+1)
+	ksm.InProgressGeneration++
+	ksm.Generations[ksm.InProgressGeneration] = &Generation{
+		Nodes:    nodeIds,
+		Elements: []*keyStateElement{},
 	}
-	if generationNumber > ksm.CurrentGeneration+1 && len(ksm.Elements[ksm.CurrentGeneration+1]) > 0 {
-		return fmt.Errorf("generation %d already in progress", ksm.CurrentGeneration+1)
+
+	err = ksm.SerialiseToPFSDir()
+	if err != nil {
+		delete(ksm.Generations, ksm.InProgressGeneration)
+		ksm.InProgressGeneration--
+		return 0, err
 	}
-	ksm.Nodes[generationNumber] = nodeIds
-	ksm.Elements[generationNumber] = []*keyStateElement{}
-	return nil
+	return ksm.InProgressGeneration, nil
 }
 
-func (ksm KeyStateMachine) NodeInGeneration(generationNumber int, nodeId string) bool {
-	nodeIds, ok := ksm.Nodes[generationNumber]
+func (ksm KeyStateMachine) NodeInGeneration(generationNumber int64, nodeId string) bool {
+	generation, ok := ksm.Generations[generationNumber]
 	if !ok {
 		return false
 	}
-	for _, v := range nodeIds {
+	for _, v := range generation.Nodes {
 		if v == nodeId {
 			return true
 		}
@@ -121,38 +138,49 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
-	if _, ok := ksm.Elements[int(req.Generation)]; !ok {
+	if req.Generation != ksm.CurrentGeneration && req.Generation <= ksm.DeprecatedGeneration {
+		return ErrGenerationDeprecated
+	}
+
+	if _, ok := ksm.Generations[req.Generation]; !ok {
 		return fmt.Errorf("generation %d has not yet been initialised", req.Generation)
 	}
 
 	elem := &keyStateElement{
-		Generation: int(req.Generation),
-		Owner:      req.GetKeyOwner(),
-		Holder:     req.GetKeyHolder(),
+		Owner:  req.GetKeyOwner(),
+		Holder: req.GetKeyHolder(),
 	}
 
-	ksm.Elements[elem.Generation] = append(ksm.Elements[elem.Generation], elem)
+	ksm.Generations[req.Generation].AddElement(elem)
 	// If a new generation is created, the state machine will only
 	// update its CurrentGeneration when enough generation N+1 elements
 	// exist for every node in the cluster to unlock if locked.
-	var backupGeneration int
-	var backupElements []*keyStateElement
-	var backupNodes []string
-	if elem.Generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(elem.Generation) {
+	var backupGeneration int64
+	var backupDeprecatedGen int64
+	var backupGenerations map[int64]*Generation
+	updatedGeneration := false
+	if req.Generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(req.Generation) {
+		updatedGeneration = true
 		backupGeneration = ksm.CurrentGeneration
-		backupElements = ksm.Elements[ksm.CurrentGeneration]
-		backupNodes = ksm.Nodes[ksm.CurrentGeneration]
-		delete(ksm.Elements, ksm.CurrentGeneration)
-		delete(ksm.Nodes, ksm.CurrentGeneration)
-		ksm.CurrentGeneration = elem.Generation
+		backupDeprecatedGen = ksm.DeprecatedGeneration
+		backupGenerations = ksm.Generations
+
+		ksm.Generations = make(map[int64]*Generation)
+		ksm.InProgressGeneration++
+		ksm.DeprecatedGeneration = ksm.InProgressGeneration
+		ksm.CurrentGeneration = req.Generation
+		ksm.Generations[req.Generation] = backupGenerations[req.Generation]
 	}
 	err := ksm.SerialiseToPFSDir()
 	if err != nil {
 		// If the serialisation fails, undo the update.
-		ksm.Elements[elem.Generation] = ksm.Elements[elem.Generation][:len(ksm.Elements[elem.Generation])-1]
-		ksm.CurrentGeneration = backupGeneration
-		ksm.Elements[ksm.CurrentGeneration] = backupElements
-		ksm.Nodes[ksm.CurrentGeneration] = backupNodes
+		if updatedGeneration {
+			ksm.CurrentGeneration = backupGeneration
+			ksm.InProgressGeneration--
+			ksm.DeprecatedGeneration = backupDeprecatedGen
+			ksm.Generations = backupGenerations
+		}
+		ksm.Generations[req.Generation].RemoveElement()
 		return fmt.Errorf("failed to commit change to KeyStateMachine: %s", err)
 	}
 
@@ -161,16 +189,16 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 }
 
 // Count all of the keys grouped by owner and make sure they meet a minimum.
-func (ksm KeyStateMachine) canUpdateGeneration(generation int) bool {
+func (ksm KeyStateMachine) canUpdateGeneration(generation int64) bool {
 	// Map of UUIDs (as string) to int
 	owners := make(map[string]int)
-	for _, v := range ksm.Elements[generation] {
+	for _, v := range ksm.Generations[generation].Elements {
 		owners[v.Owner.NodeId] += 1
 	}
-	if len(owners) != len(ksm.Elements[generation]) {
+	if len(owners) != len(ksm.Generations[generation].Nodes) {
 		return false
 	}
-	minNodesRequired := len(ksm.Nodes[generation])/2 + 1
+	minNodesRequired := len(ksm.Generations[generation].Nodes)/2 + 1
 	for _, count := range owners {
 		if count < minNodesRequired {
 			return false

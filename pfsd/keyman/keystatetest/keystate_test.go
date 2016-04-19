@@ -46,9 +46,15 @@ func TestKeyStateUpdate(t *testing.T) {
 	defer rafttestutil.StopRaftServer(nodeRaftServer)
 
 	keyman.StateMachine = keyman.NewKSM(path.Join(os.TempDir(), "keystatetest"))
-	err := keyman.StateMachine.NewGeneration(0, []string{"foobar"})
+	generation, err := keyman.StateMachine.NewGeneration([]string{"foobar"})
 	if err != nil {
 		t.Error("Failed to initialise new generation:", err)
+	}
+	if generation != 0 {
+		t.Error("Failed to initialise new generation, exptected generation number 0. Got:", generation)
+	}
+	if keyman.StateMachine.Generations[0] == nil {
+		t.Error("Failed to initialise new generation, generation is nil")
 	}
 	pbnode := &pb.Node{
 		Ip:         "10.0.0.1",
@@ -60,8 +66,9 @@ func TestKeyStateUpdate(t *testing.T) {
 	if err != nil {
 		t.Error("RequestKeyStateUpdate returned error:", err)
 	}
-	if len(keyman.StateMachine.Elements) != 1 {
-		t.Error("KeyStateMachine not updated. Expected no. elements: 1. Actual:", len(keyman.StateMachine.Elements))
+	if len(keyman.StateMachine.Generations[keyman.StateMachine.CurrentGeneration].Elements) != 1 {
+		t.Error("KeyStateMachine not updated. Expected no. elements: 1. Actual:",
+			len(keyman.StateMachine.Generations[generation].Elements))
 	}
 
 	testMachine, err := keyman.NewKSMFromPFSDir(path.Join(os.TempDir(), "keystatetest"))
