@@ -67,7 +67,7 @@ func setupTestDirectory() {
 func TestSimpleCommandUsage(t *testing.T) {
 	setupTestDirectory()
 
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("error creating test file:", err)
 	}
@@ -91,7 +91,7 @@ func TestSimpleCommandUsage(t *testing.T) {
 func TestComplexCommandUsage(t *testing.T) {
 	setupTestDirectory()
 
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("error creating test file:", err)
 	}
@@ -143,7 +143,7 @@ func TestComplexCommandUsage(t *testing.T) {
 func TestFilePermissionsCommands(t *testing.T) {
 	setupTestDirectory()
 
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("error creating test file:", err)
 	}
@@ -218,7 +218,7 @@ func TestENOENT(t *testing.T) {
 func TestFilesystemCommands(t *testing.T) {
 	setupTestDirectory()
 
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("creat did not return OK. Error:", err)
 	}
@@ -264,7 +264,7 @@ func TestFilesystemCommands(t *testing.T) {
 func TestLinkCommand(t *testing.T) {
 	setupTestDirectory()
 
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("creat did not return OK. Error:", err)
 	}
@@ -368,7 +368,7 @@ func TestSymlinkcommand(t *testing.T) {
 func TestUtimes(t *testing.T) {
 	setupTestDirectory()
 
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("error creating test file:", err)
 	}
@@ -397,7 +397,7 @@ func TestUtimes(t *testing.T) {
 func TestTruncate(t *testing.T) {
 	setupTestDirectory()
 
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("error creating test file:", err)
 	}
@@ -489,7 +489,7 @@ func TestComplexDirectoryUsage(t *testing.T) {
 	}
 
 	// file within directory
-	code, err = CreatCommand(testDirectory, "documents/important_links.txt", os.FileMode(0777))
+	code, err = CreatCommand(testDirectory, "documents/important_links.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("Mkdir did not return OK. Actual:", code, " Error:", err)
 	}
@@ -615,7 +615,7 @@ func TestComplexReadWrite(t *testing.T) {
 	Log.Info("Test seed : ", seed)
 	rand.Seed(seed)
 
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("error creating test file:", err)
 	}

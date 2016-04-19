@@ -3,6 +3,7 @@ package glob
 import (
 	"encoding/json"
 	"github.com/cpssd/paranoid/libpfs/commands"
+	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"io/ioutil"
@@ -38,8 +39,8 @@ func dirIgnored(currentPattern string, globs []string) bool {
 
 func previouslyIgnored(filePath string) (bool, *commands.Inode) {
 	namePath := commands.GetParanoidPath(globals.ParanoidDir, filePath)
-	inodeName, _, err := commands.GetFileInode(namePath)
-	if err != nil {
+	inodeName, code, err := commands.GetFileInode(namePath)
+	if err != nil || code != returncodes.OK {
 		Log.Error("Error Reading Inode:", err)
 		return false, nil
 	}
@@ -84,13 +85,14 @@ func ShouldIgnore(filePath string, changeInode bool) bool {
 			globs := strings.Split(string(returnData), "\n")
 			for _, pattern := range globs {
 				if pattern != "" {
+					dirIgnored := dirIgnored(pattern, globs)
 					if string(pattern[0]) == Negation {
-						negationSet = !dirIgnored(pattern, globs)
+						negationSet = !dirIgnored
 						pattern = strings.Trim(pattern, Negation)
 					}
 
 					globResponse := Glob(pattern, filePath)
-					shouldGlob = shouldGlob || globResponse
+					shouldGlob = shouldGlob || globResponse || dirIgnored
 				}
 			}
 			if negationSet && shouldGlob {

@@ -12,7 +12,6 @@ var flagtests = []struct {
 	{"file.html", "file.html", true},
 	{"hello*.html", "helloWorld.html", true},
 	{"*.html", "file.html", true},
-	{"bin", "bin/asdf", true},
 	{"bin/*", "bin/abc", true},
 	{"bin/*/", "bin/abc/asdf", true},
 	{"bin/*/*/", "bin/abc/asdf/", true},

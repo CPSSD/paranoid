@@ -51,7 +51,7 @@ func BenchmarkCreat(b *testing.B) {
 	setupTestDirectory()
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
-		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777))
+		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
 		if code != returncodes.OK {
 			log.Fatal("error creating test file:", err)
 		}
@@ -62,7 +62,7 @@ func BenchmarkWrite(b *testing.B) {
 	setupTestDirectory()
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
-		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777))
+		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
 		if code != returncodes.OK {
 			log.Fatal("error creating test file:", err)
 		}
@@ -77,7 +77,7 @@ func BenchmarkRename(b *testing.B) {
 	setupTestDirectory()
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
-		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777))
+		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
 		if code != returncodes.OK {
 			log.Fatal("error creating test file:", err)
 		}
@@ -90,7 +90,7 @@ func BenchmarkRename(b *testing.B) {
 
 func BenchmarkRead(b *testing.B) {
 	setupTestDirectory()
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		log.Fatal("error creating test file:", err)
 	}
@@ -104,7 +104,7 @@ func BenchmarkRead(b *testing.B) {
 
 func BenchmarkStat(b *testing.B) {
 	setupTestDirectory()
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		log.Fatal("Error creating test file:", err)
 	}
@@ -118,7 +118,7 @@ func BenchmarkStat(b *testing.B) {
 
 func BenchmarkAccess(b *testing.B) {
 	setupTestDirectory()
-	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777))
+	code, err := CreatCommand(testDirectory, "test.txt", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		log.Fatal("error creating test file:", err)
 	}
@@ -134,7 +134,7 @@ func BenchmarkTruncate(b *testing.B) {
 	setupTestDirectory()
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
-		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777))
+		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
 		if code != returncodes.OK {
 			log.Fatal("error creating test file:", err)
 		}
@@ -151,7 +151,7 @@ func BenchmarkUtimes(b *testing.B) {
 		str := strconv.Itoa(n)
 		atime := time.Unix(100, 100)
 		mtime := time.Unix(500, 250)
-		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777))
+		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
 		if code != returncodes.OK {
 			log.Fatal("error creating test file:", err)
 		}
@@ -183,7 +183,7 @@ func BenchmarkReadDir(b *testing.B) {
 	if code != returncodes.OK {
 		log.Fatal("error making benchDir:", err)
 	}
-	code, err = CreatCommand(testDirectory, path.Join("testDir", "test.txt"), os.FileMode(0777))
+	code, err = CreatCommand(testDirectory, path.Join("testDir", "test.txt"), os.FileMode(0777), false)
 	if code != returncodes.OK {
 		log.Fatal("error creating test file:", err)
 	}
@@ -199,7 +199,7 @@ func BenchmarkLink(b *testing.B) {
 	setupTestDirectory()
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
-		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777))
+		code, err := CreatCommand(testDirectory, "test.txt"+str, os.FileMode(0777), false)
 		if code != returncodes.OK {
 			log.Fatal("error creating testFile:", err)
 		}

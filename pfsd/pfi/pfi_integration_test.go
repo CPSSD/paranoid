@@ -6,6 +6,7 @@ import (
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
+	"github.com/cpssd/paranoid/pfsd/pfi/glob"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
 	"os"
@@ -28,6 +29,7 @@ func removeTestDir(name string) {
 
 func TestMain(m *testing.M) {
 	Log = logger.New("testPackage", "testComponent", os.DevNull)
+	glob.Log = Log
 	globals.ParanoidDir = path.Join(os.TempDir(), "pfiTestPfsDir")
 	commands.Log = logger.New("testPackage", "testComponent", os.DevNull)
 	os.Exit(m.Run())
@@ -46,7 +48,7 @@ func TestFuseFilePerms(t *testing.T) {
 	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
 
-	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777))
+	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777), false)
 	if err != nil {
 		t.Error("pfsm setup failed :", err)
 	}
@@ -189,7 +191,7 @@ func TestFuseLink(t *testing.T) {
 	setuptesting(t)
 	defer removeTestDir("pfiTestPfsDir")
 
-	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777))
+	_, err := commands.CreatCommand(path.Join(os.TempDir(), "pfiTestPfsDir"), "helloworld.txt", os.FileMode(0777), false)
 	if err != nil {
 		t.Error("pfsm setup failed :", err)
 	}
