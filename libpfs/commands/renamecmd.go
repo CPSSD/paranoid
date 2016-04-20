@@ -11,8 +11,8 @@ import (
 // RenameCommand is called when renaming a file
 func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("rename command called")
-	oldFileParanoidPath := GetParanoidPath(paranoidDirectory, oldFilePath)
-	newFileParanoidPath := GetParanoidPath(paranoidDirectory, newFilePath)
+	oldFileParanoidPath := getParanoidPath(paranoidDirectory, oldFilePath)
+	newFileParanoidPath := getParanoidPath(paranoidDirectory, newFilePath)
 
 	oldFileType, err := getFileType(paranoidDirectory, oldFileParanoidPath)
 	if err != nil {
@@ -49,7 +49,7 @@ func RenameCommand(paranoidDirectory, oldFilePath, newFilePath string) (returnCo
 				return returncodes.EEXIST, errors.New(newFilePath + " already exists")
 			}
 		} else if newFileType == typeDir {
-			dirpath := GetParanoidPath(paranoidDirectory, newFilePath)
+			dirpath := getParanoidPath(paranoidDirectory, newFilePath)
 			files, err := ioutil.ReadDir(dirpath)
 			if err != nil || len(files) > 0 {
 				return returncodes.ENOTEMPTY, errors.New(newFilePath + " is not empty")

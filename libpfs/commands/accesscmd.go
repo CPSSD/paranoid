@@ -23,7 +23,7 @@ func AccessCommand(paranoidDirectory, filePath string, mode uint32) (returnCode 
 		}
 	}()
 
-	namePath := GetParanoidPath(paranoidDirectory, filePath)
+	namePath := getParanoidPath(paranoidDirectory, filePath)
 
 	fileType, err := getFileType(paranoidDirectory, namePath)
 	if err != nil {

@@ -16,7 +16,7 @@ import (
 
 var Log *logger.ParanoidLogger
 
-type Inode struct {
+type inode struct {
 	Count   int         `json:"count"`
 	Inode   string      `json:"inode"`
 	Mode    os.FileMode `json:"mode"`
@@ -44,7 +44,7 @@ func getFileMode(paranoidDir, inodeName string) (os.FileMode, error) {
 		return os.FileMode(0), fmt.Errorf("error reading inode: %s", err)
 	}
 
-	nodeData := &Inode{}
+	nodeData := &inode{}
 	err = json.Unmarshal(inodeContents, &nodeData)
 	if err != nil {
 		return os.FileMode(0), fmt.Errorf("error unmarshaling inode data: %s", err)
@@ -163,7 +163,7 @@ func unLockFile(paranoidDir, fileName string) error {
 	return nil
 }
 
-func GetParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
+func getParanoidPath(paranoidDir, realPath string) (paranoidPath string) {
 	split := strings.Split(realPath, "/")
 	paranoidPath = path.Join(paranoidDir, "names")
 	for i := range split {
@@ -178,39 +178,6 @@ func generateNewInode() (inodeBytes []byte, err error) {
 		return nil, fmt.Errorf("error generating new inode: %s", err)
 	}
 	return []byte(strings.TrimSpace(string(inodeBytes))), nil
-}
-
-func UpdateInode(paranoidDirectory, filePath string, newnode Inode) (code returncodes.Code, err error) {
-	inodePath := path.Join(paranoidDirectory, "inodes", newnode.Inode)
-	openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0600)
-	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error opening file: %s", err)
-	}
-	defer openedFile.Close()
-
-	Log.Verbose("truncating inode " + inodePath)
-	err = openedFile.Truncate(0)
-	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file: %s", err)
-	}
-
-	newJSONData, err := json.Marshal(&newnode)
-	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)
-	}
-
-	Log.Verbose("link : writing to file " + inodePath)
-	_, err = openedFile.Write(newJSONData)
-	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file: %s", err)
-	}
-
-	err = openedFile.Close()
-
-	if err != nil {
-		return returncodes.EUNEXPECTED, fmt.Errorf("error closing file: %s", err)
-	}
-	return returncodes.OK, nil
 }
 
 func GetFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Code, err error) {
@@ -234,6 +201,20 @@ func GetFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Cod
 		return nil, returncodes.EUNEXPECTED, fmt.Errorf("unexpected error getting inode of file %s: %s", filePath, err)
 	}
 	return bytes, returncodes.OK, nil
+}
+
+func readInodeData(inodePath string) (*inode, error) {
+	inodeBytes, err := ioutil.ReadFile(inodePath)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot Read iNode", err)
+	}
+
+	inodeData := &inode{}
+	err = json.Unmarshal(inodeBytes, &inodeData)
+	if err != nil {
+		return inodeData, fmt.Errorf("Error parsing iNode", err)
+	}
+	return inodeData, nil
 }
 
 func deleteFile(filePath string) (returncode returncodes.Code, returnerror error) {
@@ -291,4 +272,65 @@ func getFileType(directory, filePath string) (returncodes.Code, error) {
 	}
 
 	return typeFile, nil
+}
+
+func PreviouslyIgnored(paranoidDir, filePath string) (bool, returncodes.Code) {
+	namePath := getParanoidPath(paranoidDir, filePath)
+	inodeName, code, err := GetFileInode(namePath)
+	if err != nil || code != returncodes.OK {
+		Log.Error("Error getting file iNode")
+		return true, code
+	}
+	inodePath := path.Join(path.Join(paranoidDir, "inodes", string(inodeName)))
+	inodeData, err := readInodeData(inodePath)
+	return inodeData.Ignored, returncodes.OK
+}
+
+func UpdateInodeIgnore(paranoidDir, filePath string, newIgnoreVal bool) (returncodes.Code, error) {
+	Log.Info("Updating iNode for:", filePath)
+
+	namePath := getParanoidPath(paranoidDir, filePath)
+	inodeName, code, err := GetFileInode(namePath)
+	if err != nil || code != returncodes.OK {
+		Log.Error("Error getting file iNode")
+		return code, err
+	}
+	inodePath := path.Join(path.Join(paranoidDir, "inodes", string(inodeName)))
+	inodeData, err := readInodeData(inodePath)
+	if err != nil {
+		Log.Error("Error Parsing Inode")
+		return returncodes.EACCES, err
+	}
+	if inodeData.Ignored != newIgnoreVal {
+		inodeData.Ignored = newIgnoreVal
+		openedFile, err := os.OpenFile(inodePath, os.O_WRONLY, 0600)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error opening file: %s", err)
+		}
+		defer openedFile.Close()
+
+		Log.Verbose("truncating inode " + inodePath)
+		err = openedFile.Truncate(0)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error truncating file: %s", err)
+		}
+		newJSONData, err := json.Marshal(&inodeData)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)
+		}
+
+		Log.Verbose("link : writing to file " + inodePath)
+		_, err = openedFile.Write(newJSONData)
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error writing to inode file: %s", err)
+		}
+
+		err = openedFile.Close()
+
+		if err != nil {
+			return returncodes.EUNEXPECTED, fmt.Errorf("error closing file: %s", err)
+		}
+	}
+
+	return returncodes.OK, nil
 }

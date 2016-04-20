@@ -35,7 +35,7 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Cod
 			info = statInfo{}
 		}
 	}()
-	namepath := GetParanoidPath(paranoidDirectory, filePath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 	namePathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, statInfo{}

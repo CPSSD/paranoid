@@ -29,7 +29,7 @@ func WriteCommand(paranoidDirectory, filePath string, offset, length int64, data
 		}
 	}()
 
-	namepath := GetParanoidPath(paranoidDirectory, filePath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 	namepathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, 0

@@ -16,7 +16,7 @@ import (
 func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (returnCode returncodes.Code, returnError error, fileContents []byte) {
 	Log.Verbose("read : given paranoidDirectory = " + paranoidDirectory)
 
-	namepath := GetParanoidPath(paranoidDirectory, filePath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 
 	err := GetFileSystemLock(paranoidDirectory, SharedLock)
 	if err != nil {

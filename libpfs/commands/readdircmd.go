@@ -32,7 +32,7 @@ func ReadDirCommand(paranoidDirectory, dirPath string) (returnCode returncodes.C
 	if dirPath == "" {
 		dirParanoidPath = path.Join(paranoidDirectory, "names")
 	} else {
-		dirParanoidPath = GetParanoidPath(paranoidDirectory, dirPath)
+		dirParanoidPath = getParanoidPath(paranoidDirectory, dirPath)
 		pathFileType, err := getFileType(paranoidDirectory, dirParanoidPath)
 		if err != nil {
 			return returncodes.EUNEXPECTED, err, nil

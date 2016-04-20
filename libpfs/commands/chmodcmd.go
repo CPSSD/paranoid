@@ -31,7 +31,7 @@ func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		}
 	}()
 
-	namepath := GetParanoidPath(paranoidDirectory, filePath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 
 	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
@@ -65,7 +65,7 @@ func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		return returncodes.EUNEXPECTED, fmt.Errorf("error reading inode: %s", err)
 	}
 
-	nodeData := &Inode{}
+	nodeData := &inode{}
 	err = json.Unmarshal(inodeContents, &nodeData)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshaling inode data: %s", err)

@@ -26,7 +26,7 @@ func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCo
 		}
 	}()
 
-	dirParanoidPath := GetParanoidPath(paranoidDirectory, dirPath)
+	dirParanoidPath := getParanoidPath(paranoidDirectory, dirPath)
 	dirInfoPath := path.Join(dirParanoidPath, "info")
 
 	inodeBytes, err := generateNewInode()
@@ -80,7 +80,7 @@ func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCo
 	}
 	defer inodeFile.Close()
 
-	nodeData := &Inode{
+	nodeData := &inode{
 		Mode:    mode | syscall.S_IFDIR,
 		Inode:   inodeString,
 		Count:   1,

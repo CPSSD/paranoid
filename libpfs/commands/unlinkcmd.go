@@ -26,7 +26,7 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.C
 		}
 	}()
 
-	fileParanoidPath := GetParanoidPath(paranoidDirectory, filePath)
+	fileParanoidPath := getParanoidPath(paranoidDirectory, filePath)
 	fileType, err := getFileType(paranoidDirectory, fileParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
@@ -64,7 +64,7 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.C
 		return returncodes.EUNEXPECTED, fmt.Errorf("error reading inodes contents: %s", err)
 	}
 
-	inodeData := &Inode{}
+	inodeData := &inode{}
 	Log.Verbose("unlink unmarshaling ", string(inodeContents))
 	err = json.Unmarshal(inodeContents, &inodeData)
 	if err != nil {

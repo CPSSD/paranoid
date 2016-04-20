@@ -29,7 +29,7 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode, shouldI
 		}
 	}()
 
-	namepath := GetParanoidPath(paranoidDirectory, filePath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 
 	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
@@ -54,7 +54,7 @@ func CreatCommand(paranoidDirectory, filePath string, perms os.FileMode, shouldI
 		return returncodes.EUNEXPECTED, errors.New("error writing name file")
 	}
 
-	nodeData := &Inode{
+	nodeData := &inode{
 		Mode:    perms,
 		Inode:   uuidstring,
 		Count:   1,

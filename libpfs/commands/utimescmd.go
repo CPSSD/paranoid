@@ -28,7 +28,7 @@ func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) 
 		}
 	}()
 
-	namepath := GetParanoidPath(paranoidDirectory, filePath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 
 	fileType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {

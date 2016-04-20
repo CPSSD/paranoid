@@ -27,7 +27,7 @@ func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes
 		}
 	}()
 
-	link := GetParanoidPath(paranoidDirectory, filePath)
+	link := getParanoidPath(paranoidDirectory, filePath)
 	fileType, err := getFileType(paranoidDirectory, link)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, ""
@@ -73,7 +73,7 @@ func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes
 		return returncodes.EUNEXPECTED, fmt.Errorf("error reading link: %s", err), ""
 	}
 
-	inodeData := &Inode{}
+	inodeData := &inode{}
 	Log.Verbose("readlink unmarshaling ", string(inodeContents))
 	err = json.Unmarshal(inodeContents, &inodeData)
 	if err != nil {

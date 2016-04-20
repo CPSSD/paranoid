@@ -27,7 +27,7 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 		}
 	}()
 
-	namepath := GetParanoidPath(paranoidDirectory, filePath)
+	namepath := getParanoidPath(paranoidDirectory, filePath)
 	namepathType, err := getFileType(paranoidDirectory, namepath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err

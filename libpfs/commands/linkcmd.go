@@ -13,8 +13,8 @@ import (
 // LinkCommand creates a link of a file.
 func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("link command called")
-	existingParanoidPath := GetParanoidPath(paranoidDirectory, existingFilePath)
-	targetParanoidPath:= GetParanoidPath(paranoidDirectory, targetFilePath)
+	existingParanoidPath := getParanoidPath(paranoidDirectory, existingFilePath)
+	targetParanoidPath:= getParanoidPath(paranoidDirectory, targetFilePath)
 
 	Log.Verbose("link : given paranoidDirectory = " + paranoidDirectory)
 
@@ -83,7 +83,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 		return returncodes.EUNEXPECTED, fmt.Errorf("error reading inode: %s", err)
 	}
 
-	nodeData := &Inode{}
+	nodeData := &inode{}
 	err = json.Unmarshal(inodeContents, &nodeData)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error unmarshalling inode data: %s", err)

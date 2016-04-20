@@ -1,13 +1,10 @@
 package glob
 
 import (
-	"encoding/json"
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/globals"
-	"io/ioutil"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -38,44 +35,14 @@ func dirIgnored(currentPattern string, globs []string) bool {
 	return dirFound
 }
 
-func previouslyIgnored(filePath string) (bool, *commands.Inode) {
-	namePath := commands.GetParanoidPath(globals.ParanoidDir, filePath)
-	inodeName, code, err := commands.GetFileInode(namePath)
-	if err != nil || code != returncodes.OK {
-		Log.Error("Error Reading Inode:", err)
-		return false, nil
-	}
-	inodeBytes, err := ioutil.ReadFile(path.Join(path.Join(globals.ParanoidDir, "inodes", string(inodeName))))
-	if err != nil {
-		Log.Error("Cannot Read Inode:", string(inodeName))
-		return false, nil
-	}
-	inodeData := &commands.Inode{}
-	err = json.Unmarshal(inodeBytes, &inodeData)
-	if err != nil {
-		Log.Error("Cannot Parse iNode Json,", err)
-		return false, nil
-	}
-	return inodeData.Ignored, inodeData
-}
-
-func updateInode(inodeData commands.Inode, filePath string, newIgnoreVal bool) {
-	if inodeData.Ignored != newIgnoreVal {
-		Log.Info("Updating iNode for:", filePath)
-		inodeData.Ignored = newIgnoreVal
-		commands.UpdateInode(globals.ParanoidDir, filePath, inodeData)
-	}
-}
-
 func ShouldIgnore(filePath string, changeInode bool) bool {
 	shouldIgnore := false
 
 	var prevIgnore bool
-	var nodeData *commands.Inode
+	var code returncodes.Code
 
 	if isIgnoredFile(filePath) {
-
-		prevIgnore, nodeData = previouslyIgnored(filePath)
+		prevIgnore, code = commands.PreviouslyIgnored(globals.ParanoidDir, filePath)
 		if ignoreExists() {
 			negationSet := false
 			_, err, returnData := commands.ReadCommand(globals.ParanoidDir, ".pfsignore", -1, -1)
@@ -101,16 +68,16 @@ func ShouldIgnore(filePath string, changeInode bool) bool {
 			}
 		}
 	}
+	Log.Info("What to do:", shouldIgnore, code, !changeInode)
 	if shouldIgnore {
 		Log.Info("File:", filePath, "has been ignored")
-		if nodeData != nil {
-			updateInode(*nodeData, filePath, shouldIgnore)
+		if code != returncodes.OK {
+			commands.UpdateInodeIgnore(globals.ParanoidDir, filePath, shouldIgnore)
 		}
-	} else if prevIgnore && nodeData != nil && !changeInode {
-		Log.Error(filePath, "has been previously Ignored, and will not sync")
+	} else if prevIgnore && code == returncodes.OK && !changeInode {
 		shouldIgnore = true
 	} else if changeInode && prevIgnore {
-		updateInode(*nodeData, filePath, false) //setting ignore to false
+		commands.UpdateInodeIgnore(globals.ParanoidDir, filePath, false) //setting ignore to false
 	}
 	return shouldIgnore
 }

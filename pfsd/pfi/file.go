@@ -78,7 +78,6 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 //Truncate is called when a file is to be reduced in length to size.
 func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	Log.Info("Truncate called on file : " + f.Name)
-	Log.Info("TRUCATE SIZE:", size)
 	var code returncodes.Code
 	var err error
 	if SendOverNetwork && !glob.ShouldIgnore(f.Name, size <= 0) {

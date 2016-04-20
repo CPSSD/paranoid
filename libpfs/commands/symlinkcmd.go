@@ -14,7 +14,7 @@ import (
 // SymlinkCommand creates a symbolic link
 func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("symlink command called")
-	targetParanoidPath:= GetParanoidPath(paranoidDirectory, targetFilePath)
+	targetParanoidPath:= getParanoidPath(paranoidDirectory, targetFilePath)
 
 	err := GetFileSystemLock(paranoidDirectory, ExclusiveLock)
 	if err != nil {
@@ -64,7 +64,7 @@ func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) 
 
 	stat := fi.Sys().(*syscall.Stat_t)
 
-	nodeData := &Inode{
+	nodeData := &inode{
 		Mode:    os.FileMode(stat.Mode),
 		Inode:   uuidString,
 		Count:   1,
