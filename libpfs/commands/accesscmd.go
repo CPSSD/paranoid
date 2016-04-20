@@ -34,7 +34,7 @@ func AccessCommand(paranoidDirectory, filePath string, mode uint32) (returnCode 
 		return returncodes.ENOENT, errors.New(filePath + " does not exist")
 	}
 
-	inodeNameBytes, code, err := GetFileInode(namePath)
+	inodeNameBytes, code, err := getFileInode(namePath)
 	if code != returncodes.OK || err != nil {
 		return code, err
 	}

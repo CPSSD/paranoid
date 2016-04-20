@@ -14,7 +14,7 @@ import (
 func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("link command called")
 	existingParanoidPath := getParanoidPath(paranoidDirectory, existingFilePath)
-	targetParanoidPath:= getParanoidPath(paranoidDirectory, targetFilePath)
+	targetParanoidPath := getParanoidPath(paranoidDirectory, targetFilePath)
 
 	Log.Verbose("link : given paranoidDirectory = " + paranoidDirectory)
 
@@ -58,7 +58,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 	}
 
 	// getting inode and fileMode of existing file
-	inodeBytes, code, err := GetFileInode(existingParanoidPath)
+	inodeBytes, code, err := getFileInode(existingParanoidPath)
 	if code != returncodes.OK {
 		return code, err
 	}

@@ -46,7 +46,7 @@ func ChmodCommand(paranoidDirectory, filePath string, perms os.FileMode) (return
 		return returncodes.EIO, errors.New(filePath + " is of type symlink")
 	}
 
-	inodeNameBytes, code, err := GetFileInode(namepath)
+	inodeNameBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
 		return code, err
 	}

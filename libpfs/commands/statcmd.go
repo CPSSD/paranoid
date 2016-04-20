@@ -26,7 +26,6 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Cod
 	if err != nil {
 		return returncodes.EUNEXPECTED, err, statInfo{}
 	}
-
 	defer func() {
 		err := UnLockFileSystem(paranoidDirectory)
 		if err != nil {
@@ -44,7 +43,7 @@ func StatCommand(paranoidDirectory, filePath string) (returnCode returncodes.Cod
 	if namePathType == typeENOENT {
 		return returncodes.ENOENT, errors.New(filePath + " does not exist"), statInfo{}
 	}
-	inodeBytes, code, err := GetFileInode(namepath)
+	inodeBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
 		return code, err, statInfo{}
 	}

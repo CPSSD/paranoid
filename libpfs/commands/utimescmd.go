@@ -39,7 +39,7 @@ func UtimesCommand(paranoidDirectory, filePath string, atime, mtime *time.Time) 
 		return returncodes.ENOENT, errors.New(filePath + " does not exist")
 	}
 
-	fileInodeBytes, code, err := GetFileInode(namepath)
+	fileInodeBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
 		return code, err
 	}

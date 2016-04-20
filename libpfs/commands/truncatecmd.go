@@ -45,7 +45,7 @@ func TruncateCommand(paranoidDirectory, filePath string, length int64) (returnCo
 		return returncodes.EIO, errors.New(filePath + " is a symlink")
 	}
 
-	fileInodeBytes, code, err := GetFileInode(namepath)
+	fileInodeBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK {
 		return code, err
 	}

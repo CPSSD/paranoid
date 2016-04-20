@@ -49,7 +49,7 @@ func ReadCommand(paranoidDirectory, filePath string, offset, length int64) (retu
 		return returncodes.EIO, errors.New(filePath + " is a symlink"), nil
 	}
 
-	inodeBytes, code, err := GetFileInode(namepath)
+	inodeBytes, code, err := getFileInode(namepath)
 	if code != returncodes.OK || err != nil {
 		return code, err, nil
 	}

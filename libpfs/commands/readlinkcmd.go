@@ -47,7 +47,7 @@ func ReadlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes
 
 	Log.Verbose("readlink: given paranoidDirectory", paranoidDirectory)
 
-	linkInode, code, err := GetFileInode(link)
+	linkInode, code, err := getFileInode(link)
 	if code != returncodes.OK || err != nil {
 		return code, err, ""
 	}

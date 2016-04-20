@@ -44,7 +44,7 @@ func UnlinkCommand(paranoidDirectory, filePath string) (returnCode returncodes.C
 	}
 
 	// getting file inode
-	inodeBytes, code, err := GetFileInode(fileParanoidPath)
+	inodeBytes, code, err := getFileInode(fileParanoidPath)
 	if code != returncodes.OK {
 		return code, err
 	}

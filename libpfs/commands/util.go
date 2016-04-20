@@ -180,7 +180,7 @@ func generateNewInode() (inodeBytes []byte, err error) {
 	return []byte(strings.TrimSpace(string(inodeBytes))), nil
 }
 
-func GetFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Code, err error) {
+func getFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Code, err error) {
 	f, err := os.Lstat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -203,14 +203,34 @@ func GetFileInode(filePath string) (inodeBytes []byte, errorCode returncodes.Cod
 	return bytes, returncodes.OK, nil
 }
 
-func readInodeData(inodePath string) (*inode, error) {
-	inodeBytes, err := ioutil.ReadFile(inodePath)
+func readInodeData(paranoidDirectory, inodePath string) (*inode, error) {
+	var fileContents []byte
+	err := GetFileSystemLock(paranoidDirectory, SharedLock)
+	if err != nil {
+		fileContents = nil
+	}
+
+	defer func() {
+		err := UnLockFileSystem(paranoidDirectory)
+		if err != nil {
+			fileContents = nil
+		}
+	}()
+
+	defer func() {
+		err := unLockFile(paranoidDirectory, inodePath)
+		if err != nil {
+			fileContents = nil
+		}
+	}()
+
+	fileContents, err = ioutil.ReadFile(inodePath)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot Read iNode", err)
 	}
 
 	inodeData := &inode{}
-	err = json.Unmarshal(inodeBytes, &inodeData)
+	err = json.Unmarshal(fileContents, &inodeData)
 	if err != nil {
 		return inodeData, fmt.Errorf("Error parsing iNode", err)
 	}
@@ -237,7 +257,7 @@ const (
 	typeENOENT
 )
 
-func getFileType(directory, filePath string) (returncodes.Code, error) {
+func getFileType(paranoidDirectory, filePath string) (returncodes.Code, error) {
 	f, err := os.Lstat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -250,7 +270,7 @@ func getFileType(directory, filePath string) (returncodes.Code, error) {
 		return typeDir, nil
 	}
 
-	inode, code, err := GetFileInode(filePath)
+	inode, code, err := getFileInode(filePath)
 	if err != nil {
 		return 0, fmt.Errorf("error getting file type of %s, error getting inode: %s", filePath, err)
 	}
@@ -259,10 +279,10 @@ func getFileType(directory, filePath string) (returncodes.Code, error) {
 		if code == returncodes.ENOENT {
 			return typeENOENT, nil
 		}
-		return 0, fmt.Errorf("error getting file type of %s, unexpected result from GetFileInode: %s", filePath, code)
+		return 0, fmt.Errorf("error getting file type of %s, unexpected result from getFileInode,: %s", filePath, code)
 	}
 
-	f, err = os.Lstat(path.Join(directory, "contents", string(inode)))
+	f, err = os.Lstat(path.Join(paranoidDirectory, "contents", string(inode)))
 	if err != nil {
 		return 0, fmt.Errorf("error getting file type of %s, symlink check error occured: %s", filePath, err)
 	}
@@ -276,13 +296,13 @@ func getFileType(directory, filePath string) (returncodes.Code, error) {
 
 func PreviouslyIgnored(paranoidDir, filePath string) (bool, returncodes.Code) {
 	namePath := getParanoidPath(paranoidDir, filePath)
-	inodeName, code, err := GetFileInode(namePath)
+	inodeName, code, err := getFileInode(namePath)
 	if err != nil || code != returncodes.OK {
 		Log.Error("Error getting file iNode")
 		return true, code
 	}
 	inodePath := path.Join(path.Join(paranoidDir, "inodes", string(inodeName)))
-	inodeData, err := readInodeData(inodePath)
+	inodeData, err := readInodeData(paranoidDir, inodePath)
 	return inodeData.Ignored, returncodes.OK
 }
 
@@ -290,13 +310,13 @@ func UpdateInodeIgnore(paranoidDir, filePath string, newIgnoreVal bool) (returnc
 	Log.Info("Updating iNode for:", filePath)
 
 	namePath := getParanoidPath(paranoidDir, filePath)
-	inodeName, code, err := GetFileInode(namePath)
+	inodeName, code, err := getFileInode(namePath)
 	if err != nil || code != returncodes.OK {
 		Log.Error("Error getting file iNode")
 		return code, err
 	}
 	inodePath := path.Join(path.Join(paranoidDir, "inodes", string(inodeName)))
-	inodeData, err := readInodeData(inodePath)
+	inodeData, err := readInodeData(paranoidDir, inodePath)
 	if err != nil {
 		Log.Error("Error Parsing Inode")
 		return returncodes.EACCES, err
