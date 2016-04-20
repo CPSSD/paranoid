@@ -42,20 +42,20 @@ func starGlob(pattern, file string) bool {
 
 	patternSplit := strings.Split(pattern, star)
 
-	shouldGlob := strings.HasPrefix(file, patternSplit[0])
-	if !shouldGlob {
+	shouldIgnore  := strings.HasPrefix(file, patternSplit[0])
+	if !shouldIgnore  {
 		return false
 	}
 	//search the middle Patterns
 	for i := 1; i < len(patternSplit)-1; i++ {
-		shouldGlob = shouldGlob || !strings.Contains(file, patternSplit[i])
+		shouldIgnore  = shouldIgnore  || !strings.Contains(file, patternSplit[i])
 		index := strings.Index(file, patternSplit[i]) + len(patternSplit[i])
 		file = file[index:]
 	}
 	if patternSplit[len(patternSplit)-1] == "" {
 		return true
 	} else {
-		return shouldGlob && strings.HasSuffix(file, patternSplit[len(patternSplit)-1])
+		return shouldIgnore  && strings.HasSuffix(file, patternSplit[len(patternSplit)-1])
 	}
 }
 

@@ -35,7 +35,7 @@ func (fs *ParanoidFileSystem) GetAttr(name string, context *fuse.Context) (*fuse
 		Log.Fatal("Error running stat command :", err)
 	}
 
-	if err != nil { // TODO this produces tonnes of usless logspam
+	if err != nil && code != returncodes.EEXIST { // TODO this produces tonnes of usless logspam
 		Log.Error("Error running stat command :", err)
 	}
 
@@ -93,11 +93,11 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 	Log.Info("Create called on : " + name)
 	var code returncodes.Code
 	var err error
-	shouldGlob := glob.ShouldIgnore(name, false)
-	if SendOverNetwork && !shouldGlob {
+	shouldIgnore  := glob.ShouldIgnore(name, false)
+	if SendOverNetwork && !shouldIgnore  {
 		code, err = globals.RaftNetworkServer.RequestCreatCommand(name, mode)
 	} else {
-		code, err = commands.CreatCommand(globals.ParanoidDir, name, os.FileMode(mode), shouldGlob)
+		code, err = commands.CreatCommand(globals.ParanoidDir, name, os.FileMode(mode), shouldIgnore )
 	}
 
 	if code == returncodes.EUNEXPECTED {

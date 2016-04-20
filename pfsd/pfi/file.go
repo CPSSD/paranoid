@@ -54,8 +54,7 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 		err          error
 		bytesWritten int
 	)
-	changeInode := false
-	if SendOverNetwork && !glob.ShouldIgnore(f.Name, changeInode) {
+	if SendOverNetwork && !glob.ShouldIgnore(f.Name, false) {
 		code, err, bytesWritten = globals.RaftNetworkServer.RequestWriteCommand(f.Name, off, int64(len(content)), content)
 	} else {
 		code, err, bytesWritten = commands.WriteCommand(globals.ParanoidDir, f.Name, off, int64(len(content)), content)
@@ -82,11 +81,7 @@ func (f *ParanoidFile) Truncate(size uint64) fuse.Status {
 	Log.Info("TRUCATE SIZE:", size)
 	var code returncodes.Code
 	var err error
-	changeInode := false
-	if size <= 0 {
-		changeInode = true
-	}
-	if SendOverNetwork && !glob.ShouldIgnore(f.Name, changeInode) {
+	if SendOverNetwork && !glob.ShouldIgnore(f.Name, size <= 0) {
 		code, err = globals.RaftNetworkServer.RequestTruncateCommand(f.Name, int64(size))
 	} else {
 		code, err = commands.TruncateCommand(globals.ParanoidDir, f.Name, int64(size))

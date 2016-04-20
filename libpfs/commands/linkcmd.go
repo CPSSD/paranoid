@@ -14,7 +14,7 @@ import (
 func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("link command called")
 	existingParanoidPath := GetParanoidPath(paranoidDirectory, existingFilePath)
-	tarGetParanoidPath := GetParanoidPath(paranoidDirectory, targetFilePath)
+	targetParanoidPath:= GetParanoidPath(paranoidDirectory, targetFilePath)
 
 	Log.Verbose("link : given paranoidDirectory = " + paranoidDirectory)
 
@@ -48,7 +48,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 		return returncodes.EIO, errors.New("existing file " + existingFilePath + " is a symlink")
 	}
 
-	targetFileType, err := getFileType(paranoidDirectory, tarGetParanoidPath)
+	targetFileType, err := getFileType(paranoidDirectory, targetParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error getting target file %s file type: %s", targetFilePath, err)
 	}
@@ -70,7 +70,7 @@ func LinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (re
 	fileMode := fileInfo.Mode()
 
 	// creating target file pointing to same inode
-	err = ioutil.WriteFile(tarGetParanoidPath, inodeBytes, fileMode)
+	err = ioutil.WriteFile(targetParanoidPath, inodeBytes, fileMode)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing to names file: %s", err)
 	}

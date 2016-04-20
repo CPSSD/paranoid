@@ -8,6 +8,7 @@ import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"io/ioutil"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -22,8 +23,8 @@ func ignoreExists() bool {
 	return true
 }
 
-func isIgnoreFile(filePath string) bool {
-	return strings.HasSuffix(strings.TrimSuffix(filePath, "/"), ".pfsignore")
+func isIgnoredFile(filePath string) bool {
+	return filepath.Base(filePath) != ".pfsignore"
 }
 
 func dirIgnored(currentPattern string, globs []string) bool {
@@ -67,12 +68,12 @@ func updateInode(inodeData commands.Inode, filePath string, newIgnoreVal bool) {
 }
 
 func ShouldIgnore(filePath string, changeInode bool) bool {
-	shouldGlob := false
+	shouldIgnore := false
 
 	var prevIgnore bool
 	var nodeData *commands.Inode
 
-	if !isIgnoreFile(filePath) {
+	if isIgnoredFile(filePath) {
 
 		prevIgnore, nodeData = previouslyIgnored(filePath)
 		if ignoreExists() {
@@ -92,24 +93,24 @@ func ShouldIgnore(filePath string, changeInode bool) bool {
 					}
 
 					globResponse := Glob(pattern, filePath)
-					shouldGlob = shouldGlob || globResponse || dirIgnored
+					shouldIgnore = shouldIgnore || globResponse || dirIgnored
 				}
 			}
-			if negationSet && shouldGlob {
-				shouldGlob = !shouldGlob
+			if negationSet && shouldIgnore {
+				shouldIgnore = !shouldIgnore
 			}
 		}
 	}
-	if shouldGlob {
+	if shouldIgnore {
 		Log.Info("File:", filePath, "has been ignored")
 		if nodeData != nil {
-			updateInode(*nodeData, filePath, shouldGlob)
+			updateInode(*nodeData, filePath, shouldIgnore)
 		}
 	} else if prevIgnore && nodeData != nil && !changeInode {
 		Log.Error(filePath, "has been previously Ignored, and will not sync")
-		shouldGlob = true
+		shouldIgnore = true
 	} else if changeInode && prevIgnore {
 		updateInode(*nodeData, filePath, false) //setting ignore to false
 	}
-	return shouldGlob
+	return shouldIgnore
 }

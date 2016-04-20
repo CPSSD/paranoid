@@ -14,7 +14,7 @@ import (
 // SymlinkCommand creates a symbolic link
 func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) (returnCode returncodes.Code, returnError error) {
 	Log.Info("symlink command called")
-	tarGetParanoidPath := GetParanoidPath(paranoidDirectory, targetFilePath)
+	targetParanoidPath:= GetParanoidPath(paranoidDirectory, targetFilePath)
 
 	err := GetFileSystemLock(paranoidDirectory, ExclusiveLock)
 	if err != nil {
@@ -29,7 +29,7 @@ func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) 
 		}
 	}()
 
-	targetFilePathType, err := getFileType(paranoidDirectory, tarGetParanoidPath)
+	targetFilePathType, err := getFileType(paranoidDirectory, targetParanoidPath)
 	if err != nil {
 		return returncodes.EUNEXPECTED, err
 	}
@@ -46,7 +46,7 @@ func SymlinkCommand(paranoidDirectory, existingFilePath, targetFilePath string) 
 	uuidString := string(uuidBytes)
 	Log.Verbose("symlink: uuid", uuidString)
 
-	err = ioutil.WriteFile(tarGetParanoidPath, uuidBytes, 0600)
+	err = ioutil.WriteFile(targetParanoidPath, uuidBytes, 0600)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error writing file: %s", err)
 	}
