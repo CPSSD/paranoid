@@ -114,6 +114,16 @@ func (ns *nodes) Add(n Node) {
 	ns.m[n.UUID] = n
 }
 
+func (ns *nodes) GetNode(uuid string) (Node, error) {
+	ns.lock.Lock()
+	defer ns.lock.Unlock()
+	node, ok := ns.m[uuid]
+	if !ok {
+		return node, errors.New("unrecognised uuid")
+	}
+	return node, nil
+}
+
 func (ns *nodes) Remove(n Node) {
 	ns.lock.Lock()
 	defer ns.lock.Unlock()
@@ -137,6 +147,7 @@ func (ns *nodes) GetAll() []Node {
 
 // Global key used by this instance of PFSD
 var Encrypted bool
+var KeyGenerated bool
 var EncryptionKey *keyman.Key
 
 // Indicates when the system has been locked and keys have been distributed
