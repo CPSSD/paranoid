@@ -77,7 +77,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "paranoid-cli"
 	app.HelpName = "paranoid-cli"
-	app.Version = "0.4.1"
+	app.Version = "0.4.2"
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:  "verbose",
