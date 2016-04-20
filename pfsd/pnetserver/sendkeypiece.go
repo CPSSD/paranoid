@@ -38,14 +38,17 @@ func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*p
 				NodeId:     globals.ThisNode.UUID,
 			}
 
-			globals.HeldKeyPieces.AddPiece(node.UUID, piece)
-			err := globals.RaftNetworkServer.RequestKeyStateUpdate(raftOwner, raftHolder,
+			err := globals.HeldKeyPieces.AddPiece(0, node.UUID, piece)
+			if err != nil {
+				return &pb.EmptyMessage{}, grpc.Errorf(codes.FailedPrecondition, "failed to save key piece to disk: %s", err)
+			}
+			err = globals.RaftNetworkServer.RequestKeyStateUpdate(raftOwner, raftHolder,
 				int64(keyman.StateMachine.CurrentGeneration+1))
 			if err != nil {
 				return &pb.EmptyMessage{}, grpc.Errorf(codes.FailedPrecondition, "failed to commit to Raft: %s", err)
 			}
 			Log.Info("Received KeyPiece from", node)
-			return &pb.EmptyMessage{}, nil
+			return &pb.EmptyMessage{}, err
 		}
 	}
 	Log.Warn("OwnerNode not found:", req.OwnerNode)

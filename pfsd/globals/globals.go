@@ -144,51 +144,78 @@ var SystemLocked bool = false
 
 var keyPieceStoreLock sync.Mutex
 
-type KeyPieceStore map[string]*keyman.KeyPiece
+type KeyPieceMap map[string]*keyman.KeyPiece
+type KeyPieceStore map[int64]KeyPieceMap
 
 // Returns nil if the piece is not found
-func (ks KeyPieceStore) GetPiece(nodeUUID string) *keyman.KeyPiece {
+func (ks KeyPieceStore) GetPiece(generation int64, nodeUUID string) *keyman.KeyPiece {
 	keyPieceStoreLock.Lock()
 	defer keyPieceStoreLock.Unlock()
-	piece, ok := ks[nodeUUID]
+	keymap, ok := ks[generation]
+	if !ok {
+		return nil
+	}
+
+	piece, ok := keymap[nodeUUID]
 	if !ok {
 		return nil
 	}
 	return piece
 }
 
-func (ks KeyPieceStore) AddPiece(nodeUUID string, piece *keyman.KeyPiece) {
+func (ks KeyPieceStore) AddPiece(generation int64, nodeUUID string, piece *keyman.KeyPiece) error {
 	keyPieceStoreLock.Lock()
 	defer keyPieceStoreLock.Unlock()
-	ks[nodeUUID] = piece
-	ks.SaveToDisk()
+
+	_, ok := ks[generation]
+	if !ok {
+		ks[generation] = make(KeyPieceMap)
+	}
+
+	ks[generation][nodeUUID] = piece
+	return ks.SaveToDisk()
 }
 
-func (ks KeyPieceStore) DeletePiece(nodeUUID string) {
+func (ks KeyPieceStore) DeletePiece(generation int64, nodeUUID string) error {
 	keyPieceStoreLock.Lock()
 	defer keyPieceStoreLock.Unlock()
-	delete(ks, nodeUUID)
-	ks.SaveToDisk()
+
+	_, ok := ks[generation]
+	if !ok {
+		return nil
+	}
+
+	delete(ks[generation], nodeUUID)
+	return ks.SaveToDisk()
 }
 
-func (ks KeyPieceStore) SaveToDisk() {
+func (ks KeyPieceStore) DeleteGeneration(generation int64) error {
+	keyPieceStoreLock.Lock()
+	defer keyPieceStoreLock.Unlock()
+	delete(ks, generation)
+	return ks.SaveToDisk()
+}
+
+func (ks KeyPieceStore) SaveToDisk() error {
 	piecePath := path.Join(ParanoidDir, "meta", "pieces-new")
 	file, err := os.Create(piecePath)
 	if err != nil {
 		Log.Errorf("Unable to open %s for storing pieces: %s", piecePath, file)
-		return
+		return fmt.Errorf("Unable to open %s for storing pieces: %s", piecePath, file)
 	}
 	defer file.Close()
 	enc := gob.NewEncoder(file)
 	err = enc.Encode(ks)
 	if err != nil {
 		Log.Error("Failed encoding KeyPieceStore to GOB:", err)
-		return
+		return fmt.Errorf("failed encoding KeyPieceStore to GOB: %s", err)
 	}
 	err = os.Rename(piecePath, path.Join(ParanoidDir, "meta", "pieces"))
 	if err != nil {
 		Log.Error("Failed to save KeyPieceStore to file:", err)
+		return fmt.Errorf("Failed to save KeyPieceStore to file: %s", err)
 	}
+	return nil
 }
 
 var HeldKeyPieces = make(KeyPieceStore)
