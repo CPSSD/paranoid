@@ -34,10 +34,10 @@ message ListServeRequest {
 }
 
 message ListServeResponse {
-  repeated ServedFiles data = 1; // required
+  repeated ServedFile ServedFiles = 1; // required
 }
 
-message ServedFiles {
+message ServedFile {
   string    FilePath = 1; // required
   string    FileHash = 2; // required
   int32     AccessLimit = 3; // required

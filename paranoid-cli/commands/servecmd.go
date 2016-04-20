@@ -3,10 +3,10 @@ package commands
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/cpssd/paranoid/paranoid-cli/tls"
 	pb "github.com/cpssd/paranoid/proto/fileserver"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -80,7 +80,11 @@ func Serve(c *cli.Context) {
 
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTimeout(2*time.Second))
-	opts = append(opts, grpc.WithInsecure())
+	if tls.CertExists(pfsDir) {
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
 	connection, err := grpc.Dial(address, opts...)
 	if err != nil {
 		fmt.Println("Failed to Connect to Discovery Share Server")

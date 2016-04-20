@@ -14,7 +14,7 @@ It has these top-level messages:
 	UnServeRequest
 	ListServeRequest
 	ListServeResponse
-	ServedFiles
+	ServedFile
 */
 package fileserver
 
@@ -71,30 +71,30 @@ func (m *ListServeRequest) String() string { return proto.CompactTextString(m) }
 func (*ListServeRequest) ProtoMessage()    {}
 
 type ListServeResponse struct {
-	Data []*ServedFiles `protobuf:"bytes,1,rep,name=data" json:"data,omitempty"`
+	ServedFiles []*ServedFile `protobuf:"bytes,1,rep,name=ServedFiles" json:"ServedFiles,omitempty"`
 }
 
 func (m *ListServeResponse) Reset()         { *m = ListServeResponse{} }
 func (m *ListServeResponse) String() string { return proto.CompactTextString(m) }
 func (*ListServeResponse) ProtoMessage()    {}
 
-func (m *ListServeResponse) GetData() []*ServedFiles {
+func (m *ListServeResponse) GetServedFiles() []*ServedFile {
 	if m != nil {
-		return m.Data
+		return m.ServedFiles
 	}
 	return nil
 }
 
-type ServedFiles struct {
+type ServedFile struct {
 	FilePath       string `protobuf:"bytes,1,opt,name=FilePath" json:"FilePath,omitempty"`
 	FileHash       string `protobuf:"bytes,2,opt,name=FileHash" json:"FileHash,omitempty"`
 	AccessLimit    int32  `protobuf:"varint,3,opt,name=AccessLimit" json:"AccessLimit,omitempty"`
 	ExpirationTime string `protobuf:"bytes,4,opt,name=ExpirationTime" json:"ExpirationTime,omitempty"`
 }
 
-func (m *ServedFiles) Reset()         { *m = ServedFiles{} }
-func (m *ServedFiles) String() string { return proto.CompactTextString(m) }
-func (*ServedFiles) ProtoMessage()    {}
+func (m *ServedFile) Reset()         { *m = ServedFile{} }
+func (m *ServedFile) String() string { return proto.CompactTextString(m) }
+func (*ServedFile) ProtoMessage()    {}
 
 func init() {
 	proto.RegisterType((*ServeResponse)(nil), "fileserver.ServeResponse")
@@ -102,7 +102,7 @@ func init() {
 	proto.RegisterType((*UnServeRequest)(nil), "fileserver.UnServeRequest")
 	proto.RegisterType((*ListServeRequest)(nil), "fileserver.ListServeRequest")
 	proto.RegisterType((*ListServeResponse)(nil), "fileserver.ListServeResponse")
-	proto.RegisterType((*ServedFiles)(nil), "fileserver.ServedFiles")
+	proto.RegisterType((*ServedFile)(nil), "fileserver.ServedFile")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.

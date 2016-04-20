@@ -17,8 +17,8 @@ import (
 func ListServe(c *cli.Context) {
 	args := c.Args()
 
-	if len(args) < 2 {
-		cli.ShowCommandHelp(c, "serve")
+	if len(args) < 1 {
+		cli.ShowCommandHelp(c, "list-serve")
 		os.Exit(1)
 	}
 
@@ -69,5 +69,12 @@ func ListServe(c *cli.Context) {
 		fmt.Println("Unable to send File to Discovery Share Server")
 		Log.Fatal("Couldn't message Discovery Share Server", err)
 	}
-	fmt.Println(response)
+	if len(response.ServedFiles) == 0 {
+		fmt.Println("You Have no files being Currently served")
+	} else {
+		fmt.Println("File Path", "\t", "FileHash", "\t", "Times Accessed", "\t", "Expiration Time", "\n")
+		for _, files := range response.ServedFiles {
+			fmt.Println(files.FilePath, "\t", files.FileHash, "\t", files.AccessLimit, "\t", files.ExpirationTime)
+		}
+	}
 }
