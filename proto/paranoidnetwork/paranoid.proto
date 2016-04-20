@@ -45,7 +45,7 @@ message NewGenerationRequest {
 
 message NewGenerationResponse {
     int64 generation_number = 1;    // required
-    repeated Node peers = 2;        // required
+    repeated string peers = 2;        // required
 }
 
 message KeyPiece {

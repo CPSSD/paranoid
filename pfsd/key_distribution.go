@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/gob"
-	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
@@ -15,32 +14,6 @@ import (
 const unlockQueryInterval time.Duration = time.Second * 30
 const unlockTimeout time.Duration = time.Minute * 10
 const lockWaitDuration time.Duration = time.Minute * 1
-
-// Chunks key and sends the pieces to other nodes on the network.
-func Lock() error {
-	numPieces := int64(len(globals.Nodes.GetAll()) + 1)
-	requiredPieces := numPieces/2 + 1
-	log.Info("Generating pieces.")
-	pieces, err := keyman.GeneratePieces(globals.EncryptionKey, numPieces, requiredPieces)
-	if err != nil {
-		log.Error("Could not chunk key:", err)
-		return fmt.Errorf("could not chunk key: %s", err)
-	}
-	// We always keep the first piece and distribute the rest
-	err = globals.HeldKeyPieces.AddPiece(0, globals.ThisNode.UUID, pieces[0])
-	if err != nil {
-		return fmt.Errorf("could not store key piece: %s", err)
-	}
-
-	for i := 1; i < len(pieces); i++ {
-		pnetclient.SendKeyPiece(pieces[i])
-	}
-	// Delete our copy of the full key
-	globals.EncryptionKey = nil
-	globals.SystemLocked = true
-
-	return nil
-}
 
 type keyResponse struct {
 	uuid  string

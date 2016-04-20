@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
-	"sync"
 )
 
 // Chunks key and sends the pieces to other nodes on the network.
@@ -21,7 +20,7 @@ func Distribute(key *keyman.Key, peers []globals.Node, generation int) error {
 	globals.HeldKeyPieces.AddPiece(int64(generation), globals.ThisNode.UUID, pieces[0])
 
 	for i := 1; i < len(pieces); i++ {
-		SendKeyPiece(pieces[i])
+		SendKeyPiece(peers[i].UUID, pieces[i])
 	}
 	return nil
 }

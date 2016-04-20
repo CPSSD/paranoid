@@ -90,6 +90,7 @@ func TestKillSignal(t *testing.T) {
 		"testPool",
 		"",
 	)
+	pfsd.Stderr = os.Stderr
 
 	err = pfsd.Start()
 	if err != nil {
@@ -101,7 +102,7 @@ func TestKillSignal(t *testing.T) {
 		cmd.Run()
 	}()
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	pidPath := path.Join(os.TempDir(), "testksDirectory", "meta", "pfsd.pid")
 	if _, err := os.Stat(pidPath); err == nil {

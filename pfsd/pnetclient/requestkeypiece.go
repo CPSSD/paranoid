@@ -10,13 +10,6 @@ import (
 	"math/big"
 )
 
-// A struct which is either a pointer to a KeyPiece or an error.
-// Basically like a union from C.
-type keyPieceUnion struct {
-	piece *keyman.KeyPiece
-	err   error
-}
-
 func RequestKeyPiece(uuid string) (*keyman.KeyPiece, error) {
 	node, err := globals.Nodes.GetNode(uuid)
 	if err != nil {
