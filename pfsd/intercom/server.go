@@ -93,7 +93,11 @@ func RunServer(metaDir string) {
 	go func() {
 		defer globals.Wait.Done()
 		Log.Info("Internal communication server listening on", socketPath)
-		go rpc.Accept(lis)
+		globals.Wait.Add(1)
+		go func() {
+			rpc.Accept(lis)
+			defer globals.Wait.Done()
+		}()
 
 		select {
 		case _, ok := <-globals.Quit:

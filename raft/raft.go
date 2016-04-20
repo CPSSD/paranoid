@@ -120,7 +120,6 @@ func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEnt
 		} else {
 			s.State.SetCommitIndex(req.LeaderCommit)
 		}
-		s.State.ApplyLogEntries()
 	}
 
 	return &pb.AppendEntriesResponse{s.State.GetCurrentTerm(), 0, true}, nil
@@ -653,6 +652,22 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 	}
 }
 
+func (s *RaftNetworkServer) manageEntryApplication() {
+	defer s.Wait.Done()
+	for {
+		select {
+		case _, ok := <-s.Quit:
+			if !ok {
+				s.QuitChannelClosed = true
+				Log.Info("Exiting entry application managment loop")
+				return
+			}
+		case <-s.State.ApplyEntries:
+			s.State.ApplyLogEntries()
+		}
+	}
+}
+
 func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration,
 	TLSEnabled, TLSSkipVerify bool) *RaftNetworkServer {
 
@@ -660,7 +675,6 @@ func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory stri
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
 	raftServer.Quit = make(chan bool)
 	raftServer.QuitChannelClosed = false
-	raftServer.Wait.Add(5)
 	raftServer.nodeDetails = nodeDetails
 	raftServer.raftInfoDirectory = raftInfoDirectory
 	raftServer.TLSEnabled = TLSEnabled
@@ -668,10 +682,12 @@ func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory stri
 	raftServer.ChangeNodeLocation(nodeDetails.NodeID, nodeDetails.IP, nodeDetails.Port)
 	raftServer.setupSnapshotDirectory()
 
+	raftServer.Wait.Add(6)
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()
 	go raftServer.manageConfigurationChanges()
 	go raftServer.manageSnapshoting()
+	go raftServer.manageEntryApplication()
 	return raftServer
 }
