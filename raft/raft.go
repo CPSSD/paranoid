@@ -43,6 +43,7 @@ type RaftNetworkServer struct {
 	nodeDetails       Node
 	raftInfoDirectory string
 	TLSEnabled        bool
+	Encrypted         bool
 	TLSSkipVerify     bool
 
 	QuitChannelClosed    bool
@@ -219,10 +220,12 @@ func (s *RaftNetworkServer) addLogEntryLeader(entry *pb.Entry) error {
 				if s.State.Configuration.GetFutureConfigurationActive() {
 					return errors.New("Can not change confirugation while another configuration change is underway")
 				}
-				for _, v := range config.GetNodes() {
-					if !keyman.StateMachine.NodeInGeneration(keyman.StateMachine.GetCurrentGeneration(), v.NodeId) {
-						return fmt.Errorf("node %s not in current generation (%s)",
-							v.NodeId, keyman.StateMachine.GetCurrentGeneration())
+				if s.Encrypted {
+					for _, v := range config.GetNodes() {
+						if !keyman.StateMachine.NodeInGeneration(keyman.StateMachine.GetCurrentGeneration(), v.NodeId) {
+							return fmt.Errorf("node %s not in current generation (%s)",
+								v.NodeId, keyman.StateMachine.GetCurrentGeneration())
+						}
 					}
 				}
 			}
@@ -677,7 +680,7 @@ func (s *RaftNetworkServer) manageEntryApplication() {
 }
 
 func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory string, testConfiguration *StartConfiguration,
-	TLSEnabled, TLSSkipVerify bool) *RaftNetworkServer {
+	TLSEnabled, TLSSkipVerify, encrypted bool) *RaftNetworkServer {
 
 	raftServer := &RaftNetworkServer{State: newRaftState(nodeDetails, pfsDirectory, raftInfoDirectory, testConfiguration)}
 	raftServer.ElectionTimeoutReset = make(chan bool, 100)
@@ -687,6 +690,7 @@ func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory stri
 	raftServer.raftInfoDirectory = raftInfoDirectory
 	raftServer.TLSEnabled = TLSEnabled
 	raftServer.TLSSkipVerify = TLSSkipVerify
+	raftServer.Encrypted = encrypted
 	raftServer.ChangeNodeLocation(nodeDetails.NodeID, nodeDetails.IP, nodeDetails.Port)
 	raftServer.setupSnapshotDirectory()
 

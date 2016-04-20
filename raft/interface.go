@@ -45,13 +45,13 @@ type EntryAppliedInfo struct {
 }
 
 //Starts a raft server given a listener, node information a directory to store information
-//A start configuration can be given for testing or for the first node in a cluster
+//Only used for testing purposes
 func StartRaft(lis *net.Listener, nodeDetails Node, pfsDirectory, raftInfoDirectory string,
 	startConfiguration *StartConfiguration) (*RaftNetworkServer, *grpc.Server) {
 
 	var opts []grpc.ServerOption
 	srv := grpc.NewServer(opts...)
-	raftServer := NewRaftNetworkServer(nodeDetails, pfsDirectory, raftInfoDirectory, startConfiguration, false, false)
+	raftServer := NewRaftNetworkServer(nodeDetails, pfsDirectory, raftInfoDirectory, startConfiguration, false, false, false)
 	pb.RegisterRaftNetworkServer(srv, raftServer)
 	raftServer.Wait.Add(1)
 	go func() {

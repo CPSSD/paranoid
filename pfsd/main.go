@@ -116,7 +116,9 @@ func startRPCServer(lis *net.Listener, password string) {
 				Peers: []raft.Node{},
 			},
 			globals.TLSEnabled,
-			globals.TLSSkipVerify)
+			globals.TLSSkipVerify,
+			globals.Encrypted,
+		)
 		timeout := time.After(GenerationJoinTimeout)
 	initalGenerationLoop:
 		for {
@@ -147,7 +149,9 @@ func startRPCServer(lis *net.Listener, password string) {
 			path.Join(globals.ParanoidDir, "meta", "raft"),
 			nil,
 			globals.TLSEnabled,
-			globals.TLSSkipVerify)
+			globals.TLSSkipVerify,
+			globals.Encrypted,
+		)
 	}
 
 	rpb.RegisterRaftNetworkServer(srv, globals.RaftNetworkServer)
