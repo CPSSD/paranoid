@@ -35,6 +35,7 @@ const (
 
 var (
 	Log *logger.ParanoidLogger
+	EnableExporting bool = true
 )
 
 type RaftNetworkServer struct {
@@ -746,13 +747,17 @@ func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory stri
 	raftServer.ChangeNodeLocation(nodeDetails.NodeID, nodeDetails.IP, nodeDetails.Port)
 	raftServer.setupSnapshotDirectory()
 
-	raftServer.Wait.Add(7)
+	raftServer.Wait.Add(6)
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()
 	go raftServer.manageConfigurationChanges()
 	go raftServer.manageSnapshoting()
 	go raftServer.manageEntryApplication()
-	go raftServer.sendLeaderDataRequest()
+	if EnableExporting {
+		raftServer.Wait.Add(1)
+		go raftServer.sendLeaderDataRequest()
+	}
+
 	return raftServer
 }

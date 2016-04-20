@@ -442,6 +442,15 @@ func main() {
 	}
 
 	if !globals.NetworkOff {
+
+		// Start exporter server if required
+		if(*exportFlag){
+			raft.EnableExporting = true
+			exporter.NewStdServer(*exportPortFlag);
+			go exporter.Listen();
+		}
+
+
 		discoveryPort, err := strconv.Atoi(flag.Arg(3))
 		if err != nil || discoveryPort < 1 || discoveryPort > 65535 {
 			log.Fatal("Discovery port must be a number between 1 and 65535, inclusive.")
@@ -510,13 +519,6 @@ func main() {
 	pfi.StartPfi(*verbose)
 
 	intercom.RunServer(path.Join(globals.ParanoidDir, "meta"))
-
-	// Start exporter server if required
-	if(*exportFlag){
-		exporter.NewStdServer(*exportPortFlag);
-		go exporter.Listen();
-	}
-
 	HandleSignals()
 }
 
