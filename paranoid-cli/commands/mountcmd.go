@@ -163,6 +163,10 @@ func doMount(c *cli.Context, args []string) {
 			if iface != "" {
 				pfsdFlags = append(pfsdFlags, "-interface="+iface)
 			}
+			if c.Bool("enable-export") {
+				pfsdFlags = append(pfsdFlags, "-enable-export")
+				pfsdFlags = append(pfsdFlags, "-export-port="+c.String("export-port"))
+			}
 			cmd := exec.Command("pfsd", append(pfsdFlags, pfsdArgs...)...)
 			err = cmd.Start()
 			if err != nil {

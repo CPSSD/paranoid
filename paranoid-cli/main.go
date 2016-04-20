@@ -12,6 +12,37 @@ import (
 	"path"
 )
 
+var (
+	// store the flags contained by both mount and automount
+	mountFlags  = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "n, noprompt",
+			Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
+		},
+		cli.StringFlag{
+			Name:  "i, interface",
+			Usage: "name a network interface over which to make connections. Defaults to default interface",
+		},
+		cli.StringFlag{
+			Name:  "d, discovery-addr",
+			Usage: "use a custom discovery server. Specified with ip:port. Defaults to public discovery server",
+		},
+		cli.StringFlag{
+			Name:  "pool-password",
+			Usage: "connect to a pool that is password protected",
+		},
+		cli.BoolFlag{
+			Name: "enable-export",
+			Usage: "enable exporting of Raft",
+		},
+		cli.StringFlag{
+			Name: "export-port",
+			Value: "10100",
+			Usage: "port on which raft exporter should run",
+		},
+	}
+)
+
 func main() {
 
 	usr, err := user.Current()
@@ -91,24 +122,7 @@ func main() {
 			Usage:     "mount a paranoid file system",
 			ArgsUsage: "pfs-name mountpoint",
 			Action:    commands.Mount,
-			Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "n, noprompt",
-					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
-				},
-				cli.StringFlag{
-					Name:  "i, interface",
-					Usage: "name a network interface over which to make connections. Defaults to default interface",
-				},
-				cli.StringFlag{
-					Name:  "d, discovery-addr",
-					Usage: "Use a custom discovery server. Specified with ip:port. Defaults to public discovery server",
-				},
-				cli.StringFlag{
-					Name:  "pool-password",
-					Usage: "connect to a pool that is password portected",
-				},
-			},
+			Flags:     mountFlags,
 		},
 		{
 			Name:      "secure",
@@ -153,24 +167,7 @@ func main() {
 			Usage:     "automount a paranoid file system with previous settings",
 			ArgsUsage: "pfs-name",
 			Action:    commands.AutoMount,
-			Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "n, noprompt",
-					Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
-				},
-				cli.StringFlag{
-					Name:  "i, interface",
-					Usage: "name a network interface over which to make connections. Defaults to default interface",
-				},
-				cli.StringFlag{
-					Name:  "d, discovery-addr",
-					Usage: "Use a custom discovery server. Specified with ip:port. Defaults to public discovery server",
-				},
-				cli.StringFlag{
-					Name:  "pool-password",
-					Usage: "connect to a pool that is password portected",
-				},
-			},
+			Flags: 		 mountFlags,
 		},
 		{
 			Name:      "unmount",
