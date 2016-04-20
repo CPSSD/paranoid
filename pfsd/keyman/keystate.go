@@ -59,6 +59,12 @@ func (ksm *KeyStateMachine) GetCurrentGeneration() int64 {
 	return ksm.CurrentGeneration
 }
 
+func (ksm *KeyStateMachine) GetInProgressGenertion() int64 {
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
+	return ksm.GetInProgressGenertion()
+}
+
 func (ksm *KeyStateMachine) GetNodes(generation int64) ([]string, error) {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
@@ -140,6 +146,10 @@ func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int6
 	ksm.Generations[ksm.InProgressGeneration] = &Generation{
 		Nodes:    append(existingNodes, newNode),
 		Elements: []*keyStateElement{},
+	}
+
+	if ksm.CurrentGeneration == -1 {
+		ksm.CurrentGeneration = ksm.InProgressGeneration
 	}
 
 	err = ksm.SerialiseToPFSDir()
@@ -229,11 +239,11 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateCommand) error {
 func (ksm KeyStateMachine) canUpdateGeneration(generation int64) bool {
 	// Map of UUIDs (as string) to int
 	owners := make(map[string]int)
+	for _, v := range ksm.Generations[generation].Nodes {
+		owners[v] += 1
+	}
 	for _, v := range ksm.Generations[generation].Elements {
 		owners[v.Owner.NodeId] += 1
-	}
-	if len(owners) != len(ksm.Generations[generation].Nodes) {
-		return false
 	}
 	minNodesRequired := len(ksm.Generations[generation].Nodes)/2 + 1
 	for _, count := range owners {

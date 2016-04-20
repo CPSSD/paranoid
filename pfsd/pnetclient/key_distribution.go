@@ -34,16 +34,24 @@ func KSMObserver(ksm *keyman.KeyStateMachine) {
 				return
 			}
 		case <-ksm.Events:
-			for g := ksm.CurrentGeneration; g <= ksm.InProgressGeneration; g++ {
-				nodes := make([]globals.Node, len(ksm.Generations[g].Nodes))
-				for i, v := range ksm.Generations[g].Nodes {
-					globalNode, err := globals.Nodes.GetNode(v)
-					if err != nil {
-						Log.Errorf("Unable to lookup node %s: %s", v, err)
-					}
-					nodes[i] = globalNode
+			for g := ksm.GetCurrentGeneration(); g <= ksm.GetInProgressGenertion(); g++ {
+				nodes, err := ksm.GetNodes(g)
+				if err != nil {
+					Log.Warn("Unable to get nodes for generation", g, ":", err)
+					continue
 				}
-				Distribute(globals.EncryptionKey, nodes, int(g))
+				var peers []globals.Node
+				for _, v := range nodes {
+					if v != globals.ThisNode.UUID {
+						globalNode, err := globals.Nodes.GetNode(v)
+						if err != nil {
+							Log.Errorf("Unable to lookup node %s: %s", v, err)
+						} else {
+							peers = append(peers, globalNode)
+						}
+					}
+				}
+				Distribute(globals.EncryptionKey, peers, int(g))
 			}
 			for i := int64(0); i < ksm.CurrentGeneration; i++ {
 				globals.HeldKeyPieces.DeleteGeneration(i)

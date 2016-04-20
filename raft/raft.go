@@ -327,10 +327,12 @@ func (s *RaftNetworkServer) electionTimeOut() {
 		case <-s.ElectionTimeoutReset:
 			timer.Reset(getRandomElectionTimeout())
 		case <-timer.C:
-			Log.Info("Starting new election")
-			s.State.SetCurrentTerm(s.State.GetCurrentTerm() + 1)
-			s.State.SetCurrentState(CANDIDATE)
-			timer.Reset(getRandomElectionTimeout())
+			if s.State.Configuration.HasConfiguration() {
+				Log.Info("Starting new election")
+				s.State.SetCurrentTerm(s.State.GetCurrentTerm() + 1)
+				s.State.SetCurrentState(CANDIDATE)
+				timer.Reset(getRandomElectionTimeout())
+			}
 		}
 	}
 }

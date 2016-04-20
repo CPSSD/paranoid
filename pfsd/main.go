@@ -266,6 +266,9 @@ func startRPCServer(lis *net.Listener, password string) {
 			log.Fatal("Unable to join a raft cluster")
 		}
 	}
+
+	globals.Wait.Add(1)
+	go pnetclient.KSMObserver(keyman.StateMachine)
 }
 
 func setupLogging() {
