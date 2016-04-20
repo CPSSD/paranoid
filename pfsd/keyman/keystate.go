@@ -182,6 +182,12 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateCommand) error {
 		Holder: req.GetKeyHolder(),
 	}
 
+	for _, v := range ksm.Generations[req.Generation].Elements {
+		if v.Owner.NodeId == elem.Owner.NodeId && v.Holder.NodeId == elem.Holder.NodeId {
+			return errors.New("owner-holder pair already present in this generation")
+		}
+	}
+
 	ksm.Generations[req.Generation].AddElement(elem)
 	// If a new generation is created, the state machine will only
 	// update its CurrentGeneration when enough generation N+1 elements
