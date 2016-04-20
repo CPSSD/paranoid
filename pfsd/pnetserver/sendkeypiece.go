@@ -11,7 +11,7 @@ import (
 	"math/big"
 )
 
-func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*pb.EmptyMessage, error) {
+func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*pb.SendKeyPieceResponse, error) {
 	for _, node := range globals.Nodes.GetAll() {
 		if node.UUID == req.OwnerNode.Uuid {
 			var prime big.Int
@@ -40,18 +40,22 @@ func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*p
 
 			err := globals.HeldKeyPieces.AddPiece(0, node.UUID, piece)
 			if err != nil {
-				return &pb.EmptyMessage{}, grpc.Errorf(codes.FailedPrecondition, "failed to save key piece to disk: %s", err)
-			}
-			err = globals.RaftNetworkServer.RequestKeyStateUpdate(raftOwner, raftHolder,
-				int64(keyman.StateMachine.CurrentGeneration+1))
-			if err != nil {
-				return &pb.EmptyMessage{}, grpc.Errorf(codes.FailedPrecondition, "failed to commit to Raft: %s", err)
+				return &pb.SendKeyPieceResponse{}, grpc.Errorf(codes.FailedPrecondition, "failed to save key piece to disk: %s", err)
 			}
 			Log.Info("Received KeyPiece from", node)
-			return &pb.EmptyMessage{}, err
+			if globals.RaftNetworkServer != nil {
+				err := globals.RaftNetworkServer.RequestKeyStateUpdate(raftOwner, raftHolder,
+					int64(keyman.StateMachine.CurrentGeneration+1))
+				if err != nil {
+					return &pb.SendKeyPieceResponse{}, grpc.Errorf(codes.FailedPrecondition, "failed to commit to Raft: %s", err)
+				}
+			} else {
+				return &pb.SendKeyPieceResponse{true}, nil
+			}
+			return &pb.SendKeyPieceResponse{}, nil
 		}
 	}
 	Log.Warn("OwnerNode not found:", req.OwnerNode)
 	err := grpc.Errorf(codes.NotFound, "OwnerNode not found in local database: %v", req.OwnerNode)
-	return &pb.EmptyMessage{}, err
+	return &pb.SendKeyPieceResponse{}, err
 }
