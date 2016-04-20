@@ -4,83 +4,60 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path"
 )
 
-type PersistentState struct {
-	Nodes []Node               `json:"nodes"`
-	Pools map[string]*PoolInfo `json:"pools"`
-}
-
-// saveState saves the current state of the discovery server to a file in it's
-// meta directory. the state includes all pools and nodes
-func saveState() {
-	stateData, err := json.Marshal(&PersistentState{
-		Nodes: Nodes,
-		Pools: Pools,
-	})
-
+func saveState(pool string) {
+	stateData, err := json.Marshal(Pools[pool].Info)
 	if err != nil {
 		Log.Fatal("Couldn't marshal stateData:", err)
 	}
 
-	file := prepareStateFile()
-	defer file.Close()
-	_, err = file.Write(stateData)
+	newStateFilePath := path.Join(TempDirectoryPath, pool)
+	stateFilePath := path.Join(StateDirectoryPath, pool)
+
+	err = ioutil.WriteFile(newStateFilePath, stateData, 0600)
+	if err != nil {
+		Log.Fatal("Failed to write state data to state file:", err)
+	}
+
+	err = os.Rename(newStateFilePath, stateFilePath)
 	if err != nil {
 		Log.Fatal("Failed to write state data to state file:", err)
 	}
 }
 
-// LoadState loads the Nodes from the stateFile
+// LoadState loads the state from the statefiles in the state directory
 func LoadState() {
-	_, err := os.Stat(StateFilePath)
+	_, err := os.Stat(StateDirectoryPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			Log.Info("Tried loading state from state file but it's non-existant")
+			Log.Info("Tried loading state from state directory but it's non-existant")
 			return
 		} else {
-			Log.Fatal("Couldn't stat statefile:", err)
+			Log.Fatal("Couldn't stat state directory:", err)
 		}
 	}
 
-	fileData, err := ioutil.ReadFile(StateFilePath)
-
-	perState := &PersistentState{}
-
-	err = json.Unmarshal(fileData, perState)
+	files, err := ioutil.ReadDir(StateDirectoryPath)
 	if err != nil {
-		Log.Fatal("Failed to un-marshal state file:", err)
+		Log.Fatal("Couldn't read state directory:", err)
 	}
 
-	Nodes = perState.Nodes
-	Pools = perState.Pools
-}
+	for i := 0; i < len(files); i++ {
+		stateFilePath := path.Join(StateDirectoryPath, files[i].Name())
+		fileData, err := ioutil.ReadFile(stateFilePath)
+		if err != nil {
+			Log.Fatalf("Couldn't read state file %s: %s", stateFilePath, err)
+		}
 
-// prepareStateFile prepares the statefile for a state update and returns the file
-// ready to be writen to
-func prepareStateFile() *os.File {
-	_, err := os.Stat(StateFilePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			Log.Info("Creating state file: ", StateFilePath)
-			_, err1 := os.Create(StateFilePath)
-			if err1 != nil {
-				Log.Fatal("Could not create state file:", err1)
-			}
-		} else {
-			Log.Fatal("Couldnt stat stateFile:", err)
+		Pools[files[i].Name()] = &Pool{
+			Info: PoolInfo{},
+		}
+
+		err = json.Unmarshal(fileData, &Pools[files[i].Name()].Info)
+		if err != nil {
+			Log.Fatalf("Failed to un-marshal state file %s: %s", stateFilePath, err)
 		}
 	}
-
-	err = os.Truncate(StateFilePath, 0)
-	if err != nil {
-		Log.Fatal("Couldnt truncate state file:", err)
-	}
-
-	file, err := os.OpenFile(StateFilePath, os.O_WRONLY, 0600)
-	if err != nil {
-		Log.Fatal("Couldnt open stateFile:", err)
-	}
-
-	return file
 }

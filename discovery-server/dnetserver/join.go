@@ -16,35 +16,32 @@ const (
 
 // Join method for Discovery Server
 func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
-	defer saveState()
-	nodes := getNodes(req.Pool, req.Node.Uuid)
-	response := pb.JoinResponse{RenewInterval.Nanoseconds() / 1000 / 1000, nodes}
+	PoolLock.RLock()
+	if _, ok := Pools[req.Pool]; ok {
+		defer PoolLock.RUnlock()
+		Pools[req.Pool].PoolLock.Lock()
+		defer Pools[req.Pool].PoolLock.Unlock()
 
-	if Pools[req.Pool] != nil {
 		err := checkPoolPassword(req.Pool, req.Password, req.Node)
 		if err != nil {
 			return &pb.JoinResponse{}, err
 		}
 	} else {
-		hash := make([]byte, 0)
-		salt := make([]byte, PASSWORD_SALT_LENGTH)
-		n, err := io.ReadFull(rand.Reader, salt)
-		if err != nil {
-			returnError := grpc.Errorf(codes.Internal,
-				"error hashing password: %s",
-				err,
-			)
-			return &pb.JoinResponse{}, returnError
-		}
-		if n != PASSWORD_SALT_LENGTH {
-			returnError := grpc.Errorf(codes.Internal,
-				"error hashing password: unable to read salt from random number generator",
-			)
-			return &pb.JoinResponse{}, returnError
-		}
+		PoolLock.RUnlock()
+		PoolLock.Lock()
+		defer PoolLock.Unlock()
 
-		if req.Password != "" {
-			hash, err = bcrypt.GenerateFromPassword(append(salt, []byte(req.Password)...), bcrypt.DefaultCost)
+		if _, ok := Pools[req.Pool]; ok {
+			Pools[req.Pool].PoolLock.Lock()
+			defer Pools[req.Pool].PoolLock.Unlock()
+			err := checkPoolPassword(req.Pool, req.Password, req.Node)
+			if err != nil {
+				return &pb.JoinResponse{}, err
+			}
+		} else {
+			hash := make([]byte, 0)
+			salt := make([]byte, PASSWORD_SALT_LENGTH)
+			n, err := io.ReadFull(rand.Reader, salt)
 			if err != nil {
 				returnError := grpc.Errorf(codes.Internal,
 					"error hashing password: %s",
@@ -52,43 +49,51 @@ func (s *DiscoveryServer) Join(ctx context.Context, req *pb.JoinRequest) (*pb.Jo
 				)
 				return &pb.JoinResponse{}, returnError
 			}
-		}
-		newPool := &PoolInfo{
-			PasswordSalt: salt,
-			PasswordHash: hash,
-		}
-		Pools[req.Pool] = newPool
-	}
-
-	// Go through each node and check was the node there
-	for i := 0; i < len(Nodes); i++ {
-		if Nodes[i].Data.Uuid == req.Node.Uuid {
-			if Nodes[i].Pool != req.Pool {
-				Log.Errorf("Join: node belongs to pool %s but tried to join pool %s\n", Nodes[i].Pool, req.Pool)
+			if n != PASSWORD_SALT_LENGTH {
 				returnError := grpc.Errorf(codes.Internal,
-					"node belongs to pool %s, but tried to join pool %s",
-					Nodes[i].Pool, req.Pool)
+					"error hashing password: unable to read salt from random number generator",
+				)
 				return &pb.JoinResponse{}, returnError
 			}
 
-			Nodes[i].Data.Ip = req.Node.Ip
-			Nodes[i].Data.Port = req.Node.Port
-			return &response, nil
+			if req.Password != "" {
+				hash, err = bcrypt.GenerateFromPassword(append(salt, []byte(req.Password)...), bcrypt.DefaultCost)
+				if err != nil {
+					returnError := grpc.Errorf(codes.Internal,
+						"error hashing password: %s",
+						err,
+					)
+					return &pb.JoinResponse{}, returnError
+				}
+			}
+			newPool := &Pool{
+				Info: PoolInfo{
+					PasswordSalt: salt,
+					PasswordHash: hash,
+				},
+			}
+			Pools[req.Pool] = newPool
+			Pools[req.Pool].Info.Nodes = make(map[string]*pb.Node)
+			Pools[req.Pool].PoolLock.Lock()
+			defer Pools[req.Pool].PoolLock.Unlock()
 		}
 	}
 
-	newNode := Node{req.Pool, *req.Node}
-	Nodes = append(Nodes, newNode)
+	nodes := getNodes(req.Pool, req.Node.Uuid)
+	response := pb.JoinResponse{RenewInterval.Nanoseconds() / 1000 / 1000, nodes}
+
+	Pools[req.Pool].Info.Nodes[req.Node.Uuid] = req.Node
 	Log.Infof("Join: Node %s (%s:%s) joined \n", req.Node.Uuid, req.Node.Ip, req.Node.Port)
+	saveState(req.Pool)
 
 	return &response, nil
 }
 
 func getNodes(pool, requesterUuid string) []*pb.Node {
 	var nodes []*pb.Node
-	for i := 0; i < len(Nodes); i++ {
-		if Nodes[i].Pool == pool && Nodes[i].Data.Uuid != requesterUuid {
-			nodes = append(nodes, &(Nodes[i].Data))
+	if _, ok := Pools[pool]; ok {
+		for nodeUUID, _ := range Pools[pool].Info.Nodes {
+			nodes = append(nodes, Pools[pool].Info.Nodes[nodeUUID])
 		}
 	}
 	return nodes
