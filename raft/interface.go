@@ -36,7 +36,7 @@ type StateMachineResult struct {
 
 type ksmResult struct {
 	GenerationNumber int
-	Peers            []*pb.Node
+	Peers            []string
 }
 
 type EntryAppliedInfo struct {
@@ -169,7 +169,7 @@ func (s *RaftNetworkServer) RequestKeyStateUpdate(owner, holder *pb.Node, genera
 }
 
 // Returns the new generation number, a list of peer nodes, and an error.
-func (s *RaftNetworkServer) RequestNewGeneration(newNode *pb.Node) (int, []*pb.Node, error) {
+func (s *RaftNetworkServer) RequestNewGeneration(newNode string) (int, []string, error) {
 	entry := &pb.Entry{
 		Type: pb.Entry_KeyStateCommand,
 		Uuid: generateNewUUID(),
@@ -473,7 +473,7 @@ func PerformKSMCommand(sateMachine *keyman.KeyStateMachine, keyCommand *pb.KeySt
 			Err: err,
 		}
 	case pb.KeyStateCommand_NewGeneration:
-		generationNumber, peers, err := keyman.StateMachine.NewGeneration(keyCommand.GetNewNode())
+		generationNumber, peers, err := keyman.StateMachine.NewGeneration(keyCommand.NewNode)
 		return &StateMachineResult{
 			Err: err,
 			KSMResult: &ksmResult{

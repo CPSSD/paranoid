@@ -67,7 +67,7 @@ message KeyStateCommand {
     int64 generation = 4;   // optional
 
     // NewGeneration arguments
-    Node new_node = 5;  // optional
+    string new_node = 5;  // optional
 }
 
 message Node {

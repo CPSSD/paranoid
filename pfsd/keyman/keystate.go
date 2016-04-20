@@ -48,6 +48,9 @@ type KeyStateMachine struct {
 
 	// This is, once again, to avoid an import cycle
 	PfsDir string
+
+	// Channel is pushed to every time a new generation is created.
+	Events chan bool
 }
 
 func (ksm *KeyStateMachine) GetCurrentGeneration() int64 {
@@ -78,6 +81,7 @@ func NewKSM(pfsDir string) *KeyStateMachine {
 		DeprecatedGeneration: -1,
 		Generations:          make(map[int64]*Generation),
 		PfsDir:               pfsDir,
+		Events:               make(chan bool, 1),
 	}
 }
 
@@ -89,6 +93,7 @@ func NewKSMFromReader(reader io.Reader) (*KeyStateMachine, error) {
 		Log.Error("Failed decoding GOB KeyStateMachine data:", err)
 		return nil, fmt.Errorf("failed decoding from GOB: %s", err)
 	}
+	ksm.Events = make(chan bool, 1)
 	return ksm, nil
 }
 
@@ -143,6 +148,7 @@ func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int6
 		ksm.InProgressGeneration--
 		return 0, nil, err
 	}
+	ksm.Events <- true
 	return ksm.InProgressGeneration, existingNodes, nil
 }
 

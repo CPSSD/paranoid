@@ -35,9 +35,9 @@ func NewGeneration(password string) error {
 		if err != nil {
 			Log.Error("Error requesting to create new generation", node, ":", err)
 		} else {
-			peers := make([]*globals.Node, len(resp.Peers))
+			peers := make([]globals.Node, len(resp.Peers))
 			for i, v := range resp.Peers {
-				peers[i] = &globals.Node{
+				peers[i] = globals.Node{
 					IP:         v.Ip,
 					Port:       v.Port,
 					CommonName: v.CommonName,

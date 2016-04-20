@@ -3,7 +3,6 @@ package pnetserver
 import (
 	"github.com/cpssd/paranoid/pfsd/globals"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
-	raftpb "github.com/cpssd/paranoid/proto/raft"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -27,24 +26,22 @@ func (s *ParanoidServer) NewGeneration(ctx context.Context, req *pb.NewGeneratio
 		}
 	}
 
-	raftReqNode := &raftpb.Node{
-		Ip:         req.GetRequestingNode().Ip,
-		Port:       req.GetRequestingNode().Port,
-		CommonName: req.GetRequestingNode().CommonName,
-		NodeId:     req.GetRequestingNode().Uuid,
-	}
-	generationNumber, peers, err := globals.RaftNetworkServer.RequestNewGeneration(raftReqNode)
+	generationNumber, peers, err := globals.RaftNetworkServer.RequestNewGeneration(req.GetRequestingNode().Uuid)
 	if err != nil {
 		return &pb.NewGenerationResponse{}, grpc.Errorf(codes.Unknown, "unable to create new generation")
 	}
 	// We need to convert between the two different Node types.
 	paranoidPeers := make([]*pb.Node, len(peers))
 	for i, v := range peers {
+		globalNode, err := globals.Nodes.GetNode(v)
+		if err != nil {
+			Log.Errorf("Could not look up node %s: %s", v, err)
+		}
 		paranoidPeers[i] = &pb.Node{
-			Ip:         v.Ip,
-			Port:       v.Port,
-			CommonName: v.CommonName,
-			Uuid:       v.NodeId,
+			Ip:         globalNode.IP,
+			Port:       globalNode.Port,
+			CommonName: globalNode.CommonName,
+			Uuid:       globalNode.UUID,
 		}
 	}
 	return &pb.NewGenerationResponse{
