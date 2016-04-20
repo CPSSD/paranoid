@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
+	"sync"
 )
 
 // Chunks key and sends the pieces to other nodes on the network.
