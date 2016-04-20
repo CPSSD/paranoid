@@ -1,13 +1,13 @@
 package pnetclient
 
 import (
+	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	pb "github.com/cpssd/paranoid/proto/paranoidnetwork"
 	"golang.org/x/net/context"
 	"math/big"
-	"sync"
 )
 
 // A struct which is either a pointer to a KeyPiece or an error.
@@ -17,14 +17,15 @@ type keyPieceUnion struct {
 	err   error
 }
 
-func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w *sync.WaitGroup) {
-	defer w.Done()
+func RequestKeyPiece(uuid string) (*keyman.KeyPiece, error) {
+	node, err := globals.Nodes.GetNode(uuid)
+	if err != nil {
+		return nil, errors.New("could not find node details")
+	}
+
 	conn, err := Dial(node)
 	if err != nil {
-		c <- keyPieceUnion{
-			piece: nil,
-			err:   fmt.Errorf("failed to dial %s: %s", node, err),
-		}
+		return nil, fmt.Errorf("failed to dial %s: %s", node, err)
 	}
 	defer conn.Close()
 
@@ -39,12 +40,9 @@ func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w *sync.WaitGroup)
 	pieceProto, err := client.RequestKeyPiece(context.Background(), thisNodeProto)
 	if err != nil {
 		Log.Warn("Failed requesting KeyPiece from", node, "Error:", err)
-		c <- keyPieceUnion{
-			piece: nil,
-			err:   fmt.Errorf("failed requesting KeyPiece from %s: %s", node, err),
-		}
-		return
+		return nil, fmt.Errorf("failed requesting KeyPiece from %s: %s", node, err)
 	}
+
 	Log.Info("Received KeyPiece from", node)
 	var fingerprintArray [32]byte
 	copy(fingerprintArray[:], pieceProto.ParentFingerprint)
@@ -56,33 +54,5 @@ func requestKeyPiece(node globals.Node, c chan keyPieceUnion, w *sync.WaitGroup)
 		Prime:             &primeBig,
 		Seq:               pieceProto.Seq,
 	}
-	c <- keyPieceUnion{
-		piece: piece,
-		err:   nil,
-	}
-	return
-}
-
-// Asks every known node for a KeyPiece belonging to this node.
-func RequestKeyPieces() ([]*keyman.KeyPiece, error) {
-	var pieces []*keyman.KeyPiece
-	unionChan := make(chan keyPieceUnion, len(globals.Nodes.GetAll()))
-	var wait sync.WaitGroup
-
-	for _, node := range globals.Nodes.GetAll() {
-		wait.Add(1)
-		go requestKeyPiece(node, unionChan, &wait)
-	}
-	Log.Info("Waiting for KeyPieces.")
-	wait.Wait()
-	close(unionChan)
-
-	for union := range unionChan {
-		if union.err != nil {
-			Log.Warn(union.err)
-		} else {
-			pieces = append(pieces, union.piece)
-		}
-	}
-	return pieces, nil
+	return piece, nil
 }

@@ -63,6 +63,15 @@ func startRPCServer(lis *net.Listener, password string) {
 		NodeID:     globals.ThisNode.UUID,
 	}
 
+	if globals.Encrypted && globals.KeyGenerated {
+		Unlock()
+	} else {
+		//Some logic about starting new generation and chunking and distibuting key
+		//done :
+		globals.KeyGenerated = true
+		//Save this to file system attributes
+	}
+
 	//First node to join a given cluster
 	if len(globals.Nodes.GetAll()) == 0 {
 		globals.RaftNetworkServer = raft.NewRaftNetworkServer(
@@ -161,7 +170,6 @@ func getFileSystemAttributes() {
 			if err != nil {
 				log.Fatal("unable to generate encryption key:", err)
 			}
-			attributes.KeyGenerated = true
 
 			cipherB, err := encryption.GenerateAESCipherBlock(globals.EncryptionKey.GetBytes())
 			if err != nil {
@@ -171,6 +179,7 @@ func getFileSystemAttributes() {
 
 			if attributes.NetworkOff {
 				//If networking is turned off, save the key to a file
+				attributes.KeyGenerated = true
 				attributes.EncryptionKey = *globals.EncryptionKey
 			}
 		} else if attributes.NetworkOff {
@@ -183,6 +192,8 @@ func getFileSystemAttributes() {
 			encryption.SetCipher(cipherB)
 		}
 	}
+
+	globals.KeyGenerated = attributes.KeyGenerated
 
 	attributesJson, err = json.Marshal(attributes)
 	if err != nil {
@@ -309,10 +320,6 @@ func main() {
 	createPid("pfsd")
 	pfi.StartPfi(*verbose)
 
-	if globals.SystemLocked {
-		globals.Wait.Add(1)
-		go UnlockWorker()
-	}
 	intercom.RunServer(path.Join(globals.ParanoidDir, "meta"))
 
 	HandleSignals()

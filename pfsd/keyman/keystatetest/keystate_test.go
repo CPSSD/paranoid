@@ -53,7 +53,7 @@ func TestKeyStateUpdate(t *testing.T) {
 		CommonName: "test-node",
 		NodeId:     "foobar",
 	}
-	generation, err := keyman.StateMachine.NewGeneration(pbnode)
+	generation, err := keyman.StateMachine.NewGeneration(pbnode.NodeId)
 	if err != nil {
 		t.Error("Failed to initialise new generation:", err)
 	}

@@ -23,7 +23,7 @@ type keyStateElement struct {
 
 type Generation struct {
 	//A list of all nodes included in the generation
-	Nodes    []*pb.Node
+	Nodes    []string
 	Elements []*keyStateElement
 }
 
@@ -48,6 +48,27 @@ type KeyStateMachine struct {
 
 	// This is, once again, to avoid an import cycle
 	PfsDir string
+}
+
+func (ksm *KeyStateMachine) GetCurrentGeneration() int64 {
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
+	return ksm.CurrentGeneration
+}
+
+func (ksm *KeyStateMachine) GetNodes(generation int64) ([]string, error) {
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
+
+	if generation != ksm.CurrentGeneration && generation <= ksm.DeprecatedGeneration {
+		return nil, ErrGenerationDeprecated
+	}
+
+	if _, ok := ksm.Generations[generation]; !ok {
+		return nil, fmt.Errorf("generation %d has not yet been initialised", generation)
+	}
+
+	return ksm.Generations[generation].Nodes, nil
 }
 
 func NewKSM(pfsDir string) *KeyStateMachine {
@@ -102,11 +123,11 @@ func (ksm *KeyStateMachine) UpdateFromStateFile(filePath string) error {
 	return nil
 }
 
-func (ksm *KeyStateMachine) NewGeneration(newNode *pb.Node) (generationNumber int64, err error) {
+func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int64, err error) {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
-	var existingNodes []*pb.Node
+	var existingNodes []string
 	if gen, ok := ksm.Generations[ksm.CurrentGeneration]; ok {
 		existingNodes = gen.Nodes
 	}
@@ -131,7 +152,7 @@ func (ksm KeyStateMachine) NodeInGeneration(generationNumber int64, nodeId strin
 		return false
 	}
 	for _, v := range generation.Nodes {
-		if v.NodeId == nodeId {
+		if v == nodeId {
 			return true
 		}
 	}
