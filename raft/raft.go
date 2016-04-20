@@ -3,7 +3,9 @@ package raft
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"github.com/cpssd/paranoid/logger"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft/raftlog"
 	"golang.org/x/net/context"
@@ -216,6 +218,12 @@ func (s *RaftNetworkServer) addLogEntryLeader(entry *pb.Entry) error {
 			if config.Type == pb.Configuration_FutureConfiguration {
 				if s.State.Configuration.GetFutureConfigurationActive() {
 					return errors.New("Can not change confirugation while another configuration change is underway")
+				}
+				for _, v := range config.GetNodes() {
+					if !keyman.StateMachine.NodeInGeneration(keyman.StateMachine.GetCurrentGeneration(), v.NodeId) {
+						return fmt.Errorf("node %s not in current generation (%s)",
+							v.NodeId, keyman.StateMachine.GetCurrentGeneration())
+					}
 				}
 			}
 		} else {
