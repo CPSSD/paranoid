@@ -1,7 +1,16 @@
 /* Variables */
 :root {
+  /* Colours */
+  --color-indigo-900: #1A237E;
+  --color-grey-900: #212121;
+
   --bg-red: red;
   --bg-header: rgba(255,255,255,0.1);
 
+  --bg-main: var(--color-grey-900);
+  --bg-accent: var(--color-indigo-900);
+
   --std-offset: 0.5rem;
+
+  --std-shadow: 0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px 0 rgba(0,0,0,.12);
 }

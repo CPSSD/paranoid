@@ -1,11 +1,17 @@
-# nwjs files
+# -------------------------------
+# nw.js files
+# -------------------------------
 locales/
 credits.html
 icudtl.dat
 *.bin
 *.pak
-lib/
 nw
 node_modules/
+
+# -------------------------------
+# project files
+# -------------------------------
 build/
 res/fonts
+lib/

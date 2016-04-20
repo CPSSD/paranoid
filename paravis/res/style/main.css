@@ -5,8 +5,32 @@
   padding: 0;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
 body {
-  background-color: black;
+  background-color: var(--bg-main);
   font-family: 'Roboto', sans-serif;
   color: white;
+}
+
+layout {
+  height: inherit;
+  width: inherit;
+  display: flex;
+}
+
+popup {
+  display: flex;
+  width: 50%;
+  box-sizing: border-box;
+  padding: var(--std-offset);
+  align-self: center;
+  margin: 0 auto;
+  background-color: var(--bg-accent);
+  box-shadow: var(--std-shadow);
+  z-index: 1000;
 }

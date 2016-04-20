@@ -21,11 +21,22 @@
       // Load all Activities
       var activityNames = fs.readdirSync("src/activity");
       for(var i = activityNames.length; i--;){
+        if(!isJavascriptFile(activityNames[i])){
+          continue;
+        }
         elem = document.createElement("script")
         elem.setAttribute("type", "application/javascript")
         elem.setAttribute("src", "/src/activity/"+activityNames[i]);
 
         document.head.appendChild(elem);
+      }
+
+      function isJavascriptFile(file){
+        splitFile = file.split('.');
+        if(splitFile.length == 1){
+          return false;
+        }
+        return splitFile[splitFile.length - 1] == "js"
       }
     </script>
     <script type="application/javascript" src="/_app/controller.js"></script>

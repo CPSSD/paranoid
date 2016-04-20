@@ -4,8 +4,9 @@ header {
   top: 0;
   left: 0;
   width: 100%;
-  background-color: var(--bg-header);
+  background-color: var(--color-indigo-900);
   padding: var(--std-offset);
+  box-shadow: var(--std-shadow);
 }
 
 header .title {

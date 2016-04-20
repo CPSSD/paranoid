@@ -28,7 +28,7 @@ If you wish to contribute please make sure to read the steps outlined in the top
 Please clone the repo into `$GOPATH/src/github.com/cpssd/paranoid` as the backend is written in Go
 and won't run outside `$GOPATH`
 
-After cloning make sure to run `./setup.sh`
+After cloning make sure to run `npm install`
 
 Here are the steps to set up paravis for development:
 To enable Chrome Dev Tools, download SDK build of nwjs available [here](http://nwjs.io).

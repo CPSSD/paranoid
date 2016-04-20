@@ -1,0 +1,36 @@
+node {
+  --background: rgba(255, 255, 255, 0.01);
+}
+
+node {
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  width: 10vw;
+  height: 10vw;
+  border-radius: 5000vw;
+  background-color: var(--background);
+  border: 1px solid grey;
+  text-align: center;
+  transition: scale(.99);
+}
+
+node.new {
+
+}
+
+node.candidate {
+  border: 3px dotted white;
+}
+
+node.current {
+  border-color: green;
+}
+
+node.inactive {
+
+}
+
+node.leader {
+  border: 3px solid white;
+}

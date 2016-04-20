@@ -10,5 +10,8 @@
     "title":"%name"
   },
   "js-flags":"--harmony",
-  "user-agent": "%name/%ver (%osinfo)"
+  "user-agent": "%name/%ver (%osinfo)",
+  "scripts": {
+    "install": "./setup.sh"
+  }
 }

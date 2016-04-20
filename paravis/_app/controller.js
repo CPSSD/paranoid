@@ -6,7 +6,6 @@ var app = require('../App.json');
 // List of available activities
 var activities = [];
 
-
 var A = {
   args: [], // CLI Argumens
   strings: {}, // All available strings
@@ -14,7 +13,9 @@ var A = {
   version: gui.App.manifest.version, // Version of the application
   debug: false, // Whether the debug mode is active
   lang: "en", // Language of the applications. Default: en
-  mainActivity: {} // Object storing the main acitity
+  mainActivity: {}, // Object storing the main acitity
+  activities: activities, // Array of all possible activities
+  disableCache: false, // Is cache disabled
 };
 
 
@@ -27,6 +28,10 @@ $(window).load(function(){
     gui.showDevTools();
   }
 
+  if(A.disableCache){
+    require.cache = {};
+  }
+
   console.info("Startup finished");
 });
 
@@ -34,14 +39,8 @@ $(window).load(function(){
 // Initialize everything
 function init(){
   console.info("Starting main activity...");
-  A.mainActivity = new activities[app.main]();
+  A.mainActivity = new A.activities[app.main]();
   console.info(app.main, "started.");
-
-  // Load layout for the activity
-  loadLayout(A.mainActivity.layout);
-
-  // Call onCreate function of the activity
-  A.mainActivity.onCreate();
 
   // Get the CLI arguments
   A.args = gui.App.argv;
@@ -56,6 +55,13 @@ function init(){
   if((ix = A.args.indexOf("--lang")) != -1){
     A.lang = A.args[ix+1];
   }
+
+  // Check is cache supposed to be ignored
+  if( A.args.indexOf('--no-cache') != -1 ){
+    console.log("Disabling cache");
+    A.disableCache = true;
+  }
+
 
   console.info("Loading strings...");
   // Load appropiate language text
@@ -73,6 +79,9 @@ function init(){
     console.Error("Unable to parse strings JSON:", err);
   }
   console.info("Finished loading strings.");
+
+  // Call onCreate function of the activity
+  A.mainActivity.onCreate();
 }
 
 // handleActions wraps around other handle functions
@@ -92,7 +101,7 @@ function handleIncludes(){
     }
     var layoutName = elem.attr("app:layout");
     elem.load("/res/layout/"+layoutName+".html", () => handleActions());
-    console.info("Loaded", layoutName, "layout");
+    console.info("Loaded", layoutName, "include");
   });
 }
 
@@ -130,6 +139,7 @@ function handleCloseButton(){
 
 // Loads the specific layout
 function loadLayout(name){
+  console.log("Loading", name, "layout");
   $(document.body).empty(); // Empty the body before writing to it
   $(document.body).load("/res/layout/"+name+".html layout", () => handleActions());
 }
