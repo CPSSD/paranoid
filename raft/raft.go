@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/keyman"
+	"github.com/cpssd/paranoid/pfsd/exporter"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft/raftlog"
 	"golang.org/x/net/context"
@@ -164,6 +165,21 @@ func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVote
 	return &pb.RequestVoteResponse{s.State.GetCurrentTerm(), false}, nil
 }
 
+func (s *RaftNetworkServer) RequestLeaderData(req *pb.LeaderDataRequest, stream pb.RaftNetwork_RequestLeaderDataServer) error {
+	if s.State.GetCurrentState() != LEADER {
+		return errors.New("Node is not leader")
+	}
+	for {
+		// TODO: Send proper data
+		err := stream.Send(&pb.LeaderData{})
+		if err != nil {
+			Log.Error("Cannot write to client:", err)
+		}
+	}
+
+	return nil
+}
+
 func (s *RaftNetworkServer) getLeader() *Node {
 	leaderId := s.State.GetLeaderId()
 	if leaderId != "" {
@@ -280,6 +296,39 @@ func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
 					return err
 				}
 				lastError = err
+			}
+		}
+	}
+}
+
+func (s *RaftNetworkServer) sendLeaderDataRequest() {
+	// TODO: Proper Implementation with channels
+	s.Wait.Done()
+	for {
+		select {
+		case <- s.Quit:
+		default:
+			conn, err := s.Dial(s.getLeader(), SEND_ENTRY_TIMEOUT)
+			if err == nil {
+				client := pb.NewRaftNetworkClient(conn)
+				// TODO: Proper request
+				stream, err := client.RequestLeaderData(context.Background(), &pb.LeaderDataRequest{})
+				if err != nil {
+					Log.Errorf("Unable to request leader data: ", err)
+				}
+				for {
+					data, err := stream.Recv()
+					if err != nil {
+						//TODO: Determine the change in Raft and send it as a proper message
+						if data == nil {
+
+						}
+
+						msg := exporter.Message{}
+
+						exporter.Send(msg)
+					}
+				}
 			}
 		}
 	}
@@ -459,7 +508,7 @@ func (s *RaftNetworkServer) manageElections() {
 		case _, ok := <-s.Quit:
 			if !ok {
 				s.QuitChannelClosed = true
-				Log.Info("Exiting elction managment loop")
+				Log.Info("Exiting election managment loop")
 				return
 			}
 		case <-s.State.StartElection:
@@ -631,7 +680,7 @@ func (s *RaftNetworkServer) manageConfigurationChanges() {
 		case _, ok := <-s.Quit:
 			if !ok {
 				s.QuitChannelClosed = true
-				Log.Info("Exiting configuration managment loop")
+				Log.Info("Exiting configuration management loop")
 				return
 			}
 		case config := <-s.State.ConfigurationApplied:
@@ -697,12 +746,13 @@ func NewRaftNetworkServer(nodeDetails Node, pfsDirectory, raftInfoDirectory stri
 	raftServer.ChangeNodeLocation(nodeDetails.NodeID, nodeDetails.IP, nodeDetails.Port)
 	raftServer.setupSnapshotDirectory()
 
-	raftServer.Wait.Add(6)
+	raftServer.Wait.Add(7)
 	go raftServer.electionTimeOut()
 	go raftServer.manageElections()
 	go raftServer.manageLeading()
 	go raftServer.manageConfigurationChanges()
 	go raftServer.manageSnapshoting()
 	go raftServer.manageEntryApplication()
+	go raftServer.sendLeaderDataRequest()
 	return raftServer
 }

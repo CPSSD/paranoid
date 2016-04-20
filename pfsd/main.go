@@ -8,6 +8,7 @@ import (
 	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/logger"
 	"github.com/cpssd/paranoid/pfsd/dnetclient"
+	"github.com/cpssd/paranoid/pfsd/exporter"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/intercom"
 	"github.com/cpssd/paranoid/pfsd/keyman"
@@ -46,6 +47,8 @@ var (
 	skipVerify = flag.Bool("skip_verification", false,
 		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
 	verbose = flag.Bool("v", false, "Use verbose logging")
+	exportFlag = flag.Bool("enable-export", false, "enable Raft exporter")
+	exportPortFlag = flag.String("export-port", "10100", "port at which the Raft exporter should be enabled")
 )
 
 type keySentResponse struct {
@@ -306,6 +309,7 @@ func setupLogging() {
 	commands.Log = logger.New("libpfs", "pfsd", logDir)
 	intercom.Log = logger.New("intercom", "pfsd", logDir)
 	globals.Log = logger.New("globals", "pfsd", logDir)
+	exporter.Log = logger.New("exporter", "pfsd", logDir)
 
 	log.SetOutput(logger.STDERR | logger.LOGFILE)
 	dnetclient.Log.SetOutput(logger.STDERR | logger.LOGFILE)
@@ -318,6 +322,7 @@ func setupLogging() {
 	commands.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	intercom.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 	globals.Log.SetOutput(logger.STDERR | logger.LOGFILE)
+	exporter.Log.SetOutput(logger.STDERR | logger.LOGFILE)
 
 	if *verbose {
 		commands.Log.SetLogLevel(logger.VERBOSE)
@@ -505,6 +510,12 @@ func main() {
 	pfi.StartPfi(*verbose)
 
 	intercom.RunServer(path.Join(globals.ParanoidDir, "meta"))
+
+	// Start exporter server if required
+	if(*exportFlag){
+		exporter.NewStdServer(*exportPortFlag);
+		go exporter.Listen();
+	}
 
 	HandleSignals()
 }

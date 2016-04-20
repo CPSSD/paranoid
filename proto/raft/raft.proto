@@ -9,6 +9,7 @@ service RaftNetwork {
     rpc RequestVote (RequestVoteRequest) returns (RequestVoteResponse) {}
     rpc ClientToLeaderRequest (EntryRequest) returns (EmptyMessage) {}
     rpc InstallSnapshot (SnapshotRequest) returns (SnapshotResponse) {}
+    rpc RequestLeaderData (LeaderDataRequest) returns (stream LeaderData) {}
 }
 
 message EmptyMessage {}
@@ -101,16 +102,16 @@ message Entry {
       Demo = 2;
       KeyStateCommand = 3;
     }
-    EntryType type = 1; // required 
+    EntryType type = 1; // required
     string uuid = 2; // required
-    StateMachineCommand command = 3; // optional 
-    Configuration config = 4; // optional 
+    StateMachineCommand command = 3; // optional
+    Configuration config = 4; // optional
     DemoCommand demo = 5; // optional
     KeyStateCommand key_command = 6; // optional
 }
 
 message LogEntry {
-    uint64 term = 1; // required 
+    uint64 term = 1; // required
     Entry entry = 2; // required
 }
 
@@ -136,16 +137,38 @@ message RequestVoteResponse {
 message SnapshotRequest {
     uint64 term = 1; // required
     string leader_id = 2; // required
-   
-    uint64 last_included_index = 3; // required 
-    uint64 last_included_term = 4; // required 
+
+    uint64 last_included_index = 3; // required
+    uint64 last_included_term = 4; // required
 
     uint64 offset = 5; // required
-    bytes data = 6;  // required 
+    bytes data = 6;  // required
 
     bool done = 7; // required
 }
 
 message SnapshotResponse {
     uint64 term = 1; // required
+}
+
+message LeaderDataRequest {
+  string node_id = 1; // required
+}
+
+message LeaderData {
+  enum DataType {
+    Denied = 0;
+    AppendEntriesType = 1;
+    RequestVoteType = 2;
+    ClientToLeaderRequestType = 3;
+    InstallSnapshot = 4;
+  }
+  DataType type = 1; // required
+  AppendEntriesRequest appendEntriesRequest = 2; // optional
+  AppendEntriesResponse appendEntriesResponse = 3; // optional
+  RequestVoteRequest requestVoteRequest = 4; // optional
+  RequestVoteResponse requestVoteResponse = 5; //optional
+  EntryRequest entryRequest = 6; // optional
+  SnapshotRequest snapshotRequest = 7; // optional
+  SnapshotResponse snapshotResponse = 8; // optional
 }
