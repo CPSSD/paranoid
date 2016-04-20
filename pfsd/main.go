@@ -67,9 +67,12 @@ func startRPCServer(lis *net.Listener, password string) {
 		Unlock()
 	} else {
 		//Some logic about starting new generation and chunking and distibuting key
-		//done :
 		globals.KeyGenerated = true
-		//Save this to file system attributes
+		saveFileSystemAttributes(&globals.FileSystemAttributes{
+			Encrypted:    globals.Encrypted,
+			KeyGenerated: globals.KeyGenerated,
+			NetworkOff:   globals.NetworkOff,
+		})
 	}
 
 	//First node to join a given cluster
@@ -194,8 +197,11 @@ func getFileSystemAttributes() {
 	}
 
 	globals.KeyGenerated = attributes.KeyGenerated
+	saveFileSystemAttributes(attributes)
+}
 
-	attributesJson, err = json.Marshal(attributes)
+func saveFileSystemAttributes(attributes *globals.FileSystemAttributes) {
+	attributesJson, err := json.Marshal(attributes)
 	if err != nil {
 		log.Fatal("unable to save new file system attributes to file:", err)
 	}
