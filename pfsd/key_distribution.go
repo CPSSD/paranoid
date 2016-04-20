@@ -20,8 +20,8 @@ type keyResponse struct {
 	piece *keyman.KeyPiece
 }
 
-func requestKeyPiece(uuid string, recievedPieceChan chan keyResponse) {
-	piece, err := pnetclient.RequestKeyPiece(uuid)
+func requestKeyPiece(uuid string, generation int64, recievedPieceChan chan keyResponse) {
+	piece, err := pnetclient.RequestKeyPiece(uuid, generation)
 	if err != nil {
 		log.Errorf("Error requesting key piece from node %s: %s", uuid, err)
 		return
@@ -73,7 +73,7 @@ func Unlock() {
 				keyRequestWait.Add(1)
 				go func() {
 					defer keyRequestWait.Done()
-					requestKeyPiece(peers[i], recievedPieceChan)
+					requestKeyPiece(peers[i], generation, recievedPieceChan)
 				}()
 			}
 			timer.Reset(unlockQueryInterval)

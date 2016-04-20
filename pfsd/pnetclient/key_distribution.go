@@ -20,7 +20,7 @@ func Distribute(key *keyman.Key, peers []globals.Node, generation int) error {
 	globals.HeldKeyPieces.AddPiece(int64(generation), globals.ThisNode.UUID, pieces[0])
 
 	for i := 1; i < len(pieces); i++ {
-		SendKeyPiece(peers[i].UUID, pieces[i])
+		SendKeyPiece(peers[i].UUID, int64(generation), pieces[i])
 	}
 	return nil
 }

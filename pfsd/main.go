@@ -68,8 +68,8 @@ func startKeyStateMachine() {
 	}
 }
 
-func sendKeyPiece(uuid string, piece *keyman.KeyPiece, responseChan chan keySentResponse) {
-	err := pnetclient.SendKeyPiece(uuid, piece)
+func sendKeyPiece(uuid string, generation int64, piece *keyman.KeyPiece, responseChan chan keySentResponse) {
+	err := pnetclient.SendKeyPiece(uuid, generation, piece)
 	responseChan <- keySentResponse{
 		err:  err,
 		uuid: uuid,
@@ -205,7 +205,7 @@ func startRPCServer(lis *net.Listener, password string) {
 							sendKeyPieceWait.Add(1)
 							go func() {
 								defer sendKeyPieceWait.Done()
-								sendKeyPiece(peers[i], keyPieces[i], sendKeysResponse)
+								sendKeyPiece(peers[i], generation, keyPieces[i], sendKeysResponse)
 							}()
 						}
 						sendKeysTimer.Reset(JoinSendKeysInterval)

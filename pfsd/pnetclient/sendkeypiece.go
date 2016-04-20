@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func SendKeyPiece(uuid string, piece *keyman.KeyPiece) error {
+func SendKeyPiece(uuid string, generation int64, piece *keyman.KeyPiece) error {
 	node, err := globals.Nodes.GetNode(uuid)
 	if err != nil {
 		return errors.New("could not find node details")
@@ -36,8 +36,10 @@ func SendKeyPiece(uuid string, piece *keyman.KeyPiece) error {
 		ParentFingerprint: piece.ParentFingerprint[:],
 		Prime:             piece.Prime.Bytes(),
 		Seq:               piece.Seq,
+		Generation:        generation,
 		OwnerNode:         thisNodeProto,
 	}
+
 	resp, err := client.SendKeyPiece(context.Background(), keyProto)
 	if err != nil {
 		Log.Error("Failed sending KeyPiece to", node, "Error:", err)
@@ -57,8 +59,7 @@ func SendKeyPiece(uuid string, piece *keyman.KeyPiece) error {
 			CommonName: keyProto.GetOwnerNode().CommonName,
 			NodeId:     keyProto.GetOwnerNode().Uuid,
 		}
-		err := globals.RaftNetworkServer.RequestKeyStateUpdate(raftThisNodeProto, raftOwnerNode,
-			int64(keyman.StateMachine.CurrentGeneration+1))
+		err := globals.RaftNetworkServer.RequestKeyStateUpdate(raftThisNodeProto, raftOwnerNode, generation)
 		if err != nil {
 			Log.Errorf("failed to commit to Raft: %s", err)
 			return fmt.Errorf("failed to commit to Raft: %s", err)
