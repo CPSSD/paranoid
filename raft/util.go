@@ -1,21 +1,21 @@
 package raft
 
-import(
-  pb "github.com/cpssd/paranoid/proto/raft"
-  "github.com/cpssd/paranoid/pfsd/exporter"
+import (
+	"github.com/cpssd/paranoid/pfsd/exporter"
+	pb "github.com/cpssd/paranoid/proto/raft"
 )
 
 func protoDetailedNodeToExportNode(nodes []*pb.LeaderData_Data_DetailedNode) []exporter.MessageNode {
-  res := make([]exporter.MessageNode, len(nodes))
-  for i := 0; i < len(nodes); i++ {
-    res[i] = exporter.MessageNode{
-      CommonName: nodes[i].CommonName,
-      Addr:       nodes[i].Addr,
-      Uuid:       nodes[i].Uuid,
-      State:      nodes[i].State,
-    }
-  }
-  return res
+	res := make([]exporter.MessageNode, len(nodes))
+	for i := 0; i < len(nodes); i++ {
+		res[i] = exporter.MessageNode{
+			CommonName: nodes[i].CommonName,
+			Addr:       nodes[i].Addr,
+			Uuid:       nodes[i].Uuid,
+			State:      nodes[i].State,
+		}
+	}
+	return res
 }
 
 func protoNodesToNodes(protoNodes []*pb.Node) []Node {

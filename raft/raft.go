@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cpssd/paranoid/logger"
-	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/exporter"
+	"github.com/cpssd/paranoid/pfsd/keyman"
 	pb "github.com/cpssd/paranoid/proto/raft"
 	"github.com/cpssd/paranoid/raft/raftlog"
 	"golang.org/x/net/context"
@@ -36,8 +36,8 @@ const (
 var (
 	Log *logger.ParanoidLogger
 
-	EnableExporting bool = false // if the node is actively exporting
-	leaderExporting bool = false // if its the leader is sending to node
+	EnableExporting    bool = false // if the node is actively exporting
+	leaderExporting    bool = false // if its the leader is sending to node
 	exportedChangeList chan pb.LeaderData
 )
 
@@ -177,7 +177,7 @@ func (s *RaftNetworkServer) RequestLeaderData(req *pb.LeaderDataRequest, stream 
 	}
 	for {
 		select {
-		case msg := <- exportedChangeList:
+		case msg := <-exportedChangeList:
 			err := stream.Send(&msg)
 			if err != nil {
 				Log.Error("Cannot send data to client:", err)
@@ -260,6 +260,40 @@ func (s *RaftNetworkServer) ClientToLeaderRequest(ctx context.Context, req *pb.E
 	}
 	err := s.addLogEntryLeader(req.Entry)
 	return &pb.EmptyMessage{}, err
+}
+
+//sendLeaderLogEntry forwards a client request to the leader
+func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
+	sendLogTimeout := time.After(LEADER_REQUEST_TIMEOUT)
+	lastError := errors.New("timeout before client to leader request was attempted")
+	for {
+		select {
+		case <-sendLogTimeout:
+			return lastError
+		default:
+			leaderNode := s.getLeader()
+			if leaderNode == nil {
+				lastError = errors.New("Unable to find leader")
+				continue
+			}
+
+			conn, err := s.Dial(leaderNode, SEND_ENTRY_TIMEOUT)
+			if err != nil {
+				lastError = err
+				continue
+			}
+			defer conn.Close()
+
+			if err == nil {
+				client := pb.NewRaftNetworkClient(conn)
+				_, err := client.ClientToLeaderRequest(context.Background(), &pb.EntryRequest{s.State.NodeId, entry})
+				if err == nil {
+					return err
+				}
+				lastError = err
+			}
+		}
+	}
 }
 
 //getRandomElectionTimeout returns a time between ELECTION_TIMEOUT and ELECTION_TIMEOUT*2
