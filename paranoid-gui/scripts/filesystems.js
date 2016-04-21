@@ -37,12 +37,6 @@ function drawFileSystem(i) {
   $(".content #fsMountSection").hide();
 
   // status section
-
-  /*
-  getFilesystemStatus(fileSystem.name, function(s) {
-    $(".content #fsStatus #clistatus").html(s);
-  });/*/
-
   if (fileSystem.mounted) {
     $(".content #fsStatus #fsMountedLabel").html('<b>Mounted<b>');
     $(".content #fsStatus #fsMountedLabel").addClass("label label-success");
