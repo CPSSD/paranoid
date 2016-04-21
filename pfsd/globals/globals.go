@@ -159,6 +159,7 @@ type KeyPieceStore map[int64]KeyPieceMap
 func (ks KeyPieceStore) GetPiece(generation int64, nodeUUID string) *keyman.KeyPiece {
 	keyPieceStoreLock.Lock()
 	defer keyPieceStoreLock.Unlock()
+
 	keymap, ok := ks[generation]
 	if !ok {
 		return nil

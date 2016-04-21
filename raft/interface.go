@@ -186,6 +186,24 @@ func (s *RaftNetworkServer) RequestNewGeneration(newNode string) (int, []string,
 	return result.KSMResult.GenerationNumber, result.KSMResult.Peers, result.Err
 }
 
+func (s *RaftNetworkServer) RequestOwnerComplete(nodeId string, generation int64) error {
+	entry := &pb.Entry{
+		Type: pb.Entry_KeyStateCommand,
+		Uuid: generateNewUUID(),
+		KeyCommand: &pb.KeyStateCommand{
+			Type:          pb.KeyStateCommand_OwnerComplete,
+			OwnerComplete: nodeId,
+			Generation:    generation,
+		},
+	}
+	result, err := s.RequestAddLogEntry(entry)
+	if err != nil {
+		Log.Error("failed to add log entry for owner complete:", err)
+		return err
+	}
+	return result.Err
+}
+
 func (s *RaftNetworkServer) RequestWriteCommand(filePath string, offset, length int64,
 	data []byte) (returnCode returncodes.Code, returnError error, bytesWrote int) {
 	entry := &pb.Entry{
@@ -480,6 +498,11 @@ func PerformKSMCommand(sateMachine *keyman.KeyStateMachine, keyCommand *pb.KeySt
 				GenerationNumber: int(generationNumber),
 				Peers:            peers,
 			},
+		}
+	case pb.KeyStateCommand_OwnerComplete:
+		err := keyman.StateMachine.OwnerComplete(keyCommand.OwnerComplete, keyCommand.Generation)
+		return &StateMachineResult{
+			Err: err,
 		}
 	}
 	Log.Fatal("Unrecognised command type: %s", keyCommand.Type)

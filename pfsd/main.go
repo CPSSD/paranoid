@@ -69,7 +69,7 @@ func startKeyStateMachine() {
 }
 
 func sendKeyPiece(uuid string, generation int64, piece *keyman.KeyPiece, responseChan chan keySentResponse) {
-	err := pnetclient.SendKeyPiece(uuid, generation, piece)
+	err := pnetclient.SendKeyPiece(uuid, generation, piece, true)
 	responseChan <- keySentResponse{
 		err:  err,
 		uuid: uuid,

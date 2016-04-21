@@ -58,6 +58,7 @@ message KeyStateCommand {
     enum KSMType {
         UpdateKeyPiece = 0;
         NewGeneration = 1;
+        OwnerComplete = 2;
     }
     KSMType type = 1;
 
@@ -68,6 +69,9 @@ message KeyStateCommand {
 
     // NewGeneration arguments
     string new_node = 5;  // optional
+
+    // OwnerCompete arguments
+    string owner_complete  = 6; // optional
 }
 
 message Node {
