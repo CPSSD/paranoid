@@ -156,19 +156,32 @@ message LeaderDataRequest {
 }
 
 message LeaderData {
-  enum DataType {
-    Denied = 0;
-    AppendEntriesType = 1;
-    RequestVoteType = 2;
-    ClientToLeaderRequestType = 3;
-    InstallSnapshot = 4;
+  enum Type {
+    State = 0;
+    NodeChange = 1;
+    Event = 2;
   }
-  DataType type = 1; // required
-  AppendEntriesRequest appendEntriesRequest = 2; // optional
-  AppendEntriesResponse appendEntriesResponse = 3; // optional
-  RequestVoteRequest requestVoteRequest = 4; // optional
-  RequestVoteResponse requestVoteResponse = 5; //optional
-  EntryRequest entryRequest = 6; // optional
-  SnapshotRequest snapshotRequest = 7; // optional
-  SnapshotResponse snapshotResponse = 8; // optional
+
+  message Data {
+    message DetailedNode {
+      string uuid = 1; // required
+      string common_name = 2; // required
+      string addr = 3; // required
+      string state = 4; // required
+    }
+
+    message Event {
+      string source = 1; // required
+      string target = 2; // required
+      string details = 3; // required
+    }
+
+    repeated DetailedNode nodes = 1; // optional, Type_State
+    string action = 2; // optional, Type_NodeChange
+    DetailedNode node = 3; // optional, Type_NodeChange
+    Event event = 4; // optional, Type_Event
+  }
+
+  Type type = 1; // required
+  Data data = 2; // required
 }
