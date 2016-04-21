@@ -177,6 +177,29 @@ func (ksm KeyStateMachine) NodeInGeneration(generationNumber int64, nodeId strin
 	return false
 }
 
+func (ksm *KeyStateMachine) NeedsReplication(uuid string, generationNumber int64) bool {
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
+
+	generation, ok := ksm.Generations[generationNumber]
+	if !ok {
+		return false
+	}
+
+	count := 1
+	for _, v := range generation.Elements {
+		if v.Owner.NodeId == uuid {
+			count++
+		}
+	}
+
+	minNodesRequired := len(generation.Nodes)/2 + 1
+	if count < minNodesRequired {
+		return false
+	}
+	return true
+}
+
 func (ksm *KeyStateMachine) Update(req *pb.KeyStateCommand) error {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()

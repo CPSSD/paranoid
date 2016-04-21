@@ -117,6 +117,12 @@ func (ns *nodes) Add(n Node) {
 func (ns *nodes) GetNode(uuid string) (Node, error) {
 	ns.lock.Lock()
 	defer ns.lock.Unlock()
+
+	Log.Info("Getting", uuid)
+	for i, _ := range ns.m {
+		Log.Info("In map:", i)
+	}
+
 	node, ok := ns.m[uuid]
 	if !ok {
 		return node, errors.New("unrecognised uuid")

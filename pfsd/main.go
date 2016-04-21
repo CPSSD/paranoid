@@ -180,9 +180,14 @@ func startRPCServer(lis *net.Listener, password string) {
 				}
 
 				keyPiecesN := int64(len(peers) + 1)
-				keyPieces, err := keyman.GeneratePieces(globals.EncryptionKey, keyPiecesN, keyPiecesN/2+1)
+				log.Info("pieces : ", keyPiecesN)
+				keyPieces, err := keyman.GeneratePieces(globals.EncryptionKey, keyPiecesN, (keyPiecesN/2)+1)
 				if err != nil {
 					log.Fatal("Unable to split keys:", err)
+				}
+				if len(keyPieces) != int(keyPiecesN) {
+					log.Fatal("Unable to split keys: incorrect number of pieces returned. Got:", len(keyPieces),
+						"Expected:", keyPiecesN)
 				}
 
 				err = globals.HeldKeyPieces.AddPiece(generation, globals.ThisNode.UUID, keyPieces[0])
@@ -190,6 +195,8 @@ func startRPCServer(lis *net.Listener, password string) {
 					log.Fatal("Unable to store my key piece")
 				}
 				keyPieces = keyPieces[1:]
+
+				log.Info("pieces : ", len(keyPieces))
 
 				sendKeysTimer := time.NewTimer(0)
 				sendKeysResponse := make(chan keySentResponse, len(peers))
@@ -203,9 +210,10 @@ func startRPCServer(lis *net.Listener, password string) {
 					case <-sendKeysTimer.C:
 						for i := 0; i < len(peers); i++ {
 							sendKeyPieceWait.Add(1)
+							x := i
 							go func() {
 								defer sendKeyPieceWait.Done()
-								sendKeyPiece(peers[i], generation, keyPieces[i], sendKeysResponse)
+								sendKeyPiece(peers[x], generation, keyPieces[x], sendKeysResponse)
 							}()
 						}
 						sendKeysTimer.Reset(JoinSendKeysInterval)

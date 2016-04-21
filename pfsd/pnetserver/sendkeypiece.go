@@ -41,7 +41,7 @@ func (s *ParanoidServer) SendKeyPiece(ctx context.Context, req *pb.KeyPiece) (*p
 		return &pb.SendKeyPieceResponse{}, grpc.Errorf(codes.FailedPrecondition, "failed to save key piece to disk: %s", err)
 	}
 	Log.Info("Received KeyPiece from", req.OwnerNode)
-	if globals.RaftNetworkServer != nil {
+	if globals.RaftNetworkServer != nil && globals.RaftNetworkServer.State.Configuration.HasConfiguration() {
 		err := globals.RaftNetworkServer.RequestKeyStateUpdate(raftOwner, raftHolder, req.Generation)
 		if err != nil {
 			if err == keyman.ErrGenerationDeprecated {

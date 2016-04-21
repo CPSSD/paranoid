@@ -71,9 +71,10 @@ func Unlock() {
 			}
 			for i := 0; i < len(peers); i++ {
 				keyRequestWait.Add(1)
+				x := i
 				go func() {
 					defer keyRequestWait.Done()
-					requestKeyPiece(peers[i], generation, recievedPieceChan)
+					requestKeyPiece(peers[x], generation, recievedPieceChan)
 				}()
 			}
 			timer.Reset(unlockQueryInterval)

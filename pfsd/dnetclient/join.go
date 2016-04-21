@@ -44,7 +44,12 @@ func Join(pool, password string) error {
 	peerList := "Currently Connected: "
 	for _, node := range response.Nodes {
 		peerList += node.Ip + ":" + node.Port + ", "
-		globals.Nodes.Add(globals.Node{IP: node.Ip, Port: node.Port})
+		globals.Nodes.Add(globals.Node{
+			IP:         node.Ip,
+			Port:       node.Port,
+			UUID:       node.Uuid,
+			CommonName: node.CommonName,
+		})
 	}
 	Log.Info(peerList)
 

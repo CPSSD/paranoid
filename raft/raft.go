@@ -588,6 +588,7 @@ func (s *RaftNetworkServer) manageLeading() {
 				go s.sendHeartBeat(&peers[i])
 			}
 			timer := time.NewTimer(HEARTBEAT)
+		leadingLoop:
 			for {
 				select {
 				case _, ok := <-s.Quit:
@@ -598,7 +599,7 @@ func (s *RaftNetworkServer) manageLeading() {
 					}
 				case <-s.State.StopLeading:
 					Log.Info("Stopped leading")
-					return
+					break leadingLoop
 				case <-s.State.SendAppendEntries:
 					timer.Reset(HEARTBEAT)
 					s.ElectionTimeoutReset <- true
