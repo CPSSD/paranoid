@@ -28,6 +28,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
+)
+
+const (
+	GenerationJoinTimeout time.Duration = time.Minute * 3
+	JoinSendKeysInterval  time.Duration = time.Second
 )
 
 var (
@@ -40,6 +47,34 @@ var (
 		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
 	verbose = flag.Bool("v", false, "Use verbose logging")
 )
+
+type keySentResponse struct {
+	err  error
+	uuid string
+}
+
+func startKeyStateMachine() {
+	_, err := os.Stat(path.Join(globals.ParanoidDir, "meta", keyman.KSM_FILE_NAME))
+	if err == nil {
+		var err error
+		keyman.StateMachine, err = keyman.NewKSMFromPFSDir(globals.ParanoidDir)
+		if err != nil {
+			log.Fatal("Unable to start key state machine:", err)
+		}
+	} else if os.IsNotExist(err) {
+		keyman.StateMachine = keyman.NewKSM(globals.ParanoidDir)
+	} else {
+		log.Fatal("Error stating key state machine file")
+	}
+}
+
+func sendKeyPiece(uuid string, generation int64, piece *keyman.KeyPiece, responseChan chan keySentResponse) {
+	err := pnetclient.SendKeyPiece(uuid, generation, piece)
+	responseChan <- keySentResponse{
+		err:  err,
+		uuid: uuid,
+	}
+}
 
 func startRPCServer(lis *net.Listener, password string) {
 	var opts []grpc.ServerOption
@@ -63,17 +98,16 @@ func startRPCServer(lis *net.Listener, password string) {
 		NodeID:     globals.ThisNode.UUID,
 	}
 
+	startKeyStateMachine()
+
 	if globals.Encrypted && globals.KeyGenerated {
+		log.Info("Attempting to unlock")
 		Unlock()
-	} else {
-		//Some logic about starting new generation and chunking and distibuting key
-		//done :
-		globals.KeyGenerated = true
-		//Save this to file system attributes
 	}
 
 	//First node to join a given cluster
 	if len(globals.Nodes.GetAll()) == 0 {
+		log.Info("Performing first node setup")
 		globals.RaftNetworkServer = raft.NewRaftNetworkServer(
 			nodeDetails,
 			globals.ParanoidDir,
@@ -82,7 +116,32 @@ func startRPCServer(lis *net.Listener, password string) {
 				Peers: []raft.Node{},
 			},
 			globals.TLSEnabled,
-			globals.TLSSkipVerify)
+			globals.TLSSkipVerify,
+			globals.Encrypted,
+		)
+		timeout := time.After(GenerationJoinTimeout)
+	initalGenerationLoop:
+		for {
+			select {
+			case <-timeout:
+				log.Fatal("Unable to create inital generation")
+			default:
+				_, _, err := globals.RaftNetworkServer.RequestNewGeneration(globals.ThisNode.UUID)
+				if err == nil {
+					log.Info("Successfuly created inital generation")
+					break initalGenerationLoop
+				}
+				log.Error("Unable to create inital generation:", err)
+			}
+		}
+		if globals.Encrypted {
+			globals.KeyGenerated = true
+			saveFileSystemAttributes(&globals.FileSystemAttributes{
+				Encrypted:    globals.Encrypted,
+				KeyGenerated: globals.KeyGenerated,
+				NetworkOff:   globals.NetworkOff,
+			})
+		}
 	} else {
 		globals.RaftNetworkServer = raft.NewRaftNetworkServer(
 			nodeDetails,
@@ -90,7 +149,9 @@ func startRPCServer(lis *net.Listener, password string) {
 			path.Join(globals.ParanoidDir, "meta", "raft"),
 			nil,
 			globals.TLSEnabled,
-			globals.TLSSkipVerify)
+			globals.TLSSkipVerify,
+			globals.Encrypted,
+		)
 	}
 
 	rpb.RegisterRaftNetworkServer(srv, globals.RaftNetworkServer)
@@ -105,14 +166,130 @@ func startRPCServer(lis *net.Listener, password string) {
 		}
 	}()
 
-	//Do we need to request to join a cluster
-	if globals.RaftNetworkServer.State.Configuration.HasConfiguration() == false {
+	if globals.Encrypted && !globals.KeyGenerated {
+		timeout := time.After(GenerationJoinTimeout)
+	generationCreateLoop:
+		for {
+			select {
+			case <-timeout:
+				log.Fatal("Unable to join cluster before timeout")
+			default:
+				generation, peers, err := pnetclient.NewGeneration(password)
+				if err != nil {
+					log.Error("Unable to start new generation:", err)
+				}
+
+				keyPiecesN := int64(len(peers) + 1)
+				minKeysRequired := (keyPiecesN / 2) + 1
+				log.Info("pieces : ", keyPiecesN)
+				keyPieces, err := keyman.GeneratePieces(globals.EncryptionKey, keyPiecesN, minKeysRequired)
+				if err != nil {
+					log.Fatal("Unable to split keys:", err)
+				}
+				if len(keyPieces) != int(keyPiecesN) {
+					log.Fatal("Unable to split keys: incorrect number of pieces returned. Got:", len(keyPieces),
+						"Expected:", keyPiecesN)
+				}
+
+				err = globals.HeldKeyPieces.AddPiece(generation, globals.ThisNode.UUID, keyPieces[0])
+				if err != nil {
+					log.Fatal("Unable to store my key piece")
+				}
+				keyPieces = keyPieces[1:]
+
+				log.Info("pieces : ", len(keyPieces))
+
+				sendKeysTimer := time.NewTimer(0)
+				sendKeysResponse := make(chan keySentResponse, len(peers))
+				attemptJoin := make(chan bool, 100)
+				keysReplicated := int64(1)
+				var sendKeyPieceWait sync.WaitGroup
+
+			sendKeysLoop:
+				for {
+					select {
+					case <-timeout:
+						log.Fatal("Unable to join cluster before timeout")
+					case <-sendKeysTimer.C:
+						for i := 0; i < len(peers); i++ {
+							sendKeyPieceWait.Add(1)
+							x := i
+							go func() {
+								defer sendKeyPieceWait.Done()
+								sendKeyPiece(peers[x], generation, keyPieces[x], sendKeysResponse)
+							}()
+						}
+						if keysReplicated >= minKeysRequired {
+							attemptJoin <- true
+						}
+						sendKeysTimer.Reset(JoinSendKeysInterval)
+					case keySendInfo := <-sendKeysResponse:
+						log.Info("Recieved key piece response")
+						if keySendInfo.err != nil {
+							if keySendInfo.err == keyman.ErrGenerationDeprecated {
+								log.Error("Attempting to replicate keys for deprecated generation")
+								break sendKeysLoop
+							} else {
+								log.Error("Error sending key info:", keySendInfo.err)
+							}
+						} else {
+							for i := 0; i < len(peers); i++ {
+								if peers[i] == keySendInfo.uuid {
+									peers = append(peers[:i], peers[i+1:]...)
+									keyPieces = append(keyPieces[:i], keyPieces[i+1:]...)
+									keysReplicated += 1
+									if keysReplicated >= minKeysRequired {
+										attemptJoin <- true
+									}
+								}
+							}
+						}
+					case <-attemptJoin:
+						log.Info("Attempting to join raft cluster")
+						err := pnetclient.JoinCluster(password)
+						if err != nil {
+							log.Error("Unable to join a raft cluster:", err)
+						} else {
+							log.Info("Sucessfully joined raft cluster")
+							globals.Wait.Add(1)
+							go func() {
+								defer globals.Wait.Done()
+								done := make(chan bool, 1)
+								go func() {
+									sendKeyPieceWait.Wait()
+									done <- true
+								}()
+								for {
+									select {
+									case <-sendKeysResponse:
+									case <-done:
+										return
+									}
+								}
+							}()
+							break generationCreateLoop
+						}
+					}
+				}
+			}
+		}
+
+		globals.KeyGenerated = true
+		saveFileSystemAttributes(&globals.FileSystemAttributes{
+			Encrypted:    globals.Encrypted,
+			KeyGenerated: globals.KeyGenerated,
+			NetworkOff:   globals.NetworkOff,
+		})
+	} else if globals.RaftNetworkServer.State.Configuration.HasConfiguration() == false {
 		log.Info("Attempting to join raft cluster")
 		err := dnetclient.JoinCluster(password)
 		if err != nil {
 			log.Fatal("Unable to join a raft cluster")
 		}
 	}
+
+	globals.Wait.Add(1)
+	go pnetclient.KSMObserver(keyman.StateMachine)
 }
 
 func setupLogging() {
@@ -194,8 +371,15 @@ func getFileSystemAttributes() {
 	}
 
 	globals.KeyGenerated = attributes.KeyGenerated
+	if globals.KeyGenerated {
+		LoadPieces()
+	}
 
-	attributesJson, err = json.Marshal(attributes)
+	saveFileSystemAttributes(attributes)
+}
+
+func saveFileSystemAttributes(attributes *globals.FileSystemAttributes) {
+	attributesJson, err := json.Marshal(attributes)
 	if err != nil {
 		log.Fatal("unable to save new file system attributes to file:", err)
 	}

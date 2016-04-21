@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *ParanoidServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.EmptyMessage, error) {
+func (s *ParanoidServer) Ping(ctx context.Context, req *pb.Node) (*pb.EmptyMessage, error) {
 	node := globals.Node{
 		IP:         req.Ip,
 		Port:       req.Port,

@@ -9,18 +9,20 @@ service ParanoidNetwork {
 
    	// Used for health checking and discovery. Sends the IP and port of the
     // PFSD instance running on the client.
-    rpc Ping (PingRequest) returns (EmptyMessage) {}
+    rpc Ping (Node) returns (EmptyMessage) {}
     // Used by a new node to let other nodes it is available to join the cluster.
     rpc JoinCluster (JoinClusterRequest) returns (EmptyMessage) {}
+    // Used by a new node to create a new key generation before joining the cluster.
+    rpc NewGeneration (NewGenerationRequest) returns (NewGenerationResponse) {}
 
     // Cryptography calls
-    rpc SendKeyPiece (KeyPiece) returns (EmptyMessage) {}
-    rpc RequestKeyPiece (PingRequest) returns (KeyPiece) {}
+    rpc SendKeyPiece (KeyPiece) returns (SendKeyPieceResponse) {}
+    rpc RequestKeyPiece (KeyPieceRequest) returns (KeyPiece) {}
 }
 
 message EmptyMessage {}
 
-message PingRequest {
+message Node {
     string ip = 1;  // required
     string port = 2;  // required
     string common_name = 3; // required
@@ -36,6 +38,21 @@ message JoinClusterRequest {
     string pool_password = 5; // optional
 }
 
+message NewGenerationRequest {
+    Node requesting_node = 1;   // required
+    string pool_password = 2;   // required
+}
+
+message NewGenerationResponse {
+    int64 generation_number = 1;    // required
+    repeated string peers = 2;        // required
+}
+
+message KeyPieceRequest {
+    Node node = 1; // required
+    int64 generation = 2; // required    
+}
+
 message KeyPiece {
     bytes data = 1; // required
     bytes parent_fingerprint = 2; // required
@@ -43,5 +60,12 @@ message KeyPiece {
     int64 seq = 4; // required
 
     // The Node data for the node who owns this KeyPiece
-    PingRequest owner_node = 5; // required
+    Node owner_node = 5; // required
+
+    // The KeyStateMachine generation this key belongs to
+    int64 generation = 6;   // required
+}
+
+message SendKeyPieceResponse {
+    bool client_must_commit = 1;    // required
 }

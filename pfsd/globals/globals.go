@@ -150,9 +150,6 @@ var Encrypted bool
 var KeyGenerated bool
 var EncryptionKey *keyman.Key
 
-// Indicates when the system has been locked and keys have been distributed
-var SystemLocked bool = false
-
 var keyPieceStoreLock sync.Mutex
 
 type KeyPieceMap map[string]*keyman.KeyPiece

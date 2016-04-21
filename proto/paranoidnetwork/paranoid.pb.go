@@ -10,9 +10,13 @@ It is generated from these files:
 
 It has these top-level messages:
 	EmptyMessage
-	PingRequest
+	Node
 	JoinClusterRequest
+	NewGenerationRequest
+	NewGenerationResponse
+	KeyPieceRequest
 	KeyPiece
+	SendKeyPieceResponse
 */
 package paranoid
 
@@ -42,24 +46,24 @@ func (m *EmptyMessage) String() string            { return proto.CompactTextStri
 func (*EmptyMessage) ProtoMessage()               {}
 func (*EmptyMessage) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
-type PingRequest struct {
+type Node struct {
 	Ip         string `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
 	Port       string `protobuf:"bytes,2,opt,name=port" json:"port,omitempty"`
-	CommonName string `protobuf:"bytes,3,opt,name=common_name,json=commonName" json:"common_name,omitempty"`
+	CommonName string `protobuf:"bytes,3,opt,name=common_name" json:"common_name,omitempty"`
 	Uuid       string `protobuf:"bytes,4,opt,name=uuid" json:"uuid,omitempty"`
 }
 
-func (m *PingRequest) Reset()                    { *m = PingRequest{} }
-func (m *PingRequest) String() string            { return proto.CompactTextString(m) }
-func (*PingRequest) ProtoMessage()               {}
-func (*PingRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (m *Node) Reset()                    { *m = Node{} }
+func (m *Node) String() string            { return proto.CompactTextString(m) }
+func (*Node) ProtoMessage()               {}
+func (*Node) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 type JoinClusterRequest struct {
 	Ip           string `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
 	Port         string `protobuf:"bytes,2,opt,name=port" json:"port,omitempty"`
-	CommonName   string `protobuf:"bytes,3,opt,name=common_name,json=commonName" json:"common_name,omitempty"`
+	CommonName   string `protobuf:"bytes,3,opt,name=common_name" json:"common_name,omitempty"`
 	Uuid         string `protobuf:"bytes,4,opt,name=uuid" json:"uuid,omitempty"`
-	PoolPassword string `protobuf:"bytes,5,opt,name=pool_password,json=poolPassword" json:"pool_password,omitempty"`
+	PoolPassword string `protobuf:"bytes,5,opt,name=pool_password" json:"pool_password,omitempty"`
 }
 
 func (m *JoinClusterRequest) Reset()                    { *m = JoinClusterRequest{} }
@@ -67,32 +71,91 @@ func (m *JoinClusterRequest) String() string            { return proto.CompactTe
 func (*JoinClusterRequest) ProtoMessage()               {}
 func (*JoinClusterRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+type NewGenerationRequest struct {
+	RequestingNode *Node  `protobuf:"bytes,1,opt,name=requesting_node" json:"requesting_node,omitempty"`
+	PoolPassword   string `protobuf:"bytes,2,opt,name=pool_password" json:"pool_password,omitempty"`
+}
+
+func (m *NewGenerationRequest) Reset()                    { *m = NewGenerationRequest{} }
+func (m *NewGenerationRequest) String() string            { return proto.CompactTextString(m) }
+func (*NewGenerationRequest) ProtoMessage()               {}
+func (*NewGenerationRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *NewGenerationRequest) GetRequestingNode() *Node {
+	if m != nil {
+		return m.RequestingNode
+	}
+	return nil
+}
+
+type NewGenerationResponse struct {
+	GenerationNumber int64    `protobuf:"varint,1,opt,name=generation_number" json:"generation_number,omitempty"`
+	Peers            []string `protobuf:"bytes,2,rep,name=peers" json:"peers,omitempty"`
+}
+
+func (m *NewGenerationResponse) Reset()                    { *m = NewGenerationResponse{} }
+func (m *NewGenerationResponse) String() string            { return proto.CompactTextString(m) }
+func (*NewGenerationResponse) ProtoMessage()               {}
+func (*NewGenerationResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+type KeyPieceRequest struct {
+	Node       *Node `protobuf:"bytes,1,opt,name=node" json:"node,omitempty"`
+	Generation int64 `protobuf:"varint,2,opt,name=generation" json:"generation,omitempty"`
+}
+
+func (m *KeyPieceRequest) Reset()                    { *m = KeyPieceRequest{} }
+func (m *KeyPieceRequest) String() string            { return proto.CompactTextString(m) }
+func (*KeyPieceRequest) ProtoMessage()               {}
+func (*KeyPieceRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *KeyPieceRequest) GetNode() *Node {
+	if m != nil {
+		return m.Node
+	}
+	return nil
+}
+
 type KeyPiece struct {
 	Data              []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	ParentFingerprint []byte `protobuf:"bytes,2,opt,name=parent_fingerprint,json=parentFingerprint,proto3" json:"parent_fingerprint,omitempty"`
+	ParentFingerprint []byte `protobuf:"bytes,2,opt,name=parent_fingerprint,proto3" json:"parent_fingerprint,omitempty"`
 	Prime             []byte `protobuf:"bytes,3,opt,name=prime,proto3" json:"prime,omitempty"`
 	Seq               int64  `protobuf:"varint,4,opt,name=seq" json:"seq,omitempty"`
 	// The Node data for the node who owns this KeyPiece
-	OwnerNode *PingRequest `protobuf:"bytes,5,opt,name=owner_node,json=ownerNode" json:"owner_node,omitempty"`
+	OwnerNode *Node `protobuf:"bytes,5,opt,name=owner_node" json:"owner_node,omitempty"`
+	// The KeyStateMachine generation this key belongs to
+	Generation int64 `protobuf:"varint,6,opt,name=generation" json:"generation,omitempty"`
 }
 
 func (m *KeyPiece) Reset()                    { *m = KeyPiece{} }
 func (m *KeyPiece) String() string            { return proto.CompactTextString(m) }
 func (*KeyPiece) ProtoMessage()               {}
-func (*KeyPiece) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (*KeyPiece) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
 
-func (m *KeyPiece) GetOwnerNode() *PingRequest {
+func (m *KeyPiece) GetOwnerNode() *Node {
 	if m != nil {
 		return m.OwnerNode
 	}
 	return nil
 }
 
+type SendKeyPieceResponse struct {
+	ClientMustCommit bool `protobuf:"varint,1,opt,name=client_must_commit" json:"client_must_commit,omitempty"`
+}
+
+func (m *SendKeyPieceResponse) Reset()                    { *m = SendKeyPieceResponse{} }
+func (m *SendKeyPieceResponse) String() string            { return proto.CompactTextString(m) }
+func (*SendKeyPieceResponse) ProtoMessage()               {}
+func (*SendKeyPieceResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+
 func init() {
 	proto.RegisterType((*EmptyMessage)(nil), "paranoid.EmptyMessage")
-	proto.RegisterType((*PingRequest)(nil), "paranoid.PingRequest")
+	proto.RegisterType((*Node)(nil), "paranoid.Node")
 	proto.RegisterType((*JoinClusterRequest)(nil), "paranoid.JoinClusterRequest")
+	proto.RegisterType((*NewGenerationRequest)(nil), "paranoid.NewGenerationRequest")
+	proto.RegisterType((*NewGenerationResponse)(nil), "paranoid.NewGenerationResponse")
+	proto.RegisterType((*KeyPieceRequest)(nil), "paranoid.KeyPieceRequest")
 	proto.RegisterType((*KeyPiece)(nil), "paranoid.KeyPiece")
+	proto.RegisterType((*SendKeyPieceResponse)(nil), "paranoid.SendKeyPieceResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -108,12 +171,14 @@ const _ = grpc.SupportPackageIsVersion2
 type ParanoidNetworkClient interface {
 	// Used for health checking and discovery. Sends the IP and port of the
 	// PFSD instance running on the client.
-	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
+	Ping(ctx context.Context, in *Node, opts ...grpc.CallOption) (*EmptyMessage, error)
 	// Used by a new node to let other nodes it is available to join the cluster.
 	JoinCluster(ctx context.Context, in *JoinClusterRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
+	// Used by a new node to create a new key generation before joining the cluster.
+	NewGeneration(ctx context.Context, in *NewGenerationRequest, opts ...grpc.CallOption) (*NewGenerationResponse, error)
 	// Cryptography calls
-	SendKeyPiece(ctx context.Context, in *KeyPiece, opts ...grpc.CallOption) (*EmptyMessage, error)
-	RequestKeyPiece(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*KeyPiece, error)
+	SendKeyPiece(ctx context.Context, in *KeyPiece, opts ...grpc.CallOption) (*SendKeyPieceResponse, error)
+	RequestKeyPiece(ctx context.Context, in *KeyPieceRequest, opts ...grpc.CallOption) (*KeyPiece, error)
 }
 
 type paranoidNetworkClient struct {
@@ -124,7 +189,7 @@ func NewParanoidNetworkClient(cc *grpc.ClientConn) ParanoidNetworkClient {
 	return &paranoidNetworkClient{cc}
 }
 
-func (c *paranoidNetworkClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*EmptyMessage, error) {
+func (c *paranoidNetworkClient) Ping(ctx context.Context, in *Node, opts ...grpc.CallOption) (*EmptyMessage, error) {
 	out := new(EmptyMessage)
 	err := grpc.Invoke(ctx, "/paranoid.ParanoidNetwork/Ping", in, out, c.cc, opts...)
 	if err != nil {
@@ -142,8 +207,17 @@ func (c *paranoidNetworkClient) JoinCluster(ctx context.Context, in *JoinCluster
 	return out, nil
 }
 
-func (c *paranoidNetworkClient) SendKeyPiece(ctx context.Context, in *KeyPiece, opts ...grpc.CallOption) (*EmptyMessage, error) {
-	out := new(EmptyMessage)
+func (c *paranoidNetworkClient) NewGeneration(ctx context.Context, in *NewGenerationRequest, opts ...grpc.CallOption) (*NewGenerationResponse, error) {
+	out := new(NewGenerationResponse)
+	err := grpc.Invoke(ctx, "/paranoid.ParanoidNetwork/NewGeneration", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paranoidNetworkClient) SendKeyPiece(ctx context.Context, in *KeyPiece, opts ...grpc.CallOption) (*SendKeyPieceResponse, error) {
+	out := new(SendKeyPieceResponse)
 	err := grpc.Invoke(ctx, "/paranoid.ParanoidNetwork/SendKeyPiece", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -151,7 +225,7 @@ func (c *paranoidNetworkClient) SendKeyPiece(ctx context.Context, in *KeyPiece, 
 	return out, nil
 }
 
-func (c *paranoidNetworkClient) RequestKeyPiece(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*KeyPiece, error) {
+func (c *paranoidNetworkClient) RequestKeyPiece(ctx context.Context, in *KeyPieceRequest, opts ...grpc.CallOption) (*KeyPiece, error) {
 	out := new(KeyPiece)
 	err := grpc.Invoke(ctx, "/paranoid.ParanoidNetwork/RequestKeyPiece", in, out, c.cc, opts...)
 	if err != nil {
@@ -165,12 +239,14 @@ func (c *paranoidNetworkClient) RequestKeyPiece(ctx context.Context, in *PingReq
 type ParanoidNetworkServer interface {
 	// Used for health checking and discovery. Sends the IP and port of the
 	// PFSD instance running on the client.
-	Ping(context.Context, *PingRequest) (*EmptyMessage, error)
+	Ping(context.Context, *Node) (*EmptyMessage, error)
 	// Used by a new node to let other nodes it is available to join the cluster.
 	JoinCluster(context.Context, *JoinClusterRequest) (*EmptyMessage, error)
+	// Used by a new node to create a new key generation before joining the cluster.
+	NewGeneration(context.Context, *NewGenerationRequest) (*NewGenerationResponse, error)
 	// Cryptography calls
-	SendKeyPiece(context.Context, *KeyPiece) (*EmptyMessage, error)
-	RequestKeyPiece(context.Context, *PingRequest) (*KeyPiece, error)
+	SendKeyPiece(context.Context, *KeyPiece) (*SendKeyPieceResponse, error)
+	RequestKeyPiece(context.Context, *KeyPieceRequest) (*KeyPiece, error)
 }
 
 func RegisterParanoidNetworkServer(s *grpc.Server, srv ParanoidNetworkServer) {
@@ -178,7 +254,7 @@ func RegisterParanoidNetworkServer(s *grpc.Server, srv ParanoidNetworkServer) {
 }
 
 func _ParanoidNetwork_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
+	in := new(Node)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -190,7 +266,7 @@ func _ParanoidNetwork_Ping_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/paranoid.ParanoidNetwork/Ping",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ParanoidNetworkServer).Ping(ctx, req.(*PingRequest))
+		return srv.(ParanoidNetworkServer).Ping(ctx, req.(*Node))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -209,6 +285,24 @@ func _ParanoidNetwork_JoinCluster_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ParanoidNetworkServer).JoinCluster(ctx, req.(*JoinClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ParanoidNetwork_NewGeneration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewGenerationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ParanoidNetworkServer).NewGeneration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/paranoid.ParanoidNetwork/NewGeneration",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ParanoidNetworkServer).NewGeneration(ctx, req.(*NewGenerationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -232,7 +326,7 @@ func _ParanoidNetwork_SendKeyPiece_Handler(srv interface{}, ctx context.Context,
 }
 
 func _ParanoidNetwork_RequestKeyPiece_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
+	in := new(KeyPieceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -244,7 +338,7 @@ func _ParanoidNetwork_RequestKeyPiece_Handler(srv interface{}, ctx context.Conte
 		FullMethod: "/paranoid.ParanoidNetwork/RequestKeyPiece",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ParanoidNetworkServer).RequestKeyPiece(ctx, req.(*PingRequest))
+		return srv.(ParanoidNetworkServer).RequestKeyPiece(ctx, req.(*KeyPieceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -262,6 +356,10 @@ var _ParanoidNetwork_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ParanoidNetwork_JoinCluster_Handler,
 		},
 		{
+			MethodName: "NewGeneration",
+			Handler:    _ParanoidNetwork_NewGeneration_Handler,
+		},
+		{
 			MethodName: "SendKeyPiece",
 			Handler:    _ParanoidNetwork_SendKeyPiece_Handler,
 		},
@@ -274,28 +372,34 @@ var _ParanoidNetwork_serviceDesc = grpc.ServiceDesc{
 }
 
 var fileDescriptor0 = []byte{
-	// 367 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xb4, 0x52, 0x4d, 0x4b, 0xeb, 0x50,
-	0x10, 0x6d, 0xfa, 0xf1, 0x68, 0x27, 0x79, 0xed, 0x7b, 0xc3, 0x7b, 0x12, 0x44, 0x54, 0xe2, 0xc6,
-	0x8d, 0x15, 0xaa, 0xe0, 0x46, 0xdc, 0x48, 0x5d, 0x28, 0x96, 0x10, 0x7f, 0x40, 0x88, 0xcd, 0xb4,
-	0x04, 0x9b, 0x7b, 0x6f, 0x6f, 0x6e, 0x28, 0xfd, 0x15, 0x82, 0x7f, 0xc3, 0x3f, 0x69, 0x72, 0x93,
-	0x36, 0x15, 0x6b, 0x77, 0xee, 0xce, 0x9c, 0x39, 0x33, 0xf7, 0x64, 0x4e, 0xe0, 0x50, 0x04, 0x32,
-	0x60, 0x3c, 0x0a, 0x19, 0xa9, 0x05, 0x97, 0x2f, 0xe7, 0xab, 0xba, 0x2f, 0x24, 0x57, 0x1c, 0xdb,
-	0xab, 0xda, 0xe9, 0x82, 0x35, 0x8c, 0x85, 0x5a, 0x3e, 0x52, 0x92, 0x04, 0x53, 0x72, 0x26, 0x60,
-	0xba, 0x11, 0x9b, 0x7a, 0x34, 0x4f, 0x29, 0x51, 0xd8, 0x85, 0x7a, 0x24, 0x6c, 0xe3, 0xd8, 0x38,
-	0xed, 0x78, 0x19, 0x42, 0x84, 0xa6, 0xe0, 0x52, 0xd9, 0x75, 0xcd, 0x68, 0x8c, 0x47, 0x60, 0x8e,
-	0x79, 0x1c, 0x73, 0xe6, 0xb3, 0x20, 0x26, 0xbb, 0xa1, 0x5b, 0x50, 0x50, 0xa3, 0x8c, 0xc9, 0x87,
-	0xd2, 0x34, 0x0a, 0xed, 0x66, 0x31, 0x94, 0x63, 0xe7, 0xcd, 0x00, 0xbc, 0xe7, 0x11, 0xbb, 0x9d,
-	0xa5, 0x89, 0x22, 0xf9, 0xd3, 0xef, 0xe1, 0x09, 0xfc, 0x16, 0x9c, 0xcf, 0x7c, 0x11, 0x24, 0x49,
-	0x76, 0x91, 0xd0, 0x6e, 0xe9, 0xa6, 0x95, 0x93, 0x6e, 0xc9, 0x39, 0xef, 0x06, 0xb4, 0x1f, 0x68,
-	0xe9, 0x46, 0x34, 0xd6, 0x5b, 0xc2, 0x40, 0x05, 0xda, 0x8c, 0xe5, 0x69, 0x8c, 0x67, 0x80, 0xd9,
-	0xe5, 0x88, 0x29, 0x7f, 0x92, 0x1d, 0x89, 0xa4, 0x90, 0x11, 0x2b, 0xcc, 0x59, 0xde, 0xdf, 0xa2,
-	0x73, 0x57, 0x35, 0xf0, 0x1f, 0xb4, 0x32, 0x50, 0x7a, 0xb4, 0xbc, 0xa2, 0xc0, 0x3f, 0xd0, 0x48,
-	0x68, 0xae, 0xdd, 0x35, 0xbc, 0x1c, 0xe2, 0x25, 0x00, 0x5f, 0x30, 0x92, 0x3e, 0xe3, 0x21, 0x69,
-	0x67, 0xe6, 0xe0, 0x7f, 0x7f, 0x9d, 0xd9, 0x46, 0x20, 0x5e, 0x47, 0x0b, 0x47, 0x99, 0x6e, 0xf0,
-	0x5a, 0x87, 0x9e, 0x5b, 0x6a, 0x46, 0x45, 0xce, 0x78, 0x05, 0xcd, 0x5c, 0x8d, 0xdb, 0xa7, 0xf7,
-	0xf7, 0x2a, 0xfa, 0x53, 0xea, 0x35, 0x1c, 0x82, 0xb9, 0x11, 0x07, 0x1e, 0x54, 0xc2, 0xaf, 0x29,
-	0xed, 0x58, 0x73, 0x0d, 0xd6, 0x13, 0xb1, 0xb0, 0x3a, 0x62, 0xa5, 0x5c, 0x71, 0x3b, 0xa6, 0x6f,
-	0xa0, 0x57, 0x3e, 0xb1, 0x5e, 0xf0, 0xcd, 0x87, 0x6c, 0xd9, 0xeb, 0xd4, 0x9e, 0x7f, 0xe9, 0xbf,
-	0xfb, 0xe2, 0x23, 0x00, 0x00, 0xff, 0xff, 0xdc, 0xea, 0x45, 0x72, 0xff, 0x02, 0x00, 0x00,
+	// 462 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xa4, 0x93, 0xd1, 0x6e, 0xd3, 0x30,
+	0x14, 0x86, 0xd7, 0x26, 0x9d, 0xca, 0x69, 0xba, 0x8a, 0xc3, 0x86, 0xb2, 0x6a, 0x1a, 0x28, 0x37,
+	0x70, 0x35, 0x50, 0x79, 0x02, 0x28, 0x13, 0x12, 0x88, 0xaa, 0x1a, 0x12, 0xb7, 0x91, 0xd7, 0x1c,
+	0x8a, 0x45, 0x63, 0x7b, 0xb6, 0xa3, 0x6a, 0x6f, 0xc0, 0xa3, 0xf2, 0x18, 0xb8, 0x4e, 0xdd, 0x74,
+	0x6b, 0x99, 0x90, 0x76, 0xd7, 0xe3, 0xda, 0xdf, 0xff, 0x9f, 0xff, 0x9c, 0xc0, 0xb9, 0x62, 0x9a,
+	0x09, 0xc9, 0x0b, 0x41, 0x76, 0x29, 0xf5, 0xaf, 0x37, 0xa1, 0xbe, 0x50, 0x5a, 0x5a, 0x89, 0xdd,
+	0x50, 0x67, 0x47, 0x90, 0x5c, 0x96, 0xca, 0xde, 0x7e, 0x25, 0x63, 0xd8, 0x9c, 0xb2, 0x31, 0xc4,
+	0x13, 0x59, 0x10, 0x02, 0xb4, 0xb9, 0x4a, 0x5b, 0x2f, 0x5b, 0xaf, 0x9f, 0x60, 0x02, 0xb1, 0x92,
+	0xda, 0xa6, 0x6d, 0x5f, 0x3d, 0x83, 0xde, 0x4c, 0x96, 0xa5, 0x14, 0xb9, 0x60, 0x25, 0xa5, 0x51,
+	0xb8, 0x52, 0x55, 0xbc, 0x48, 0xe3, 0x55, 0x95, 0xfd, 0x04, 0xfc, 0x2c, 0xb9, 0x18, 0x2f, 0x2a,
+	0x63, 0x49, 0x5f, 0xd1, 0x4d, 0x45, 0xc6, 0x3e, 0x0a, 0x89, 0x27, 0xd0, 0x57, 0x52, 0x2e, 0x72,
+	0xc5, 0x8c, 0x71, 0x1d, 0x15, 0x69, 0xc7, 0x2b, 0x7d, 0x87, 0xe3, 0x09, 0x2d, 0x3f, 0x91, 0x20,
+	0xcd, 0x2c, 0x97, 0x22, 0x68, 0xbd, 0x82, 0x81, 0xae, 0x7f, 0x72, 0x31, 0xcf, 0x85, 0xeb, 0xc8,
+	0x0b, 0xf7, 0x46, 0x47, 0x17, 0x9b, 0x28, 0x7c, 0x9f, 0x3b, 0x5c, 0xef, 0x28, 0x7b, 0x0f, 0x27,
+	0xf7, 0xb8, 0x46, 0x49, 0x61, 0x08, 0x4f, 0xe1, 0xe9, 0x7c, 0x73, 0x9a, 0x8b, 0xaa, 0xbc, 0x26,
+	0xed, 0xd1, 0x11, 0xf6, 0xa1, 0xa3, 0x88, 0xb4, 0x71, 0x88, 0xc8, 0x21, 0xc6, 0x30, 0xf8, 0x42,
+	0xb7, 0x53, 0x4e, 0x33, 0x0a, 0xae, 0xce, 0x20, 0x7e, 0xc0, 0x8a, 0x0b, 0xa8, 0x41, 0x7b, 0x1f,
+	0x51, 0xf6, 0xbb, 0x05, 0xdd, 0x40, 0x59, 0x25, 0x52, 0x30, 0xcb, 0xfc, 0xf3, 0x04, 0x87, 0x80,
+	0xee, 0x3d, 0x09, 0x9b, 0xff, 0x70, 0x3d, 0x92, 0x56, 0x9a, 0x8b, 0x3a, 0xd0, 0xc4, 0x5b, 0xd1,
+	0x7c, 0x1d, 0x65, 0x82, 0x3d, 0x88, 0x0c, 0xdd, 0xf8, 0x24, 0x23, 0xcc, 0x00, 0xe4, 0xd2, 0xc9,
+	0xd4, 0xa9, 0x74, 0xfe, 0xc3, 0xca, 0xa1, 0xb7, 0x32, 0x82, 0xe3, 0x6f, 0x24, 0x8a, 0xa6, 0xa7,
+	0x75, 0x22, 0xce, 0xc7, 0x6c, 0xc1, 0x57, 0x3e, 0x4a, 0x37, 0xee, 0x7c, 0x35, 0x48, 0x6e, 0xbd,
+	0xc7, 0xee, 0xe8, 0x4f, 0x1b, 0x06, 0xd3, 0x35, 0x79, 0x52, 0xaf, 0x22, 0xbe, 0x85, 0x78, 0xea,
+	0x0c, 0xe3, 0x3d, 0xcd, 0xe1, 0xf3, 0xa6, 0xbe, 0xb3, 0x91, 0x07, 0x78, 0x09, 0xbd, 0xad, 0x75,
+	0xc2, 0xb3, 0xe6, 0xe2, 0xee, 0x96, 0x3d, 0x80, 0xb9, 0x82, 0xfe, 0x9d, 0x99, 0xe2, 0xf9, 0x96,
+	0x83, 0x3d, 0x4b, 0x34, 0x7c, 0xf1, 0xcf, 0xff, 0xeb, 0xd6, 0x1d, 0xf3, 0x23, 0x24, 0xdb, 0xa1,
+	0x20, 0x36, 0x4f, 0xc2, 0xd9, 0x70, 0x4b, 0x66, 0x5f, 0x80, 0x8e, 0xf2, 0x01, 0x06, 0x6b, 0xcd,
+	0x0d, 0xe8, 0x74, 0x17, 0x14, 0x6c, 0xed, 0xd1, 0xc8, 0x0e, 0xae, 0x0f, 0xfd, 0x97, 0xfd, 0xee,
+	0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x6c, 0x12, 0x77, 0x30, 0xfb, 0x03, 0x00, 0x00,
 }

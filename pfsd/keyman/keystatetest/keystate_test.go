@@ -53,7 +53,7 @@ func TestKeyStateUpdate(t *testing.T) {
 		CommonName: "test-node",
 		NodeId:     "foobar",
 	}
-	generation, err := keyman.StateMachine.NewGeneration(pbnode.NodeId)
+	generation, _, err := keyman.StateMachine.NewGeneration(pbnode.NodeId)
 	if err != nil {
 		t.Error("Failed to initialise new generation:", err)
 	}
@@ -76,6 +76,9 @@ func TestKeyStateUpdate(t *testing.T) {
 	if err != nil {
 		t.Error("Failed to create new KSM from PFS directory:", err)
 	}
+	// Delete the Events channel because we don't care about it.
+	keyman.StateMachine.Events = nil
+	testMachine.Events = nil
 	if !reflect.DeepEqual(*keyman.StateMachine, *testMachine) {
 		t.Log("Decoded and encoded KSM's do not match.")
 		t.Log("Expected:", *keyman.StateMachine)

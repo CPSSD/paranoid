@@ -48,12 +48,21 @@ type KeyStateMachine struct {
 
 	// This is, once again, to avoid an import cycle
 	PfsDir string
+
+	// Channel is pushed to every time a new generation is created.
+	Events chan bool
 }
 
 func (ksm *KeyStateMachine) GetCurrentGeneration() int64 {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 	return ksm.CurrentGeneration
+}
+
+func (ksm *KeyStateMachine) GetInProgressGenertion() int64 {
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
+	return ksm.InProgressGeneration
 }
 
 func (ksm *KeyStateMachine) GetNodes(generation int64) ([]string, error) {
@@ -78,6 +87,7 @@ func NewKSM(pfsDir string) *KeyStateMachine {
 		DeprecatedGeneration: -1,
 		Generations:          make(map[int64]*Generation),
 		PfsDir:               pfsDir,
+		Events:               make(chan bool, 10),
 	}
 }
 
@@ -89,6 +99,7 @@ func NewKSMFromReader(reader io.Reader) (*KeyStateMachine, error) {
 		Log.Error("Failed decoding GOB KeyStateMachine data:", err)
 		return nil, fmt.Errorf("failed decoding from GOB: %s", err)
 	}
+	ksm.Events = make(chan bool, 10)
 	return ksm, nil
 }
 
@@ -120,10 +131,11 @@ func (ksm *KeyStateMachine) UpdateFromStateFile(filePath string) error {
 	ksm.InProgressGeneration = tmpKSM.InProgressGeneration
 	ksm.DeprecatedGeneration = tmpKSM.DeprecatedGeneration
 	ksm.Generations = tmpKSM.Generations
+	ksm.Events <- true
 	return nil
 }
 
-func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int64, err error) {
+func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int64, peers []string, err error) {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
@@ -137,13 +149,19 @@ func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int6
 		Elements: []*keyStateElement{},
 	}
 
+	if ksm.CurrentGeneration == -1 {
+		ksm.CurrentGeneration = ksm.InProgressGeneration
+	}
+
 	err = ksm.SerialiseToPFSDir()
 	if err != nil {
+		Log.Error("Error serialising key state machine:", err)
 		delete(ksm.Generations, ksm.InProgressGeneration)
 		ksm.InProgressGeneration--
-		return 0, err
+		return 0, nil, err
 	}
-	return ksm.InProgressGeneration, nil
+	ksm.Events <- true
+	return ksm.InProgressGeneration, existingNodes, nil
 }
 
 func (ksm KeyStateMachine) NodeInGeneration(generationNumber int64, nodeId string) bool {
@@ -159,7 +177,30 @@ func (ksm KeyStateMachine) NodeInGeneration(generationNumber int64, nodeId strin
 	return false
 }
 
-func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
+func (ksm *KeyStateMachine) NeedsReplication(uuid string, generationNumber int64) bool {
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
+
+	generation, ok := ksm.Generations[generationNumber]
+	if !ok {
+		return false
+	}
+
+	count := 1
+	for _, v := range generation.Elements {
+		if v.Owner.NodeId == uuid {
+			count++
+		}
+	}
+
+	minNodesRequired := len(generation.Nodes)/2 + 1
+	if count < minNodesRequired {
+		return true
+	}
+	return false
+}
+
+func (ksm *KeyStateMachine) Update(req *pb.KeyStateCommand) error {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
 
@@ -174,6 +215,12 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 	elem := &keyStateElement{
 		Owner:  req.GetKeyOwner(),
 		Holder: req.GetKeyHolder(),
+	}
+
+	for _, v := range ksm.Generations[req.Generation].Elements {
+		if v.Owner.NodeId == elem.Owner.NodeId && v.Holder.NodeId == elem.Holder.NodeId {
+			return errors.New("owner-holder pair already present in this generation")
+		}
 	}
 
 	ksm.Generations[req.Generation].AddElement(elem)
@@ -217,11 +264,11 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateMessage) error {
 func (ksm KeyStateMachine) canUpdateGeneration(generation int64) bool {
 	// Map of UUIDs (as string) to int
 	owners := make(map[string]int)
+	for _, v := range ksm.Generations[generation].Nodes {
+		owners[v] += 1
+	}
 	for _, v := range ksm.Generations[generation].Elements {
 		owners[v.Owner.NodeId] += 1
-	}
-	if len(owners) != len(ksm.Generations[generation].Nodes) {
-		return false
 	}
 	minNodesRequired := len(ksm.Generations[generation].Nodes)/2 + 1
 	for _, count := range owners {

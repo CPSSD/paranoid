@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/gob"
-	"fmt"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
@@ -12,43 +12,17 @@ import (
 	"time"
 )
 
-const unlockQueryInterval time.Duration = time.Second * 30
+const unlockQueryInterval time.Duration = time.Second * 10
 const unlockTimeout time.Duration = time.Minute * 10
 const lockWaitDuration time.Duration = time.Minute * 1
-
-// Chunks key and sends the pieces to other nodes on the network.
-func Lock() error {
-	numPieces := int64(len(globals.Nodes.GetAll()) + 1)
-	requiredPieces := numPieces/2 + 1
-	log.Info("Generating pieces.")
-	pieces, err := keyman.GeneratePieces(globals.EncryptionKey, numPieces, requiredPieces)
-	if err != nil {
-		log.Error("Could not chunk key:", err)
-		return fmt.Errorf("could not chunk key: %s", err)
-	}
-	// We always keep the first piece and distribute the rest
-	err = globals.HeldKeyPieces.AddPiece(0, globals.ThisNode.UUID, pieces[0])
-	if err != nil {
-		return fmt.Errorf("could not store key piece: %s", err)
-	}
-
-	for i := 1; i < len(pieces); i++ {
-		pnetclient.SendKeyPiece(pieces[i])
-	}
-	// Delete our copy of the full key
-	globals.EncryptionKey = nil
-	globals.SystemLocked = true
-
-	return nil
-}
 
 type keyResponse struct {
 	uuid  string
 	piece *keyman.KeyPiece
 }
 
-func requestKeyPiece(uuid string, recievedPieceChan chan keyResponse) {
-	piece, err := pnetclient.RequestKeyPiece(uuid)
+func requestKeyPiece(uuid string, generation int64, recievedPieceChan chan keyResponse) {
+	piece, err := pnetclient.RequestKeyPiece(uuid, generation)
 	if err != nil {
 		log.Errorf("Error requesting key piece from node %s: %s", uuid, err)
 		return
@@ -62,7 +36,7 @@ func requestKeyPiece(uuid string, recievedPieceChan chan keyResponse) {
 //Attempt to unlock the state machine
 func Unlock() {
 
-	timer := time.NewTimer(unlockQueryInterval)
+	timer := time.NewTimer(0)
 	defer timer.Stop()
 	timeout := time.After(unlockTimeout)
 
@@ -98,9 +72,10 @@ func Unlock() {
 			}
 			for i := 0; i < len(peers); i++ {
 				keyRequestWait.Add(1)
+				x := i
 				go func() {
 					defer keyRequestWait.Done()
-					requestKeyPiece(peers[i], recievedPieceChan)
+					requestKeyPiece(peers[x], generation, recievedPieceChan)
 				}()
 			}
 			timer.Reset(unlockQueryInterval)
@@ -115,7 +90,11 @@ func Unlock() {
 						break
 					}
 					globals.EncryptionKey = key
-					globals.SystemLocked = false
+					cipherB, err := encryption.GenerateAESCipherBlock(globals.EncryptionKey.GetBytes())
+					if err != nil {
+						log.Fatal("unable to generate cipher block:", err)
+					}
+					encryption.SetCipher(cipherB)
 
 					done := make(chan bool, 1)
 					go func() {
@@ -141,7 +120,6 @@ func LoadPieces() {
 		log.Info("Filesystem not locked. Will not attepmt to load KeyPieces.")
 		return
 	}
-	globals.SystemLocked = true
 	piecePath := path.Join(globals.ParanoidDir, "meta", "pieces")
 	file, err := os.Open(piecePath)
 	if err != nil {
