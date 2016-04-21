@@ -55,6 +55,8 @@ type RaftNetworkServer struct {
 	appendEntriesLock sync.Mutex
 	addEntryLock      sync.Mutex
 	clientRequest     *pb.Entry
+
+	exportedChangeList chan pb.LeaderData
 }
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
@@ -171,10 +173,12 @@ func (s *RaftNetworkServer) RequestLeaderData(req *pb.LeaderDataRequest, stream 
 		return errors.New("Node is not leader")
 	}
 	for {
-		// TODO: Send proper data
-		err := stream.Send(&pb.LeaderData{})
-		if err != nil {
-			Log.Error("Cannot write to client:", err)
+		select {
+		case msg := <- s.exportedChangeList:
+			err := stream.Send(&msg)
+			if err != nil {
+				Log.Error("Cannot send data to client:", err)
+			}
 		}
 	}
 
@@ -342,12 +346,44 @@ checkLeaderLoop:
 				Log.Error("Unable to get data:", err)
 			}
 
-			// TODO: Remove this
-			if data == nil {
+			// Get the message from protobuf and convert it to export message
+			var messageType exporter.MessageType
+			var messageData exporter.MessageData
 
+			switch data.Type {
+			case pb.LeaderData_State:
+				messageType = exporter.StateMessage
+				messageData = exporter.MessageData{
+					Nodes: convertProtoDetailedNodeToExportNode(data.Data.GetNodes()),
+				}
+			case pb.LeaderData_NodeChange:
+				messageType = exporter.NodeChangeMessage
+				messageData = exporter.MessageData{
+					Action: data.Data.Action,
+					Node: exporter.MessageNode{
+						CommonName: data.Data.Node.CommonName,
+			      Addr: data.Data.Node.Addr,
+			      Uuid: data.Data.Node.Uuid,
+			      State: data.Data.Node.State,
+					},
+				}
+			case pb.LeaderData_Event:
+				messageType = exporter.RaftEventMessage
+				messageData = exporter.MessageData{
+					Event: exporter.MessageEvent{
+						Source: data.Data.Event.Source,
+						Target: data.Data.Event.Target,
+						Details: data.Data.Event.Details,
+					},
+				}
 			}
-			msg := exporter.Message{}
 
+			msg := exporter.Message{
+				Type: messageType,
+				Data: messageData,
+			}
+
+			// Send the export message
 			exporter.Send(msg)
 		}
 	}
