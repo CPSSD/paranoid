@@ -210,10 +210,13 @@ func startRPCServer(lis *net.Listener, password string) {
 						}
 						sendKeysTimer.Reset(JoinSendKeysInterval)
 					case keySendInfo := <-sendKeysResponse:
+						log.Info("Recieved key piece response")
 						if keySendInfo.err != nil {
 							if keySendInfo.err == keyman.ErrGenerationDeprecated {
 								log.Error("Attempting to replicate keys for deprecated generation")
 								break sendKeysLoop
+							} else {
+								log.Error("Error sending key info:", keySendInfo.err)
 							}
 						} else {
 							for i := 0; i < len(peers); i++ {

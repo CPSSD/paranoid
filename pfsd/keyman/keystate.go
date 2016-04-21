@@ -62,7 +62,7 @@ func (ksm *KeyStateMachine) GetCurrentGeneration() int64 {
 func (ksm *KeyStateMachine) GetInProgressGenertion() int64 {
 	ksm.lock.Lock()
 	defer ksm.lock.Unlock()
-	return ksm.GetInProgressGenertion()
+	return ksm.InProgressGeneration
 }
 
 func (ksm *KeyStateMachine) GetNodes(generation int64) ([]string, error) {
@@ -87,7 +87,7 @@ func NewKSM(pfsDir string) *KeyStateMachine {
 		DeprecatedGeneration: -1,
 		Generations:          make(map[int64]*Generation),
 		PfsDir:               pfsDir,
-		Events:               make(chan bool, 1),
+		Events:               make(chan bool, 10),
 	}
 }
 
@@ -99,7 +99,7 @@ func NewKSMFromReader(reader io.Reader) (*KeyStateMachine, error) {
 		Log.Error("Failed decoding GOB KeyStateMachine data:", err)
 		return nil, fmt.Errorf("failed decoding from GOB: %s", err)
 	}
-	ksm.Events = make(chan bool, 1)
+	ksm.Events = make(chan bool, 10)
 	return ksm, nil
 }
 
@@ -131,6 +131,7 @@ func (ksm *KeyStateMachine) UpdateFromStateFile(filePath string) error {
 	ksm.InProgressGeneration = tmpKSM.InProgressGeneration
 	ksm.DeprecatedGeneration = tmpKSM.DeprecatedGeneration
 	ksm.Generations = tmpKSM.Generations
+	ksm.Events <- true
 	return nil
 }
 
@@ -154,6 +155,7 @@ func (ksm *KeyStateMachine) NewGeneration(newNode string) (generationNumber int6
 
 	err = ksm.SerialiseToPFSDir()
 	if err != nil {
+		Log.Error("Error serialising key state machine:", err)
 		delete(ksm.Generations, ksm.InProgressGeneration)
 		ksm.InProgressGeneration--
 		return 0, nil, err

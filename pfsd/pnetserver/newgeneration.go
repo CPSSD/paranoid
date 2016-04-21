@@ -26,6 +26,7 @@ func (s *ParanoidServer) NewGeneration(ctx context.Context, req *pb.NewGeneratio
 		}
 	}
 
+	Log.Info("Requesting new generation")
 	generationNumber, peers, err := globals.RaftNetworkServer.RequestNewGeneration(req.GetRequestingNode().Uuid)
 	if err != nil {
 		return &pb.NewGenerationResponse{}, grpc.Errorf(codes.Unknown, "unable to create new generation")
