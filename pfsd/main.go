@@ -48,7 +48,7 @@ var (
 		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
 	verbose = flag.Bool("v", false, "Use verbose logging")
 	exportFlag = flag.Bool("enable-export", false, "enable Raft exporter")
-	exportPortFlag = flag.String("export-port", "10100", "port at which the Raft exporter should be enabled")
+	exportPortFlag = flag.String("export-port", "10100", "port on which the Raft exporter should listen")
 )
 
 type keySentResponse struct {

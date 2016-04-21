@@ -4,7 +4,7 @@ Export API
 This document defined the API used for exporting data from Raft
 
 ## Enabling Exporting ##
-By default the exporting function is off, to turn it on `pfsd` must be ran with
+By default the exporting function is off, to turn it on `pfsd` must be run with
 `-enable-export` flag.
 
 The default port for the exporter is `10100`, and it can be changed with

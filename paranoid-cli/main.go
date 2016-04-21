@@ -12,9 +12,10 @@ import (
 	"path"
 )
 
-var (
+
+func main() {
 	// store the flags contained by both mount and automount
-	mountFlags  = []cli.Flag{
+	mountFlags  := []cli.Flag{
 		cli.BoolFlag{
 			Name:  "n, noprompt",
 			Usage: "disable the prompt when attempting to mount a PFS without TLS/SSL",
@@ -38,12 +39,10 @@ var (
 		cli.StringFlag{
 			Name: "export-port",
 			Value: "10100",
-			Usage: "port on which raft exporter should run",
+			Usage: "port on which the Raft exporter should listen",
 		},
 	}
-)
 
-func main() {
 
 	usr, err := user.Current()
 	if err != nil {
