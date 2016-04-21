@@ -18,6 +18,7 @@ class Node {
     this.m_state = details.state || FollowerState;
     this.m_parent = details.parent || {};
     this.m_shown = details.shown || false,
+    this.m_address = details.address || "::"
 
     this.d_node = document.createElement("node");
     this.d_node.id = "_node"+this.m_name;

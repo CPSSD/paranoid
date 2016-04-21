@@ -3,12 +3,15 @@
   /* Colours */
   --color-indigo-900: #1A237E;
   --color-grey-900: #212121;
+  --color-lime-500: #CDDC39;
+  --color-lime-900: #827717;
 
   --bg-red: red;
   --bg-header: rgba(255,255,255,0.1);
 
   --bg-main: var(--color-grey-900);
   --bg-accent: var(--color-indigo-900);
+  --color-accent-2: var(--color-lime-500);
 
   --std-offset: 0.5rem;
 

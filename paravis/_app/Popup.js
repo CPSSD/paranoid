@@ -1,13 +1,12 @@
 var console = require('console');
 
 class Popup {
-  constructor(title, layout, parent){
+  constructor(title, layout){
     var self = this;
     console.log("Creating popup", title);
 
     self.m_title = title;
     self.m_layout = layout;
-    self.m_parent = parent;
     self.m_element = document.createElement('popup');
     self.m_titleElement = document.createElement('title');
     self.m_contentElement = document.createElement('content');
@@ -19,14 +18,16 @@ class Popup {
     $(self.m_element).append(this.m_contentElement);
 
     $(document).on('click', (e) => {
-      if(!$(self.m_element).is(e.target)){
+      console.log($(e.target).parents().is(self.m_element));
+      if(!$(e.target).closest(self.m_element)){
+        e.stopPropagation();
         self.hide();
       }
     });
   }
 
-  destructor(){
-    delete(this.m_element);
+  hide(){
+    $(this.m_element).remove();
   }
 
   show(){
@@ -34,4 +35,6 @@ class Popup {
   }
 }
 
-module.exports = Popup;
+// Redeclare module if not available
+var module = module || { exports: {} };
+module.exports.Popup = Popup;

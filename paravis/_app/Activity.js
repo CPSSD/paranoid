@@ -11,6 +11,11 @@ class Activity {
   onCreate() {
     console.log("onCreate called");
   }
+
+  startActivity(intent){
+    $(document.body).empty();
+    intent.onCreate();
+  }
 }
 
 // All activies must be registered

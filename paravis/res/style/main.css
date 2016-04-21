@@ -33,4 +33,27 @@ popup {
   background-color: var(--bg-accent);
   box-shadow: var(--std-shadow);
   z-index: 1000;
+  flex-direction: column;
+}
+
+popup title {
+  display: block;
+}
+
+popup content {
+  display: flex;
+  flex-direction: column;
+}
+
+input {
+  background-color: inherit;
+  border: 0px;
+  border-bottom: 1px solid var(--color-lime-900);
+  color: white;
+  padding: var(--std-offset);
+}
+
+input:focus {
+  border-bottom-color: var(--color-accent-2);
+  outline: none;
 }

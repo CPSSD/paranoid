@@ -82,6 +82,8 @@ function init(){
 
   // Call onCreate function of the activity
   A.mainActivity.onCreate();
+
+  handleCloseButton();
 }
 
 // handleActions wraps around other handle functions
@@ -132,8 +134,9 @@ function handleAppText(){
 // Handle button to close the app
 // TODO: Make it work...
 function handleCloseButton(){
-  $('#app_close_button').click(function(){
-    gui.App.quit();
+  $('#app_close_button').on('click', () => {
+    console.log("Closing...");
+    win.close();
   });
 }
 

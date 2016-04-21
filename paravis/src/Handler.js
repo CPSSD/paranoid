@@ -1,6 +1,7 @@
 var node = require('../src/Node.js');
 var ToRad = require('../src/utils/utils.js').ToRad;
-var Popup = require('../_app/Popup.js');
+var Queue = require('../src/utils/Queue.js').Queue;
+var Popup = require('../_app/Popup.js').Popup;
 var console = require('console');
 
 // Connection server and port to local instance running the websocket server
@@ -23,7 +24,7 @@ class Handler {
     this.nodes = {};
 
     // Action queue
-    var this.m_queue = new Queue();
+    this.m_queue = new Queue();
 
     // Start handling
     this.handleMessage();
@@ -176,7 +177,11 @@ class Handler {
   // handleStatus takes care of the initial status which is send as first message
   // after connection is established
   handleStatus(data){
-    var nodes = data.nodes || [];
+    var nodes = data.nodes || null;
+
+    if(nodes == null){
+      console.error("nodes cannot be null, cannot process status");
+    }
 
     for(var n in nodes){
       this.addNode(new Node({
@@ -190,11 +195,36 @@ class Handler {
   }
 
   handleNodeUpdate(data){
-    this.nodes[data.node.uuid].setState(getStateFromString(data.node.state));
+    var n = data.node;
+
+    if(n === null){
+      console.error("Node is null, unable to process nodechange");
+      return;
+    }
+
+    switch(data.action){
+      case 'add':
+      case 'change':
+        this.nodes[n.uuid] = new Node({
+          name: n.commonName,
+          uuid: n.uuid,
+          address: n.addr,
+          state: getStateFromString(n.state),
+          parent: this.m_viewer,
+          shown: true
+        });
+        break;
+      case 'delete':
+        delete(this.nodes[n.uuid]);
+        break;
+      default:
+        console.error("Unknown action", data.action);
+        return;
+    }
   }
 
   handleEvent(data){
-
+    //TODO: Implement event handling
   }
 }
 module.exports.Handler = Handler;
