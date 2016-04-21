@@ -5,7 +5,7 @@ type MessageType string
 const (
 	StateMessage      MessageType = "state"
 	NodeChangeMessage             = "nodechange"
-	RaftActionMessage             = "event"
+	RaftEventMessage              = "event"
 )
 
 func (m MessageType) String() string {
@@ -14,7 +14,7 @@ func (m MessageType) String() string {
 		return "state"
 	case NodeChangeMessage:
 		return "nodechange"
-	case RaftActionMessage:
+	case RaftEventMessage:
 		return "event"
 	default:
 		return ""
@@ -45,4 +45,7 @@ type MessageNode struct {
 }
 
 type MessageEvent struct {
+	Source  string `json:"source"`
+	Target  string `json:"target"`
+	Details string `json:"details"`
 }
