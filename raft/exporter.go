@@ -33,12 +33,14 @@ func (s *RaftNetworkServer) sendLeaderDataRequest() {
 	defer s.Wait.Done()
 
 	leaderCheckTimer := time.NewTimer(LEADER_CHECK_INTERVAL)
+	leader := s.getLeader()
 
 checkLeaderLoop:
 	for {
 		select {
 		case <-leaderCheckTimer.C:
-			if s.getLeader() == nil {
+			leader = s.getLeader()
+			if leader == nil {
 				Log.Warn("Leader not yet elected")
 				continue
 			} else {
@@ -49,15 +51,16 @@ checkLeaderLoop:
 		}
 	}
 
-	leader := s.getLeader()
-	conn, err := s.Dial(s.getLeader(), SEND_ENTRY_TIMEOUT)
+	conn, err := s.Dial(leader, SEND_ENTRY_TIMEOUT)
 	if err != nil {
 		Log.Error("Unable to dial leader")
+		goto checkLeaderLoop
 	}
 	client := pb.NewRaftNetworkClient(conn)
 	stream, err := client.RequestLeaderData(context.Background(), &pb.LeaderDataRequest{})
 	if err != nil {
 		Log.Error("Unable to request user data")
+		goto checkLeaderLoop
 	}
 
 	for {
@@ -72,6 +75,7 @@ checkLeaderLoop:
 			data, err := stream.Recv()
 			if err != nil {
 				Log.Error("Unable to get data:", err)
+				continue
 			}
 
 			// Get the message from protobuf and convert it to export message
