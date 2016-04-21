@@ -118,7 +118,7 @@ func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex ui
 				Uuid: nodes[i].NodeID,
 				CommonName: nodes[i].CommonName,
 				State: "unknown",
-				Addr: nodes[i].IP+nodes[i].Port,
+				Addr: nodes[i].IP+":"+nodes[i].Port,
 			})
 		}
 

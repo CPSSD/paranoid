@@ -330,6 +330,8 @@ checkLeaderLoop:
 		}
 	}
 
+dialLeader:
+	leader := s.getLeader()
 	conn, err := s.Dial(s.getLeader(), SEND_ENTRY_TIMEOUT)
 	if err != nil {
 		Log.Error("Unable to dial leader")
@@ -344,6 +346,11 @@ checkLeaderLoop:
 		select {
 		case <-s.Quit:
 		default:
+			// Check is the leader we are dialing still the leader
+			if(leader != s.getLeader()){
+				goto dialLeader
+			}
+
 			data, err := stream.Recv()
 			if err != nil {
 				Log.Error("Unable to get data:", err)
