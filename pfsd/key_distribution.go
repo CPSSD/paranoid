@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"github.com/cpssd/paranoid/libpfs/encryption"
 	"github.com/cpssd/paranoid/pfsd/globals"
 	"github.com/cpssd/paranoid/pfsd/keyman"
 	"github.com/cpssd/paranoid/pfsd/pnetclient"
@@ -11,7 +12,7 @@ import (
 	"time"
 )
 
-const unlockQueryInterval time.Duration = time.Second * 30
+const unlockQueryInterval time.Duration = time.Second * 10
 const unlockTimeout time.Duration = time.Minute * 10
 const lockWaitDuration time.Duration = time.Minute * 1
 
@@ -35,7 +36,7 @@ func requestKeyPiece(uuid string, generation int64, recievedPieceChan chan keyRe
 //Attempt to unlock the state machine
 func Unlock() {
 
-	timer := time.NewTimer(unlockQueryInterval)
+	timer := time.NewTimer(0)
 	defer timer.Stop()
 	timeout := time.After(unlockTimeout)
 
@@ -89,7 +90,11 @@ func Unlock() {
 						break
 					}
 					globals.EncryptionKey = key
-					globals.SystemLocked = false
+					cipherB, err := encryption.GenerateAESCipherBlock(globals.EncryptionKey.GetBytes())
+					if err != nil {
+						log.Fatal("unable to generate cipher block:", err)
+					}
+					encryption.SetCipher(cipherB)
 
 					done := make(chan bool, 1)
 					go func() {
@@ -115,7 +120,6 @@ func LoadPieces() {
 		log.Info("Filesystem not locked. Will not attepmt to load KeyPieces.")
 		return
 	}
-	globals.SystemLocked = true
 	piecePath := path.Join(globals.ParanoidDir, "meta", "pieces")
 	file, err := os.Open(piecePath)
 	if err != nil {

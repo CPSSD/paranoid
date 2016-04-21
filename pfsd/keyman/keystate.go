@@ -195,9 +195,9 @@ func (ksm *KeyStateMachine) NeedsReplication(uuid string, generationNumber int64
 
 	minNodesRequired := len(generation.Nodes)/2 + 1
 	if count < minNodesRequired {
-		return false
+		return true
 	}
-	return true
+	return false
 }
 
 func (ksm *KeyStateMachine) Update(req *pb.KeyStateCommand) error {

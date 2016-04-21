@@ -180,8 +180,9 @@ func startRPCServer(lis *net.Listener, password string) {
 				}
 
 				keyPiecesN := int64(len(peers) + 1)
+				minKeysRequired := (keyPiecesN / 2) + 1
 				log.Info("pieces : ", keyPiecesN)
-				keyPieces, err := keyman.GeneratePieces(globals.EncryptionKey, keyPiecesN, (keyPiecesN/2)+1)
+				keyPieces, err := keyman.GeneratePieces(globals.EncryptionKey, keyPiecesN, minKeysRequired)
 				if err != nil {
 					log.Fatal("Unable to split keys:", err)
 				}
@@ -200,6 +201,8 @@ func startRPCServer(lis *net.Listener, password string) {
 
 				sendKeysTimer := time.NewTimer(0)
 				sendKeysResponse := make(chan keySentResponse, len(peers))
+				attemptJoin := make(chan bool, 100)
+				keysReplicated := int64(1)
 				var sendKeyPieceWait sync.WaitGroup
 
 			sendKeysLoop:
@@ -216,6 +219,9 @@ func startRPCServer(lis *net.Listener, password string) {
 								sendKeyPiece(peers[x], generation, keyPieces[x], sendKeysResponse)
 							}()
 						}
+						if keysReplicated >= minKeysRequired {
+							attemptJoin <- true
+						}
 						sendKeysTimer.Reset(JoinSendKeysInterval)
 					case keySendInfo := <-sendKeysResponse:
 						log.Info("Recieved key piece response")
@@ -231,33 +237,37 @@ func startRPCServer(lis *net.Listener, password string) {
 								if peers[i] == keySendInfo.uuid {
 									peers = append(peers[:i], peers[i+1:]...)
 									keyPieces = append(keyPieces[:i], keyPieces[i+1:]...)
-
-									log.Info("Attempting to join raft cluster")
-									err := pnetclient.JoinCluster(password)
-									if err != nil {
-										log.Error("Unable to join a raft cluster:", err)
-									} else {
-										log.Info("Sucessfully joined raft cluster")
-										globals.Wait.Add(1)
-										go func() {
-											defer globals.Wait.Done()
-											done := make(chan bool, 1)
-											go func() {
-												sendKeyPieceWait.Wait()
-												done <- true
-											}()
-											for {
-												select {
-												case <-sendKeysResponse:
-												case <-done:
-													return
-												}
-											}
-										}()
-										break generationCreateLoop
+									keysReplicated += 1
+									if keysReplicated >= minKeysRequired {
+										attemptJoin <- true
 									}
 								}
 							}
+						}
+					case <-attemptJoin:
+						log.Info("Attempting to join raft cluster")
+						err := pnetclient.JoinCluster(password)
+						if err != nil {
+							log.Error("Unable to join a raft cluster:", err)
+						} else {
+							log.Info("Sucessfully joined raft cluster")
+							globals.Wait.Add(1)
+							go func() {
+								defer globals.Wait.Done()
+								done := make(chan bool, 1)
+								go func() {
+									sendKeyPieceWait.Wait()
+									done <- true
+								}()
+								for {
+									select {
+									case <-sendKeysResponse:
+									case <-done:
+										return
+									}
+								}
+							}()
+							break generationCreateLoop
 						}
 					}
 				}
@@ -361,6 +371,10 @@ func getFileSystemAttributes() {
 	}
 
 	globals.KeyGenerated = attributes.KeyGenerated
+	if globals.KeyGenerated {
+		LoadPieces()
+	}
+
 	saveFileSystemAttributes(attributes)
 }
 
