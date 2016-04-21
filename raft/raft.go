@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	Log *logger.ParanoidLogger
+	Log             *logger.ParanoidLogger
 	EnableExporting bool = true
 )
 
@@ -307,17 +307,20 @@ func (s *RaftNetworkServer) sendLeaderDataRequest() {
 	s.Wait.Done()
 
 	leaderCheckTimer := time.NewTimer(100 * time.Millisecond)
+
+checkLeaderLoop:
 	for {
- 		select {
+		select {
 		case <-leaderCheckTimer.C:
-				if s.getLeader() == nil {
-					Log.Warn("Leader not yet elected")
-					continue;
-				} else {
-					Log.Info("Leader elected")
-					break;
-				}
+			if s.getLeader() == nil {
+				Log.Warn("Leader not yet elected")
+				continue
+			} else {
+				Log.Info("Leader elected")
+				leaderCheckTimer.Stop()
+				break checkLeaderLoop
 			}
+		}
 	}
 
 	conn, err := s.Dial(s.getLeader(), SEND_ENTRY_TIMEOUT)
@@ -327,12 +330,12 @@ func (s *RaftNetworkServer) sendLeaderDataRequest() {
 	client := pb.NewRaftNetworkClient(conn)
 	stream, err := client.RequestLeaderData(context.Background(), &pb.LeaderDataRequest{})
 	if err != nil {
-		Log.Error("Unable to request user data");
+		Log.Error("Unable to request user data")
 	}
 
 	for {
 		select {
-		case <- s.Quit:
+		case <-s.Quit:
 		default:
 			data, err := stream.Recv()
 			if err != nil {
