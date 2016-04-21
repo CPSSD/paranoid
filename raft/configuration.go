@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/cpssd/paranoid/raft/raftlog"
+	"github.com/cpssd/paranoid/pfsd/exporter"
 	"io/ioutil"
 	"os"
 	"path"
@@ -110,6 +111,19 @@ func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64
 func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex uint64) {
 	c.configLock.Lock()
 	defer c.configLock.Unlock()
+
+	if EnableExporting {
+		var exporterNodes []exporter.MessageNode
+		for i := 0; i < len(nodes); i++ {
+			exporterNodes = append(exporterNodes, exporter.MessageNode{
+				Uuid: nodes[i].NodeID,
+				CommonName: nodes[i].CommonName,
+				State: "unknown",
+				Addr: nodes[i].IP+nodes[i].Port,
+			})
+		}
+		exporter.SetState(exporterNodes)
+	}
 
 	if len(nodes) == len(c.futureConfiguration) {
 		futureToCurrent := true
