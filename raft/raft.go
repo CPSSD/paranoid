@@ -35,7 +35,10 @@ const (
 
 var (
 	Log             *logger.ParanoidLogger
-	EnableExporting bool = true
+
+	EnableExporting bool = false // if the node is actively exporting
+	leaderExporting bool = false // if its the leader is sending to node
+	exportedChangeList chan pb.LeaderData
 )
 
 type RaftNetworkServer struct {
@@ -55,8 +58,6 @@ type RaftNetworkServer struct {
 	appendEntriesLock sync.Mutex
 	addEntryLock      sync.Mutex
 	clientRequest     *pb.Entry
-
-	exportedChangeList chan pb.LeaderData
 }
 
 func (s *RaftNetworkServer) AppendEntries(ctx context.Context, req *pb.AppendEntriesRequest) (*pb.AppendEntriesResponse, error) {
@@ -169,12 +170,14 @@ func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVote
 }
 
 func (s *RaftNetworkServer) RequestLeaderData(req *pb.LeaderDataRequest, stream pb.RaftNetwork_RequestLeaderDataServer) error {
+	leaderExporting = true
+
 	if s.State.GetCurrentState() != LEADER {
 		return errors.New("Node is not leader")
 	}
 	for {
 		select {
-		case msg := <- s.exportedChangeList:
+		case msg := <- exportedChangeList:
 			err := stream.Send(&msg)
 			if err != nil {
 				Log.Error("Cannot send data to client:", err)

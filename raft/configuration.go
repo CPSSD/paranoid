@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/cpssd/paranoid/raft/raftlog"
-	"github.com/cpssd/paranoid/pfsd/exporter"
+	pb "github.com/cpssd/paranoid/proto/raft"
 	"io/ioutil"
 	"os"
 	"path"
@@ -111,18 +111,24 @@ func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64
 func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex uint64) {
 	c.configLock.Lock()
 	defer c.configLock.Unlock()
-
-	if EnableExporting {
-		var exporterNodes []exporter.MessageNode
+	if leaderExporting {
+		var detailedNodes []*pb.LeaderData_Data_DetailedNode
 		for i := 0; i < len(nodes); i++ {
-			exporterNodes = append(exporterNodes, exporter.MessageNode{
+			detailedNodes = append(detailedNodes, &pb.LeaderData_Data_DetailedNode{
 				Uuid: nodes[i].NodeID,
 				CommonName: nodes[i].CommonName,
 				State: "unknown",
 				Addr: nodes[i].IP+nodes[i].Port,
 			})
 		}
-		exporter.SetState(exporterNodes)
+
+		// Send the status to listening channel
+		exportedChangeList <- pb.LeaderData{
+			Type: pb.LeaderData_State,
+			Data: &pb.LeaderData_Data{
+				Nodes: detailedNodes,
+			},
+		}
 	}
 
 	if len(nodes) == len(c.futureConfiguration) {
