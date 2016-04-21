@@ -1,20 +1,15 @@
-<h1>PFSD</h1>
-
-<h1>Create a new filesystem</h1>
-<form id="newfsForm" action="#" type="submit" onsubmit="newfs(this);">
-  <label>Name</label>
-  <input type="text" name="name" class='form-control' placeholder="Name for your filesystem" required>
-  <label>Cert</label>
-  <input type="file" name="cert" class='form-control' placeholder="Path to existing cert file">
-  <label>Key</label>
-  <input type="file" name="key" class='form-control' placeholder="Path to existing key file">
-  <label>Pool</label>
-  <input type="text" name="pool" class='form-control' placeholder="Pool name (opt)"><br>
-  <label>Secure</label>
-  <input type="checkbox" name="secure" checked><br>
-  <label>Use Network</label>
-  <input type="checkbox" name="network" checked><br>
-  <label>Encrypted</label>
-  <input type="checkbox" name="encrypted" checked><br>
-  <button type="submit" class="btn btn-success">Submit</button>
-</form>
+<h1>PFSD Status</h1>
+<h3><span class="label label-success" id="runningLabel">running</span></h3>
+<hr>
+<button class="btn btn-primary" onclick="rowClicked(fileSystems.length)">Create New Filesystem</button>
+<hr>
+<h1>Credits</h1>
+<h2>Co-Ordinator</h2>
+<a style="text-decoration:none; color:inherit;" href="#" onclick='require("open")("https://github.com/smblott-github")'><img src="images/Stephen_Blott.jpg"/> Stehpen Blott</a>
+<br>
+<h2>Developers</h2>
+<a style="text-decoration:none; color:inherit;" href="#" onclick='require("open")("https://github.com/CanOpener")'><img src="images/Mladen_Kajic.jpg"/> Mladen Kajic</a> <br><br>
+<a style="text-decoration:none; color:inherit;" href="#" onclick='require("open")("https://github.com/GoldenBadger")'><img src="images/Terry_Bolt.jpg"/> Terry Bolt</a> <br><br>
+<a style="text-decoration:none; color:inherit;" href="#" onclick='require("open")("https://github.com/ConorGriffin37")'><img src="images/Conor_Griffin.jpg"/> Conor Griffin</a> <br><br>
+<a style="text-decoration:none; color:inherit;" href="#" onclick='require("open")("https://github.com/VoyTechnology")'><img src="images/Wojtek_Bednarzak.jpg"/> Wojtek Bednarzak</a> <br><br>
+<a style="text-decoration:none; color:inherit;" href="#" onclick='require("open")("https://github.com/SeanHealy33")'><img src="images/Sean_Healy.jpg"/> Sean Healy</a>

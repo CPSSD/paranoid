@@ -81,12 +81,6 @@ ul#nav li a{
   -webkit-transition: 0.2s;
 }
 
-ul#nav li a#mounted {
-  background-color: #27ae60;
-  color: #000;
-  font-weight: bold;
-}
-
 ul#nav li a:hover {
   background-color: #030303;
   color: #fff;
@@ -94,7 +88,8 @@ ul#nav li a:hover {
 }
 
 ul#nav li a.selected {
-  padding-left: 20px;
+  padding-left: 30px;
+  font-weight: bold;
 }
 
 div#box {
@@ -125,4 +120,8 @@ div#buttons {
 
 div#buttons.btn {
   width: 33%;
+}
+
+#refresh_bt {
+  padding: 100px;
 }

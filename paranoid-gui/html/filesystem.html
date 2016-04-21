@@ -6,11 +6,17 @@
 <div id="fsStatus">
   <h3>Status <span class="label label-success" id="fsMountedLabel">Mounted</span>
      <button class="btn btn-normal" id="refreshButton" onClick="refreshButtonClicked()">refresh</button></h3>
-  <br>
+
+  <h5>Detailed status</h5>
   <ul class="list-group" id="">
-    <li class="list-group-item"><h5>status</h5><br><div id="clistatus"></div></li>
-    <li class="list-group-item"><h5>Nodes</h5><br><div id="nodes"></div></li>
+    <li class="list-group-item"><div id="clistatus">Must be mounted to get detailed status</div></li>
   </ul>
+
+  <h5>Nodes</h5>
+  <ul class="list-group" id="">
+    <li class="list-group-item"><div id="nodes">Must be mounted to get node list</div></li>
+  </ul>
+
   <button class="btn btn-warning" id="mountUnmountButton" onClick="mountUnmountButtonClicked()">Mount</button>
   <hr>
 </div>

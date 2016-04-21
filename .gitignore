@@ -28,3 +28,5 @@ _testmain.go
 
 # TLS cert/key files
 *.pem
+
+node_modules/
