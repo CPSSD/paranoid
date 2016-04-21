@@ -46,8 +46,8 @@ var (
 	keyFile    = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
 	skipVerify = flag.Bool("skip_verification", false,
 		"skip verification of TLS certificate chain and hostname - not recommended unless using self-signed certs")
-	verbose = flag.Bool("v", false, "Use verbose logging")
-	exportFlag = flag.Bool("enable-export", false, "enable Raft exporter")
+	verbose        = flag.Bool("v", false, "Use verbose logging")
+	exportFlag     = flag.Bool("enable-export", false, "enable Raft exporter")
 	exportPortFlag = flag.String("export-port", "10100", "port on which the Raft exporter should listen")
 )
 
@@ -444,13 +444,15 @@ func main() {
 	if !globals.NetworkOff {
 
 		// Start exporter server if required
-		if(*exportFlag){
-			globals.Wait.Add(1)
+		if *exportFlag {
 			raft.EnableExporting = true
-			exporter.NewStdServer(*exportPortFlag);
-			go exporter.Listen();
+			exporter.NewStdServer(*exportPortFlag)
+			globals.Wait.Add(1)
+			go func() {
+				defer globals.Wait.Done()
+				exporter.Listen()
+			}()
 		}
-
 
 		discoveryPort, err := strconv.Atoi(flag.Arg(3))
 		if err != nil || discoveryPort < 1 || discoveryPort > 65535 {

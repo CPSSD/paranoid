@@ -1,6 +1,10 @@
 package raft
 
 import (
+	"errors"
+	"github.com/cpssd/paranoid/pfsd/exporter"
+	pb "github.com/cpssd/paranoid/proto/raft"
+	"golang.org/x/net/context"
 	"time"
 )
 
@@ -11,13 +15,26 @@ const (
 // RequestLeaderData recieves a request from a client and serves its the steam of
 // data it possesses
 func (s *RaftNetworkServer) RequestLeaderData(req *pb.LeaderDataRequest, stream pb.RaftNetwork_RequestLeaderDataServer) error {
-	leaderExporting = true
 
 	if s.State.GetCurrentState() != LEADER {
 		return errors.New("Node is not leader")
 	}
+
+	if leaderExporting == true {
+		return errors.New("Already exporting raft information to another node")
+	}
+	leaderExporting = true
+
+	s.Wait.Add(1)
+	defer s.Wait.Done()
 	for {
 		select {
+		case _, ok := <-s.Quit:
+			if !ok {
+				s.QuitChannelClosed = true
+				Log.Info("Exiting send leader data function")
+				return errors.New("Node is shutting down")
+			}
 		case msg := <-exportedChangeList:
 			err := stream.Send(&msg)
 			if err != nil {
@@ -33,19 +50,25 @@ func (s *RaftNetworkServer) sendLeaderDataRequest() {
 	defer s.Wait.Done()
 
 	leaderCheckTimer := time.NewTimer(LEADER_CHECK_INTERVAL)
-	leader := s.getLeader()
+	var leader *Node
 
 checkLeaderLoop:
 	for {
 		select {
+		case _, ok := <-s.Quit:
+			if !ok {
+				s.QuitChannelClosed = true
+				Log.Info("Exiting leader data request function")
+				return
+			}
 		case <-leaderCheckTimer.C:
 			leader = s.getLeader()
 			if leader == nil {
 				Log.Warn("Leader not yet elected")
+				leaderCheckTimer.Reset(LEADER_CHECK_INTERVAL)
 				continue
 			} else {
-				Log.Info("Leader elected")
-				leaderCheckTimer.Stop()
+				Log.Info("Leader found to query for data")
 				break checkLeaderLoop
 			}
 		}
@@ -65,7 +88,12 @@ checkLeaderLoop:
 
 	for {
 		select {
-		case <-s.Quit:
+		case _, ok := <-s.Quit:
+			if !ok {
+				s.QuitChannelClosed = true
+				Log.Info("Exiting leader data request function")
+				return
+			}
 		default:
 			// Check is the leader we are dialing still the leader
 			if leader != s.getLeader() {
@@ -86,7 +114,7 @@ checkLeaderLoop:
 			case pb.LeaderData_State:
 				messageType = exporter.StateMessage
 				messageData = exporter.MessageData{
-					Nodes: convertProtoDetailedNodeToExportNode(data.Data.GetNodes()),
+					Nodes: protoDetailedNodeToExportNode(data.Data.GetNodes()),
 				}
 			case pb.LeaderData_NodeChange:
 				messageType = exporter.NodeChangeMessage

@@ -3,6 +3,8 @@ package raft
 import (
 	"github.com/cpssd/paranoid/pfsd/exporter"
 	pb "github.com/cpssd/paranoid/proto/raft"
+	"io/ioutil"
+	"strings"
 )
 
 func protoDetailedNodeToExportNode(nodes []*pb.LeaderData_Data_DetailedNode) []exporter.MessageNode {

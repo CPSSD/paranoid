@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/cpssd/paranoid/raft/raftlog"
-	pb "github.com/cpssd/paranoid/proto/raft"
 	"io/ioutil"
 	"os"
 	"path"
