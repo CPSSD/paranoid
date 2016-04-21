@@ -3,6 +3,7 @@ package exporter
 
 import (
 	"github.com/cpssd/paranoid/logger"
+	"github.com/cpssd/paranoid/pfsd/globals"
 )
 
 var (
@@ -24,6 +25,7 @@ func NewStdServer(port string) {
 }
 
 func Listen() {
+	globals.Wait.Done()
 	server.Run()
 }
 

@@ -445,6 +445,7 @@ func main() {
 
 		// Start exporter server if required
 		if(*exportFlag){
+			globals.Wait.Add(1)
 			raft.EnableExporting = true
 			exporter.NewStdServer(*exportPortFlag);
 			go exporter.Listen();

@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	Log             *logger.ParanoidLogger
+	Log *logger.ParanoidLogger
 
 	EnableExporting bool = false // if the node is actively exporting
 	leaderExporting bool = false // if its the leader is sending to node
