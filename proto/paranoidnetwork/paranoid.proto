@@ -17,7 +17,7 @@ service ParanoidNetwork {
 
     // Cryptography calls
     rpc SendKeyPiece (KeyPiece) returns (SendKeyPieceResponse) {}
-    rpc RequestKeyPiece (Node) returns (KeyPiece) {}
+    rpc RequestKeyPiece (KeyPieceRequest) returns (KeyPiece) {}
 }
 
 message EmptyMessage {}
@@ -45,7 +45,12 @@ message NewGenerationRequest {
 
 message NewGenerationResponse {
     int64 generation_number = 1;    // required
-    repeated Node peers = 2;        // required
+    repeated string peers = 2;        // required
+}
+
+message KeyPieceRequest {
+    Node node = 1; // required
+    int64 generation = 2; // required    
 }
 
 message KeyPiece {

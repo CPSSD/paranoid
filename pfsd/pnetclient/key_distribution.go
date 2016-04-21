@@ -20,7 +20,7 @@ func Distribute(key *keyman.Key, peers []globals.Node, generation int) error {
 	globals.HeldKeyPieces.AddPiece(int64(generation), globals.ThisNode.UUID, pieces[0])
 
 	for i := 1; i < len(pieces); i++ {
-		SendKeyPiece(pieces[i])
+		SendKeyPiece(peers[i-1].UUID, int64(generation), pieces[i])
 	}
 	return nil
 }
@@ -34,19 +34,43 @@ func KSMObserver(ksm *keyman.KeyStateMachine) {
 				return
 			}
 		case <-ksm.Events:
-			for g := ksm.CurrentGeneration; g <= ksm.InProgressGeneration; g++ {
-				nodes := make([]globals.Node, len(ksm.Generations[g].Nodes))
-				for i, v := range ksm.Generations[g].Nodes {
-					globalNode, err := globals.Nodes.GetNode(v)
-					if err != nil {
-						Log.Errorf("Unable to lookup node %s: %s", v, err)
+		replicationLoop:
+			for {
+				select {
+				case <-ksm.Events:
+					//Keep this channel clear
+				default:
+					done := true
+					for g := ksm.GetCurrentGeneration(); g <= ksm.GetInProgressGenertion(); g++ {
+						if !ksm.NeedsReplication(globals.ThisNode.UUID, g) {
+							continue
+						}
+						done = false
+						nodes, err := ksm.GetNodes(g)
+						if err != nil {
+							Log.Warn("Unable to get nodes for generation", g, ":", err)
+							continue
+						}
+						var peers []globals.Node
+						for _, v := range nodes {
+							if v != globals.ThisNode.UUID {
+								globalNode, err := globals.Nodes.GetNode(v)
+								if err != nil {
+									Log.Errorf("Unable to lookup node %s: %s", v, err)
+								} else {
+									peers = append(peers, globalNode)
+								}
+							}
+						}
+						Distribute(globals.EncryptionKey, peers, int(g))
 					}
-					nodes[i] = globalNode
+					for i := int64(0); i < ksm.GetCurrentGeneration(); i++ {
+						globals.HeldKeyPieces.DeleteGeneration(i)
+					}
+					if done {
+						break replicationLoop
+					}
 				}
-				Distribute(globals.EncryptionKey, nodes, int(g))
-			}
-			for i := int64(0); i < ksm.CurrentGeneration; i++ {
-				globals.HeldKeyPieces.DeleteGeneration(i)
 			}
 		}
 	}

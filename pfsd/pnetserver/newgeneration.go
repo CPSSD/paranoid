@@ -26,26 +26,13 @@ func (s *ParanoidServer) NewGeneration(ctx context.Context, req *pb.NewGeneratio
 		}
 	}
 
+	Log.Info("Requesting new generation")
 	generationNumber, peers, err := globals.RaftNetworkServer.RequestNewGeneration(req.GetRequestingNode().Uuid)
 	if err != nil {
 		return &pb.NewGenerationResponse{}, grpc.Errorf(codes.Unknown, "unable to create new generation")
 	}
-	// We need to convert between the two different Node types.
-	paranoidPeers := make([]*pb.Node, len(peers))
-	for i, v := range peers {
-		globalNode, err := globals.Nodes.GetNode(v)
-		if err != nil {
-			Log.Errorf("Could not look up node %s: %s", v, err)
-		}
-		paranoidPeers[i] = &pb.Node{
-			Ip:         globalNode.IP,
-			Port:       globalNode.Port,
-			CommonName: globalNode.CommonName,
-			Uuid:       globalNode.UUID,
-		}
-	}
 	return &pb.NewGenerationResponse{
 		GenerationNumber: int64(generationNumber),
-		Peers:            paranoidPeers,
+		Peers:            peers,
 	}, nil
 }
