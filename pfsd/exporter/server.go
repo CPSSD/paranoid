@@ -26,6 +26,14 @@ func (s *Server) Run() {
 			msgs: make(chan Message),
 		}
 		s.client.listen()
+
+		// Send the state message
+		s.Send(Message{
+			Type: StateMessage,
+			Data: MessageData{
+				Nodes: toNodeArray(nodeList),
+			},
+		})
 	}
 
 	http.ListenAndServe(":"+s.port, websocket.Handler(onConnected))
