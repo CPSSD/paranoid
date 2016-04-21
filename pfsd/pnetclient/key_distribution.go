@@ -18,9 +18,24 @@ func Distribute(key *keyman.Key, peers []globals.Node, generation int) error {
 	}
 	// We always keep the first piece and distribute the rest
 	globals.HeldKeyPieces.AddPiece(int64(generation), globals.ThisNode.UUID, pieces[0])
+	count := int64(1)
 
 	for i := 1; i < len(pieces); i++ {
-		SendKeyPiece(peers[i-1].UUID, int64(generation), pieces[i])
+		err := SendKeyPiece(peers[i-1].UUID, int64(generation), pieces[i], false)
+		if err != nil {
+			Log.Error("Error sending key piece:", err)
+		} else {
+			count++
+		}
+	}
+
+	if count >= requiredPieces {
+		err := globals.RaftNetworkServer.RequestOwnerComplete(globals.ThisNode.UUID, int64(generation))
+		if err != nil {
+			Log.Error("Error marking generation complete:", err)
+		} else {
+			Log.Info("Succesfully completed generation", generation)
+		}
 	}
 	return nil
 }
@@ -57,6 +72,7 @@ func KSMObserver(ksm *keyman.KeyStateMachine) {
 								globalNode, err := globals.Nodes.GetNode(v)
 								if err != nil {
 									Log.Errorf("Unable to lookup node %s: %s", v, err)
+									peers = append(peers, globals.Node{})
 								} else {
 									peers = append(peers, globalNode)
 								}
@@ -65,7 +81,10 @@ func KSMObserver(ksm *keyman.KeyStateMachine) {
 						Distribute(globals.EncryptionKey, peers, int(g))
 					}
 					for i := int64(0); i < ksm.GetCurrentGeneration(); i++ {
-						globals.HeldKeyPieces.DeleteGeneration(i)
+						err := globals.HeldKeyPieces.DeleteGeneration(i)
+						if err != nil {
+							Log.Error("Unable to delete generation:", err)
+						}
 					}
 					if done {
 						break replicationLoop

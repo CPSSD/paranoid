@@ -23,8 +23,9 @@ type keyStateElement struct {
 
 type Generation struct {
 	//A list of all nodes included in the generation
-	Nodes    []string
-	Elements []*keyStateElement
+	Nodes         []string
+	CompleteNodes []string
+	Elements      []*keyStateElement
 }
 
 func (g *Generation) AddElement(elem *keyStateElement) {
@@ -33,6 +34,14 @@ func (g *Generation) AddElement(elem *keyStateElement) {
 
 func (g *Generation) RemoveElement() {
 	g.Elements = g.Elements[:len(g.Elements)-1]
+}
+
+func (g *Generation) AddCompleteNode(ownerId string) {
+	g.CompleteNodes = append(g.CompleteNodes, ownerId)
+}
+
+func (g *Generation) RemoveCompleteNode() {
+	g.CompleteNodes = g.CompleteNodes[:len(g.CompleteNodes)-1]
 }
 
 type KeyStateMachine struct {
@@ -186,6 +195,23 @@ func (ksm *KeyStateMachine) NeedsReplication(uuid string, generationNumber int64
 		return false
 	}
 
+	nodeFound := false
+	for _, v := range generation.Nodes {
+		if v == uuid {
+			nodeFound = true
+			break
+		}
+	}
+	if nodeFound == false {
+		return false
+	}
+
+	for _, v := range generation.CompleteNodes {
+		if v == uuid {
+			return false
+		}
+	}
+
 	count := 1
 	for _, v := range generation.Elements {
 		if v.Owner.NodeId == uuid {
@@ -260,12 +286,70 @@ func (ksm *KeyStateMachine) Update(req *pb.KeyStateCommand) error {
 	return nil
 }
 
+func (ksm *KeyStateMachine) OwnerComplete(ownerId string, generation int64) error {
+	ksm.lock.Lock()
+	defer ksm.lock.Unlock()
+
+	if generation != ksm.CurrentGeneration && generation <= ksm.DeprecatedGeneration {
+		return ErrGenerationDeprecated
+	}
+
+	if _, ok := ksm.Generations[generation]; !ok {
+		return fmt.Errorf("generation %d has not yet been initialised", generation)
+	}
+
+	for _, v := range ksm.Generations[generation].CompleteNodes {
+		if v == ownerId {
+			return errors.New("complete owner already present in this generation")
+		}
+	}
+
+	ksm.Generations[generation].AddCompleteNode(ownerId)
+	// If a new generation is created, the state machine will only
+	// update its CurrentGeneration when enough generation N+1 elements
+	// exist for every node in the cluster to unlock if locked.
+	var backupGeneration int64
+	var backupDeprecatedGen int64
+	var backupGenerations map[int64]*Generation
+	updatedGeneration := false
+	if generation > ksm.CurrentGeneration && ksm.canUpdateGeneration(generation) {
+		updatedGeneration = true
+		backupGeneration = ksm.CurrentGeneration
+		backupDeprecatedGen = ksm.DeprecatedGeneration
+		backupGenerations = ksm.Generations
+
+		ksm.Generations = make(map[int64]*Generation)
+		ksm.InProgressGeneration++
+		ksm.DeprecatedGeneration = ksm.InProgressGeneration
+		ksm.CurrentGeneration = generation
+		ksm.Generations[generation] = backupGenerations[generation]
+	}
+	err := ksm.SerialiseToPFSDir()
+	if err != nil {
+		// If the serialisation fails, undo the update.
+		if updatedGeneration {
+			ksm.CurrentGeneration = backupGeneration
+			ksm.InProgressGeneration--
+			ksm.DeprecatedGeneration = backupDeprecatedGen
+			ksm.Generations = backupGenerations
+		}
+		ksm.Generations[generation].RemoveCompleteNode()
+		return fmt.Errorf("failed to commit change to KeyStateMachine: %s", err)
+	}
+
+	Log.Verbosef("Owner complete tracked: %s", ownerId)
+	return nil
+}
+
 // Count all of the keys grouped by owner and make sure they meet a minimum.
 func (ksm KeyStateMachine) canUpdateGeneration(generation int64) bool {
 	// Map of UUIDs (as string) to int
 	owners := make(map[string]int)
 	for _, v := range ksm.Generations[generation].Nodes {
 		owners[v] += 1
+	}
+	for _, v := range ksm.Generations[generation].CompleteNodes {
+		owners[v] += 1000
 	}
 	for _, v := range ksm.Generations[generation].Elements {
 		owners[v.Owner.NodeId] += 1

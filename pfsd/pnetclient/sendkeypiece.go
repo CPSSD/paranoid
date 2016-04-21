@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func SendKeyPiece(uuid string, generation int64, piece *keyman.KeyPiece) error {
+func SendKeyPiece(uuid string, generation int64, piece *keyman.KeyPiece, addElement bool) error {
 	node, err := globals.Nodes.GetNode(uuid)
 	if err != nil {
 		return errors.New("could not find node details")
@@ -40,13 +40,16 @@ func SendKeyPiece(uuid string, generation int64, piece *keyman.KeyPiece) error {
 		OwnerNode:         thisNodeProto,
 	}
 
-	resp, err := client.SendKeyPiece(context.Background(), keyProto)
+	resp, err := client.SendKeyPiece(context.Background(), &pb.KeyPieceSend{
+		Key:        keyProto,
+		AddElement: addElement,
+	})
 	if err != nil {
 		Log.Error("Failed sending KeyPiece to", node, "Error:", err)
 		return fmt.Errorf("Failed sending key piece to %s, Error: %s", node, err)
 	}
 
-	if resp.ClientMustCommit {
+	if resp.ClientMustCommit && addElement {
 		raftThisNodeProto := &raftpb.Node{
 			Ip:         globals.ThisNode.IP,
 			Port:       globals.ThisNode.Port,

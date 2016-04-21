@@ -16,7 +16,7 @@ service ParanoidNetwork {
     rpc NewGeneration (NewGenerationRequest) returns (NewGenerationResponse) {}
 
     // Cryptography calls
-    rpc SendKeyPiece (KeyPiece) returns (SendKeyPieceResponse) {}
+    rpc SendKeyPiece (KeyPieceSend) returns (SendKeyPieceResponse) {}
     rpc RequestKeyPiece (KeyPieceRequest) returns (KeyPiece) {}
 }
 
@@ -64,6 +64,11 @@ message KeyPiece {
 
     // The KeyStateMachine generation this key belongs to
     int64 generation = 6;   // required
+}
+
+message KeyPieceSend {
+    KeyPiece key = 1; // required
+    bool add_element = 2; // required
 }
 
 message SendKeyPieceResponse {
