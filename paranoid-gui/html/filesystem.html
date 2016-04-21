@@ -24,11 +24,11 @@
 <div id="fsMountSection">
   <h3>Mount your FileSystem</h3>
   <form id="fsMountForm">
-    <label>Location</label>
+    <label for="location">Location</label>
     <input type="file" id="location" class='form-control' placeholder="Directory in which to mount your filesystem" required webkitdirectory directory multiple>
-    <label>Interface</label>
+    <label for="interface">Interface</label>
     <input type="text" id="interface" class='form-control' placeholder="A network interface over which to make connections">
-    <label>Discovery Server</label>
+    <label for="discovery">Discovery Server</label>
     <input type="text" id="discovery" class='form-control' placeholder="The address of the discovery server - ip:port">
     <button type="submit" class="btn btn-success">Mount</button>
   </form>
@@ -49,7 +49,7 @@
 
 <div id="fsDeleteSection">
   <h3>Delete FileSystem</h3>
-    <label>Confirm Deletion</label>
+    <label for="nameCheck">Confirm Deletion</label>
     <input type="text" name="nameCheck" class='form-control' placeholder="Enter the filesystem name" id="nameCheckText">
     <button type="submit" class="btn btn-danger" id="deleteButton">Delete</button>
 </div>

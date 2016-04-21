@@ -13,7 +13,7 @@ function getFilesystems() {
     var fsPath = path.join(fileSystemsDir, fileNames[i]);
     var filesystem = {
       name: fileNames[i],
-      path: path.join(fileSystemsDir, fileNames[i]),
+      path: fsPath,
       mounted: fileSystemIsMounted(fileNames[i]),
       attributes: loadJsonFile(path.join(fsPath, "meta", "attributes")),
       pool: readFile(path.join(fsPath, "meta", "pool")),

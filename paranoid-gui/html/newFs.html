@@ -1,19 +1,19 @@
 <h1>Create a new filesystem</h1>
 
 <form id="newfsForm" action="#" type="submit" onsubmit="newfs(this);">
-  <label>Name</label>
+  <label for="name">Name</label>
   <input type="text" name="name" class='form-control' placeholder="Name for your filesystem" required>
-  <label>Cert</label>
+  <label for="cert">Cert</label>
   <input type="file" name="cert" class='form-control' placeholder="Path to existing cert file">
-  <label>Key</label>
+  <label for="key">Key</label>
   <input type="file" name="key" class='form-control' placeholder="Path to existing key file">
-  <label>Pool</label>
+  <label for="pool">Pool</label>
   <input type="text" name="pool" class='form-control' placeholder="Pool name (opt)"><br>
-  <label>Secure</label>
+  <label for="secure">Secure</label>
   <input type="checkbox" name="secure" checked><br>
-  <label>Use Network</label>
+  <label for="network">Use Network</label>
   <input type="checkbox" name="network" checked><br>
-  <label>Encrypted</label>
+  <label for="encrypted">Encrypted</label>
   <input type="checkbox" name="encrypted" checked><br>
   <button type="submit" class="btn btn-success">Submit</button>
 </form>
