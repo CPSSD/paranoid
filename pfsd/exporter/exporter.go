@@ -25,7 +25,7 @@ func NewStdServer(port string) {
 }
 
 func Listen() {
-	globals.Wait.Done()
+	defer globals.Wait.Done()
 	server.Run()
 }
 

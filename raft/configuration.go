@@ -111,24 +111,9 @@ func (c *Configuration) NewFutureConfiguration(nodes []Node, lastLogIndex uint64
 func (c *Configuration) UpdateCurrentConfiguration(nodes []Node, lastLogIndex uint64) {
 	c.configLock.Lock()
 	defer c.configLock.Unlock()
-	if leaderExporting {
-		var detailedNodes []*pb.LeaderData_Data_DetailedNode
-		for i := 0; i < len(nodes); i++ {
-			detailedNodes = append(detailedNodes, &pb.LeaderData_Data_DetailedNode{
-				Uuid: nodes[i].NodeID,
-				CommonName: nodes[i].CommonName,
-				State: "unknown",
-				Addr: nodes[i].IP+":"+nodes[i].Port,
-			})
-		}
 
-		// Send the status to listening channel
-		exportedChangeList <- pb.LeaderData{
-			Type: pb.LeaderData_State,
-			Data: &pb.LeaderData_Data{
-				Nodes: detailedNodes,
-			},
-		}
+	if leaderExporting {
+		updateExporterState(nodes)
 	}
 
 	if len(nodes) == len(c.futureConfiguration) {
