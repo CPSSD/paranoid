@@ -169,25 +169,6 @@ func (s *RaftNetworkServer) RequestVote(ctx context.Context, req *pb.RequestVote
 	return &pb.RequestVoteResponse{s.State.GetCurrentTerm(), false}, nil
 }
 
-func (s *RaftNetworkServer) RequestLeaderData(req *pb.LeaderDataRequest, stream pb.RaftNetwork_RequestLeaderDataServer) error {
-	leaderExporting = true
-
-	if s.State.GetCurrentState() != LEADER {
-		return errors.New("Node is not leader")
-	}
-	for {
-		select {
-		case msg := <-exportedChangeList:
-			err := stream.Send(&msg)
-			if err != nil {
-				Log.Error("Cannot send data to client:", err)
-			}
-		}
-	}
-
-	return nil
-}
-
 func (s *RaftNetworkServer) getLeader() *Node {
 	leaderId := s.State.GetLeaderId()
 	if leaderId != "" {

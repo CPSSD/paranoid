@@ -8,6 +8,27 @@ const (
 	LEADER_CHECK_INTERVAL time.Duration = 100 * time.Millisecond
 )
 
+// RequestLeaderData recieves a request from a client and serves its the steam of
+// data it possesses
+func (s *RaftNetworkServer) RequestLeaderData(req *pb.LeaderDataRequest, stream pb.RaftNetwork_RequestLeaderDataServer) error {
+	leaderExporting = true
+
+	if s.State.GetCurrentState() != LEADER {
+		return errors.New("Node is not leader")
+	}
+	for {
+		select {
+		case msg := <-exportedChangeList:
+			err := stream.Send(&msg)
+			if err != nil {
+				Log.Error("Cannot send data to client:", err)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (s *RaftNetworkServer) sendLeaderDataRequest() {
 	defer s.Wait.Done()
 
