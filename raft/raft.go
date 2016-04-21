@@ -305,32 +305,47 @@ func (s *RaftNetworkServer) sendLeaderLogEntry(entry *pb.Entry) error {
 func (s *RaftNetworkServer) sendLeaderDataRequest() {
 	// TODO: Proper Implementation with channels
 	s.Wait.Done()
+
+	leaderCheckTimer := time.NewTimer(100 * time.Millisecond)
+	for {
+ 		select {
+		case <-leaderCheckTimer.C:
+				if s.getLeader() == nil {
+					Log.Warn("Leader not yet elected")
+					continue;
+				} else {
+					Log.Info("Leader elected")
+					break;
+				}
+			}
+	}
+
+	conn, err := s.Dial(s.getLeader(), SEND_ENTRY_TIMEOUT)
+	if err != nil {
+		Log.Error("Unable to dial leader")
+	}
+	client := pb.NewRaftNetworkClient(conn)
+	stream, err := client.RequestLeaderData(context.Background(), &pb.LeaderDataRequest{})
+	if err != nil {
+		Log.Error("Unable to request user data");
+	}
+
 	for {
 		select {
 		case <- s.Quit:
 		default:
-			conn, err := s.Dial(s.getLeader(), SEND_ENTRY_TIMEOUT)
-			if err == nil {
-				client := pb.NewRaftNetworkClient(conn)
-				// TODO: Proper request
-				stream, err := client.RequestLeaderData(context.Background(), &pb.LeaderDataRequest{})
-				if err != nil {
-					Log.Errorf("Unable to request leader data: ", err)
-				}
-				for {
-					data, err := stream.Recv()
-					if err != nil {
-						//TODO: Determine the change in Raft and send it as a proper message
-						if data == nil {
-
-						}
-
-						msg := exporter.Message{}
-
-						exporter.Send(msg)
-					}
-				}
+			data, err := stream.Recv()
+			if err != nil {
+				Log.Error("Unable to get data:", err)
 			}
+
+			// TODO: Remove this
+			if data == nil {
+
+			}
+			msg := exporter.Message{}
+
+			exporter.Send(msg)
 		}
 	}
 }
