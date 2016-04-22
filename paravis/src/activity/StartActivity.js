@@ -4,6 +4,10 @@ class StartActivity extends Activity {
     this.m_layout = "start";
   }
 
+  name(){
+    return "StartActivity";
+  }
+
   onCreate(){
     loadLayout(this.m_layout);
   }

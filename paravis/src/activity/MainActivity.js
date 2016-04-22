@@ -4,6 +4,10 @@ class MainActivity extends Activity {
         this.m_layout = "main";
     }
 
+    name(){
+      return "MainActivity";
+    }
+
     onCreate(){
       loadLayout(this.m_layout);
 

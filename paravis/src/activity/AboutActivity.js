@@ -4,6 +4,10 @@ class AboutActivity extends Activity {
     this.m_layout = "about";
   }
 
+  name(){
+    return "AboutActivity";
+  }
+
   onCreate(){
     loadLayout(this.m_layout);
   }

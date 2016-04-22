@@ -4,6 +4,10 @@ class Activity {
     this.layout = "";
   }
 
+  name(){
+    return "Activity";
+  }
+
   layout(){
     return this.layout;
   }

@@ -10,15 +10,16 @@ the cluster in a nice visual way
 
 Features (both current and planned):
 - [x] NWJS framework
-  - [ ] Multiple Activity support
+  - [x] Multiple Activity support
+  - [x] Transition support
   - (only basic version is currently available, more features will be added)
 - [ ] Downloading necessary binaries
 - [ ] Filesystem operations
   - [ ] Creating new filesystems
   - [ ] Modifying existing ones
 - [ ] Visualizing the data flow
-  - [ ] Leader
-  - [ ] Peers
+  - [x] Nodes
+  - [ ] Events
 
 ---
 

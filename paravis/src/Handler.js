@@ -154,7 +154,8 @@ class Handler {
   }
 
   handleEvent(data){
-    //TODO: Implement event handling
+    target = this.nodes[data.target]
+    source = this.nodes[data.source]
   }
 }
 module.exports.Handler = Handler;

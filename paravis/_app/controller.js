@@ -6,6 +6,8 @@ var app = require('../App.json');
 // List of available activities
 var activities = [];
 
+var transitions = {};
+
 var A = {
   args: [], // CLI Argumens
   strings: {}, // All available strings
@@ -41,6 +43,8 @@ function init(){
   console.info("Starting main activity...");
   A.mainActivity = new A.activities[app.main]();
   console.info(app.main, "started.");
+
+  $(document.body).attr("activity", app.main);
 
   // Get the CLI arguments
   A.args = gui.App.argv;
@@ -88,6 +92,7 @@ function init(){
 
 // handleActions wraps around other handle functions
 function handleActions(){
+  handleLinks();
   handleIncludes();
   handleAppText();
   handleCloseButton();
@@ -138,6 +143,40 @@ function handleCloseButton(){
     console.log("Closing...");
     win.close();
   });
+}
+
+function handleLinks(){
+  $(document).on('click', (e) => {
+    var url = $(e.target).attr("app:link");
+    e.stopPropagation();
+    console.log(url);
+    if(url != null){
+      urlSplit = url.split(":");
+      switch(urlSplit[0]){
+        case "external":
+          console.info("Opening External Link...");
+          urlSplit.shift();
+          url = urlSplit.join(":");
+          gui.Shell.openExternal(url);
+          break;
+        case "app":
+          var i = new Intent(activities[urlSplit[1]], getTransition(urlSplit[2]));
+          A.mainActivity.startActivity(i);
+          break;
+      }
+    }
+  });
+}
+
+// Returns an appropriate transition
+function getTransition(name){
+  if(name == null || name == undefined || name == ""){
+    return transitions.None;
+  }
+  if(transitions[name] == null){
+    return transitions.None;
+  }
+  return transitions[name];
 }
 
 // Loads the specific layout

@@ -6,9 +6,9 @@
 }
 
 html, body {
-  width: 100%;
   height: 100%;
   display: flex;
+  justify-content: center;
 }
 
 body {
@@ -25,7 +25,7 @@ layout {
 
 popup {
   display: flex;
-  width: 50%;
+  width: 100%;
   box-sizing: border-box;
   padding: var(--std-offset);
   align-self: center;
