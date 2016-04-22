@@ -428,7 +428,7 @@ func TestTruncate(t *testing.T) {
 func TestSimpleDirectoryUsage(t *testing.T) {
 	setupTestDirectory()
 
-	code, err := MkdirCommand(testDirectory, "documents", os.FileMode(0777))
+	code, err := MkdirCommand(testDirectory, "documents", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("Mkdir did not return OK. Actual:", code, " Error:", err)
 	}
@@ -465,12 +465,12 @@ func TestComplexDirectoryUsage(t *testing.T) {
 	setupTestDirectory()
 
 	// directory within directory
-	code, err := MkdirCommand(testDirectory, "documents", os.FileMode(0777))
+	code, err := MkdirCommand(testDirectory, "documents", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("Mkdir did not return OK. Actual:", code, " Error:", err)
 	}
 
-	code, _ = MkdirCommand(testDirectory, "documents/work_docs", os.FileMode(0777))
+	code, _ = MkdirCommand(testDirectory, "documents/work_docs", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		t.Error("Mkdir did not return OK. Actual:", code, " Error:", err)
 	}

@@ -166,7 +166,7 @@ func BenchmarkRmDir(b *testing.B) {
 	setupTestDirectory()
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
-		code, err := MkdirCommand(testDirectory, "testDir"+str, os.FileMode(0777))
+		code, err := MkdirCommand(testDirectory, "testDir"+str, os.FileMode(0777), false)
 		if code != returncodes.OK {
 			log.Fatal("error making benchdir:", err)
 		}
@@ -179,7 +179,7 @@ func BenchmarkRmDir(b *testing.B) {
 
 func BenchmarkReadDir(b *testing.B) {
 	setupTestDirectory()
-	code, err := MkdirCommand(testDirectory, "testDir", os.FileMode(0777))
+	code, err := MkdirCommand(testDirectory, "testDir", os.FileMode(0777), false)
 	if code != returncodes.OK {
 		log.Fatal("error making benchDir:", err)
 	}
@@ -236,7 +236,7 @@ func BenchmarkMkDir(b *testing.B) {
 	setupTestDirectory()
 	for n := 0; n < b.N; n++ {
 		str := strconv.Itoa(n)
-		code, err := MkdirCommand(testDirectory, "testDir"+str, os.FileMode(0777))
+		code, err := MkdirCommand(testDirectory, "testDir"+str, os.FileMode(0777), false)
 		if code != returncodes.OK {
 			log.Fatal("error making benchdir:", err)
 		}

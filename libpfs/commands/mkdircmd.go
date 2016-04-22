@@ -11,7 +11,7 @@ import (
 )
 
 // MkdirCommand is called when making a paranoidDirectory
-func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCode returncodes.Code, returnError error) {
+func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode, isIgnored bool) (returnCode returncodes.Code, returnError error) {
 	Log.Info("mkdir command called")
 	err := GetFileSystemLock(paranoidDirectory, ExclusiveLock)
 	if err != nil {
@@ -84,7 +84,7 @@ func MkdirCommand(paranoidDirectory, dirPath string, mode os.FileMode) (returnCo
 		Mode:    mode | syscall.S_IFDIR,
 		Inode:   inodeString,
 		Count:   1,
-		Ignored: false}
+		Ignored: isIgnored}
 	jsonData, err := json.Marshal(nodeData)
 	if err != nil {
 		return returncodes.EUNEXPECTED, fmt.Errorf("error marshalling json: %s", err)

@@ -431,7 +431,7 @@ func PerformLibPfsCommand(directory string, command *pb.StateMachineCommand) *St
 		code, err := commands.UnlinkCommand(directory, command.Path)
 		return &StateMachineResult{Code: code, Err: err}
 	case TYPE_MKDIR:
-		code, err := commands.MkdirCommand(directory, command.Path, os.FileMode(command.Mode))
+		code, err := commands.MkdirCommand(directory, command.Path, os.FileMode(command.Mode), false)
 		return &StateMachineResult{Code: code, Err: err}
 	case TYPE_RMDIR:
 		code, err := commands.RmdirCommand(directory, command.Path)

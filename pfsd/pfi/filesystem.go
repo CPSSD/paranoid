@@ -92,7 +92,7 @@ func (fs *ParanoidFileSystem) Create(name string, flags uint32, mode uint32, con
 	Log.Info("Create called on : " + name)
 	var code returncodes.Code
 	var err error
-	if ignore, err := glob.ShouldIgnore(name, false); SendOverNetwork && !ignore && err == nil {
+	if ignore, code := glob.ShouldIgnore(name, false); SendOverNetwork && !ignore && code != returncodes.OK {
 		code, err = globals.RaftNetworkServer.RequestCreatCommand(name, mode)
 	} else {
 		code, err = commands.CreatCommand(globals.ParanoidDir, name, os.FileMode(mode), ignore)
@@ -137,7 +137,12 @@ func (fs *ParanoidFileSystem) Rename(oldName string, newName string, context *fu
 	Log.Info("Rename called on : " + oldName + " to be renamed to " + newName)
 	var code returncodes.Code
 	var err error
-	if ignore, err := glob.ShouldIgnore(newName, false); SendOverNetwork && !ignore && err == nil {
+	ignore, code := glob.ShouldIgnore(newName, false)
+	if code != returncodes.OK {
+		Log.Error("cannot read pfsignore file", code)
+		return GetFuseReturnCode(code)
+	}
+	if SendOverNetwork && !ignore {
 		code, err = globals.RaftNetworkServer.RequestRenameCommand(oldName, newName)
 	} else {
 		code, err = commands.RenameCommand(globals.ParanoidDir, oldName, newName)
@@ -161,7 +166,12 @@ func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse
 	Log.Info("Link called")
 	var code returncodes.Code
 	var err error
-	if ignore, err := glob.ShouldIgnore(newName, false); SendOverNetwork && !ignore && err == nil {
+	ignore, code := glob.ShouldIgnore(newName, false)
+	if code != returncodes.OK {
+		Log.Error("cannot read pfsignore file", code)
+		return GetFuseReturnCode(code)
+	}
+	if SendOverNetwork && !ignore {
 		code, err = globals.RaftNetworkServer.RequestLinkCommand(oldName, newName)
 	} else {
 		code, err = commands.LinkCommand(globals.ParanoidDir, oldName, newName)
@@ -185,7 +195,12 @@ func (fs *ParanoidFileSystem) Symlink(oldName string, newName string, context *f
 	Log.Info("Symbolic link called from", oldName, "to", newName)
 	var code returncodes.Code
 	var err error
-	if ignore, err := glob.ShouldIgnore(newName, false); SendOverNetwork && !ignore && err == nil {
+	ignore, code := glob.ShouldIgnore(newName, false)
+	if code != returncodes.OK {
+		Log.Error("cannot read pfsignore file", code)
+		return GetFuseReturnCode(code)
+	}
+	if SendOverNetwork && !ignore {
 		code, err = globals.RaftNetworkServer.RequestSymlinkCommand(oldName, newName)
 	} else {
 		code, err = commands.SymlinkCommand(globals.ParanoidDir, oldName, newName)
@@ -222,7 +237,12 @@ func (fs *ParanoidFileSystem) Unlink(name string, context *fuse.Context) fuse.St
 	Log.Info("Unlink called on : " + name)
 	var code returncodes.Code
 	var err error
-	if ignore, err := glob.ShouldIgnore(name, false); SendOverNetwork && !ignore && err == nil {
+	ignore, code := glob.ShouldIgnore(name, false)
+	if code != returncodes.OK {
+		Log.Error("cannot read pfsignore file", code)
+		return GetFuseReturnCode(code)
+	}
+	if SendOverNetwork && !ignore {
 		code, err = globals.RaftNetworkServer.RequestUnlinkCommand(name)
 	} else {
 		code, err = commands.UnlinkCommand(globals.ParanoidDir, name)
@@ -246,10 +266,15 @@ func (fs *ParanoidFileSystem) Mkdir(name string, mode uint32, context *fuse.Cont
 	Log.Info("Mkdir called on : " + name)
 	var code returncodes.Code
 	var err error
-	if ignore, err := glob.ShouldIgnore(name, false); SendOverNetwork && !ignore && err == nil {
+	ignore, code := glob.ShouldIgnore(name, false)
+	if code != returncodes.OK {
+		Log.Error("cannot read pfsignore file", code)
+		return GetFuseReturnCode(code)
+	}
+	if SendOverNetwork && !ignore {
 		code, err = globals.RaftNetworkServer.RequestMkdirCommand(name, mode)
 	} else {
-		code, err = commands.MkdirCommand(globals.ParanoidDir, name, os.FileMode(mode))
+		code, err = commands.MkdirCommand(globals.ParanoidDir, name, os.FileMode(mode), true)
 	}
 
 	if code == returncodes.EUNEXPECTED {
@@ -267,7 +292,12 @@ func (fs *ParanoidFileSystem) Rmdir(name string, context *fuse.Context) fuse.Sta
 	Log.Info("Rmdir called on : " + name)
 	var code returncodes.Code
 	var err error
-	if ignore, err := glob.ShouldIgnore(name, false); SendOverNetwork && !ignore && err == nil {
+	ignore, code := glob.ShouldIgnore(name, false)
+	if code != returncodes.OK {
+		Log.Error("cannot read pfsignore file", code)
+		return GetFuseReturnCode(code)
+	}
+	if SendOverNetwork && !ignore {
 		code, err = globals.RaftNetworkServer.RequestRmdirCommand(name)
 	} else {
 		code, err = commands.RmdirCommand(globals.ParanoidDir, name)

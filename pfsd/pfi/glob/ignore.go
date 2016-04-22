@@ -1,7 +1,6 @@
 package glob
 
 import (
-	"fmt"
 	"github.com/cpssd/paranoid/libpfs/commands"
 	"github.com/cpssd/paranoid/libpfs/returncodes"
 	"github.com/cpssd/paranoid/logger"
@@ -36,7 +35,7 @@ func dirIgnored(currentPattern string, globs []string) bool {
 	return dirFound
 }
 
-func ShouldIgnore(filePath string, changeInode bool) (bool, error) {
+func ShouldIgnore(filePath string, changeInode bool) (bool, returncodes.Code) {
 	shouldIgnore := false
 
 	var prevIgnore bool
@@ -46,10 +45,10 @@ func ShouldIgnore(filePath string, changeInode bool) (bool, error) {
 		prevIgnore, code = commands.PreviouslyIgnored(globals.ParanoidDir, filePath)
 		if ignoreExists() {
 			negationSet := false
-			_, err, returnData := commands.ReadCommand(globals.ParanoidDir, ".pfsignore", -1, -1)
-			if err != nil {
+			code, err, returnData := commands.ReadCommand(globals.ParanoidDir, ".pfsignore", -1, -1)
+			if err != nil || code != returncodes.OK {
 				Log.Error("Cannot Read .pfsignore File, Defaulting to sending over the network")
-				return false, fmt.Errorf("Cannot Read .pfsignore File")
+				return false, code
 			}
 			globs := strings.Split(string(returnData), "\n")
 			for _, pattern := range globs {
@@ -80,5 +79,5 @@ func ShouldIgnore(filePath string, changeInode bool) (bool, error) {
 	} else if changeInode && prevIgnore {
 		commands.UpdateInodeIgnore(globals.ParanoidDir, filePath, false) //setting ignore to false
 	}
-	return shouldIgnore, nil
+	return shouldIgnore, returncodes.OK
 }
