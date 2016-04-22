@@ -15,5 +15,16 @@
   <input type="checkbox" name="network" checked><br>
   <label for="encrypted">Encrypted</label>
   <input type="checkbox" name="encrypted" checked><br>
+
+  <h3>Cert Generation (ignore if unsecured)</h3>
+  <label for="numDays">Number of days cert is valid</label>
+  <input type="number" name="numDays" class='form-control' placeholder="365"><br>
+
+  <label for="organisation">Organisation name</label>
+  <input type="text" name="organisation" class='form-control' placeholder="The name of your organisation (optional)"><br>
+
+  <label for="hostnames">Hostnames or ips this cert validates (ignore if unsecured)</label>
+  <input type="text" name="hostnames" class='form-control' placeholder="comma-separated list of hostnames and/or IP addresses this cert will validate (optional)"><br>
+
   <button type="submit" class="btn btn-success">Submit</button>
 </form>

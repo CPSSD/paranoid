@@ -115,20 +115,38 @@ function newfs(form) {
   }
   cmd += form.name.value;
 
-  exec(cmd, {input:"2\n\n\n\n"}, function(error, stdout, stderr) {
+  var input = "";
+  if (form.numDays.value !== null) {
+    input += form.numDays.value.toString() + "\n";
+  } else {
+    input += "100\n";
+  }
+
+  if (form.organisation.value !== null) {
+    input += form.organisation.value;
+  }
+  input += "\n";
+
+  if (form.hostnames.value !== null) {
+    input += form.hostnames.value;
+  }
+  input += "\n";
+
+  var child = exec(cmd, function(error, stdout, stderr) {
     if (error !== null) {
       alert(error);
       return;
     }
 
-    if (stdout !== "") {
-      alert(stdout);
+    if (stderr !== "") {
+      alert(stderr);
     }
 
     fileSystems = getFilesystems();
     loadSideBar();
     rowClicked(-1);
   });
+  child.stdin.write(input);
 }
 
 function deleteClicked(val, i) {
