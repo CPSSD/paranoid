@@ -7,15 +7,29 @@
   <h3>Status <span class="label label-success" id="fsMountedLabel">Mounted</span>
      <button class="btn btn-normal" id="refreshButton" onClick="refreshButtonClicked()">refresh</button></h3>
 
-  <h5>Detailed status</h5>
-  <ul class="list-group" id="">
-    <li class="list-group-item"><div id="clistatus">Must be mounted to get detailed status</div></li>
-  </ul>
+  <div class="onlyForMountedSection">
+    <div class="mountpointSection">
+      <h5>Mountpoint</h5>
+      <ul class="list-group">
+        <li class="list-group-item"><div id="mountpoint">Must be mounted to get mountpoint</div></li>
+      </ul>
+      <button class="btn btn-normal" id="openButton" onclick="openButtonPressed()">Open</button>
+    </div>
 
-  <h5>Nodes</h5>
-  <ul class="list-group" id="">
-    <li class="list-group-item"><div id="nodes">Must be mounted to get node list</div></li>
-  </ul>
+    <div class="detailedStatus">
+      <h5>Detailed status</h5>
+      <ul class="list-group">
+        <li class="list-group-item"><div id="clistatus">Must be mounted to get detailed status</div></li>
+      </ul>
+    </div>
+
+    <div class="nodesDiv">
+      <h5>Nodes</h5>
+      <ul class="list-group">
+        <li class="list-group-item"><div id="nodes">Must be mounted to get node list</div></li>
+      </ul>
+    </div>
+  </div>
 
   <button class="btn btn-warning" id="mountUnmountButton" onClick="mountUnmountButtonClicked()">Mount</button>
   <button class="btn btn-normal" id="autoMountButton" onClick="automountButtonClicked()">Automount</button>

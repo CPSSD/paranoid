@@ -44,12 +44,17 @@ function drawFileSystem(i) {
     $(".content #mountUnmountButton").attr("class", "btn btn-warning");
     $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + i + ")");
     $(".content #autoMountButton").hide();
+    $(".content .onlyForMountedSection").show();
+    $(".content #refreshButton").show();
+
     getFilesystemStatus(fileSystem.name, function(s) {
+      $(".content #fsStatus #mountpoint").html(getFilesystemMountpoint(fileSystem.path));
       $(".content #fsStatus #clistatus").html(s);
     });
     getFilesystemNodes(fileSystem.name, function(s) {
       $(".content #fsStatus #nodes").html(s);
     });
+
   } else {
     $(".content #fsStatus #fsMountedLabel").html('<b>not mounted<b>');
     $(".content #fsStatus #fsMountedLabel").addClass("label label-warning");
@@ -57,6 +62,8 @@ function drawFileSystem(i) {
     $(".content #mountUnmountButton").attr("class", "btn btn-success");
     $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + i + ")");
     $(".content #autoMountButton").show();
+    $(".content .onlyForMountedSection").hide();
+    $(".content #refreshButton").hide();
   }
 
   // mount section
@@ -317,27 +324,17 @@ function getFilesystemNodes(fsName, callback) {
   });
 }
 
+function getFilesystemMountpoint(fsPath) {
+  var mpPath = path.join(fsPath, "meta", "mountpoint");
+  return readFile(mpPath);
+}
+
 function refreshButtonClicked() {
-  var fileSystem = fileSystems[selected];
-  if (fileSystem.mounted) {
-    $(".content #fsStatus #fsMountedLabel").html('<b>mounted<b>');
-    $(".content #fsStatus #fsMountedLabel").addClass("label label-success");
-    $(".content #mountUnmountButton").html("Unmount");
-    $(".content #mountUnmountButton").attr("class", "btn btn-warning");
-    $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + selected + ")");
-    $(".content #autoMountButton").show();
-    getFilesystemStatus(fileSystem.name, function(s) {
-      $(".content #fsStatus #clistatus").html(s);
-    });
-    getFilesystemNodes(fileSystem.name, function(s) {
-      $(".content #fsStatus #nodes").html(s);
-    });
-  } else {
-    $(".content #fsStatus #fsMountedLabel").html('<b>not mounted<b>');
-    $(".content #fsStatus #fsMountedLabel").addClass("label label-warning");
-    $(".content #mountUnmountButton").html("Mount");
-    $(".content #mountUnmountButton").attr("class", "btn btn-success");
-    $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + selected + ")");
-    $(".content #autoMountButton").hide();
-  }
+  drawFileSystem(selected);
+}
+
+function openButtonPressed() {
+  var path = getFilesystemMountpoint(fileSystems[selected].path);
+  var gui = require("nw.gui");
+  gui.Shell.showItemInFolder(path + "/.");
 }
