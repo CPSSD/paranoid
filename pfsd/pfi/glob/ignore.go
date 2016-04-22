@@ -71,13 +71,19 @@ func ShouldIgnore(filePath string, changeInode bool) (bool, returncodes.Code) {
 	if shouldIgnore {
 		Log.Info("File:", filePath, "has been ignored")
 		if code != returncodes.OK {
-			commands.UpdateInodeIgnore(globals.ParanoidDir, filePath, shouldIgnore)
+			code, err := commands.UpdateInodeIgnore(globals.ParanoidDir, filePath, shouldIgnore)
+			if err != nil && code != returncodes.OK {
+				Log.Error("Cannot Update iNode for", filePath)
+			}
 		}
 	} else if prevIgnore && code == returncodes.OK && !changeInode {
 		Log.Error(filePath, "was previously ignored and will not sync")
 		shouldIgnore = true
 	} else if changeInode && prevIgnore {
-		commands.UpdateInodeIgnore(globals.ParanoidDir, filePath, false) //setting ignore to false
+		code, err := commands.UpdateInodeIgnore(globals.ParanoidDir, filePath, false) //setting ignore to false
+		if err != nil && code != returncodes.OK {
+			Log.Error("Cannot Update iNode for", filePath)
+		}
 	}
 	return shouldIgnore, returncodes.OK
 }
