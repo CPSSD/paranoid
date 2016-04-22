@@ -50,7 +50,7 @@ func ServeFiles(serverPort string) {
 		} else {
 			file, name, err := getFileFromHash(r.URL.Path[1:])
 			if err != nil {
-				w.Write([]byte("File Not Found"))
+				w.Write([]byte("File Not Found:" + err.Error()))
 			} else {
 				w.Header().Set("Content-Disposition", "attachment; filename="+name)
 				w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
