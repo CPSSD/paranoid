@@ -30,3 +30,7 @@ _testmain.go
 *.pem
 
 node_modules/
+
+**/bootstrap.min.css
+**/site.css
+**/jquery-2.2.2.min.js
