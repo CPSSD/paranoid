@@ -34,6 +34,7 @@ func getFileFromHash(hash string) ([]byte, string, error) {
 		delete(FileMap, hash)
 		return []byte(""), "", fmt.Errorf("File Expired")
 	}
+	value.AccessAmmount++
 	return value.FileData, filepath.Base(value.FilePath), nil
 }
 

@@ -35,9 +35,8 @@ func ListServe(c *cli.Context) {
 
 	uuid, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "uuid"))
 	if err != nil {
-		Log.Error("Error Reading supplied file", err)
 		fmt.Println("Error Reading UUID")
-		os.Exit(1)
+		Log.Fatal("Error Reading supplied file", err)
 	}
 
 	ip, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "ip"))

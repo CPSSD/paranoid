@@ -77,3 +77,23 @@ func fileToProto(file os.FileInfo, directory string) (entry *pb.LogEntry, err er
 	}
 	return entry, nil
 }
+
+func getFsMeta(pfsName) (string, string, string) {
+	pfsDir := path.Join(usr.HomeDir, ".pfs", "filesystems", pfsName)
+	if _, err := os.Stat(pfsDir); err != nil {
+		fmt.Printf("%s does not exist. Please call 'paranoid-cli init' before running this command.", pfsDir)
+		Log.Fatal("PFS directory does not exist.")
+	}
+
+	serveFilePath, err := filepath.Abs(file)
+	serveData, err := ioutil.ReadFile(serveFilePath)
+	uuid, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "uuid"))
+	if err != nil {
+		fmt.Println("Error Reading supplied file:", file)
+		Log.Fatal("Cant Reading uuid file")
+	}
+
+	ip, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "ip"))
+	port, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "port"))
+	return string(ip), string(port), string(uuid)
+}

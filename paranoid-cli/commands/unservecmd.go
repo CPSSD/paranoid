@@ -29,22 +29,7 @@ func Unserve(c *cli.Context) {
 		fmt.Println("Unable to get information on current user:", err)
 		os.Exit(1)
 	}
-
-	pfsDir := path.Join(usr.HomeDir, ".pfs", "filesystems", args[0])
-	if _, err := os.Stat(pfsDir); err != nil {
-		fmt.Printf("%s does not exist. Please call 'paranoid-cli init' before running this command.", pfsDir)
-		Log.Fatal("PFS directory does not exist.")
-		os.Exit(1)
-	}
-	uuid, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "uuid"))
-	if err != nil {
-		Log.Error("Error Reading UUID file:", err)
-		fmt.Println("Error Reading Unique ID")
-		os.Exit(1)
-	}
-
-	ip, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "ip"))
-	port, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "port"))
+	ip, port, uuid := getFsMeta(args[0])
 
 	if err != nil {
 		Log.Error("Unable to read Ip and Port of discovery server", err)
@@ -72,7 +57,7 @@ func Unserve(c *cli.Context) {
 	serverClient := pb.NewFileserverClient(connection)
 	response, err := serverClient.UnServeFile(context.Background(),
 		&pb.UnServeRequest{
-			Uuid:     string(uuid),
+			Uuid:     uuid,
 			FilePath: filePath,
 		})
 	if err != nil {

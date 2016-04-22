@@ -53,30 +53,14 @@ func Serve(c *cli.Context) {
 		fmt.Println("Unable to get information on current user:", err)
 		Log.Fatal("Could not get user information:", err)
 	}
-	pfsDir := path.Join(usr.HomeDir, ".pfs", "filesystems", args[0])
-	if _, err := os.Stat(pfsDir); err != nil {
-		fmt.Printf("%s does not exist. Please call 'paranoid-cli init' before running this command.", pfsDir)
-		Log.Fatal("PFS directory does not exist.")
-	}
-
-	serveFilePath, err := filepath.Abs(file)
-	serveData, err := ioutil.ReadFile(serveFilePath)
-	uuid, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "uuid"))
-	if err != nil {
-		Log.Error("Error Reading supplied file", err)
-		fmt.Println("Error Reading supplied file:", file)
-		os.Exit(1)
-	}
-
-	ip, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "ip"))
-	port, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "port"))
+	ip, port, uuid := getFsMeta(args[0])
 
 	if err != nil {
 		fmt.Println("Could not find Ip address of the file server")
 		Log.Fatal("Unable to read Ip and Port of discovery server", err)
 	}
 
-	address := string(ip) + ":" + string(port)
+	address := ip + ":" + port
 
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTimeout(2*time.Second))
@@ -95,7 +79,7 @@ func Serve(c *cli.Context) {
 	serverClient := pb.NewFileserverClient(connection)
 	response, err := serverClient.ServeFile(context.Background(),
 		&pb.ServeRequest{
-			Uuid:     string(uuid),
+			Uuid:     uuid,
 			FilePath: serveFilePath,
 			FileData: serveData,
 			Timeout:  int32(requestTimeout),
@@ -105,5 +89,5 @@ func Serve(c *cli.Context) {
 		fmt.Println("Unable to send File to Discovery Share Server")
 		Log.Fatal("Couldn't message Discovery Share Server", err)
 	}
-	fmt.Println("File now avaliable at:", "http://"+string(ip)+response.ServerPort+"/"+response.ServeResponse)
+	fmt.Println("File now avaliable at:", "http://"+ip+response.ServerPort+"/"+response.ServeResponse)
 }
