@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"os"
 	"os/user"
+	"strconv"
 	"time"
 )
 
@@ -52,9 +53,21 @@ func ListServe(c *cli.Context) {
 	if len(response.ServedFiles) == 0 {
 		fmt.Println("You Have no files being Currently served")
 	} else {
-		fmt.Println("File Path", "\t", "FileHash", "\t", "Times Accessed", "\t", "Expiration Time", "\n")
+		fmt.Printf("%s%s%s%s\n\n",
+			fmt.Sprintf("%-60s", "File Path")[:60],
+			fmt.Sprintf("%-35s", "FileHash")[:35],
+			fmt.Sprintf("%-20s", "Times Accessed")[:20],
+			fmt.Sprintf("%-20s", "Expires")[:20],
+		)
 		for _, files := range response.ServedFiles {
-			fmt.Println(files.FilePath, "\t", files.FileHash, "\t", files.AccessLimit, "\t", files.ExpirationTime)
+			i, _ := strconv.ParseInt(files.ExpirationTime, 10, 64)
+			expiration := time.Unix(i, 0)
+			fmt.Printf("%s%s%s%s\n",
+				fmt.Sprintf("%-60s", files.FilePath)[:60],
+				fmt.Sprintf("%-35s", files.FileHash)[:35],
+				fmt.Sprintf("%-20d", files.AccessLimit)[:20],
+				fmt.Sprintf("%-20s", expiration)[:20],
+			)
 		}
 	}
 }

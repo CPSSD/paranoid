@@ -14,7 +14,7 @@ func (s *FileserverServer) ListServer(ctx context.Context, req *pb.ListServeRequ
 				FilePath:       FileMap[key].FilePath,
 				FileHash:       key,
 				AccessLimit:    FileMap[key].AccessLimit - FileMap[key].AccessAmmount,
-				ExpirationTime: strconv.FormatInt(int64(FileMap[key].ExpirationTime.Minute()), 10)}
+				ExpirationTime: strconv.FormatInt(FileMap[key].ExpirationTime.Unix(), 10)}
 			served = append(served, &(file))
 		}
 	}
