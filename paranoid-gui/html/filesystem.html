@@ -18,6 +18,7 @@
   </ul>
 
   <button class="btn btn-warning" id="mountUnmountButton" onClick="mountUnmountButtonClicked()">Mount</button>
+  <button class="btn btn-normal" id="autoMountButton" onClick="automountButtonClicked()">Automount</button>
   <hr>
 </div>
 
@@ -30,6 +31,8 @@
     <input type="text" id="interface" class='form-control' placeholder="A network interface over which to make connections">
     <label for="discovery">Discovery Server</label>
     <input type="text" id="discovery" class='form-control' placeholder="The address of the discovery server - ip:port">
+    <label for="password">Pool Password</label>
+    <input type="text" id="password" class='form-control' placeholder="The pool password">
     <button type="submit" class="btn btn-success">Mount</button>
   </form>
   <hr>

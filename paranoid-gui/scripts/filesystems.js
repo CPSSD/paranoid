@@ -38,11 +38,12 @@ function drawFileSystem(i) {
 
   // status section
   if (fileSystem.mounted) {
-    $(".content #fsStatus #fsMountedLabel").html('<b>Mounted<b>');
+    $(".content #fsStatus #fsMountedLabel").html('<b>mounted<b>');
     $(".content #fsStatus #fsMountedLabel").addClass("label label-success");
     $(".content #mountUnmountButton").html("Unmount");
     $(".content #mountUnmountButton").attr("class", "btn btn-warning");
     $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + i + ")");
+    $(".content #autoMountButton").hide();
     getFilesystemStatus(fileSystem.name, function(s) {
       $(".content #fsStatus #clistatus").html(s);
     });
@@ -50,11 +51,12 @@ function drawFileSystem(i) {
       $(".content #fsStatus #nodes").html(s);
     });
   } else {
-    $(".content #fsStatus #fsMountedLabel").html('<b>UnMounted<b>');
+    $(".content #fsStatus #fsMountedLabel").html('<b>not mounted<b>');
     $(".content #fsStatus #fsMountedLabel").addClass("label label-warning");
     $(".content #mountUnmountButton").html("Mount");
     $(".content #mountUnmountButton").attr("class", "btn btn-success");
     $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + i + ")");
+    $(".content #autoMountButton").show();
   }
 
   // mount section
@@ -205,6 +207,34 @@ function mountUnmountButtonClicked(i){
   }
 }
 
+function automountButtonClicked() {
+  var fileSystem = fileSystems[selected];
+
+  var exec = require('child_process').exec;
+  var cmd = "paranoid-cli automount -n " + fileSystem.name;
+
+  exec(cmd, function(error, stdout, stderr) {
+    var e = false;
+    if (error !== null) {
+      alert(error);
+      e = true;
+    }
+
+    if (stdout !== "") {
+      alert(stdout);
+      e = true;
+    }
+
+    if (e) {
+      return;
+    }
+
+    fileSystems = getFilesystems();
+    loadSideBar();
+    rowClicked(selected);
+  });
+}
+
 function unMountFs(i) {
   var execSync = require('child_process').execSync;
   var cmd = "paranoid-cli unmount " + fileSystems[i].name;
@@ -231,6 +261,10 @@ function mountFS() {
     cmd += "-d " + $("#fsMountSection #fsMountForm #discovery").val() + " ";
   }
 
+  if($("#fsMountSection #fsMountForm #password").val() !== "") {
+    cmd += "--pool-password " + $("#fsMountSection #fsMountForm #password").val() + " ";
+  }
+
   cmd += fileSystems[selected].name + " " + $("#fsMountSection #fsMountForm #location").val();
 
   exec(cmd, function(error, stdout, stderr) {
@@ -253,7 +287,6 @@ function mountFS() {
     loadSideBar();
     rowClicked(selected);
   });
-  return false;
 }
 
 function getFilesystemStatus(fsName, callback) {
@@ -287,11 +320,12 @@ function getFilesystemNodes(fsName, callback) {
 function refreshButtonClicked() {
   var fileSystem = fileSystems[selected];
   if (fileSystem.mounted) {
-    $(".content #fsStatus #fsMountedLabel").html('<b>Mounted<b>');
+    $(".content #fsStatus #fsMountedLabel").html('<b>mounted<b>');
     $(".content #fsStatus #fsMountedLabel").addClass("label label-success");
     $(".content #mountUnmountButton").html("Unmount");
     $(".content #mountUnmountButton").attr("class", "btn btn-warning");
     $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + selected + ")");
+    $(".content #autoMountButton").show();
     getFilesystemStatus(fileSystem.name, function(s) {
       $(".content #fsStatus #clistatus").html(s);
     });
@@ -299,10 +333,11 @@ function refreshButtonClicked() {
       $(".content #fsStatus #nodes").html(s);
     });
   } else {
-    $(".content #fsStatus #fsMountedLabel").html('<b>UnMounted<b>');
+    $(".content #fsStatus #fsMountedLabel").html('<b>not mounted<b>');
     $(".content #fsStatus #fsMountedLabel").addClass("label label-warning");
     $(".content #mountUnmountButton").html("Mount");
     $(".content #mountUnmountButton").attr("class", "btn btn-success");
     $(".content #mountUnmountButton").attr("onClick", "mountUnmountButtonClicked(" + selected + ")");
+    $(".content #autoMountButton").hide();
   }
 }
