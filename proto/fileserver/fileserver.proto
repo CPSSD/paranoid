@@ -1,0 +1,50 @@
+// ParanoidNetwork API v0.3.0
+
+syntax = "proto3";
+
+package fileserver;
+
+service Fileserver {
+  // File Server Calls
+  rpc ServeFile (ServeRequest) returns (ServeResponse) {}
+  rpc UnServeFile (UnServeRequest) returns (ServeResponse) {}
+  rpc ListServer (ListServeRequest) returns (ListServeResponse) {}
+
+}
+
+
+message ServeResponse {
+  string ServeResponse = 1; // required
+  string ServerPort = 2; // optional
+}
+
+message ServeRequest {
+  string      Uuid = 1; // required
+  string      Pool = 2; // required
+  string      FilePath = 3; // required
+  bytes       FileData = 4; // required
+  int32       Timeout = 5; // optional
+  int32       Limit = 6; // optional
+}
+
+message UnServeRequest {
+  string    Uuid = 1; // required
+  string    Pool = 2; // required
+  string    FilePath = 3; // required
+}
+
+message ListServeRequest {
+  string    Uuid = 1; // required
+  string    Pool = 2; // required
+}
+
+message ListServeResponse {
+  repeated ServedFile ServedFiles = 1; // required
+}
+
+message ServedFile {
+  string    FilePath = 1; // required
+  string    FileHash = 2; // required
+  int32     AccessLimit = 3; // required
+  string    ExpirationTime = 4; // required
+}

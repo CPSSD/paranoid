@@ -137,6 +137,34 @@ func main() {
 			Action:    commands.Status,
 		},
 		{
+			Name:      "list-serve",
+			Usage:     "List Files currently being served.",
+			ArgsUsage: "pfs-name",
+			Action:    commands.ListServe,
+		},
+		{
+			Name:      "serve",
+			Usage:     "Serve file from discovery share server",
+			ArgsUsage: "pfs-name, file-name, [request limit, timeout]",
+			Action:    commands.Serve,
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "t, timeout",
+					Usage: "set a time for the file to expire",
+				},
+				cli.IntFlag{
+					Name:  "a, access",
+					Usage: "give an acces ammount",
+				},
+			},
+		},
+		{
+			Name:      "unserve",
+			Usage:     "remove file from discovery share server",
+			ArgsUsage: "pfs-name, file-hash",
+			Action:    commands.Unserve,
+		},
+		{
 			Name:      "list-nodes",
 			Usage:     "list the nodes connected to local PFSD instances",
 			ArgsUsage: "[pfs-name ...]",

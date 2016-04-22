@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"github.com/cpssd/paranoid/discovery-server/dnetserver"
+	"github.com/cpssd/paranoid/discovery-server/server"
 	"github.com/cpssd/paranoid/logger"
 	pb "github.com/cpssd/paranoid/proto/discoverynetwork"
+	fileServe "github.com/cpssd/paranoid/proto/fileserver"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
@@ -22,12 +24,13 @@ const (
 )
 
 var (
-	port          = flag.Int("port", 10101, "port to listen on")
-	logDir        = flag.String("log-directory", "/var/log", "directory in which to create ParanoidDiscovery.log")
-	renewInterval = flag.Int("renew-interval", 5*60*1000, "time after which membership expires, in ms")
-	certFile      = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
-	keyFile       = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
-	loadState     = flag.Bool("state", true, "Load the Nodes from the statefile")
+	port           = flag.Int("port", 10101, "port to listen on")
+	logDir         = flag.String("log-directory", "/var/log", "directory in which to create ParanoidDiscovery.log")
+	renewInterval  = flag.Int("renew-interval", 5*60*1000, "time after which membership expires, in ms")
+	certFile       = flag.String("cert", "", "TLS certificate file - if empty connection will be unencrypted")
+	keyFile        = flag.String("key", "", "TLS key file - if empty connection will be unencrypted")
+	loadState      = flag.Bool("state", true, "Load the Nodes from the statefile")
+	fileServerPort = flag.Int("filePort", 10111, "File Server Port")
 )
 
 func createRPCServer() *grpc.Server {
@@ -49,6 +52,7 @@ func main() {
 	flag.Parse()
 	dnetserver.Log = logger.New("main", "discovery-server", *logDir)
 	dnetserver.Pools = make(map[string]*dnetserver.Pool)
+	server.Log = logger.New("fileServer", "discovery-server", *logDir)
 	err := dnetserver.Log.SetOutput(logger.LOGFILE | logger.STDERR)
 	if err != nil {
 		dnetserver.Log.Error("Failed to set logger output:", err)
@@ -63,8 +67,8 @@ func main() {
 
 	dnetserver.RenewInterval = renewDuration
 
-	if *port < 1 || *port > 65535 {
-		dnetserver.Log.Fatal("Port must be a number between 1 and 65535, inclusive.")
+	if *port < 1 || *port > 65535 || *fileServerPort < 1 || *fileServerPort > 65535 {
+		dnetserver.Log.Fatal("Ports must be a number between 1 and 65535, inclusive.")
 	}
 
 	dnetserver.Log.Info("Starting Paranoid Discovery Server")
@@ -78,9 +82,12 @@ func main() {
 	if *loadState {
 		dnetserver.LoadState()
 	}
-
+	server.FileMap = make(map[string]*server.FileCache)
+	servePort := strconv.Itoa(*fileServerPort)
+	go server.ServeFiles(servePort)
 	srv := createRPCServer()
 	pb.RegisterDiscoveryNetworkServer(srv, &dnetserver.DiscoveryServer{})
+	fileServe.RegisterFileserverServer(srv, &server.FileserverServer{})
 
 	dnetserver.Log.Info("gRPC server created")
 	srv.Serve(lis)
