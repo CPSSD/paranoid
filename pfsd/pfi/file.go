@@ -55,6 +55,9 @@ func (f *ParanoidFile) Write(content []byte, off int64) (uint32, fuse.Status) {
 		bytesWritten int
 	)
 	ignore, code := glob.ShouldIgnore(f.Name, false)
+	if code != returncodes.OK {
+		return 0, GetFuseReturnCode(code)
+	}
 	if SendOverNetwork && !ignore {
 		code, err, bytesWritten = globals.RaftNetworkServer.RequestWriteCommand(f.Name, off, int64(len(content)), content)
 	} else {

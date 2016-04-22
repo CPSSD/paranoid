@@ -176,10 +176,6 @@ func (fs *ParanoidFileSystem) Link(oldName string, newName string, context *fuse
 	} else {
 		code, err = commands.LinkCommand(globals.ParanoidDir, oldName, newName)
 	}
-	if err != nil {
-		return fuse.EBUSY
-	}
-
 	if code == returncodes.EUNEXPECTED {
 		Log.Fatal("Error running link command :", err)
 	}
