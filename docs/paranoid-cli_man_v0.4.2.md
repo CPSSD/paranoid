@@ -13,6 +13,9 @@ paranoid-cli(1) -- interact with a paranoid filesystem
 `paranoid-cli` `history` `<pfs-name>||<log-directory>`<br>
 `paranoid-cli` `buildfs` `<pfs-name>` `<log-directory>`<br>
 `paranoid-cli` `restart` `<pfs-name>`<br>
+`paranoid-cli` `serve` `<pfs-name>` `<file>` <br>
+`paranoid-cli` `unserve` `<pfs-name>` `<file>` <br>
+`paranoid-cli` `list-serve` `<pfs-name>` <br>
 
 ## DESCRIPTION
 
@@ -50,6 +53,15 @@ mount or unmount a paranoid file system.
 
 * `restart`:
     Restart the network services of the named paranoid filesystem.
+
+* `serve`:
+    Set a file to be served from the Paranoid File Server
+
+* `unserve`:
+    Remove a file that has been previously served from the paranoid file server
+
+* `list-serve`:
+    List all files that are currently on the server and are available to be served
 
 ## OPTIONS
 
