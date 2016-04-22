@@ -1,5 +1,3 @@
-var console = require('console');
-
 class Popup {
   constructor(title, layout){
     var self = this;
@@ -31,10 +29,7 @@ class Popup {
   }
 
   show(){
+    console.info('Showing popup')
     $(document.body).append(this.m_element);
   }
 }
-
-// Redeclare module if not available
-var module = module || { exports: {} };
-module.exports.Popup = Popup;

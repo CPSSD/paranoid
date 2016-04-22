@@ -1,16 +1,16 @@
-var node = require('../src/Node.js');
-var ToRad = require('../src/utils/utils.js').ToRad;
-var Queue = require('../src/utils/Queue.js').Queue;
-var Popup = require('../_app/Popup.js').Popup;
-var console = require('console');
-
 // Connection server and port to local instance running the websocket server
 const WebsocketServerUrl = "ws://127.0.0.1:10100";
 
 class Handler {
   constructor(view){
+    var self = this;
+
     console.log("Handler initialized");
     this.m_animationTime = 1000;
+
+    // Action queue
+    self.m_queue = new Queue();
+
     this.m_ws = {};
     try {
       this.m_ws = new WebSocket(WebsocketServerUrl);
@@ -23,87 +23,11 @@ class Handler {
     // Store all nodes in an map
     this.nodes = {};
 
-    // Action queue
-    this.m_queue = new Queue();
-
     // Start handling
-    this.handleMessage();
+    this.handleMessage(self);
 
-    var popup = new Popup("Title", "new_node", this.m_viewer);
-    popup.show();
-
-    console.log("popup:", popup);
-
-    // ------------------------------------------------------------------------
-    // TODO: REMOVE THIS
-    var n1uuid ="1234-abcd-5678-efgh-9012"
-    var n1 = new node.Node({
-      name: "node1",
-      uuid: n1uuid,
-      shown: false,
-      state: node.CurrentState,
-      // position: {x: 100, y: 100},
-      parent: this.m_viewer
-    });
-
-    var n2uuid = "4567-abcd-8901-efgh-2345"
-    var n2 = new node.Node({
-      name: 'node2',
-      uuid: n2uuid,
-      shown: false,
-      state: node.LeaderState,
-      // position: {x: 0, y: 200},
-      parent: this.m_viewer
-    });
-
-    var n3uuid = "4567-abce-8901-efgh-2345"
-    var n3 = new node.Node({
-      name: 'node4',
-      uuid: n3uuid,
-      shown: false,
-      state: node.FollowerState,
-      parent: this.m_viewer
-    });
-
-    var n4uuid = "8567-abce-8901-efgh-2345"
-    var n4 = new node.Node({
-      name: 'node4',
-      uuid: n4uuid,
-      shown: false,
-      state: node.InactiveState,
-      parent: this.m_viewer
-    });
-
-    var n5uuid = "8568-abce-8901-efgh-2345"
-    var n5 = new node.Node({
-      name: 'node5',
-      uuid: n5uuid,
-      shown: false,
-      state: node.CandidateState,
-      parent: this.m_viewer
-    });
-
-    this.addNode(n1);
-    n1.show();
-
-    setTimeout( () => {
-      this.addNode(n2);
-      n2.show();
-
-      this.addNode(n5);
-      n5.show();
-
-      setTimeout( () => {
-        this.addNode(n3);
-        n3.show();
-
-        setTimeout( () => {
-          this.addNode(n4);
-          n4.show();
-        }, 2000);
-      }, 2000);
-    }, 2000);
-    // ------------------------------------------------------------------------
+    // var popup = new Popup("Title", "new_node");
+    // popup.show();
 
   }
 
@@ -140,32 +64,35 @@ class Handler {
   }
 
   // Listen to whatever hanges in the raft log
-  handleMessage(){
+  handleMessage(self){
     this.m_ws.onmessage = function(e){
-      var msg = JSON.parse(e);
-      console.log("Server: ", msg);
-      this.m_queue.add(msg);
+      console.log("Server: ", e.data);
+      var msg = JSON.parse(e.data);
+      self.m_queue.add(msg);
 
       // Handle Messages at specific interval
       var loop = function(){
-        switch(msg.type){
-          case 'event':
-            this.handleEvent(msg.data);
-            break;
-          case "status":
-            this.handleStatus(msg.data);
-            break;
-          case 'nodechange':
-            this.handleNodeUpdate(msg.data);
-            break;
-          default:
-            console.error("unrecognished messsage type", msg.type);
-            break;
+        if(!self.m_queue.empty()){
+          var m = self.m_queue.pop()
+          switch(m.type){
+            case 'event':
+              self.handleEvent(m.data);
+              break;
+            case "state":
+              self.handleStatus(m.data);
+              break;
+            case 'nodechange':
+              self.handleNodeUpdate(m.data);
+              break;
+            default:
+              console.error("unrecognished message type", m.type);
+              break;
+          }
         }
 
-        setTimeout(loop, this.getProcessInterval());
+        setTimeout(loop, self.getProcessInterval());
       }
-
+      loop()
     }
   }
 
@@ -190,7 +117,7 @@ class Handler {
         state: getStateFromString(nodes[n].state),
         shown: true,
         parent: this.m_viewer
-      }));
+      }).show());
     }
   }
 
@@ -205,7 +132,7 @@ class Handler {
     switch(data.action){
       case 'add':
       case 'change':
-        this.nodes[n.uuid] = new Node({
+        var newNode = new Node({
           name: n.commonName,
           uuid: n.uuid,
           address: n.addr,
@@ -213,6 +140,9 @@ class Handler {
           parent: this.m_viewer,
           shown: true
         });
+        newNode.show();
+
+        this.addNode(newNode);
         break;
       case 'delete':
         delete(this.nodes[n.uuid]);

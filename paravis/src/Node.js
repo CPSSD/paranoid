@@ -1,13 +1,9 @@
-var console = require('console');
-
 // Node states
 const LeaderState     = 1<<1;
 const FollowerState   = 1<<2;
 const CandidateState  = 1<<3;
 const CurrentState    = 1<<4;
 const InactiveState   = 1<<5;
-
-window.$ = window.jQuery = require('../lib/jquery-2.2.3.min.js');
 
 class Node {
   constructor(details){

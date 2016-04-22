@@ -31,6 +31,32 @@
         document.head.appendChild(elem);
       }
 
+      // Load all files in src
+      var files = fs.readdirSync("src");
+      for(var i = files.length; i--;){
+        if(!isJavascriptFile(files[i])){
+          continue;
+        }
+        elem = document.createElement("script")
+        elem.setAttribute("type", "application/javascript")
+        elem.setAttribute("src", "/src/"+files[i]);
+
+        document.head.appendChild(elem);
+      }
+
+      // Load all files in src/utils
+      var utils = fs.readdirSync("src/utils");
+      for(var i = utils.length; i--;){
+        if(!isJavascriptFile(utils[i])){
+          continue;
+        }
+        elem = document.createElement("script")
+        elem.setAttribute("type", "application/javascript")
+        elem.setAttribute("src", "/src/utils/"+utils[i]);
+
+        document.head.appendChild(elem);
+      }
+
       function isJavascriptFile(file){
         splitFile = file.split('.');
         if(splitFile.length == 1){

@@ -1,6 +1,3 @@
-var Queue = require('../src/utils/Queue.js').Queue;
-var Handler = require('../src/Handler.js').Handler;
-
 class MainActivity extends Activity {
     constructor() {
         super();
