@@ -8,8 +8,8 @@ import (
 )
 
 func (s *FileserverServer) UnServeFile(ctx context.Context, req *pb.UnServeRequest) (*pb.ServeResponse, error) {
-	for i := 0; i < len(dnetserver.Nodes); i++ {
-		if dnetserver.Nodes[i].Data.Uuid == req.Uuid {
+	for _, node := range dnetserver.Pools[req.Pool].Info.Nodes {
+		if node.Uuid == req.Uuid {
 			for key := range FileMap {
 				if FileMap[key].FilePath == req.FilePath {
 					fmt.Println(key, req.FilePath)

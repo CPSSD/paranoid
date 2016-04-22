@@ -19,8 +19,8 @@ func (s *FileserverServer) ServeFile(ctx context.Context, req *pb.ServeRequest) 
 		req.Limit = 1000
 	}
 
-	for i := 0; i < len(dnetserver.Nodes); i++ {
-		if dnetserver.Nodes[i].Data.Uuid == req.Uuid {
+	for _, node := range dnetserver.Pools[req.Pool].Info.Nodes {
+		if node.Uuid == req.Uuid {
 			hasher := md5.New()
 			fileUUID := req.FilePath + req.Uuid
 			hasher.Write([]byte(fileUUID))

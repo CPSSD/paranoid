@@ -79,7 +79,7 @@ func fileToProto(file os.FileInfo, directory string) (entry *pb.LogEntry, err er
 	return entry, nil
 }
 
-func getFsMeta(usr *user.User, pfsName string) (string, string, string) {
+func getFsMeta(usr *user.User, pfsName string) (string, string, string, string) {
 	pfsDir := path.Join(usr.HomeDir, ".pfs", "filesystems", pfsName)
 	if _, err := os.Stat(pfsDir); err != nil {
 		fmt.Printf("%s does not exist. Please call 'paranoid-cli init' before running this command.", pfsDir)
@@ -95,9 +95,10 @@ func getFsMeta(usr *user.User, pfsName string) (string, string, string) {
 
 	ip, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "ip"))
 	port, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "port"))
+	pool, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "pool"))
 	if err != nil {
 		fmt.Println("Could not find Ip address of the file server")
 		Log.Fatal("Unable to read Ip and Port of discovery server", err)
 	}
-	return string(ip), string(port), string(uuid)
+	return string(ip), string(port), string(uuid), string(pool)
 }

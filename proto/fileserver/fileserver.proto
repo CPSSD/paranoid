@@ -20,19 +20,22 @@ message ServeResponse {
 
 message ServeRequest {
   string      Uuid = 1; // required
-  string      FilePath = 2;// required
-  bytes       FileData = 3;// required
-  int32       Timeout = 4;// optional
-  int32       Limit = 5;// optional
+  string      Pool = 2; // required
+  string      FilePath = 3; // required
+  bytes       FileData = 4; // required
+  int32       Timeout = 5; // optional
+  int32       Limit = 6; // optional
 }
 
 message UnServeRequest {
   string    Uuid = 1; // required
-  string    FilePath = 2;// required
+  string    Pool = 2; // required
+  string    FilePath = 3; // required
 }
 
 message ListServeRequest {
   string    Uuid = 1; // required
+  string    Pool = 2; // required
 }
 
 message ListServeResponse {

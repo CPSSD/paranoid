@@ -27,18 +27,17 @@ func Unserve(c *cli.Context) {
 		Log.Fatal("Could not get user information:", err)
 	}
 
-	ip, port, uuid := getFsMeta(usr, args[0])
+	ip, port, uuid, pool := getFsMeta(usr, args[0])
 
-	address := string(ip) + ":" + string(port)
+	address := ip + ":" + port
 
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTimeout(2*time.Second))
 	opts = append(opts, grpc.WithInsecure())
 	connection, err := grpc.Dial(address, opts...)
 	if err != nil {
-		Log.Error("Unable to Connect to Discovery Share Server", err)
 		fmt.Println("Failed to Connect to Discovery Share Server")
-		os.Exit(1)
+		Log.Fatal("Unable to Connect to Discovery Share Server", err)
 	}
 	defer connection.Close()
 	filePath, err := filepath.Abs(args[1])
@@ -50,12 +49,12 @@ func Unserve(c *cli.Context) {
 	response, err := serverClient.UnServeFile(context.Background(),
 		&pb.UnServeRequest{
 			Uuid:     uuid,
+			Pool:     pool,
 			FilePath: filePath,
 		})
 	if err != nil {
-		Log.Error("Couldn't remove file from Discovery Share Server", err)
 		fmt.Println("Unable to remove to Discovery Share Server")
-		os.Exit(1)
+		Log.Fatal("Couldn't remove file from Discovery Share Server", err)
 	}
 
 	fmt.Println(response.ServeResponse)

@@ -51,7 +51,7 @@ func Serve(c *cli.Context) {
 		fmt.Println("Unable to get information on current user:", err)
 		Log.Fatal("Could not get user information:", err)
 	}
-	ip, port, uuid := getFsMeta(usr, args[0])
+	ip, port, uuid, pool := getFsMeta(usr, args[0])
 
 	address := ip + ":" + port
 	serveFilePath, err := filepath.Abs(file)
@@ -73,6 +73,7 @@ func Serve(c *cli.Context) {
 			Uuid:     uuid,
 			FilePath: serveFilePath,
 			FileData: serveData,
+			Pool:     pool,
 			Timeout:  int32(requestTimeout),
 			Limit:    int32(requestLimit),
 		})

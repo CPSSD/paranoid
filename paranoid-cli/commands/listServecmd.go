@@ -26,7 +26,7 @@ func ListServe(c *cli.Context) {
 		Log.Fatal("Could not get user information:", err)
 	}
 
-	ip, port, uuid := getFsMeta(usr, args[0])
+	ip, port, uuid, pool := getFsMeta(usr, args[0])
 	address := ip + ":" + port
 
 	var opts []grpc.DialOption
@@ -43,6 +43,7 @@ func ListServe(c *cli.Context) {
 	response, err := serverClient.ListServer(context.Background(),
 		&pb.ListServeRequest{
 			Uuid: uuid,
+			Pool: pool,
 		})
 	if err != nil {
 		fmt.Println("Unable to send File to Discovery Share Server")
