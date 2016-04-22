@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <title>Paranoid Filesystems</title>
+    <script src="scripts/jquery-2.2.2.min.js"></script>
+    <script src="scripts/filesystems.js"></script>
+    <script src="scripts/home.js"></script>
+    <script type="text/javascript">
+      var fileSystems = getFilesystems();
+      $(document).ready(function () {
+        loadSideBar();
+        setupHome();
+      });
+      $('a[target=_blank]').on('click', function(){
+       require('open')(this.href);
+       return false;
+      });
+    </script>
+    <script src="scripts/nav.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/master.css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/site.css">
+  </head>
+
+  <body>
+    <div id="header">
+      <div class="logo">
+        <a onclick="rowClicked(-1)">Paranoid<span>Filesystems</span></a>
+      </div>
+    </div>
+
+    <div id="container">
+      <div class="sidebar">
+        <ul id="nav">
+        </ul>
+      </div>
+
+      <div class="content">
+      </div>
+    </div>
+  </body>
+
+</html>

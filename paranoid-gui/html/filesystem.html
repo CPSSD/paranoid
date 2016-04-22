@@ -1,0 +1,72 @@
+<div id="fsHeader">
+  <h1 id="fsName">FileSystem</h1>
+  <hr>
+</div>
+
+<div id="fsStatus">
+  <h3>Status <span class="label label-success" id="fsMountedLabel">Mounted</span>
+     <button class="btn btn-normal" id="refreshButton" onClick="refreshButtonClicked()">refresh</button></h3>
+
+  <div class="onlyForMountedSection">
+    <div class="mountpointSection">
+      <h5>Mountpoint</h5>
+      <ul class="list-group">
+        <li class="list-group-item"><div id="mountpoint">Must be mounted to get mountpoint</div></li>
+      </ul>
+      <button class="btn btn-normal" id="openButton" onclick="openButtonPressed()">Open</button>
+    </div>
+
+    <div class="detailedStatus">
+      <h5>Detailed status</h5>
+      <ul class="list-group">
+        <li class="list-group-item"><div id="clistatus">Must be mounted to get detailed status</div></li>
+      </ul>
+    </div>
+
+    <div class="nodesDiv">
+      <h5>Nodes</h5>
+      <ul class="list-group">
+        <li class="list-group-item"><div id="nodes">Must be mounted to get node list</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <button class="btn btn-warning" id="mountUnmountButton" onClick="mountUnmountButtonClicked()">Mount</button>
+  <button class="btn btn-normal" id="autoMountButton" onClick="automountButtonClicked()">Automount</button>
+  <hr>
+</div>
+
+<div id="fsMountSection">
+  <h3>Mount your FileSystem</h3>
+  <form id="fsMountForm">
+    <label for="location">Location</label>
+    <input type="file" id="location" class='form-control' placeholder="Directory in which to mount your filesystem" required webkitdirectory directory multiple>
+    <label for="interface">Interface</label>
+    <input type="text" id="interface" class='form-control' placeholder="A network interface over which to make connections">
+    <label for="discovery">Discovery Server</label>
+    <input type="text" id="discovery" class='form-control' placeholder="The address of the discovery server - ip:port">
+    <label for="password">Pool Password</label>
+    <input type="text" id="password" class='form-control' placeholder="The pool password">
+    <button type="submit" class="btn btn-success">Mount</button>
+  </form>
+  <hr>
+</div>
+
+<div id="fsAttributes">
+  <h3>Attributes</h3>
+  <ul class="list-group" id="fsAttributesList">
+    <li class="list-group-item" id="fsAttributeEncrypted">Encrypted<span class="label label-success" id="badge">YES</span></li>
+    <li class="list-group-item" id="fsAttributeNetwork">Network<span class="label label-success" id="badge">YES</span></li>
+    <li class="list-group-item" id="fsAttributeKeygen">Key Generated<span class="label label-success" id="badge">YES</span></li>
+    <li class="list-group-item" id="fsAttributePool">Pool<span class="label label-primary" id="badge">strange_fox</span></li>
+    <li class="list-group-item" id="fsAttributeUuid">UUID<span class="label label-primary" id="badge">e256a4ed-43c2-4011-a1c8-545bc73cc021</span></li>
+  </ul>
+  <hr>
+</div>
+
+<div id="fsDeleteSection">
+  <h3>Delete FileSystem</h3>
+    <label for="nameCheck">Confirm Deletion</label>
+    <input type="text" name="nameCheck" class='form-control' placeholder="Enter the filesystem name" id="nameCheckText">
+    <button type="submit" class="btn btn-danger" id="deleteButton">Delete</button>
+</div>
