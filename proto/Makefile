@@ -8,3 +8,6 @@ dnetwork:
 
 raftnetwork:
 	protoc --go_out=plugins=grpc:. raft/raft.proto
+
+fileserver:
+	protoc --go_out=plugins=grpc:. fileserver/fileserver.proto

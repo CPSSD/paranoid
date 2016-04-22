@@ -6,10 +6,8 @@ import (
 	pb "github.com/cpssd/paranoid/proto/fileserver"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"io/ioutil"
 	"os"
 	"os/user"
-	"path"
 	"time"
 )
 
@@ -27,27 +25,9 @@ func ListServe(c *cli.Context) {
 		fmt.Println("Unable to get information on current user:", err)
 		Log.Fatal("Could not get user information:", err)
 	}
-	pfsDir := path.Join(usr.HomeDir, ".pfs", "filesystems", args[0])
-	if _, err := os.Stat(pfsDir); err != nil {
-		fmt.Printf("%s does not exist. Please call 'paranoid-cli init' before running this command.", pfsDir)
-		Log.Fatal("PFS directory does not exist.")
-	}
 
-	uuid, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "uuid"))
-	if err != nil {
-		fmt.Println("Error Reading UUID")
-		Log.Fatal("Error Reading supplied file", err)
-	}
-
-	ip, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "ip"))
-	port, err := ioutil.ReadFile(path.Join(pfsDir, "meta", "port"))
-
-	if err != nil {
-		fmt.Println("Could not find Ip address of the file server")
-		Log.Fatal("Unable to read Ip and Port of discovery server", err)
-	}
-
-	address := string(ip) + ":" + string(port)
+	ip, port, uuid := getFsMeta(usr, args[0])
+	address := ip + ":" + port
 
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTimeout(2*time.Second))
@@ -62,7 +42,7 @@ func ListServe(c *cli.Context) {
 	serverClient := pb.NewFileserverClient(connection)
 	response, err := serverClient.ListServer(context.Background(),
 		&pb.ListServeRequest{
-			Uuid: string(uuid),
+			Uuid: uuid,
 		})
 	if err != nil {
 		fmt.Println("Unable to send File to Discovery Share Server")

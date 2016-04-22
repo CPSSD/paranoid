@@ -6,10 +6,8 @@ import (
 	pb "github.com/cpssd/paranoid/proto/fileserver"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"io/ioutil"
 	"os"
 	"os/user"
-	"path"
 	"path/filepath"
 	"time"
 )
@@ -25,17 +23,11 @@ func Unserve(c *cli.Context) {
 
 	usr, err := user.Current()
 	if err != nil {
-		Log.Error("Could not get user information:", err)
 		fmt.Println("Unable to get information on current user:", err)
-		os.Exit(1)
+		Log.Fatal("Could not get user information:", err)
 	}
-	ip, port, uuid := getFsMeta(args[0])
 
-	if err != nil {
-		Log.Error("Unable to read Ip and Port of discovery server", err)
-		fmt.Println("Could not find Ip address of the file server")
-		os.Exit(1)
-	}
+	ip, port, uuid := getFsMeta(usr, args[0])
 
 	address := string(ip) + ":" + string(port)
 

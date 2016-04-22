@@ -1,9 +1,11 @@
+// ParanoidNetwork API v0.3.0
+
 syntax = "proto3";
 
 package fileserver;
 
 service Fileserver {
-  // Discovery Calls
+  // File Server Calls
   rpc ServeFile (ServeRequest) returns (ServeResponse) {}
   rpc UnServeFile (UnServeRequest) returns (ServeResponse) {}
   rpc ListServer (ListServeRequest) returns (ListServeResponse) {}
