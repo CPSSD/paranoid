@@ -42,8 +42,8 @@ func Unserve(c *cli.Context) {
 	defer connection.Close()
 	filePath, err := filepath.Abs(args[1])
 	if err != nil {
-		Log.Error("Failed to get path to file", err)
 		fmt.Println("Could Not get path to file", args[1])
+		Log.Fatal("Failed to get path to file", err)
 	}
 	serverClient := pb.NewFileserverClient(connection)
 	response, err := serverClient.UnServeFile(context.Background(),

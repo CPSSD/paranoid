@@ -10,40 +10,18 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"strconv"
 	"time"
 )
 
 //Adds files from Paranoid File Server
 func Serve(c *cli.Context) {
 	args := c.Args()
-
 	if len(args) < 2 {
 		cli.ShowCommandHelp(c, "serve")
 		os.Exit(1)
 	}
-	var requestLimit int
-	var requestTimeout int
-	var err error
-	if len(args) < 3 {
-		requestLimit = 0
-		requestTimeout = 0
-	} else if len(args) < 4 {
-		requestLimit, err = strconv.Atoi(args[2])
-		requestTimeout = 0
-		if err != nil {
-			fmt.Println("Unable to parse optional paramaters")
-			Log.Fatal("Unable to parse optional paramaters:", err)
-		}
-	} else if len(args) < 5 {
-		requestLimit, err = strconv.Atoi(args[2])
-		requestTimeout, err = strconv.Atoi(args[3])
-		if err != nil {
-			fmt.Println("Unable to parse optional paramaters")
-			Log.Fatal("Unable to parse optional paramaters:", err)
-		}
-	}
-
+	requestTimeout := c.Int("timeout")
+	requestLimit := c.Int("access")
 	file := args[1]
 
 	usr, err := user.Current()

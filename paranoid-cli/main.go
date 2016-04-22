@@ -147,6 +147,16 @@ func main() {
 			Usage:     "Serve file from discovery share server",
 			ArgsUsage: "pfs-name, file-name, [request limit, timeout]",
 			Action:    commands.Serve,
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "t, timeout",
+					Usage: "set a time for the file to expire",
+				},
+				cli.IntFlag{
+					Name:  "a, access",
+					Usage: "give an acces ammount",
+				},
+			},
 		},
 		{
 			Name:      "unserve",
