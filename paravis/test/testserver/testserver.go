@@ -35,6 +35,7 @@ func main() {
 	log.Println("Waiting...")
 	wait.Wait()
 	log.Println("Done Waiting")
+	wait.Add(1)
 
 	if *demoFlag {
 		go demo(server)

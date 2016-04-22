@@ -16,7 +16,6 @@ class Popup {
     $(self.m_element).append(this.m_contentElement);
 
     $(document).on('click', (e) => {
-      console.log($(e.target).parents().is(self.m_element));
       if(!$(e.target).closest(self.m_element)){
         e.stopPropagation();
         self.hide();
@@ -26,6 +25,10 @@ class Popup {
 
   hide(){
     $(this.m_element).remove();
+  }
+
+  onOk( callback ){
+    // Run callback when user presses ok
   }
 
   show(){

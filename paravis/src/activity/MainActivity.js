@@ -2,6 +2,7 @@ class MainActivity extends Activity {
     constructor() {
         super();
         this.m_layout = "main";
+        this.m_db = new KeyValueDB("Main", 1, PermanentDB);
     }
 
     name(){
@@ -11,10 +12,16 @@ class MainActivity extends Activity {
     onCreate(){
       loadLayout(this.m_layout);
 
-      setTimeout(() => {
-        var handler = new Handler($('#viewer'));
-      }, 100);
+      if(this.m_db.get("filesystems") == undefined){
+        // var p = new Popup(A.strings.pool_new_pool, "new_node");
+        // p.onOk(() => {
+        //   // Get the data from the input
+        // });
+      }
 
+      $(document).click(() => {
+        var handler = new Handler($('#viewer'));
+      });
     }
 }
 

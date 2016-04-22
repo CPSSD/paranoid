@@ -25,10 +25,6 @@ class Handler {
 
     // Start handling
     this.handleMessage(self);
-
-    // var popup = new Popup("Title", "new_node");
-    // popup.show();
-
   }
 
   resetNodeLayout(){
@@ -76,7 +72,7 @@ class Handler {
           var m = self.m_queue.pop()
           switch(m.type){
             case 'event':
-              self.handleEvent(m.data);
+              self.handleEvent(m.data.event);
               break;
             case "state":
               self.handleStatus(m.data);
@@ -111,13 +107,15 @@ class Handler {
     }
 
     for(var n in nodes){
-      this.addNode(new Node({
+      var newNode = new Node({
         name: nodes[n].commonName,
         uuid: nodes[n].uuid,
         state: getStateFromString(nodes[n].state),
         shown: true,
         parent: this.m_viewer
-      }).show());
+      });
+      newNode.show();
+      this.addNode(newNode);
     }
   }
 
@@ -154,8 +152,24 @@ class Handler {
   }
 
   handleEvent(data){
-    target = this.nodes[data.target]
-    source = this.nodes[data.source]
+    $('backlog').append("<div>"+data.details+"</div>");
+
+    var target = this.nodes[data.target].getPosition();
+    var source = this.nodes[data.source].getPosition();
+
+    var point = $('<event></event>');
+    point.css({
+      left: source.x,
+      top: source.y
+    });
+    point.appendTo(this.m_viewer);
+    console.log("From:", source.x, source.y);
+    console.log("To:", target.x, target.y);
+    point.animate({
+      left: target.x,
+      top: target.y
+    });
+
   }
 }
 module.exports.Handler = Handler;

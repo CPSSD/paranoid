@@ -28,7 +28,7 @@ func demo(server *Server) {
 	time.Sleep(2 * time.Second)
 
 	// Start ticking and finish after 20 times
-	tick := time.NewTicker(500 * time.Millisecond)
+	tick := time.NewTicker(876 * time.Millisecond)
 	for i := 0; i < 20; i++ {
 		select {
 		case <-tick.C:
@@ -45,7 +45,7 @@ func demo(server *Server) {
 			}
 			server.Send(m)
 			log.Print("Sending write-request")
-			time.Sleep(100 * time.Second)
+			time.Sleep(2 * time.Second)
 
 			// Send a write
 			m = Message{
