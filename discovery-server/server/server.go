@@ -15,6 +15,7 @@ type FileCache struct {
 	AccessLimit    int32
 	FileData       []byte
 	FilePath       string
+	isServing      bool
 	ExpirationTime time.Time
 }
 
@@ -31,7 +32,10 @@ func getFileFromHash(hash string) ([]byte, string, error) {
 	}
 	if time.Now().After(value.ExpirationTime) || value.AccessAmmount >= value.AccessLimit {
 		Log.Info("Expired Filed attempted to be accessed")
-		delete(FileMap, hash)
+		if !FileMap[hash].isServing {
+			delete(FileMap, hash)
+		}
+		FileMap[hash].isServing = true
 		return []byte(""), "", fmt.Errorf("File Expired")
 	}
 	value.AccessAmmount++
@@ -52,6 +56,7 @@ func ServeFiles(serverPort string) {
 				w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
 				Log.Info("sending File", name, "to user")
 				w.Write(file)
+				FileMap[r.URL.Path[1:]].isServing = false
 			}
 		}
 	})

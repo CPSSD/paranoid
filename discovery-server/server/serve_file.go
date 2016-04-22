@@ -31,6 +31,7 @@ func (s *FileserverServer) ServeFile(ctx context.Context, req *pb.ServeRequest) 
 				req.Limit,
 				req.FileData,
 				req.FilePath,
+				false,
 				time.Now().Add(time.Minute * time.Duration(req.Timeout))}
 			FileMap[hash] = fileData
 			return &pb.ServeResponse{hash, Port}, nil
