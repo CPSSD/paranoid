@@ -1,6 +1,12 @@
 Paranoid
 ========
 
+---
+
+This repo is no longer maintained. The project has a new home: https://github.com/pp2p/paranoid
+
+---
+
 ## Build Instructions ##
 
 To run the unit tests recursively for the entire project, run `go test ./...` from this directory.
